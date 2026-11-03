@@ -19,6 +19,10 @@ import fr.kodistan.interregne.InterregneMod;
 import fr.kodistan.interregne.economy.RegionalTreasury;
 import fr.kodistan.interregne.economy.TreasuryPayment;
 import fr.kodistan.interregne.economy.Wallet;
+import fr.kodistan.interregne.production.HutProduction;
+import fr.kodistan.interregne.production.Huts;
+import fr.kodistan.interregne.production.WaterSeal;
+import fr.kodistan.interregne.region.Crate;
 import fr.kodistan.interregne.region.CrateRequirements;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -33,6 +37,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.EnumMap;
+import java.util.Map;
 
 import static com.ldtteam.structurize.blockentities.interfaces.IBlueprintDataProviderBE.TAG_BLUEPRINTDATA;
 import static com.minecolonies.api.util.constant.NbtTagConstants.TAG_NAME;
@@ -62,6 +69,12 @@ public final class InstantBuilder
         }
 
         final ServerPlayer player = BuildContext.requester();
+        if (order instanceof WorkOrderDecoration)
+        {
+            // A decoration's price depends on its size, known once its blueprint is loaded
+            takeOverDecoration(colony, level, order, player);
+            return true;
+        }
         // Regional crates (from level 2): checked before any Couronne is charged
         final CrateRequirements.Plan crates = CrateRequirements.plan(colony, order, player);
         if (crates.refused())
@@ -147,6 +160,21 @@ public final class InstantBuilder
         {
             abstractOrder.onCompleted(colony, null);
         }
+        if (building != null && order instanceof WorkOrderBuilding && order.getWorkOrderType() != WorkOrderType.REPAIR)
+        {
+            try
+            {
+                if (Huts.FISHERMAN.equals(Huts.id(building)))
+                {
+                    WaterSeal.seal(level, building);
+                }
+                HutProduction.afterConstruction(level, colony, building);
+            }
+            catch (final RuntimeException e)
+            {
+                InterregneMod.LOGGER.error("Setting up {} after construction failed", building.getPosition(), e);
+            }
+        }
 
         final BlockPos pos = order.getLocation();
         level.playSound(null, pos, SoundEvents.PLAYER_LEVELUP, SoundSource.BLOCKS, 1.0F, 1.0F);
@@ -173,6 +201,70 @@ public final class InstantBuilder
         {
             abstractOrder.onCompleted(colony, null);
         }
+    }
+
+    /**
+     * Decorations pay by size: one Couronne per so many blocks (at least the flat decoration cost), and regional
+     * crates (wood and stone in turn) for the big ones.
+     */
+    private static void takeOverDecoration(final IColony colony, final ServerLevel level, final IServerWorkOrder order, @Nullable final ServerPlayer player)
+    {
+        order.loadBlueprint(level, blueprint -> level.getServer().execute(() -> {
+            if (blueprint == null)
+            {
+                InterregneMod.LOGGER.warn("Instant build: no blueprint for {} at {}", order.getStructurePath(), order.getLocation());
+                if (player != null)
+                {
+                    player.sendSystemMessage(Component.literal("Plan introuvable, chantier annulé.").withStyle(ChatFormatting.RED));
+                }
+                return;
+            }
+            final long blocks = blueprint.getBlockInfoAsList().stream().filter(info -> !info.getState().isAir()).count();
+            final boolean free = player == null || player.isCreative();
+            final int cost = free ? 0 : (int) Math.max(BuildCosts.forDecoration(), blocks / Config.DECORATION_BLOCKS_PER_COURONNE.get());
+            final CrateRequirements.Plan crates = free ? CrateRequirements.Plan.NONE : CrateRequirements.plan(colony, player, decorationCrates(blocks));
+            if (crates.refused())
+            {
+                return;
+            }
+            final TreasuryPayment payment = TreasuryPayment.pay(player, colony, cost);
+            if (payment == null)
+            {
+                player.sendSystemMessage(Component.literal("Il te faut " + Wallet.couronnes(cost, null) + " pour cette décoration de " + blocks + " blocs (trésor régional : "
+                                                             + Wallet.format(RegionalTreasury.get(level.getServer()).balance(colony)) + ", sur toi : "
+                                                             + Wallet.format(Wallet.value(purse(player))) + ").")
+                                           .withStyle(ChatFormatting.RED));
+                return;
+            }
+            crates.take();
+            if (player != null && cost > 0)
+            {
+                player.sendSystemMessage(Component.literal("Décoration de " + blocks + " blocs, payé : " + payment.describe() + ".").withStyle(ChatFormatting.GRAY));
+            }
+            ConstructionManager.start(new ConstructionSite(level, colony, order, null, blueprint, player));
+            if (player != null)
+            {
+                player.sendSystemMessage(Component.literal("Chantier lancé : ")
+                                           .append(order.getDisplayName())
+                                           .append(" (durée " + BuildCosts.formatSeconds(ConstructionSite.durationSeconds(order)) + ")")
+                                           .withStyle(ChatFormatting.GOLD));
+            }
+        }));
+    }
+
+    /**
+     * One crate per so many blocks, alternating wood and stone.
+     */
+    private static Map<Crate, Integer> decorationCrates(final long blocks)
+    {
+        final Map<Crate, Integer> needs = new EnumMap<>(Crate.class);
+        final int per = Config.DECORATION_BLOCKS_PER_CRATE.get();
+        final long count = per <= 0 ? 0 : blocks / per;
+        for (int i = 0; i < count; i++)
+        {
+            needs.merge(Crate.byId(i % 2 == 0 ? "bois" : "pierre"), 1, Integer::sum);
+        }
+        return needs;
     }
 
     private static int costOf(final IServerWorkOrder order)

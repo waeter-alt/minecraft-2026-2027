@@ -66,7 +66,11 @@ public class InterregneMod
       "com.minecolonies.core.entity.ai.workers.CitizenAI",
       "com.minecolonies.core.entity.ai.workers.AbstractAISkeleton",
       "com.minecolonies.core.event.EventHandler",
-      "com.minecolonies.core.colony.buildings.modules.EnchanterStationsModule");
+      "com.minecolonies.core.colony.buildings.modules.EnchanterStationsModule",
+      "com.minecolonies.core.entity.ai.workers.production.herders.AbstractEntityAIHerder",
+      "com.minecolonies.core.entity.ai.workers.production.agriculture.EntityAIWorkFarmer",
+      "com.minecolonies.core.entity.ai.workers.AbstractEntityAIUsesFurnace",
+      "com.minecolonies.core.network.messages.server.colony.building.fields.FarmFieldUpdateSeedMessage");
 
     public InterregneMod(final IEventBus modEventBus, final ModContainer modContainer)
     {

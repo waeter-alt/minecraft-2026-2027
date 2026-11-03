@@ -385,6 +385,52 @@ public final class Config
         BUILDER.pop();
     }
 
+    static
+    {
+        BUILDER.push("production");
+    }
+
+    public static final ModConfigSpec.IntValue PRODUCTION_SECONDS = BUILDER
+      .comment("Every staffed production hut (breeders, fisher, farm) yields its goods this often, whatever its animals or water")
+      .defineInRange("productionSeconds", 30, 5, 3600);
+
+    public static final ModConfigSpec.IntValue PRODUCTION_PER_LEVEL = BUILDER
+      .comment("Main goods per production cycle, per building level (a level 1 chicken coop: 1 raw chicken every cycle)")
+      .defineInRange("productionPerLevel", 1, 0, 64);
+
+    public static final ModConfigSpec.IntValue FIELD_BONUS = BUILDER
+      .comment("Extra goods per cycle for each decorative field planted with the farm's crop")
+      .defineInRange("fieldBonus", 1, 0, 64);
+
+    public static final ModConfigSpec.IntValue HERD_PER_LEVEL = BUILDER
+      .comment("Animals shown in a breeder's pen after each construction or upgrade, per building level (plus a starting pair)")
+      .defineInRange("herdPerLevel", 2, 0, 16);
+
+    public static final ModConfigSpec.IntValue FOREST_SAPLINGS = BUILDER
+      .comment("Saplings a forester makes sure exist around its hut after each construction or upgrade, per building level (plus 4)")
+      .defineInRange("forestSaplingsPerLevel", 2, 0, 16);
+
+    public static final ModConfigSpec.DoubleValue SAPLING_GROWTH = BUILDER
+      .comment("Chance per level, every 10 seconds, that a sapling near a staffed forester grows a stage (level 5 at 0.15: 75%)")
+      .defineInRange("saplingGrowthPerLevel", 0.15, 0.0, 1.0);
+
+    public static final ModConfigSpec.IntValue KITCHEN_SURPLUS_PER_LEVEL = BUILDER
+      .comment("Raw food a restaurant whose own stock is full cooks for the warehouse every production cycle, per level")
+      .defineInRange("kitchenSurplusPerLevel", 16, 0, 1024);
+
+    public static final ModConfigSpec.IntValue DECORATION_BLOCKS_PER_COURONNE = BUILDER
+      .comment("A decoration costs one Couronne per this many blocks (at least decorationCost)")
+      .defineInRange("decorationBlocksPerCouronne", 100, 1, 100_000);
+
+    public static final ModConfigSpec.IntValue DECORATION_BLOCKS_PER_CRATE = BUILDER
+      .comment("A decoration needs one regional crate (wood and stone in turn) per this many blocks; 0 disables")
+      .defineInRange("decorationBlocksPerCrate", 1000, 0, 100_000);
+
+    static
+    {
+        BUILDER.pop();
+    }
+
     static final ModConfigSpec SPEC = BUILDER.build();
 
     private Config()

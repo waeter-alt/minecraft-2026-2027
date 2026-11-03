@@ -449,7 +449,7 @@ public final class MagicNetwork
      * A comet of light flying from one building to the other along an arc, so players see goods travel,
      * colored by the building level.
      */
-    private static void comet(final ServerLevel level, final BlockPos from, final BlockPos to, final int buildingLevel)
+    public static void comet(final ServerLevel level, final BlockPos from, final BlockPos to, final int buildingLevel)
     {
         final DustParticleOptions dust = LEVEL_DUST[Math.clamp(buildingLevel, 1, LEVEL_DUST.length) - 1];
         emit(level, dust, from.getX() + 0.5, from.getY() + 1.3, from.getZ() + 0.5, 20, 0.4, 0.5, 0.4, 0.05);

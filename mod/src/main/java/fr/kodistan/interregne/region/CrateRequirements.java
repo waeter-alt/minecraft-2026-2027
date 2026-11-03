@@ -96,7 +96,14 @@ public final class CrateRequirements
         {
             return Plan.NONE;
         }
-        final Map<Crate, Integer> needs = forLevel(order.getTargetLevel());
+        return plan(colony, player, forLevel(order.getTargetLevel()));
+    }
+
+    /**
+     * Check that these crates are available, on the player then in the colony warehouse.
+     */
+    public static Plan plan(final IColony colony, final ServerPlayer player, final Map<Crate, Integer> needs)
+    {
         if (needs.isEmpty())
         {
             return Plan.NONE;
@@ -126,7 +133,7 @@ public final class CrateRequirements
      */
     public static final class Plan
     {
-        static final Plan NONE    = new Plan(false, null, null, Collections.emptyMap());
+        public static final Plan NONE    = new Plan(false, null, null, Collections.emptyMap());
         static final Plan REFUSED = new Plan(true, null, null, Collections.emptyMap());
 
         private final boolean             refused;
