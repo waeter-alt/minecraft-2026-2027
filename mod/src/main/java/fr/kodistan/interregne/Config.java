@@ -135,7 +135,11 @@ public final class Config
 
     public static final ModConfigSpec.IntValue SWEEP_SECONDS = BUILDER
       .comment("Every worker hut's surplus is sent to the warehouse this often (0 disables; MineColonies alone waits days)")
-      .defineInRange("sweepSeconds", 30, 0, 3600);
+      .defineInRange("sweepSeconds", 10, 0, 3600);
+
+    public static final ModConfigSpec.IntValue SWEEP_ITEMS_PER_LEVEL = BUILDER
+      .comment("Items a hut sends to the warehouse in one trip, per building level (level 3 hut: 3 x this)")
+      .defineInRange("sweepItemsPerLevel", 16, 1, 4096);
 
     public static final ModConfigSpec.IntValue AUTO_SORT_SECONDS = BUILDER
       .comment("The warehouse racks sort themselves this often (0 disables)")

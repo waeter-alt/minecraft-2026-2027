@@ -23,8 +23,6 @@ import fr.kodistan.interregne.InterregneMod;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -297,7 +295,8 @@ public final class MagicNetwork
     }
 
     /**
-     * Move what a hut does not need to keep into the warehouse racks; Couronnes stay where they are.
+     * Move what a hut does not need to keep into the warehouse racks, one trip's worth (more for higher-level huts);
+     * Couronnes stay where they are.
      *
      * @return true if anything moved.
      */
@@ -310,14 +309,15 @@ public final class MagicNetwork
         }
         final List<ItemStorage> kept = new ArrayList<>();
         boolean movedAny = false;
-        for (int slot = 0; slot < handler.getSlots(); slot++)
+        int budget = Math.max(1, hut.getBuildingLevel()) * Config.SWEEP_ITEMS_PER_LEVEL.get();
+        for (int slot = 0; slot < handler.getSlots() && budget > 0; slot++)
         {
             final ItemStack stack = handler.getStackInSlot(slot);
             if (stack.isEmpty() || stack.getItem() instanceof CoinItem)
             {
                 continue;
             }
-            final int amount = hut.buildingRequiresCertainAmountOfItem(stack, kept, false);
+            final int amount = Math.min(budget, hut.buildingRequiresCertainAmountOfItem(stack, kept, false));
             if (amount <= 0)
             {
                 continue;
@@ -334,6 +334,7 @@ public final class MagicNetwork
             {
                 handler.insertItem(slot, rest, false);
             }
+            budget -= taken.getCount() - rest.getCount();
             movedAny |= rest.getCount() < taken.getCount();
         }
         if (movedAny)
@@ -436,7 +437,6 @@ public final class MagicNetwork
     private static void comet(final ServerLevel level, final BlockPos from, final BlockPos to)
     {
         level.sendParticles(ParticleTypes.REVERSE_PORTAL, from.getX() + 0.5, from.getY() + 1.3, from.getZ() + 0.5, 30, 0.4, 0.5, 0.4, 0.05);
-        level.playSound(null, from, SoundEvents.ENDER_EYE_LAUNCH, SoundSource.BLOCKS, 0.6F, 1.3F);
         COMETS.add(new Comet(level, from, to));
     }
 
@@ -497,7 +497,6 @@ public final class MagicNetwork
             }
             level.sendParticles(ParticleTypes.FIREWORK, to.getX() + 0.5, to.getY() + 1.5, to.getZ() + 0.5, 25, 0.4, 0.4, 0.4, 0.08);
             level.sendParticles(ParticleTypes.END_ROD, to.getX() + 0.5, to.getY() + 1.5, to.getZ() + 0.5, 12, 0.5, 0.5, 0.5, 0.02);
-            level.playSound(null, to, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 1.0F, 1.2F);
             return true;
         }
     }
