@@ -1,12 +1,16 @@
 package fr.kodistan.interregne.politics;
 
 import fr.kodistan.interregne.InterregneMod;
+import fr.kodistan.interregne.network.InfluenceSyncPayload;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -48,8 +52,31 @@ public final class Influence extends SavedData
             data.points.put(player, after);
             data.setDirty();
             InterregneMod.LOGGER.info("Influence of {}: {} -> {} ({})", player, before, after, reason);
+            final ServerPlayer online = server.getPlayerList().getPlayer(player);
+            if (online != null)
+            {
+                PacketDistributor.sendToPlayer(online, new InfluenceSyncPayload(after, after - before));
+            }
         }
         return after;
+    }
+
+    /**
+     * Send a player their Influence, e.g. on login.
+     */
+    public static void sync(final ServerPlayer player)
+    {
+        PacketDistributor.sendToPlayer(player, new InfluenceSyncPayload(get(player.server, player.getUUID()), 0));
+    }
+
+    /**
+     * Every player's Influence, highest first.
+     */
+    public static List<Map.Entry<UUID, Long>> ranking(final MinecraftServer server)
+    {
+        return data(server).points.entrySet().stream()
+                 .sorted(Map.Entry.<UUID, Long>comparingByValue().reversed())
+                 .toList();
     }
 
     /**

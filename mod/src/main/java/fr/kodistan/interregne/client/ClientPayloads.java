@@ -1,5 +1,8 @@
 package fr.kodistan.interregne.client;
 
+import fr.kodistan.interregne.client.hud.InterregneHud;
+import fr.kodistan.interregne.network.InfluenceSyncPayload;
+import fr.kodistan.interregne.network.OpenThronePayload;
 import fr.kodistan.interregne.network.OpenBankPayload;
 import fr.kodistan.interregne.network.OpenRegionalBankPayload;
 import fr.kodistan.interregne.network.TreasurySyncPayload;
@@ -11,6 +14,16 @@ import fr.kodistan.interregne.network.OpenMarketPayload;
  */
 public final class ClientPayloads
 {
+    public static void openThrone(final OpenThronePayload payload)
+    {
+        WindowThrone.open(payload);
+    }
+
+    public static void syncInfluence(final InfluenceSyncPayload payload)
+    {
+        InterregneHud.setInfluence(payload.influence(), payload.delta());
+    }
+
     private ClientPayloads()
     {
     }

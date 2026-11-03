@@ -15,6 +15,10 @@ import fr.kodistan.interregne.economy.Couronnes;
 import fr.kodistan.interregne.economy.RegionalBankBlock;
 import fr.kodistan.interregne.economy.RegionalBanks;
 import fr.kodistan.interregne.network.BankActionPayload;
+import fr.kodistan.interregne.network.InfluenceSyncPayload;
+import fr.kodistan.interregne.network.OpenThronePayload;
+import fr.kodistan.interregne.network.ThroneActionPayload;
+import fr.kodistan.interregne.politics.ThroneBlock;
 import fr.kodistan.interregne.network.OpenBankPayload;
 import fr.kodistan.interregne.network.OpenComptoirPayload;
 import fr.kodistan.interregne.network.OpenMarketPayload;
@@ -76,6 +80,19 @@ public class InterregneMod
     private void registerPayloads(final RegisterPayloadHandlersEvent event)
     {
         event.registrar("1")
+          .playToServer(ThroneActionPayload.TYPE, ThroneActionPayload.STREAM_CODEC, ThroneBlock::onAction)
+          .playToClient(OpenThronePayload.TYPE, OpenThronePayload.STREAM_CODEC, (payload, context) -> {
+              if (FMLEnvironment.dist.isClient())
+              {
+                  ClientPayloads.openThrone(payload);
+              }
+          })
+          .playToClient(InfluenceSyncPayload.TYPE, InfluenceSyncPayload.STREAM_CODEC, (payload, context) -> {
+              if (FMLEnvironment.dist.isClient())
+              {
+                  ClientPayloads.syncInfluence(payload);
+              }
+          })
           .playToServer(PlacementModePayload.TYPE, PlacementModePayload.STREAM_CODEC, BuildNow::onPayload)
           .playToServer(TerminalWithdrawPayload.TYPE, TerminalWithdrawPayload.STREAM_CODEC, Terminal::onWithdraw)
           .playToServer(TerminalDepositPayload.TYPE, TerminalDepositPayload.STREAM_CODEC, Terminal::onDeposit)

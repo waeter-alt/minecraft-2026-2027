@@ -339,6 +339,44 @@ public final class Config
         BUILDER.pop();
     }
 
+    static
+    {
+        BUILDER.push("politics");
+    }
+
+    public static final ModConfigSpec.IntValue PRESENCE_MINUTES = BUILDER
+      .comment("Online minutes for each point of presence Influence")
+      .defineInRange("presenceMinutes", 10, 1, 1440);
+
+    public static final ModConfigSpec.IntValue PRESENCE_CAP = BUILDER
+      .comment("Most presence Influence a player can earn per real day")
+      .defineInRange("presenceDailyCap", 12, 0, 10_000);
+
+    public static final ModConfigSpec.IntValue FAVOR_CAP = BUILDER
+      .comment("Most Influence the Intendants can grant or remove with one edict")
+      .defineInRange("favorCap", 10, 1, 10_000);
+
+    public static final ModConfigSpec.IntValue TITHE_HOURS = BUILDER
+      .comment("Real hours between two tithes")
+      .defineInRange("titheHours", 48, 1, 24 * 30);
+
+    public static final ModConfigSpec.IntValue TITHE_PER_TYPE = BUILDER
+      .comment("Crates of each type (except the colony's own) owed per tithe, before the tithe-weight edict")
+      .defineInRange("tithePerType", 2, 0, 64);
+
+    public static final ModConfigSpec.IntValue TITHE_BONUS = BUILDER
+      .comment("Influence earned per crate delivered to the tithe")
+      .defineInRange("titheInfluencePerCrate", 1, 0, 100);
+
+    public static final ModConfigSpec.IntValue TITHE_PENALTY = BUILDER
+      .comment("Influence the colony owner loses when the tithe is not fully paid at the deadline")
+      .defineInRange("tithePenalty", 10, 0, 10_000);
+
+    static
+    {
+        BUILDER.pop();
+    }
+
     static final ModConfigSpec SPEC = BUILDER.build();
 
     private Config()

@@ -1,6 +1,7 @@
 package fr.kodistan.interregne.economy;
 
 import fr.kodistan.interregne.InterregneMod;
+import fr.kodistan.interregne.politics.ThroneBlock;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
@@ -43,6 +44,13 @@ public final class Couronnes
     public static final DeferredItem<BlockItem> GUICHET_ITEM = ITEMS.registerSimpleBlockItem("guichet_imperial", GUICHET);
 
     /**
+     * The Trône impérial, placed by the admins in the palace.
+     */
+    public static final DeferredBlock<ThroneBlock> TRONE = BLOCKS.register("trone_imperial",
+      () -> new ThroneBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(-1.0F, 3_600_000.0F).sound(SoundType.STONE).noLootTable()));
+    public static final DeferredItem<BlockItem> TRONE_ITEM = ITEMS.registerSimpleBlockItem("trone_imperial", TRONE);
+
+    /**
      * Highest value first, for making change.
      */
     public static final List<DeferredItem<CoinItem>> TIERS_DESCENDING = List.of(TRESOR_DU_DRAGON, COFFRET, LINGOT, SAC, BOURSE, COURONNE);
@@ -53,6 +61,7 @@ public final class Couronnes
       .displayItems((parameters, output) -> {
           TIERS_DESCENDING.reversed().forEach(tier -> output.accept(tier.get()));
           output.accept(GUICHET_ITEM.get());
+          output.accept(TRONE_ITEM.get());
           output.accept(RegionalBanks.BANK_ITEM.get());
       })
       .build());
