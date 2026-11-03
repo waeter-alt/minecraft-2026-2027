@@ -1,0 +1,119 @@
+# Refonte complète des interfaces MineColonies — plan
+
+Validé avec l'utilisateur le 2026-11-03. Rien n'est codé : **on démarre par la phase 0** dans une nouvelle session.
+
+## Objectif (mots de l'utilisateur)
+
+> « refonte complète des interfaces, menus, sous-menus, logique UX/UI, psychologie cognitive. On reste dans la même DA, sans trop surcharger, les informations doivent être claires et accessibles. »
+
+## Référence de qualité : ce qui est déjà validé
+
+Le catalogue de la baguette et la galerie de styles ont été jugés « PARFAIT » par l'utilisateur. Ils servent de modèle :
+
+- `mod/src/main/java/fr/kodistan/interregne/client/catalogue/CatalogueScreen.java`
+  - Fenêtre parchemin (480×260 maximum) avec un en-tête et une ✕.
+  - Navigation à gauche, cartes au centre, panneau de détail à droite.
+  - Bouton d'action principal en bas à droite.
+- `client/catalogue/StyleScreen.java`
+  - Grille de cartes avec images recadrées, puis un panneau de détail.
+- `client/hud/InterregneHud.java`
+  - `roundedPlate(...)` (public static) dessine les plaques.
+  - Palette parchemin : PAPER `0xFFE9D8A6`, EDGE `0xFF4A2E16`, LIGHT `0xFFFFF4D2`, INK `0xFF4A2A10`.
+- Exigences de rendu :
+  - compact ;
+  - suit le réglage de taille d'interface de Minecraft (coordonnées GUI, mise à l'échelle par `pose()`) ;
+  - icônes plutôt que texte, sans icônes génériques (chaque icône correspond à son sens) ;
+  - tout en français, sans texte coupé.
+- Écrans vanilla `Screen` dessinés avec `GuiGraphics` :
+  - `renderBackground` = `fill(0,0,w,h,0x88000000)`, sans flou ;
+  - `isPauseScreen` = false.
+- Maquette HTML de référence : `mod/docs/maquette-baguette.html`. Une maquette doit **toujours être vérifiée dans le panneau navigateur** (capture d'écran) avant d'être montrée.
+
+## Principes UX (à appliquer à chaque écran)
+
+1. Un écran répond à une seule question (« comment va ce bâtiment ? », « que veut ce citoyen ? »). Le détail s'ouvre à la demande.
+2. Les mêmes choses sont toujours au même endroit : fermer (✕) en haut à droite, action principale en bas à droite, Échap revient en arrière, jamais de cul-de-sac.
+3. Une icône s'accompagne d'un mot, et un nombre d'une unité (Couronnes, caisses, secondes…).
+4. Couleurs d'état uniques : vert = OK, ambre = en attente, rouge = bloquant.
+5. Pas de surcharge : la hiérarchie se fait par la taille et le gras, pas par plus de cadres.
+6. Les coûts sont exprimés dans notre économie : Couronnes et caisses régionales (`CrateRows.forCrates`), pas les listes de matériaux de MineColonies.
+
+## Approche technique : hybride
+
+- **Remplacer** les écrans très utilisés par nos propres `Screen`, avec un contrôle total. Il faut alors renvoyer les bons messages réseau à MineColonies (sources dans `sources/minecolonies`, tag v1.21.1-1.1.1041).
+- **Rhabiller** les écrans rares : textures, XML BlockUI, traductions (layouts surchargés sous `assets/minecolonies/gui/`, ou mixins sur les fenêtres).
+- Ouvrir nos écrans à la place des leurs : un mixin client sur la méthode `open`/le constructeur de la fenêtre BlockUI concernée, comme `WindowExtendedBuildToolMixin` → `BuildCatalogue.openFor`.
+
+## Phases
+
+### Phase 0 — Kit d'interface commun (environ 1 session)
+Extraire et généraliser les éléments du catalogue dans `client/ui/` :
+- fenêtre parchemin avec en-tête, ✕ et onglets ;
+- navigation à gauche, cartes, panneau de détail ;
+- boutons (principal / secondaire / désactivé) et listes avec défilement à la molette ;
+- infobulles, lignes d'objets (icône + quantité), lignes de coût, pastilles d'état ;
+- barres de progression.
+
+Ensuite, rebrancher `CatalogueScreen` et `StyleScreen` dessus, sans changement visuel.
+
+### Phase 1 — Écrans de la première heure (2 à 3 sessions)
+- Fenêtre principale de hutte (`layouthuts/layouthutpageactions*`, `windowhutworkerplaceholder`) : niveau, ouvriers, amélioration (avec notre prix et notre durée), production.
+- Fiche citoyen (`citizen/` : main, happiness, job, requests, family, nav, windowinteraction) : état, besoins, bonheur, doléances.
+- Hôtel de ville (`townhall/windowtownhall` + layoutinfo, layoutstats, layoutcitizens, layoutactions, layoutsettings, layoutpermissions, layoutalliance) : vue d'ensemble de la colonie.
+- Détail d'une demande et presse-papiers (`windowrequestdetail`, `windowclipboard`), reliés au panneau des doléances (`client/hud/Grievances.java`).
+- Embauche et affectation (`windowhireworker`, `windowassigncitizen`).
+
+### Phase 2 — Modules des bâtiments (3 à 4 sessions)
+Les modules génériques d'abord, car ils couvrent la plupart des huttes :
+- réglages : layoutsettings, layoutboolsetting, layoutintsetting, layoutstringsetting, layoutblocksetting, layoutcraftingsetting, layoutguardtasksetting ;
+- listes : layoutfilterablelist, layoutfilterableentitylist, layoutminimumstock, layoutfoodstock ;
+- recettes : layoutlistrecipes, layoutdocrafting ;
+- ouvriers : layoutcourierassignment, layoutminerassignment ;
+- tâches : layouttasklist, layoutworkorders, layoutrequeststree, layoutselectrequest ;
+- statistiques : layoutstatsmodule.
+
+Puis les cas particuliers : layoutbuilderres, layoutenchanter, layoutexpeditionlog, layoutfarmfields, layoutplantationfields, layoutgraveyard, layoutguardlist, layoutminermodule, layouttool, layoutuniversity, layoutwarehouseoptions.
+
+Déjà modifiés par nos mixins (à intégrer, pas à casser) :
+- WindowBuildBuildingMixin (prix) ;
+- WindowFieldMixin ;
+- WindowBuildDecorationMixin ;
+- AbstractWindowModuleBuildingMixin (terminal de l'entrepôt) ;
+- `WindowWarehouseTerminal`, `WindowThrone`, `WindowImperialTreasury`.
+
+### Phase 3 — Écrans rares (environ 2 sessions)
+- `windowresearch` : à fusionner avec le chantier de l'université.
+- `windowhutbarracks`, `windowbarracksspies`, `windowbannerrallyguards`.
+- `windowquestlog`, `windowsupplystory`, `windowsupplies`.
+- `map/`, `analyzer/`, `windowpostbox`, `windowstash`, `windowdecorationcontroller`, `windowhutguide`.
+- `windowresourcescroll`, `windowbrowsebuilding`, `windowhuthome`, `windowselectres`, `windowhutnameentry`.
+- Les dialogues : `dialogdonecancel`, `windowinfo`, `windowreactivatebuilding`, `windowsuggestbuildtool`, `townhall/window*` colony management.
+- Remplacer `WindowBannerPicker` par l'éditeur de drapeau héraldique, qui n'est toujours pas fait.
+
+## Inventaire
+
+90 layouts XML dans `sources/minecolonies/src/main/resources/assets/minecolonies/gui/` :
+
+| Dossier | Nombre |
+|---|---|
+| racine | 29 |
+| layouthuts | 34 |
+| townhall | 14 |
+| citizen | 7 |
+| map | 4 |
+| analyzer | 2 |
+
+## Méthode, pour chaque écran
+
+1. Lire le XML et la classe Java de la fenêtre, puis **lister tout ce que l'écran permet de faire**. Cette checklist de couverture protège contre la perte d'une fonction cachée.
+2. Faire une maquette HTML, la vérifier dans le panneau navigateur, et obtenir l'accord de l'utilisateur pour les écrans majeurs.
+3. Coder sur le kit commun, puis compiler, vérifier le serveur et relancer le client.
+4. L'utilisateur teste et envoie ses captures. On itère.
+
+## Risques
+
+- **Perte de fonctions** cachées dans les modules : la checklist de couverture (étape 1) y répond.
+- **Messages réseau** à reproduire pour les écrans remplacés : lire l'action d'origine dans les sources avant de recoder.
+- **Je ne vois pas le jeu** : les itérations passent par les captures de l'utilisateur, et c'est le facteur de durée principal.
+- **Mises à jour de MineColonies** : la version est figée, donc le risque reste faible.
+- **Périmètre** : avancer phase par phase, valider à chaque étape et ne pas tout ouvrir en même temps.
