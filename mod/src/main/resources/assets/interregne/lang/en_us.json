@@ -5,5 +5,6 @@
   "item.interregne.lingot_imperial": "Imperial Ingot",
   "item.interregne.coffret_imperial": "Imperial Coffer",
   "item.interregne.tresor_du_dragon": "Dragon's Hoard",
-  "block.interregne.guichet_imperial": "Imperial Bank Counter"
+  "block.interregne.guichet_imperial": "Imperial Bank Counter",
+  "tag.item.interregne.drops_on_death": "Dropped on death"
 }

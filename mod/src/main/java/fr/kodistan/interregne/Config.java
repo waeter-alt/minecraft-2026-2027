@@ -176,6 +176,60 @@ public final class Config
         BUILDER.pop();
     }
 
+    static
+    {
+        BUILDER.push("death");
+    }
+
+    public static final ModConfigSpec.BooleanValue DEATH_RULE = BUILDER
+      .comment("Players keep armor, hotbar and inventory on death, even with keepInventory off; items tagged interregne:drops_on_death (backpacks) always drop")
+      .define("enabled", true);
+
+    public static final ModConfigSpec.BooleanValue PVP_DROPS_COINS = BUILDER
+      .comment("When killed by a player, every Couronne carried drops for the killer to loot")
+      .define("pvpDropsCoins", true);
+
+    public static final ModConfigSpec.LongValue PVP_INFLUENCE_LOSS = BUILDER
+      .comment("Influence lost when killed by a player (never below zero)")
+      .defineInRange("pvpInfluenceLoss", 5L, 0L, Long.MAX_VALUE);
+
+    static
+    {
+        BUILDER.pop();
+        BUILDER.push("gear");
+    }
+
+    public static final ModConfigSpec.BooleanValue UNBREAKABLE_PLAYER_GEAR = BUILDER
+      .comment("Players' tools, weapons and armor never break: they stop at 1 durability and become damaged (abîmé) until repaired")
+      .define("neverBreaks", true);
+
+    public static final ModConfigSpec.DoubleValue DAMAGED_STAT_PENALTY = BUILDER
+      .comment("Share of attack damage, armor and armor toughness lost by a damaged item (0.5 = -50%)")
+      .defineInRange("damagedStatPenalty", 0.5, 0.0, 1.0);
+
+    public static final ModConfigSpec.DoubleValue DAMAGED_MINING_PENALTY = BUILDER
+      .comment("Share of mining speed lost with a damaged tool in the main hand (0.5 = -50%)")
+      .defineInRange("damagedMiningPenalty", 0.5, 0.0, 1.0);
+
+    static
+    {
+        BUILDER.pop();
+        BUILDER.push("safeZones");
+    }
+
+    public static final ModConfigSpec.BooleanValue SAFE_ZONES = BUILDER
+      .comment("Player-vs-player damage is cancelled inside safe zones (/interregne zone sure)")
+      .define("enabled", true);
+
+    public static final ModConfigSpec.BooleanValue SAFE_ZONE_MESSAGES = BUILDER
+      .comment("Show an action-bar message when a player enters or leaves a safe zone")
+      .define("messages", true);
+
+    static
+    {
+        BUILDER.pop();
+    }
+
     static final ModConfigSpec SPEC = BUILDER.build();
 
     private Config()
