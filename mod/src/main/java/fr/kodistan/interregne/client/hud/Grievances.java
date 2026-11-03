@@ -40,8 +40,9 @@ public final class Grievances
     private static final String NO_HOSPITAL = "com.minecolonies.coremod.ai.nohospital";
     private static final int REFRESH_TICKS = 10;
     private static final int MAX_SHOWN = 5;
-    private static final int WIDTH = 190;
-    private static final int PAD = 5;
+    private static final float SCALE = 0.6F;
+    private static final int WIDTH = 210;
+    private static final int PAD = 4;
 
     private static final int FILL  = 0xD8180F08;
     private static final int EDGE  = 0xFF6E4A22;
@@ -138,15 +139,14 @@ public final class Grievances
               && translatable.getArgs().length >= 2)
         {
             return Component.empty()
-              .append(citizen.getName() + " a attrapé ")
               .append(arg(translatable.getArgs()[0]))
-              .append(" : construisez un hôpital ou donnez-lui ")
+              .append(" : un hôpital, ou donnez-lui ")
               .append(arg(translatable.getArgs()[1]))
               .append(".");
         }
         if (interaction instanceof RequestBasedInteraction)
         {
-            return Component.empty().append(inquiry).append(" Apportez-le-lui, ou rangez-le dans l'entrepôt.");
+            return Component.empty().append(inquiry).append(" À lui apporter, ou à ranger à l'entrepôt.");
         }
         return inquiry;
     }
@@ -166,7 +166,11 @@ public final class Grievances
         {
             return;
         }
-        final int left = right - WIDTH;
+        // Drawn small: a reminder in the corner, not a window
+        graphics.pose().pushPose();
+        graphics.pose().translate(right, top, 0);
+        graphics.pose().scale(SCALE, SCALE, 1);
+        final int left = -WIDTH;
         final int textWidth = WIDTH - 2 * PAD;
         final List<FormattedCharSequence> lines = new ArrayList<>();
         final List<Integer> colors = new ArrayList<>();
@@ -189,15 +193,14 @@ public final class Grievances
             colors.add(NAME);
         }
         final int height = PAD * 2 + lines.size() * (font.lineHeight + 1);
-        graphics.fill(left + 1, top, right - 1, top + height, FILL);
-        graphics.fill(left, top + 1, left + 1, top + height - 1, FILL);
-        graphics.fill(right - 1, top + 1, right, top + height - 1, FILL);
-        graphics.renderOutline(left, top, WIDTH, height, EDGE);
-        int y = top + PAD;
+        graphics.fill(left, 0, 0, height, FILL);
+        graphics.renderOutline(left, 0, WIDTH, height, EDGE);
+        int y = PAD;
         for (int i = 0; i < lines.size(); i++)
         {
             graphics.drawString(font, lines.get(i), left + PAD, y, colors.get(i), true);
             y += font.lineHeight + 1;
         }
+        graphics.pose().popPose();
     }
 }
