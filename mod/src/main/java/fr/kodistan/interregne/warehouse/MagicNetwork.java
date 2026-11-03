@@ -21,7 +21,10 @@ import fr.kodistan.interregne.economy.CoinItem;
 import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.InterregneMod;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -32,6 +35,7 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -269,7 +273,7 @@ public final class MagicNetwork
             }
         }
 
-        comet(level, startPos, targetPos);
+        comet(level, startPos, targetPos, targetBuilding != null ? targetBuilding.getBuildingLevel() : 1);
         return true;
     }
 
@@ -340,7 +344,7 @@ public final class MagicNetwork
         if (movedAny)
         {
             hut.markDirty();
-            comet(level, hut.getPosition(), warehousePos);
+            comet(level, hut.getPosition(), warehousePos, hut.getBuildingLevel());
         }
         return movedAny;
     }
@@ -432,12 +436,50 @@ public final class MagicNetwork
     }
 
     /**
-     * A comet of light flying from one building to the other along an arc, so players see goods travel.
+     * Comet color per building level, same rarity scale as the construction boss bars: grey, green, blue, purple, gold.
      */
-    private static void comet(final ServerLevel level, final BlockPos from, final BlockPos to)
+    private static final DustParticleOptions[] LEVEL_DUST = {
+      new DustParticleOptions(new Vector3f(0.85F, 0.85F, 0.90F), 2.5F),
+      new DustParticleOptions(new Vector3f(0.30F, 1.00F, 0.35F), 2.5F),
+      new DustParticleOptions(new Vector3f(0.30F, 0.60F, 1.00F), 2.5F),
+      new DustParticleOptions(new Vector3f(0.75F, 0.30F, 1.00F), 2.5F),
+      new DustParticleOptions(new Vector3f(1.00F, 0.80F, 0.15F), 2.5F)};
+
+    /**
+     * A comet of light flying from one building to the other along an arc, so players see goods travel,
+     * colored by the building level.
+     */
+    private static void comet(final ServerLevel level, final BlockPos from, final BlockPos to, final int buildingLevel)
     {
-        level.sendParticles(ParticleTypes.REVERSE_PORTAL, from.getX() + 0.5, from.getY() + 1.3, from.getZ() + 0.5, 30, 0.4, 0.5, 0.4, 0.05);
-        COMETS.add(new Comet(level, from, to));
+        final DustParticleOptions dust = LEVEL_DUST[Math.clamp(buildingLevel, 1, LEVEL_DUST.length) - 1];
+        emit(level, dust, from.getX() + 0.5, from.getY() + 1.3, from.getZ() + 0.5, 20, 0.4, 0.5, 0.4, 0.05);
+        emit(level, ParticleTypes.REVERSE_PORTAL, from.getX() + 0.5, from.getY() + 1.3, from.getZ() + 0.5, 15, 0.4, 0.5, 0.4, 0.05);
+        COMETS.add(new Comet(level, from, to, dust));
+    }
+
+    /**
+     * Particles forced to every player within the comet view distance, far beyond the vanilla 32 blocks.
+     */
+    private static void emit(
+      final ServerLevel level,
+      final ParticleOptions particle,
+      final double x,
+      final double y,
+      final double z,
+      final int count,
+      final double spreadX,
+      final double spreadY,
+      final double spreadZ,
+      final double speed)
+    {
+        final double range = Config.COMET_VIEW_DISTANCE.get();
+        for (final ServerPlayer player : level.players())
+        {
+            if (player.distanceToSqr(x, y, z) < range * range)
+            {
+                level.sendParticles(player, particle, true, x, y, z, count, spreadX, spreadY, spreadZ, speed);
+            }
+        }
     }
 
     private static void tickComets()
@@ -453,6 +495,7 @@ public final class MagicNetwork
         private static final int STEPS_PER_TICK = 3;
 
         private final ServerLevel level;
+        private final DustParticleOptions dust;
         private final BlockPos    from;
         private final BlockPos    to;
         private final double      dx;
@@ -462,9 +505,10 @@ public final class MagicNetwork
         private final int         points;
         private int               step;
 
-        private Comet(final ServerLevel level, final BlockPos from, final BlockPos to)
+        private Comet(final ServerLevel level, final BlockPos from, final BlockPos to, final DustParticleOptions dust)
         {
             this.level = level;
+            this.dust = dust;
             this.from = from;
             this.to = to;
             this.dx = to.getX() - from.getX();
@@ -487,16 +531,16 @@ public final class MagicNetwork
                 final double x = from.getX() + 0.5 + dx * t;
                 final double y = from.getY() + 1.5 + dy * t + arc;
                 final double z = from.getZ() + 0.5 + dz * t;
-                level.sendParticles(ParticleTypes.END_ROD, x, y, z, 2, 0.06, 0.06, 0.06, 0.005);
-                level.sendParticles(ParticleTypes.FIREWORK, x, y, z, 1, 0.1, 0.1, 0.1, 0.01);
-                level.sendParticles(ParticleTypes.WAX_ON, x, y - 0.2, z, 1, 0.15, 0.15, 0.15, 0.0);
+                emit(level, dust, x, y, z, 2, 0.08, 0.08, 0.08, 0.0);
+                emit(level, ParticleTypes.END_ROD, x, y, z, 1, 0.04, 0.04, 0.04, 0.003);
+                emit(level, dust, x, y - 0.25, z, 1, 0.2, 0.2, 0.2, 0.0);
             }
             if (step <= points)
             {
                 return false;
             }
-            level.sendParticles(ParticleTypes.FIREWORK, to.getX() + 0.5, to.getY() + 1.5, to.getZ() + 0.5, 25, 0.4, 0.4, 0.4, 0.08);
-            level.sendParticles(ParticleTypes.END_ROD, to.getX() + 0.5, to.getY() + 1.5, to.getZ() + 0.5, 12, 0.5, 0.5, 0.5, 0.02);
+            emit(level, dust, to.getX() + 0.5, to.getY() + 1.5, to.getZ() + 0.5, 30, 0.6, 0.6, 0.6, 0.0);
+            emit(level, ParticleTypes.FIREWORK, to.getX() + 0.5, to.getY() + 1.5, to.getZ() + 0.5, 15, 0.4, 0.4, 0.4, 0.08);
             return true;
         }
     }
