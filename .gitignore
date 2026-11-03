@@ -1,0 +1,7 @@
+# 2025 server archive (read-only reference, large)
+KODISTAN - L' Artefact du Chaos/
+# Third-party sources cloned for reading (have their own git)
+sources/
+# Python caches from the dossier generator
+__pycache__/
+*.pyc

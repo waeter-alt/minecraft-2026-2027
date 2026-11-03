@@ -1,0 +1,26 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:diamond",
+    "minecraft:diamond_block",
+    "minecraft:emerald",
+    "minecraft:emerald_block",
+    "minecraft:gold_ingot",
+    "minecraft:gold_block",
+    "minecraft:gold_nugget",
+    "minecraft:raw_gold",
+    "minecraft:netherite_ingot",
+    "minecraft:netherite_scrap",
+    "minecraft:ancient_debris",
+    "minecraft:ender_pearl",
+    "minecraft:blaze_rod",
+    "minecraft:ghast_tear",
+    "minecraft:shulker_shell",
+    "minecraft:nether_star",
+    "minecraft:echo_shard",
+    "minecraft:amethyst_shard",
+    "minecraft:lapis_lazuli",
+    "minecraft:experience_bottle",
+    "#minecraft:trim_templates"
+  ]
+}

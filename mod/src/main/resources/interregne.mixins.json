@@ -1,0 +1,34 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "fr.kodistan.interregne.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "AbstractAISkeletonAccessor",
+    "AbstractEntityAIBasicMixin",
+    "AbstractEntityAICraftingMixin",
+    "AbstractEntityAIInteractMixin",
+    "AbstractWorkOrderMixin",
+    "BuildRequestMessageMixin",
+    "CitizenAIMixin",
+    "DecorationBuildRequestMessageMixin",
+    "DeliverymenRequestResolverMixin",
+    "EntityAIWorkFishermanMixin",
+    "EventHandlerMixin",
+    "HarvestTransferMixin",
+    "ItemStackHandlerMixin",
+    "ItemStackMixin",
+    "NewBobberEntityMixin",
+    "SurvivalHandlerMixin",
+    "WorkManagerMixin",
+    "WorkOrderBuildingMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "client": [
+    "client.AbstractWindowModuleBuildingMixin",
+    "client.WindowBuildBuildingMixin",
+    "client.WindowExtendedBuildToolMixin"
+  ]
+}
