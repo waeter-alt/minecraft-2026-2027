@@ -224,7 +224,7 @@ public final class InterregneHud
     /**
      * A plate with pixel-rounded corners (radius 2), a dark outline and a light top edge.
      */
-    private static void roundedPlate(final GuiGraphics graphics, final int left, final int top, final int right, final int bottom, final int fill, final int edge, final int light)
+    public static void roundedPlate(final GuiGraphics graphics, final int left, final int top, final int right, final int bottom, final int fill, final int edge, final int light)
     {
         graphics.fill(left + 2, top, right - 2, top + 1, edge);
         graphics.fill(left + 1, top + 1, right - 1, top + 2, edge);

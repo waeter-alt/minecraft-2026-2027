@@ -38,6 +38,7 @@
     "client.WindowBuildDecorationMixin",
     "client.WindowExtendedBuildToolMixin",
     "client.MinecraftMixin",
-    "client.EntityMixin"
+    "client.EntityMixin",
+    "client.WindowExtendedBuildToolAccessor"
   ]
 }

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Maquette baguette</title>
+<style>
+  body { margin: 0; background: #1d2617; font-family: "Segoe UI", sans-serif; display: flex; justify-content: center; padding: 24px; }
+  .screen { width: 860px; height: 520px; background: #3d5230; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; }
+  .win { width: 780px; height: 440px; background: #e9d8a6; border: 3px solid #4a2e16; border-radius: 6px; color: #4a2a10;
+         display: grid; grid-template-columns: 150px 1fr 210px; overflow: hidden; }
+  .col { padding: 10px; }
+  .left { border-right: 2px solid #b9976a; }
+  .right { border-left: 2px solid #b9976a; background: #f1e3bd; display: flex; flex-direction: column; }
+  .label { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #7a5232; margin: 0 0 6px; }
+  .style { background: #5c3a21; color: #ffe3a3; border-radius: 4px; padding: 6px 8px; font-size: 13px; margin-bottom: 14px; display: flex; justify-content: space-between; }
+  .cat { display: flex; align-items: center; gap: 8px; padding: 7px 8px; font-size: 13px; border-radius: 4px; margin-bottom: 2px; }
+  .cat .ic { width: 20px; height: 20px; border-radius: 4px; background: #c9a66b; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .cat.on { background: #5c3a21; color: #ffe3a3; }
+  .cat.on .ic { background: #8a5a2e; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-content: start; }
+  .card { background: #f8eed6; border: 1px solid #b9976a; border-radius: 5px; padding: 8px; height: 74px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; }
+  .card.sel { border: 2px solid #c08a1e; background: #fff6dd; }
+  .card.lock { background: #e2d3ac; color: #8c7a5c; }
+  .top { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; }
+  .thumb { width: 26px; height: 26px; border-radius: 4px; background: #c9a66b; flex: none; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .lock .thumb { background: #cbbb95; }
+  .price { display: flex; gap: 10px; font-size: 12px; }
+  .coin::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #e0a82e; border: 1px solid #8a5a10; margin-right: 4px; vertical-align: -1px; }
+  .crate::before { content: ""; display: inline-block; width: 9px; height: 9px; background: #a0703c; border: 1px solid #5c3a21; margin-right: 4px; vertical-align: -1px; }
+  .why { font-size: 12px; color: #a32d2d; }
+  h3 { margin: 0 0 4px; font-size: 16px; }
+  .desc { font-size: 12px; margin-bottom: 10px; }
+  .sec { font-size: 12px; margin-bottom: 8px; line-height: 1.5; }
+  .sec b { display: block; font-size: 11px; text-transform: uppercase; color: #7a5232; letter-spacing: .5px; }
+  .variants { display: flex; gap: 6px; }
+  .variants span { width: 34px; height: 26px; border: 1px solid #b9976a; border-radius: 4px; background: #e2d3ac; }
+  .variants span.on { border: 2px solid #c08a1e; }
+  .place { margin-top: auto; background: #3b6d11; color: #eaf3de; text-align: center; border-radius: 4px; padding: 8px; font-size: 14px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="screen">
+ <div class="win">
+  <div class="col left">
+   <p class="label">Style</p>
+   <div class="style"><span>Original</span><span>▾</span></div>
+   <p class="label">Besoins</p>
+   <div class="cat on"><span class="ic">🍗</span>Nourriture</div>
+   <div class="cat"><span class="ic">🪓</span>Bois et pierre</div>
+   <div class="cat"><span class="ic">🏠</span>Logement</div>
+   <div class="cat"><span class="ic">🔨</span>Artisanat</div>
+   <div class="cat"><span class="ic">💰</span>Commerce</div>
+   <div class="cat"><span class="ic">🛡</span>Défense</div>
+   <div class="cat"><span class="ic">📖</span>Savoir</div>
+   <div class="cat"><span class="ic">🌷</span>Décoration</div>
+  </div>
+  <div class="col grid">
+   <div class="card sel"><div class="top"><span class="thumb">🐔</span>Poulailler</div><div class="price"><span class="coin">120</span><span class="crate">1 bois</span></div></div>
+   <div class="card"><div class="top"><span class="thumb">🍲</span>Restaurant</div><div class="price"><span class="coin">150</span><span class="crate">1 pierre</span></div></div>
+   <div class="card"><div class="top"><span class="thumb">🌾</span>Ferme</div><div class="price"><span class="coin">140</span><span class="crate">1 bois</span></div></div>
+   <div class="card"><div class="top"><span class="thumb">🐟</span>Pêcheur</div><div class="price"><span class="coin">130</span><span class="crate">1 bois</span></div></div>
+   <div class="card"><div class="top"><span class="thumb">🐄</span>Vacher</div><div class="price"><span class="coin">160</span><span class="crate">2 bois</span></div></div>
+   <div class="card"><div class="top"><span class="thumb">🐑</span>Berger</div><div class="price"><span class="coin">160</span><span class="crate">2 bois</span></div></div>
+   <div class="card lock"><div class="top"><span class="thumb">🔒</span>Boulanger</div><div class="why">Ferme niveau 2</div></div>
+   <div class="card"><div class="top"><span class="thumb">🎃</span>Champ décoratif</div><div class="price"><span class="coin">20</span></div></div>
+  </div>
+  <div class="col right">
+   <h3>Poulailler</h3>
+   <div class="desc">Élève des poules dans son enclos.</div>
+   <div class="sec"><b>Produit</b>2 poulets crus par minute au niveau 1, davantage à chaque niveau</div>
+   <div class="sec"><b>Prix</b><span class="coin">120 Couronnes</span><br><span class="crate">1 caisse de bois</span><br>30 s de construction</div>
+   <div class="sec"><b>Variantes</b><div class="variants"><span class="on"></span><span></span></div></div>
+   <div class="place">Placer</div>
+  </div>
+ </div>
+</div>
+</body>
+</html>

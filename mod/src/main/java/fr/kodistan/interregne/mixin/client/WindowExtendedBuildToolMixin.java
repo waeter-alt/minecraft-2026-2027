@@ -4,6 +4,7 @@ import com.ldtteam.structurize.blueprints.v1.Blueprint;
 import com.ldtteam.structurize.client.gui.WindowExtendedBuildTool;
 import com.ldtteam.structurize.network.messages.BuildToolPlacementMessage;
 import fr.kodistan.interregne.client.BuildToolMode;
+import fr.kodistan.interregne.client.catalogue.BuildCatalogue;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import org.jetbrains.annotations.Nullable;
@@ -40,6 +41,33 @@ public abstract class WindowExtendedBuildToolMixin
         if (selectionCallback == null)
         {
             BuildToolMode.attach((WindowExtendedBuildTool) (Object) this);
+        }
+    }
+
+    @Shadow
+    public Blueprint selectedBlueprint;
+
+    /**
+     * Nothing chosen yet: the catalogue opens instead of the folder menus.
+     */
+    @Inject(method = "onOpened", at = @At("TAIL"))
+    private void interregne$openCatalogue(final CallbackInfo ci)
+    {
+        if (selectionCallback == null && selectedBlueprint == null)
+        {
+            BuildCatalogue.openFor((WindowExtendedBuildTool) (Object) this);
+        }
+    }
+
+    /**
+     * The folder menus stay hidden: the catalogue replaces them.
+     */
+    @Inject(method = "onUpdate", at = @At("TAIL"))
+    private void interregne$hideFolders(final CallbackInfo ci)
+    {
+        if (selectionCallback == null)
+        {
+            BuildCatalogue.hideFolders((WindowExtendedBuildTool) (Object) this);
         }
     }
 
