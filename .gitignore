@@ -5,3 +5,6 @@ sources/
 # Python caches from the dossier generator
 __pycache__/
 *.pyc
+
+# Agent worktrees
+.claude/
