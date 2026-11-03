@@ -39,6 +39,7 @@
     "client.WindowExtendedBuildToolMixin",
     "client.MinecraftMixin",
     "client.EntityMixin",
-    "client.WindowExtendedBuildToolAccessor"
+    "client.WindowExtendedBuildToolAccessor",
+    "client.AbstractBlueprintManipulationWindowAccessor"
   ]
 }

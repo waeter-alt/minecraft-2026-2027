@@ -12,7 +12,9 @@ import fr.kodistan.interregne.client.CrateRows;
 import fr.kodistan.interregne.client.hud.InterregneHud;
 import fr.kodistan.interregne.colony.BuildCosts;
 import fr.kodistan.interregne.economy.Wallet;
+import fr.kodistan.interregne.mixin.client.AbstractBlueprintManipulationWindowAccessor;
 import fr.kodistan.interregne.mixin.client.WindowExtendedBuildToolAccessor;
+import com.ldtteam.structurize.storage.rendering.RenderingCache;
 import fr.kodistan.interregne.region.Crate;
 import fr.kodistan.interregne.region.CrateRequirements;
 import net.minecraft.ChatFormatting;
@@ -111,7 +113,7 @@ public final class CatalogueScreen extends Screen
         }
     }
 
-    private void reload()
+    void reload()
     {
         StructurePacks.ensureSelectedPack();
         final StructurePackMeta pack = StructurePacks.getSelectedPack();
@@ -224,7 +226,7 @@ public final class CatalogueScreen extends Screen
         y += 11;
         InterregneHud.roundedPlate(graphics, x, y, x + LEFT_W - 8, y + 16, LEATHER, EDGE, LEATHER_LIGHT);
         final StructurePackMeta pack = StructurePacks.getSelectedPack();
-        final String name = pack == null ? "—" : fit(pack.getName(), LEFT_W - 30);
+        final String name = pack == null ? "—" : fit(StyleNames.name(pack), LEFT_W - 30);
         graphics.drawString(font, "◀", x + 4, y + 4, inside(mouseX, mouseY, x, y, 14, 16) ? 0xFFFFFFFF : GOLD_TEXT, false);
         graphics.drawString(font, "▶", x + LEFT_W - 17, y + 4, inside(mouseX, mouseY, x + LEFT_W - 22, y, 14, 16) ? 0xFFFFFFFF : GOLD_TEXT, false);
         final boolean overName = inside(mouseX, mouseY, x + 14, y, LEFT_W - 36, 16);
@@ -503,7 +505,7 @@ public final class CatalogueScreen extends Screen
         }
         if (inside(mouseX, mouseY, lx + 14, styleY, LEFT_W - 36, 16))
         {
-            BuildCatalogue.openStyles(buildTool);
+            minecraft.setScreen(new StyleScreen(this));
             return true;
         }
         int y = styleY + 24 + 11;
@@ -585,7 +587,9 @@ public final class CatalogueScreen extends Screen
             return;
         }
         ((WindowExtendedBuildToolAccessor) (Object) buildTool).interregne$setBlueprint(blueprint);
-        buildTool.open();
+        final BlockPos pos = RenderingCache.getOrCreateBlueprintPreviewData("blueprint").getPos();
+        final int groundstyle = ((AbstractBlueprintManipulationWindowAccessor) (Object) buildTool).interregne$groundstyle();
+        new WindowExtendedBuildTool(pos != null ? pos : anchor, groundstyle, minecraft.level.registryAccess()).open();
     }
 
     @Override

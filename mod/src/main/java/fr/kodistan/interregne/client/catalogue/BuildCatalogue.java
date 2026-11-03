@@ -4,7 +4,6 @@ import com.ldtteam.blockui.BOScreen;
 import com.ldtteam.blockui.Pane;
 import com.ldtteam.blockui.controls.ButtonImage;
 import com.ldtteam.structurize.client.gui.WindowExtendedBuildTool;
-import com.ldtteam.structurize.client.gui.WindowSwitchPack;
 import com.ldtteam.structurize.storage.StructurePacks;
 import com.ldtteam.structurize.storage.rendering.RenderingCache;
 import net.minecraft.client.Minecraft;
@@ -22,21 +21,8 @@ public final class BuildCatalogue
     private static final String BUTTON_ID = "interregne_catalogue";
     private static final ResourceLocation BUTTON = ResourceLocation.fromNamespaceAndPath("structurize", "textures/gui/buildtool/button_medium.png");
 
-    private static boolean forceCatalogue;
-
     private BuildCatalogue()
     {
-    }
-
-    /**
-     * Structurize's style browser, with each style's picture; picking one comes back to the catalogue.
-     */
-    public static void openStyles(final WindowExtendedBuildTool window)
-    {
-        new WindowSwitchPack(() -> {
-            forceCatalogue = true;
-            return window;
-        }).open();
     }
 
     /**
@@ -49,9 +35,7 @@ public final class BuildCatalogue
             // First use: Structurize asks for a style first
             return;
         }
-        final boolean force = forceCatalogue;
-        forceCatalogue = false;
-        if (!force && RenderingCache.getOrCreateBlueprintPreviewData("blueprint").getBlueprint() != null)
+        if (RenderingCache.getOrCreateBlueprintPreviewData("blueprint").getBlueprint() != null)
         {
             // A building waits to be placed: back to moving and rotating it
             return;
