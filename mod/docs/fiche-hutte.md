@@ -43,6 +43,8 @@ Les bâtisseurs ne sont plus utilisés : construction, amélioration, réparatio
 | Annuler un chantier (#7) | **Retiré** : un chantier payé va jusqu'au bout (décidé le 2026-11-04) |
 | Priorité de collecte et « Faire collecter » (#8, #9) | **Retirés** : `MagicNetwork` vide les huttes vers l'entrepôt toutes les `SWEEP_SECONDS` (10 s), et livre les demandes sans livreur |
 | La cabane du bâtisseur dans le catalogue | **Retirée** (`CatalogueIndex.HIDDEN`, 2026-11-04) |
+| Le bloc de hutte dans l'inventaire pour poser une construction | **Retiré** (2026-11-04) : les constructions coûtent seulement de l'or. `SurvivalHandlerMixin` ne l'exige plus et ne le consomme plus ; `client/AbstractBlockHutMixin` retire « Besoin de 1 bloc… » |
+| « Ramasser » la hutte (rend le bloc) dans `WindowBuildBuilding` | **À demander** : reste du concept de bloc de hutte |
 | La cabane du livreur dans le catalogue | **Retirée** : plus aucun rôle avec le réseau magique (2026-11-04) |
 
 ## Icônes

@@ -175,7 +175,9 @@ public class InterregneMod
       "com.ldtteam.structurize.client.gui.WindowExtendedBuildTool",
       "com.minecolonies.core.client.gui.AbstractWindowModuleBuilding",
       "com.minecolonies.core.client.gui.containers.WindowField",
-      "com.minecolonies.core.client.gui.WindowBuildDecoration");
+      "com.minecolonies.core.client.gui.WindowBuildDecoration",
+      "com.minecolonies.api.blocks.AbstractBlockHut",
+      "com.minecolonies.core.blocks.huts.BlockHutTownHall");
 
     private void commonSetup(final FMLCommonSetupEvent event)
     {
