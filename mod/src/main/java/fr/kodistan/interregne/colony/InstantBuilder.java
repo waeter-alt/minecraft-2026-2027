@@ -19,6 +19,7 @@ import fr.kodistan.interregne.InterregneMod;
 import fr.kodistan.interregne.economy.RegionalTreasury;
 import fr.kodistan.interregne.economy.TreasuryPayment;
 import fr.kodistan.interregne.economy.Wallet;
+import fr.kodistan.interregne.region.CrateRequirements;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -61,6 +62,12 @@ public final class InstantBuilder
         }
 
         final ServerPlayer player = BuildContext.requester();
+        // Regional crates (from level 2): checked before any Couronne is charged
+        final CrateRequirements.Plan crates = CrateRequirements.plan(colony, order, player);
+        if (crates.refused())
+        {
+            return true;
+        }
         final int cost = player == null || player.isCreative() ? 0 : costOf(order);
         // Regional treasury: the colony's treasury pays first, the coins carried make up the rest
         final TreasuryPayment payment = TreasuryPayment.pay(player, colony, cost);
@@ -72,6 +79,7 @@ public final class InstantBuilder
                                        .withStyle(ChatFormatting.RED));
             return true;
         }
+        crates.take();
         if (player != null && payment.fromTreasury() > 0)
         {
             player.sendSystemMessage(Component.literal("Payé : " + payment.describe() + ".").withStyle(ChatFormatting.GRAY));
@@ -85,6 +93,7 @@ public final class InstantBuilder
                 if (player != null)
                 {
                     payment.refund(player, colony);
+                    crates.refund();
                     player.sendSystemMessage(Component.literal("Plan introuvable, chantier annulé et remboursé.").withStyle(ChatFormatting.RED));
                 }
                 return;

@@ -8,5 +8,12 @@
   "block.interregne.guichet_imperial": "Imperial Bank Counter",
   "tag.item.interregne.drops_on_death": "Dropped on death",
   "block.interregne.banque_regionale": "Regional Bank",
-  "block.interregne.tresor_de_la_banque": "Bank Hoard"
+  "block.interregne.tresor_de_la_banque": "Bank Hoard",
+  "block.interregne.caisse_bois": "Wood Crate",
+  "block.interregne.caisse_brique": "Brick Crate",
+  "block.interregne.caisse_ble": "Wheat Crate",
+  "block.interregne.caisse_pierre": "Stone Crate",
+  "block.interregne.caisse_minerai": "Ore Crate",
+  "block.interregne.comptoir_regional": "Regional Trading Post",
+  "block.interregne.marche_imperial": "Imperial Market"
 }

@@ -261,6 +261,84 @@ public final class Config
         BUILDER.pop();
     }
 
+    static
+    {
+        BUILDER.push("regions");
+    }
+
+    public static final ModConfigSpec.IntValue CRATES_SLOWNESS_1 = BUILDER
+      .comment("A player carrying more crates than this is slowed down (Slowness I)")
+      .defineInRange("cratesSlowness1", 6, 0, 10_000);
+
+    public static final ModConfigSpec.IntValue CRATES_SLOWNESS_2 = BUILDER
+      .comment("A player carrying more crates than this is slowed further (Slowness II)")
+      .defineInRange("cratesSlowness2", 16, 0, 10_000);
+
+    public static final ModConfigSpec.ConfigValue<String> COMPTOIR_SECONDS = BUILDER
+      .comment("Seconds a Comptoir régional takes to produce one crate, for levels 1 to 5, comma-separated")
+      .define("comptoirSeconds", "300,240,180,120,60");
+
+    public static final ModConfigSpec.ConfigValue<String> COMPTOIR_UPGRADE_COSTS = BUILDER
+      .comment("Couronnes to upgrade a Comptoir régional to levels 2, 3, 4 and 5, comma-separated")
+      .define("comptoirUpgradeCosts", "200,400,800,1600");
+
+    public static final ModConfigSpec.IntValue COMPTOIR_STORAGE = BUILDER
+      .comment("Crates a Comptoir régional keeps itself when the colony has no warehouse (or a full one); production stops beyond")
+      .defineInRange("comptoirStorage", 32, 1, 10_000);
+
+    public static final ModConfigSpec.IntValue COMPTOIR_CATCH_UP_MINUTES = BUILDER
+      .comment("When a Comptoir's chunk loads again, it catches up on at most this many minutes of production (0 disables catch-up)")
+      .defineInRange("comptoirCatchUpMinutes", 120, 0, 10_080);
+
+    public static final ModConfigSpec.ConfigValue<String> CRATES_LEVEL_2 = BUILDER
+      .comment("Crates needed to build or upgrade a building to level 2 (types: bois, brique, ble, pierre, minerai; empty for none)")
+      .define("cratesLevel2", "bois:1,pierre:1");
+
+    public static final ModConfigSpec.ConfigValue<String> CRATES_LEVEL_3 = BUILDER
+      .comment("Crates needed for level 3")
+      .define("cratesLevel3", "bois:2,pierre:1,brique:1");
+
+    public static final ModConfigSpec.ConfigValue<String> CRATES_LEVEL_4 = BUILDER
+      .comment("Crates needed for level 4")
+      .define("cratesLevel4", "bois:2,pierre:2,brique:2,minerai:1");
+
+    public static final ModConfigSpec.ConfigValue<String> CRATES_LEVEL_5 = BUILDER
+      .comment("Crates needed for level 5")
+      .define("cratesLevel5", "bois:3,brique:3,ble:3,pierre:3,minerai:3");
+
+    public static final ModConfigSpec.IntValue MARKET_BUY_PRICE = BUILDER
+      .comment("Base price, in Couronnes, at which the Marché impérial sells a crate to players")
+      .defineInRange("marketBuyPrice", 60, 1, 1_000_000);
+
+    public static final ModConfigSpec.IntValue MARKET_SELL_PRICE = BUILDER
+      .comment("Base price, in Couronnes, at which the Marché impérial buys a crate from players")
+      .defineInRange("marketSellPrice", 25, 1, 1_000_000);
+
+    public static final ModConfigSpec.IntValue MARKET_BASE_STOCK = BUILDER
+      .comment("Imperial stock of each crate type at which base prices apply; less stock raises prices, more lowers them")
+      .defineInRange("marketBaseStock", 32, 1, 100_000);
+
+    public static final ModConfigSpec.DoubleValue MARKET_ELASTICITY = BUILDER
+      .comment("How strongly the stock moves prices: 1.0 doubles them at zero stock and halves them at 1.5x the base stock")
+      .defineInRange("marketElasticity", 1.0, 0.0, 10.0);
+
+    public static final ModConfigSpec.DoubleValue MARKET_MIN_FACTOR = BUILDER
+      .comment("Price floor, as a multiple of the base prices")
+      .defineInRange("marketMinFactor", 0.5, 0.01, 1.0);
+
+    public static final ModConfigSpec.DoubleValue MARKET_MAX_FACTOR = BUILDER
+      .comment("Price ceiling, as a multiple of the base prices")
+      .defineInRange("marketMaxFactor", 2.5, 1.0, 100.0);
+
+    public static final ModConfigSpec.IntValue MARKET_RESTOCK_MINUTES = BUILDER
+      .comment("Every this many minutes, each imperial stock moves one crate back toward the base stock (0 disables)")
+      .defineInRange("marketRestockMinutes", 10, 0, 10_080);
+
+    static
+    {
+        BUILDER.pop();
+    }
+
     static final ModConfigSpec SPEC = BUILDER.build();
 
     private Config()

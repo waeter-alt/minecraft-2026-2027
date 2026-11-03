@@ -16,12 +16,17 @@ import fr.kodistan.interregne.economy.RegionalBankBlock;
 import fr.kodistan.interregne.economy.RegionalBanks;
 import fr.kodistan.interregne.network.BankActionPayload;
 import fr.kodistan.interregne.network.OpenBankPayload;
+import fr.kodistan.interregne.network.OpenComptoirPayload;
+import fr.kodistan.interregne.network.OpenMarketPayload;
 import fr.kodistan.interregne.network.OpenRegionalBankPayload;
 import fr.kodistan.interregne.network.PlacementModePayload;
+import fr.kodistan.interregne.network.RegionActionPayload;
 import fr.kodistan.interregne.network.RegionalBankActionPayload;
 import fr.kodistan.interregne.network.TreasurySyncPayload;
 import fr.kodistan.interregne.network.TerminalDepositPayload;
 import fr.kodistan.interregne.network.TerminalWithdrawPayload;
+import fr.kodistan.interregne.region.Crates;
+import fr.kodistan.interregne.region.Regions;
 import fr.kodistan.interregne.warehouse.Terminal;
 import org.slf4j.Logger;
 
@@ -65,6 +70,7 @@ public class InterregneMod
         modEventBus.addListener(this::registerPayloads);
         Couronnes.register(modEventBus);
         RegionalBanks.register(modEventBus);
+        Crates.register(modEventBus);
     }
 
     private void registerPayloads(final RegisterPayloadHandlersEvent event)
@@ -91,6 +97,19 @@ public class InterregneMod
               if (FMLEnvironment.dist.isClient())
               {
                   ClientPayloads.syncTreasury(payload);
+              }
+          })
+          .playToServer(RegionActionPayload.TYPE, RegionActionPayload.STREAM_CODEC, Regions::onAction)
+          .playToClient(OpenComptoirPayload.TYPE, OpenComptoirPayload.STREAM_CODEC, (payload, context) -> {
+              if (FMLEnvironment.dist.isClient())
+              {
+                  ClientPayloads.openComptoir(payload);
+              }
+          })
+          .playToClient(OpenMarketPayload.TYPE, OpenMarketPayload.STREAM_CODEC, (payload, context) -> {
+              if (FMLEnvironment.dist.isClient())
+              {
+                  ClientPayloads.openMarket(payload);
               }
           });
     }

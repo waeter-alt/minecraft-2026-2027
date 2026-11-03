@@ -46,8 +46,12 @@ public final class BuildWindowPricing
     /**
      * One line of the price list.
      */
-    private record PriceRow(Component label, int amount, boolean affordable)
+    private record PriceRow(Component label, int amount, boolean affordable, ItemStack icon)
     {
+        PriceRow(final Component label, final int amount, final boolean affordable)
+        {
+            this(label, amount, affordable, ItemStack.EMPTY);
+        }
     }
 
     private BuildWindowPricing()
@@ -98,6 +102,9 @@ public final class BuildWindowPricing
             priceButton(build, action, cost, free, owned);
             rows.add(new PriceRow(label, cost, free || owned >= cost));
         }
+
+        // Regional crates the next level needs (red: not enough on the player)
+        CrateRows.forBuilding(building, build.isVisible()).forEach(c -> rows.add(new PriceRow(c.label(), c.count(), c.available(), c.icon())));
 
         final Button repairButton = window.findPaneOfTypeByID(BUTTON_REPAIR, Button.class);
         if (repairButton.isVisible())
@@ -150,7 +157,7 @@ public final class BuildWindowPricing
                 quantity.setText(Component.literal(Integer.toString(row.amount())));
                 name.setColors(last ? GOLD : WHITE);
                 quantity.setColors(row.affordable() ? (last ? GOLD : WHITE) : RED);
-                rowPane.findPaneOfTypeByID(RESOURCE_ICON, ItemIcon.class).setItem(new ItemStack(payment));
+                rowPane.findPaneOfTypeByID(RESOURCE_ICON, ItemIcon.class).setItem(row.icon().isEmpty() ? new ItemStack(payment) : row.icon());
             }
         });
     }

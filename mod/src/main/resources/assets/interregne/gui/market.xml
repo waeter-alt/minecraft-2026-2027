@@ -1,0 +1,29 @@
+<window xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        size="272 196"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/ldtteam/BlockUI/version/main/src/main/resources/assets/blockui/gui/block_ui.xsd">
+    <image source="minecolonies:textures/gui/builderhut/builder_paper.png" size="272 196"/>
+    <text id="title" size="242 11" pos="15 14" color="black" textalign="MIDDLE" label="Marché impérial"/>
+    <text id="hint" size="242 11" pos="15 27" color="gray" textalign="MIDDLE" label=""/>
+
+    <text size="20 11" pos="125 44" color="gray" textalign="MIDDLE" label="Stock"/>
+    <text size="40 11" pos="147 44" color="gray" textalign="MIDDLE" label="Acheter"/>
+    <text size="40 11" pos="189 44" color="gray" textalign="MIDDLE" label="Vendre"/>
+    <text size="18 11" pos="231 44" color="gray" textalign="MIDDLE" label="Toi"/>
+
+    <list id="crates" size="244 100" pos="15 56">
+        <box size="100% 19" linewidth="1">
+            <itemicon id="icon" size="17 17" pos="1 1"/>
+            <text id="name" size="88 12" pos="21 5" color="black"/>
+            <text id="stock" size="20 12" pos="110 5" color="black" textalign="MIDDLE"/>
+            <button id="buy" size="40 15" pos="132 2" color="black"
+                    source="minecolonies:textures/gui/builderhut/builder_button_mini.png" label=""/>
+            <button id="sell" size="40 15" pos="174 2" color="black"
+                    source="minecolonies:textures/gui/builderhut/builder_button_mini.png" label=""/>
+            <text id="carried" size="16 12" pos="216 5" color="black" textalign="MIDDLE"/>
+        </box>
+    </list>
+
+    <text id="purse" size="242 11" pos="15 160" color="black" textalign="MIDDLE" label=""/>
+    <button id="close" size="86 17" pos="93 174" color="black"
+            source="minecolonies:textures/gui/builderhut/builder_button_medium.png" label="Fermer"/>
+</window>

@@ -8,5 +8,12 @@
   "block.interregne.guichet_imperial": "Guichet de la Banque impériale",
   "tag.item.interregne.drops_on_death": "Perdu à la mort",
   "block.interregne.banque_regionale": "Banque régionale",
-  "block.interregne.tresor_de_la_banque": "Trésor de la banque"
+  "block.interregne.tresor_de_la_banque": "Trésor de la banque",
+  "block.interregne.caisse_bois": "Caisse de bois",
+  "block.interregne.caisse_brique": "Caisse de briques",
+  "block.interregne.caisse_ble": "Caisse de blé",
+  "block.interregne.caisse_pierre": "Caisse de pierre",
+  "block.interregne.caisse_minerai": "Caisse de minerai",
+  "block.interregne.comptoir_regional": "Comptoir régional",
+  "block.interregne.marche_imperial": "Marché impérial"
 }

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "interregne:block/marche_imperial_top",
+    "bottom": "minecraft:block/dark_oak_planks",
+    "side": "interregne:block/marche_imperial"
+  }
+}
