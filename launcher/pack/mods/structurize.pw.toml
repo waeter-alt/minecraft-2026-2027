@@ -1,0 +1,14 @@
+name = "Structurize"
+filename = "structurize-1.0.793-1.21.1.jar"
+side = "both"
+pin = true
+
+[download]
+hash-format = "sha1"
+hash = "0915b4a988b3845a1ea448beab6a6b8090d2310f"
+mode = "metadata:curseforge"
+
+[update]
+[update.curseforge]
+file-id = 7214034
+project-id = 298744

@@ -1,0 +1,14 @@
+name = "MineColonies"
+filename = "minecolonies-1.1.1041-1.21.1.jar"
+side = "both"
+pin = true
+
+[download]
+hash-format = "sha1"
+hash = "3b63a1bb1b8026eaceebd245c5f3f8bcafbb02c3"
+mode = "metadata:curseforge"
+
+[update]
+[update.curseforge]
+file-id = 6790456
+project-id = 245506

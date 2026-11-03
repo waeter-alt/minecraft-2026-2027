@@ -1,0 +1,5 @@
+# packwiz calcule les hashes octet par octet : on force LF partout pour que
+# index.toml reste valide quel que soit core.autocrlf.
+* text eol=lf
+*.jar binary
+*.zip binary

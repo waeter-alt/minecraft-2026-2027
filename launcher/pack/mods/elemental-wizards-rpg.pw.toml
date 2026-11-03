@@ -1,0 +1,14 @@
+name = "Elemental Wizards (RPG Series Plus)"
+filename = "elemental_wizards_rpg-neoforge-2.5.4+1.21.1.jar"
+side = "both"
+pin = true
+
+[download]
+url = "https://cdn.modrinth.com/data/PeZ4h4i0/versions/BlNBW6VH/elemental_wizards_rpg-neoforge-2.5.4%2B1.21.1.jar"
+hash-format = "sha512"
+hash = "baed7cddaecbf70146779532bba60ee7fdaf4a5c49d054721f10a2dae0492be14071284e20047235c68098477bf34cb6f2c863539ac7ab7a55e2c1a8883f82e5"
+
+[update]
+[update.modrinth]
+mod-id = "PeZ4h4i0"
+version = "BlNBW6VH"
