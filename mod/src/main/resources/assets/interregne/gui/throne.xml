@@ -8,7 +8,7 @@
     <button id="deliver" size="88 17" pos="15 110" color="black"
             source="minecolonies:textures/gui/builderhut/builder_button_mini.png" label="Livrer la dîme"/>
     <button id="fund" size="88 17" pos="107 110" color="black"
-            source="minecolonies:textures/gui/builderhut/builder_button_mini.png" label="Verser au trésor"/>
+            source="minecolonies:textures/gui/builderhut/builder_button_mini.png" label="Trésor impérial"/>
 
     <view id="rule" size="180 96" pos="15 132">
         <text id="ruleTitle" size="180 11" pos="0 0" color="dark_purple" textalign="MIDDLE" label="Édits de l'Intendance"/>

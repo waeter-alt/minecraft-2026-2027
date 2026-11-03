@@ -15,6 +15,7 @@ import fr.kodistan.interregne.economy.Couronnes;
 import fr.kodistan.interregne.economy.RegionalBankBlock;
 import fr.kodistan.interregne.economy.RegionalBanks;
 import fr.kodistan.interregne.network.BankActionPayload;
+import fr.kodistan.interregne.network.CrateStockPayload;
 import fr.kodistan.interregne.network.InfluenceSyncPayload;
 import fr.kodistan.interregne.network.OpenThronePayload;
 import fr.kodistan.interregne.network.ThroneActionPayload;
@@ -80,6 +81,12 @@ public class InterregneMod
     private void registerPayloads(final RegisterPayloadHandlersEvent event)
     {
         event.registrar("1")
+          .playToClient(CrateStockPayload.TYPE, CrateStockPayload.STREAM_CODEC, (payload, context) -> {
+              if (FMLEnvironment.dist.isClient())
+              {
+                  ClientPayloads.syncCrateStock(payload);
+              }
+          })
           .playToServer(ThroneActionPayload.TYPE, ThroneActionPayload.STREAM_CODEC, ThroneBlock::onAction)
           .playToClient(OpenThronePayload.TYPE, OpenThronePayload.STREAM_CODEC, (payload, context) -> {
               if (FMLEnvironment.dist.isClient())

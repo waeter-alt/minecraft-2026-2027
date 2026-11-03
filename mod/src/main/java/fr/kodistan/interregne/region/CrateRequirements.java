@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Buildings from level 2 need regional crates on top of their Couronnes. The requester's inventory is used first,
- * then the colony warehouse racks. Shared with the client, which reads the same synced config to show the needs.
+ * Buildings from level 2 need regional crates on top of their Couronnes. The colony warehouse racks are used first,
+ * then the requester's inventory. Shared with the client, which reads the same synced config to show the needs.
  */
 public final class CrateRequirements
 {
@@ -154,7 +154,7 @@ public final class CrateRequirements
         }
 
         /**
-         * Take the crates, from the player first, then from the warehouse.
+         * Take the crates, from the colony warehouse first, then from the player.
          */
         public void take()
         {
@@ -165,8 +165,8 @@ public final class CrateRequirements
             final IItemHandler inventory = new PlayerMainInvWrapper(player.getInventory());
             final IItemHandler warehouse = CrateStores.warehouseRacks(colony);
             needs.forEach((crate, count) -> {
-                int got = CrateStores.extract(inventory, crate, count);
-                got += CrateStores.extract(warehouse, crate, count - got);
+                int got = CrateStores.extract(warehouse, crate, count);
+                got += CrateStores.extract(inventory, crate, count - got);
                 taken.put(crate, got);
             });
             player.sendSystemMessage(Component.literal("Caisses livrées au chantier : " + describe(taken) + ".").withStyle(ChatFormatting.GRAY));

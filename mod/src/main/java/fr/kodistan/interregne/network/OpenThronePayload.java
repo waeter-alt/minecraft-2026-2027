@@ -11,7 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 /**
  * Server to client: open the Trône impérial window. Intendants get the edict controls; everyone sees the proclamation.
  */
-public record OpenThronePayload(BlockPos throne, boolean intendant, String state, String colonyLine) implements CustomPacketPayload
+public record OpenThronePayload(BlockPos throne, boolean intendant, String state, String colonyLine, long treasury) implements CustomPacketPayload
 {
     public static final Type<OpenThronePayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "open_throne"));
 
@@ -20,6 +20,7 @@ public record OpenThronePayload(BlockPos throne, boolean intendant, String state
       ByteBufCodecs.BOOL, OpenThronePayload::intendant,
       ByteBufCodecs.STRING_UTF8, OpenThronePayload::state,
       ByteBufCodecs.STRING_UTF8, OpenThronePayload::colonyLine,
+      ByteBufCodecs.VAR_LONG, OpenThronePayload::treasury,
       OpenThronePayload::new);
 
     @Override

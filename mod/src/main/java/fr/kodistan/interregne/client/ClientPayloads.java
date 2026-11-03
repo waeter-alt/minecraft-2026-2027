@@ -1,6 +1,7 @@
 package fr.kodistan.interregne.client;
 
 import fr.kodistan.interregne.client.hud.InterregneHud;
+import fr.kodistan.interregne.network.CrateStockPayload;
 import fr.kodistan.interregne.network.InfluenceSyncPayload;
 import fr.kodistan.interregne.network.OpenThronePayload;
 import fr.kodistan.interregne.network.OpenBankPayload;
@@ -14,6 +15,11 @@ import fr.kodistan.interregne.network.OpenMarketPayload;
  */
 public final class ClientPayloads
 {
+    public static void syncCrateStock(final CrateStockPayload payload)
+    {
+        ClientCrateStock.set(payload.counts());
+    }
+
     public static void openThrone(final OpenThronePayload payload)
     {
         WindowThrone.open(payload);

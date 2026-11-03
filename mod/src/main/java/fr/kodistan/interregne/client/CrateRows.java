@@ -40,7 +40,7 @@ public final class CrateRows
         }
         final PlayerMainInvWrapper inventory = new PlayerMainInvWrapper(player.getInventory());
         CrateRequirements.forLevel(level + 1).forEach((crate, count) -> rows.add(new Row(crate.stack(1), Component.literal(crate.displayName()), count,
-          player.isCreative() || CrateStores.count(inventory, crate) >= count)));
+          player.isCreative() || CrateStores.count(inventory, crate) + ClientCrateStock.get(crate) >= count)));
         return rows;
     }
 }

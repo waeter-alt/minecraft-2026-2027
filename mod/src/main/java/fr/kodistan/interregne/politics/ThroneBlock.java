@@ -58,7 +58,7 @@ public class ThroneBlock extends Block
             }
             else
             {
-                Edicts.fundTreasury(server, player);
+                Edicts.fundTreasury(server, player, payload.amount());
             }
             open(player, payload.throne());
             return;
@@ -73,6 +73,7 @@ public class ThroneBlock extends Block
             case ThroneActionPayload.CLEMENTE -> Edicts.setTitheWeight(server, Empire.TitheWeight.CLEMENTE);
             case ThroneActionPayload.ORDINAIRE -> Edicts.setTitheWeight(server, Empire.TitheWeight.ORDINAIRE);
             case ThroneActionPayload.ECRASANTE -> Edicts.setTitheWeight(server, Empire.TitheWeight.ECRASANTE);
+            case ThroneActionPayload.WITHDRAW -> Edicts.withdrawTreasury(server, player, payload.amount());
             case ThroneActionPayload.FAVOR, ThroneActionPayload.DISGRACE -> {
                 final ServerPlayer target = server.getPlayerList().getPlayerByName(payload.target().trim());
                 if (target == null)
@@ -109,6 +110,6 @@ public class ThroneBlock extends Block
         final IColony colony = Tithe.colonyOf(player);
         final String colonyLine = colony == null || !empire.titheActive() ? ""
                                     : colony.getName() + " doit encore : " + Tithe.describe(Tithe.remaining(server, colony));
-        PacketDistributor.sendToPlayer(player, new OpenThronePayload(pos, empire.isIntendant(player.getUUID()) || player.hasPermissions(2), state, colonyLine));
+        PacketDistributor.sendToPlayer(player, new OpenThronePayload(pos, empire.isIntendant(player.getUUID()) || player.hasPermissions(2), state, colonyLine, empire.treasury()));
     }
 }

@@ -17,6 +17,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public class WindowThrone extends AbstractWindowSkeleton
 {
     private final BlockPos throne;
+    private OpenThronePayload last;
 
     private WindowThrone(final OpenThronePayload payload)
     {
@@ -26,7 +27,7 @@ public class WindowThrone extends AbstractWindowSkeleton
         registerButton("clemente", () -> send(ThroneActionPayload.CLEMENTE));
         registerButton("ordinaire", () -> send(ThroneActionPayload.ORDINAIRE));
         registerButton("ecrasante", () -> send(ThroneActionPayload.ECRASANTE));
-        registerButton("fund", () -> send(ThroneActionPayload.FUND));
+        registerButton("fund", () -> new WindowImperialTreasury(last).open());
         registerButton("favor", () -> send(ThroneActionPayload.FAVOR));
         registerButton("disgrace", () -> send(ThroneActionPayload.DISGRACE));
         show(payload);
@@ -34,6 +35,20 @@ public class WindowThrone extends AbstractWindowSkeleton
 
     public static void open(final OpenThronePayload payload)
     {
+        open(payload, false);
+    }
+
+    /**
+     * Show the throne, or refresh the treasury window when it is the one open (unless going back to the throne).
+     */
+    public static void open(final OpenThronePayload payload, final boolean backToThrone)
+    {
+        if (!backToThrone && Minecraft.getInstance().screen instanceof BOScreen screen
+              && screen.getWindow() instanceof WindowImperialTreasury treasury && treasury.throne().equals(payload.throne()))
+        {
+            treasury.show(payload);
+            return;
+        }
         if (Minecraft.getInstance().screen instanceof BOScreen screen && screen.getWindow() instanceof WindowThrone window && window.throne.equals(payload.throne()))
         {
             window.show(payload);
@@ -44,6 +59,7 @@ public class WindowThrone extends AbstractWindowSkeleton
 
     private void show(final OpenThronePayload payload)
     {
+        last = payload;
         findPaneOfTypeByID("state", Text.class).setText(Component.literal(payload.state()));
         findPaneOfTypeByID("colony", Text.class).setText(Component.literal(payload.colonyLine()));
         if (payload.intendant())

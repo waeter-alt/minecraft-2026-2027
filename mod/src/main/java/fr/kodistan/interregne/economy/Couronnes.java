@@ -31,8 +31,8 @@ public final class Couronnes
 
     public static final DeferredItem<CoinItem> COURONNE         = tier("couronne", 1, Rarity.COMMON, false);
     public static final DeferredItem<CoinItem> BOURSE           = tier("bourse", 10, Rarity.COMMON, false);
-    public static final DeferredItem<CoinItem> SAC              = tier("sac_de_couronnes", 100, Rarity.UNCOMMON, false);
-    public static final DeferredItem<CoinItem> LINGOT           = tier("lingot_imperial", 1_000, Rarity.RARE, false);
+    public static final DeferredItem<CoinItem> LINGOT           = tier("lingot_imperial", 100, Rarity.UNCOMMON, false);
+    public static final DeferredItem<CoinItem> SAC              = tier("sac_de_couronnes", 1_000, Rarity.RARE, false);
     public static final DeferredItem<CoinItem> COFFRET          = tier("coffret_imperial", 10_000, Rarity.EPIC, true);
     public static final DeferredItem<CoinItem> TRESOR_DU_DRAGON = tier("tresor_du_dragon", 100_000, Rarity.EPIC, true);
 
@@ -53,7 +53,7 @@ public final class Couronnes
     /**
      * Highest value first, for making change.
      */
-    public static final List<DeferredItem<CoinItem>> TIERS_DESCENDING = List.of(TRESOR_DU_DRAGON, COFFRET, LINGOT, SAC, BOURSE, COURONNE);
+    public static final List<DeferredItem<CoinItem>> TIERS_DESCENDING = List.of(TRESOR_DU_DRAGON, COFFRET, SAC, LINGOT, BOURSE, COURONNE);
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register("interregne", () -> CreativeModeTab.builder()
       .title(Component.literal("L'Interrègne"))

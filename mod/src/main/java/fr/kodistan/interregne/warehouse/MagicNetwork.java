@@ -41,7 +41,7 @@ import java.util.List;
 
 /**
  * The warehouse's magic network: instead of a courier walking it over, a delivery or pickup lands after a short
- * delay, straight from rack to hut or hut to rack, with a little sparkle at both ends.
+ * delay, straight from rack to hut or hut to rack, with a comet of light flying from one to the other.
  * Mirrors what MineColonies' courier does (gather, force into the hut, dump into the racks) minus the walk.
  */
 @EventBusSubscriber(modid = InterregneMod.MODID)
@@ -75,6 +75,11 @@ public final class MagicNetwork
 
     private static final List<Transfer> QUEUE = new ArrayList<>();
 
+    /**
+     * Comets of light currently flying between buildings.
+     */
+    private static final List<Comet> COMETS = new ArrayList<>();
+
     private static long now;
 
     private MagicNetwork()
@@ -105,6 +110,7 @@ public final class MagicNetwork
     public static void onServerTick(final ServerTickEvent.Post event)
     {
         now++;
+        tickComets();
         final int sweepSeconds = enabled() ? Config.SWEEP_SECONDS.get() : 0;
         if (sweepSeconds > 0 && now % (sweepSeconds * 20L) == 0)
         {
@@ -265,9 +271,7 @@ public final class MagicNetwork
             }
         }
 
-        sparkle(level, startPos, false);
-        trail(level, startPos, targetPos);
-        sparkle(level, targetPos, true);
+        comet(level, startPos, targetPos);
         return true;
     }
 
@@ -335,9 +339,7 @@ public final class MagicNetwork
         if (movedAny)
         {
             hut.markDirty();
-            sparkle(level, hut.getPosition(), false);
-            trail(level, hut.getPosition(), warehousePos);
-            sparkle(level, warehousePos, true);
+            comet(level, hut.getPosition(), warehousePos);
         }
         return movedAny;
     }
@@ -429,32 +431,74 @@ public final class MagicNetwork
     }
 
     /**
-     * A glowing arc from one building to the other, so players see goods travel along the network.
+     * A comet of light flying from one building to the other along an arc, so players see goods travel.
      */
-    private static void trail(final ServerLevel level, final BlockPos from, final BlockPos to)
+    private static void comet(final ServerLevel level, final BlockPos from, final BlockPos to)
     {
-        final double dx = to.getX() - from.getX();
-        final double dy = to.getY() - from.getY();
-        final double dz = to.getZ() - from.getZ();
-        final double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        final int points = (int) Math.clamp(length / 1.2, 4, 160);
-        final double lift = Math.min(8.0, 1.5 + length / 8);
-        for (int i = 1; i < points; i++)
-        {
-            final double t = (double) i / points;
-            // A parabola above the straight line, highest halfway
-            final double arc = 4 * t * (1 - t) * lift;
-            level.sendParticles(ParticleTypes.END_ROD,
-              from.getX() + 0.5 + dx * t, from.getY() + 1.5 + dy * t + arc, from.getZ() + 0.5 + dz * t, 1, 0.05, 0.05, 0.05, 0.0);
-        }
+        level.sendParticles(ParticleTypes.REVERSE_PORTAL, from.getX() + 0.5, from.getY() + 1.3, from.getZ() + 0.5, 30, 0.4, 0.5, 0.4, 0.05);
+        level.playSound(null, from, SoundEvents.ENDER_EYE_LAUNCH, SoundSource.BLOCKS, 0.6F, 1.3F);
+        COMETS.add(new Comet(level, from, to));
     }
 
-    private static void sparkle(final ServerLevel level, final BlockPos pos, final boolean arrival)
+    private static void tickComets()
     {
-        level.sendParticles(arrival ? ParticleTypes.END_ROD : ParticleTypes.PORTAL, pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, arrival ? 6 : 10, 0.3, 0.3, 0.3, 0.02);
-        if (arrival)
+        COMETS.removeIf(Comet::advance);
+    }
+
+    /**
+     * One comet in flight: its head moves a few steps along the arc every tick, leaving a fading glitter trail.
+     */
+    private static final class Comet
+    {
+        private static final int STEPS_PER_TICK = 3;
+
+        private final ServerLevel level;
+        private final BlockPos    from;
+        private final BlockPos    to;
+        private final double      dx;
+        private final double      dy;
+        private final double      dz;
+        private final double      lift;
+        private final int         points;
+        private int               step;
+
+        private Comet(final ServerLevel level, final BlockPos from, final BlockPos to)
         {
-            level.playSound(null, pos, SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 0.4F, 1.4F);
+            this.level = level;
+            this.from = from;
+            this.to = to;
+            this.dx = to.getX() - from.getX();
+            this.dy = to.getY() - from.getY();
+            this.dz = to.getZ() - from.getZ();
+            final double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            this.points = (int) Math.clamp(length / 0.8, 8, 240);
+            this.lift = Math.min(10.0, 2.0 + length / 6);
+        }
+
+        /**
+         * @return true once the comet has landed.
+         */
+        private boolean advance()
+        {
+            for (int i = 0; i < STEPS_PER_TICK && step <= points; i++, step++)
+            {
+                final double t = (double) step / points;
+                final double arc = 4 * t * (1 - t) * lift;
+                final double x = from.getX() + 0.5 + dx * t;
+                final double y = from.getY() + 1.5 + dy * t + arc;
+                final double z = from.getZ() + 0.5 + dz * t;
+                level.sendParticles(ParticleTypes.END_ROD, x, y, z, 2, 0.06, 0.06, 0.06, 0.005);
+                level.sendParticles(ParticleTypes.FIREWORK, x, y, z, 1, 0.1, 0.1, 0.1, 0.01);
+                level.sendParticles(ParticleTypes.WAX_ON, x, y - 0.2, z, 1, 0.15, 0.15, 0.15, 0.0);
+            }
+            if (step <= points)
+            {
+                return false;
+            }
+            level.sendParticles(ParticleTypes.FIREWORK, to.getX() + 0.5, to.getY() + 1.5, to.getZ() + 0.5, 25, 0.4, 0.4, 0.4, 0.08);
+            level.sendParticles(ParticleTypes.END_ROD, to.getX() + 0.5, to.getY() + 1.5, to.getZ() + 0.5, 12, 0.5, 0.5, 0.5, 0.02);
+            level.playSound(null, to, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 1.0F, 1.2F);
+            return true;
         }
     }
 }

@@ -44,18 +44,36 @@ public final class Edicts
 
 
     /**
-     * Put every Couronne the player carries into the imperial treasury.
+     * Put Couronnes the player carries into the imperial treasury; 0 or less means all of them.
      */
-    public static void fundTreasury(final MinecraftServer server, final ServerPlayer player)
+    public static void fundTreasury(final MinecraftServer server, final ServerPlayer player, final long requested)
     {
         final PlayerMainInvWrapper purse = new PlayerMainInvWrapper(player.getInventory());
         final long carried = Wallet.value(purse);
-        if (carried <= 0 || !Wallet.pay(purse, carried, stack -> player.drop(stack, false)))
+        final long amount = requested <= 0 ? carried : requested;
+        if (amount <= 0 || amount > carried || !Wallet.pay(purse, amount, stack -> player.drop(stack, false)))
         {
-            player.sendSystemMessage(Component.literal("Tu ne portes aucune couronne.").withStyle(ChatFormatting.GRAY));
+            player.sendSystemMessage(Component.literal("Tu ne portes pas assez de couronnes (" + Wallet.format(carried) + ").").withStyle(ChatFormatting.RED));
             return;
         }
-        Empire.get(server).addTreasury(carried);
-        player.sendSystemMessage(Component.literal(Wallet.couronnes(carried, "versée") + " au trésor impérial.").withStyle(ChatFormatting.GOLD));
+        Empire.get(server).addTreasury(amount);
+        player.sendSystemMessage(Component.literal(Wallet.couronnes(amount, "versée") + " au trésor impérial.").withStyle(ChatFormatting.GOLD));
+    }
+
+    /**
+     * Take Couronnes out of the imperial treasury (Intendants only); 0 or less means everything.
+     */
+    public static void withdrawTreasury(final MinecraftServer server, final ServerPlayer player, final long requested)
+    {
+        final Empire empire = Empire.get(server);
+        final long amount = requested <= 0 ? empire.treasury() : requested;
+        if (amount <= 0 || amount > empire.treasury())
+        {
+            player.sendSystemMessage(Component.literal("Le trésor impérial ne contient que " + Wallet.couronnes(empire.treasury(), null) + ".").withStyle(ChatFormatting.RED));
+            return;
+        }
+        empire.addTreasury(-amount);
+        Wallet.give(new PlayerMainInvWrapper(player.getInventory()), amount, stack -> player.drop(stack, false));
+        player.sendSystemMessage(Component.literal(Wallet.couronnes(amount, "prélevée") + " sur le trésor impérial.").withStyle(ChatFormatting.GOLD));
     }
 }

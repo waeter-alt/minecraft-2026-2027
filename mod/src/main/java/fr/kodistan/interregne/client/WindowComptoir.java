@@ -100,6 +100,12 @@ public class WindowComptoir extends AbstractWindowSkeleton
 
     private void showRate()
     {
+        final StringBuilder colonyStock = new StringBuilder("Caisses à l'entrepôt :");
+        for (final Crate each : Crate.values())
+        {
+            colonyStock.append('\n').append(each.displayName()).append(" : ").append(ClientCrateStock.get(each));
+        }
+        findPaneOfTypeByID("colonyStock", Text.class).setText(Component.literal(colonyStock.toString()));
         findPaneOfTypeByID("rate", Text.class).setText(Component.literal("Une caisse toutes les " + BuildCosts.formatSeconds(state.seconds())));
         findPaneOfTypeByID("next", Text.class).setText(Component.literal(state.region().isEmpty() ? "En attente d'une région"
                                                                            : "Prochaine caisse dans " + BuildCosts.formatSeconds(secondsLeft)));
