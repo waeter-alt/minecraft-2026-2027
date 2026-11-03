@@ -2,7 +2,6 @@ package fr.kodistan.interregne.production;
 
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.buildings.IBuilding;
-import com.minecolonies.api.colony.permissions.Action;
 import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.InterregneMod;
 import net.minecraft.server.level.ServerLevel;
@@ -151,7 +150,7 @@ public final class HutProduction
     }
 
     /**
-     * Set a production hut up after it is built or upgraded: restock the pen, plant the forest, ask a farm's crop.
+     * Set a production hut up after it is built or upgraded: restock the pen, plant the forest.
      */
     public static void afterConstruction(final ServerLevel level, final IColony colony, final IBuilding building)
     {
@@ -163,12 +162,6 @@ public final class HutProduction
         else if (id.equals(Huts.LUMBERJACK))
         {
             Forest.plant(level, building);
-        }
-        else if (id.equals(Huts.FARMER))
-        {
-            colony.getMessagePlayerEntities().stream()
-              .filter(player -> colony.getPermissions().hasPermission(player, Action.MANAGE_HUTS))
-              .forEach(player -> Farms.offerChoice((net.minecraft.server.level.ServerPlayer) player, building));
         }
     }
 }

@@ -2,6 +2,8 @@ package fr.kodistan.interregne.client;
 
 import fr.kodistan.interregne.client.hud.InterregneHud;
 import fr.kodistan.interregne.network.CrateStockPayload;
+import fr.kodistan.interregne.network.FarmCropsSyncPayload;
+import fr.kodistan.interregne.network.OpenFarmCropPayload;
 import fr.kodistan.interregne.network.InfluenceSyncPayload;
 import fr.kodistan.interregne.network.OpenThronePayload;
 import fr.kodistan.interregne.network.OpenBankPayload;
@@ -15,6 +17,16 @@ import fr.kodistan.interregne.network.OpenMarketPayload;
  */
 public final class ClientPayloads
 {
+    public static void openFarmCrop(final OpenFarmCropPayload payload)
+    {
+        WindowCropChoice.openForFarm(payload);
+    }
+
+    public static void syncFarmCrops(final FarmCropsSyncPayload payload)
+    {
+        ClientFarmCrops.set(payload.crops());
+    }
+
     public static void syncCrateStock(final CrateStockPayload payload)
     {
         ClientCrateStock.set(payload.counts());

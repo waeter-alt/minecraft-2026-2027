@@ -1,5 +1,8 @@
 package fr.kodistan.interregne.region;
 
+import fr.kodistan.interregne.network.FarmCropsSyncPayload;
+import fr.kodistan.interregne.production.Farms;
+
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
 import fr.kodistan.interregne.InterregneMod;
@@ -45,11 +48,13 @@ public final class CrateStockSync
                 continue;
             }
             final CrateStockPayload payload = new CrateStockPayload(stock(colony));
+            final FarmCropsSyncPayload crops = new FarmCropsSyncPayload(Farms.cropsGrown(colony).stream().map(Farms.Crop::id).toList());
             for (final Player member : members)
             {
                 if (member instanceof ServerPlayer serverPlayer)
                 {
                     PacketDistributor.sendToPlayer(serverPlayer, payload);
+                    PacketDistributor.sendToPlayer(serverPlayer, crops);
                 }
             }
         }

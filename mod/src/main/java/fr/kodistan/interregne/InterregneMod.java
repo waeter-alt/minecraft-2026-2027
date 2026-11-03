@@ -16,6 +16,10 @@ import fr.kodistan.interregne.economy.RegionalBankBlock;
 import fr.kodistan.interregne.economy.RegionalBanks;
 import fr.kodistan.interregne.network.BankActionPayload;
 import fr.kodistan.interregne.network.CrateStockPayload;
+import fr.kodistan.interregne.network.FarmCropPayload;
+import fr.kodistan.interregne.network.FarmCropsSyncPayload;
+import fr.kodistan.interregne.network.OpenFarmCropPayload;
+import fr.kodistan.interregne.colony.FarmChoice;
 import fr.kodistan.interregne.network.InfluenceSyncPayload;
 import fr.kodistan.interregne.network.OpenThronePayload;
 import fr.kodistan.interregne.network.ThroneActionPayload;
@@ -86,6 +90,19 @@ public class InterregneMod
     private void registerPayloads(final RegisterPayloadHandlersEvent event)
     {
         event.registrar("1")
+          .playToServer(FarmCropPayload.TYPE, FarmCropPayload.STREAM_CODEC, FarmChoice::onChoice)
+          .playToClient(OpenFarmCropPayload.TYPE, OpenFarmCropPayload.STREAM_CODEC, (payload, context) -> {
+              if (FMLEnvironment.dist.isClient())
+              {
+                  ClientPayloads.openFarmCrop(payload);
+              }
+          })
+          .playToClient(FarmCropsSyncPayload.TYPE, FarmCropsSyncPayload.STREAM_CODEC, (payload, context) -> {
+              if (FMLEnvironment.dist.isClient())
+              {
+                  ClientPayloads.syncFarmCrops(payload);
+              }
+          })
           .playToClient(CrateStockPayload.TYPE, CrateStockPayload.STREAM_CODEC, (payload, context) -> {
               if (FMLEnvironment.dist.isClient())
               {
@@ -149,7 +166,8 @@ public class InterregneMod
     private static final List<String> CLIENT_MIXIN_TARGETS = List.of(
       "com.minecolonies.core.client.gui.WindowBuildBuilding",
       "com.ldtteam.structurize.client.gui.WindowExtendedBuildTool",
-      "com.minecolonies.core.client.gui.AbstractWindowModuleBuilding");
+      "com.minecolonies.core.client.gui.AbstractWindowModuleBuilding",
+      "com.minecolonies.core.client.gui.containers.WindowField");
 
     private void commonSetup(final FMLCommonSetupEvent event)
     {

@@ -4,24 +4,16 @@ import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.buildingextensions.IBuildingExtension;
 import com.minecolonies.api.colony.buildings.IBuilding;
-import com.minecolonies.api.colony.permissions.Action;
 import com.minecolonies.core.colony.buildingextensions.FarmField;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.InterregneMod;
 import net.minecraft.ChatFormatting;
-import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.Commands;
-import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.HoverEvent;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -38,7 +30,6 @@ import net.minecraft.world.level.block.FarmBlock;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,7 +40,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * A farm is one crop: the farmer hut alone yields it from the start (wheat until the player picks another), so a
+ * A farm is one crop, picked in a window right before it is built: the farmer hut alone yields it from the start, so a
  * colony wanting several crops builds several farms. Scarecrow fields are optional decoration that boosts the farms of
  * their crop: they can only be sown with a crop one of the colony's farms grows, are planted ripe at once, are never
  * harvested and cannot be broken or trampled.
@@ -87,6 +78,16 @@ public final class Farms
         public String label()
         {
             return label;
+        }
+
+        public ItemStack seedStack()
+        {
+            return new ItemStack(seed);
+        }
+
+        public ItemStack produceStack()
+        {
+            return new ItemStack(produce);
         }
 
         @Nullable
@@ -140,25 +141,6 @@ public final class Farms
         {
             Huts.give(farm, new ItemStack(Items.WHEAT_SEEDS, Math.max(1, amount / 2)));
         }
-    }
-
-    /**
-     * Ask the player which crop the farm grows, as clickable choices.
-     */
-    public static void offerChoice(final ServerPlayer player, final IBuilding farm)
-    {
-        final Crop current = cropOf(player.server, farm);
-        final BlockPos pos = farm.getPosition();
-        final MutableComponent line = Component.literal("🌾 Culture de cette ferme (" + current.label() + ") : ").withStyle(ChatFormatting.GOLD);
-        for (final Crop crop : Crop.values())
-        {
-            final String command = "/interregne ferme " + pos.getX() + " " + pos.getY() + " " + pos.getZ() + " " + crop.id();
-            line.append(Component.literal("[" + crop.label() + "] ").withStyle(style -> style
-              .withColor(crop == current ? ChatFormatting.GREEN : ChatFormatting.YELLOW)
-              .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, command))
-              .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("Cette ferme produira : " + crop.label())))));
-        }
-        player.sendSystemMessage(line);
     }
 
     /**
@@ -239,37 +221,13 @@ public final class Farms
         }
     }
 
-    @SubscribeEvent
-    public static void onRegister(final RegisterCommandsEvent event)
+    /**
+     * Record the crop a farm grows.
+     */
+    public static void setCrop(final MinecraftServer server, final IBuilding farm, final Crop crop)
     {
-        event.getDispatcher().register(Commands.literal("interregne")
-          .then(Commands.literal("ferme")
-                  .then(Commands.argument("hutte", BlockPosArgument.blockPos())
-                          .then(Commands.argument("culture", StringArgumentType.word())
-                                  .executes(context -> choose(context.getSource(), BlockPosArgument.getBlockPos(context, "hutte"),
-                                    StringArgumentType.getString(context, "culture")))))));
-    }
-
-    private static int choose(final CommandSourceStack source, final BlockPos pos, final String id)
-    {
-        final ServerPlayer player = source.getPlayer();
-        final Crop crop = Crop.byId(id);
-        final IColony colony = IColonyManager.getInstance().getColonyByPosFromWorld(source.getLevel(), pos);
-        final IBuilding farm = colony == null ? null : colony.getBuildingManager().getBuilding(pos);
-        if (player == null || crop == null || farm == null || !Huts.FARMER.equals(Huts.id(farm)))
-        {
-            source.sendFailure(Component.literal("Ferme ou culture introuvable."));
-            return 0;
-        }
-        if (!colony.getPermissions().hasPermission(player, Action.MANAGE_HUTS))
-        {
-            source.sendFailure(Component.literal("Seuls les responsables de la colonie choisissent ses cultures."));
-            return 0;
-        }
-        Data.get(player.server).crops.put(key(farm), crop.id());
-        Data.get(player.server).setDirty();
-        source.sendSuccess(() -> Component.literal("Cette ferme produit désormais : " + crop.label() + ".").withStyle(ChatFormatting.GREEN), false);
-        return 1;
+        Data.get(server).crops.put(key(farm), crop.id());
+        Data.get(server).setDirty();
     }
 
     public static Crop cropOf(final MinecraftServer server, final IBuilding farm)
@@ -278,7 +236,7 @@ public final class Farms
         return crop == null ? Crop.BLE : crop;
     }
 
-    private static List<Crop> cropsGrown(final IColony colony)
+    public static List<Crop> cropsGrown(final IColony colony)
     {
         final List<Crop> crops = new ArrayList<>();
         for (final IBuilding farm : farmsOf(colony))

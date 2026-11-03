@@ -33,6 +33,7 @@
   },
   "client": [
     "client.AbstractWindowModuleBuildingMixin",
+    "client.WindowFieldMixin",
     "client.WindowBuildBuildingMixin",
     "client.WindowExtendedBuildToolMixin"
   ]

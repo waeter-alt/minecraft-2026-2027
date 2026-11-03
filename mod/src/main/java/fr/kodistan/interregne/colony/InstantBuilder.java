@@ -69,6 +69,20 @@ public final class InstantBuilder
         }
 
         final ServerPlayer player = BuildContext.requester();
+        if (player != null && FarmChoice.ask(player, colony, order))
+        {
+            // Resumed by proceed() once the player has picked the farm's crop
+            return true;
+        }
+        return proceed(colony, order, player);
+    }
+
+    /**
+     * Pay for and start a work order.
+     */
+    public static boolean proceed(final IColony colony, final IServerWorkOrder order, @Nullable final ServerPlayer player)
+    {
+        final ServerLevel level = (ServerLevel) colony.getWorld();
         if (order instanceof WorkOrderDecoration)
         {
             // A decoration's price depends on its size, known once its blueprint is loaded

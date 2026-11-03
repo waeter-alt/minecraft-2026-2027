@@ -3,34 +3,44 @@ package fr.kodistan.interregne.production;
 import com.minecolonies.api.colony.buildings.IBuilding;
 import fr.kodistan.interregne.Config;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Tuple;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SaplingBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.neoforged.neoforge.common.Tags;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
  * A forester always has something to cut: after each construction or upgrade it makes sure enough saplings or trees
- * stand around its hut (planting oaks on bare ground), and saplings near a staffed forester grow faster with its level.
+ * stand around its hut, and saplings near a staffed forester grow faster with its level.
+ * New saplings match the biome and grow in groves on untouched natural ground, clear of every colony building and of
+ * anything built (paths, walls, farmland, other mods' structures): nothing is ever broken to plant them.
  */
 public final class Forest
 {
-    private static final int RADIUS  = 16;
-    private static final int SPACING = 4;
+    private static final int RADIUS      = 18;
+    private static final int MIN_RADIUS  = 5;
+    private static final int SPACING     = 3;
+    private static final int GROVE       = 6;
+    private static final int SAMPLES     = 600;
+    private static final int CANOPY      = 7;
 
     private Forest()
     {
     }
 
     /**
-     * Plant oaks around the hut until saplings plus trunks reach the target for its level.
+     * Plant saplings around the hut until saplings plus trunks reach the target for its level.
      */
     public static void plant(final ServerLevel level, final IBuilding building)
     {
@@ -55,31 +65,81 @@ public final class Forest
             return;
         }
 
-        final Tuple<BlockPos, BlockPos> corners = building.getCorners();
-        final List<BlockPos> spots = new ArrayList<>();
-        for (int dx = -RADIUS; dx <= RADIUS; dx += SPACING)
+        final List<Tuple<BlockPos, BlockPos>> footprints = new ArrayList<>();
+        for (final IBuilding other : building.getColony().getBuildingManager().getBuildings().values())
         {
-            for (int dz = -RADIUS; dz <= RADIUS; dz += SPACING)
+            footprints.add(other.getCorners());
+        }
+
+        final List<BlockPos> candidates = new ArrayList<>();
+        for (int i = 0; i < SAMPLES; i++)
+        {
+            final double angle = level.random.nextDouble() * Math.PI * 2;
+            final double distance = MIN_RADIUS + level.random.nextDouble() * (RADIUS - MIN_RADIUS);
+            final int x = center.getX() + (int) Math.round(Math.cos(angle) * distance);
+            final int z = center.getZ() + (int) Math.round(Math.sin(angle) * distance);
+            final BlockPos spot = new BlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z);
+            if (!nearFootprint(footprints, spot) && untouched(level, spot))
             {
-                final int x = center.getX() + dx;
-                final int z = center.getZ() + dz;
-                if (insideFootprint(corners, x, z))
-                {
-                    continue;
-                }
-                final BlockPos pos = new BlockPos(x, level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z), z);
-                if (canPlant(level, pos))
-                {
-                    spots.add(pos);
-                }
+                candidates.add(spot);
             }
         }
-        Collections.shuffle(spots);
-        for (int i = 0; i < Math.min(wanted - present, spots.size()); i++)
+
+        // Groves: the first sapling anywhere, then each next one close to those already planted
+        final List<BlockPos> chosen = new ArrayList<>();
+        while (chosen.size() < wanted - present && !candidates.isEmpty())
         {
-            final BlockPos pos = spots.get(i);
-            level.setBlockAndUpdate(pos, Blocks.OAK_SAPLING.defaultBlockState());
-            level.sendParticles(ParticleTypes.HAPPY_VILLAGER, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 6, 0.3, 0.3, 0.3, 0.0);
+            BlockPos pick = null;
+            if (chosen.isEmpty())
+            {
+                pick = candidates.get(0);
+            }
+            else
+            {
+                final List<BlockPos> close = new ArrayList<>();
+                BlockPos nearest = null;
+                double nearestDistance = Double.MAX_VALUE;
+                for (final BlockPos candidate : candidates)
+                {
+                    final double distance = distanceToChosen(chosen, candidate);
+                    if (distance < SPACING)
+                    {
+                        continue;
+                    }
+                    if (distance <= GROVE)
+                    {
+                        close.add(candidate);
+                    }
+                    if (distance < nearestDistance)
+                    {
+                        nearestDistance = distance;
+                        nearest = candidate;
+                    }
+                }
+                pick = close.isEmpty() ? nearest : close.get(level.random.nextInt(close.size()));
+            }
+            if (pick == null)
+            {
+                break;
+            }
+            candidates.remove(pick);
+            chosen.add(pick);
+        }
+
+        for (final BlockPos pos : chosen)
+        {
+            final Holder<Biome> biome = level.getBiome(pos);
+            final BlockState sapling = saplingFor(level, biome);
+            if (level.getBlockState(pos.below()).is(BlockTags.SAND))
+            {
+                // Arid biomes: a patch of coarse dirt under the sapling, the only change made to the ground
+                level.setBlockAndUpdate(pos.below(), Blocks.COARSE_DIRT.defaultBlockState());
+            }
+            if (sapling.canSurvive(level, pos))
+            {
+                level.setBlockAndUpdate(pos, sapling);
+                level.sendParticles(ParticleTypes.HAPPY_VILLAGER, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 6, 0.3, 0.3, 0.3, 0.0);
+            }
         }
     }
 
@@ -112,36 +172,100 @@ public final class Forest
         }
     }
 
-    private static BlockState topBlock(final ServerLevel level, final int x, final int z, final Heightmap.Types type)
+    /**
+     * The tree that grows there naturally. Treeless arid biomes get acacias, cold ones spruces, the rest oaks
+     * with a few birches.
+     */
+    private static BlockState saplingFor(final ServerLevel level, final Holder<Biome> biome)
     {
-        return level.getBlockState(new BlockPos(x, level.getHeight(type, x, z) - 1, z));
+        final String name = biome.unwrapKey().map(key -> key.location().getPath()).orElse("");
+        final Block sapling;
+        if (name.contains("cherry"))
+        {
+            sapling = Blocks.CHERRY_SAPLING;
+        }
+        else if (name.contains("birch"))
+        {
+            sapling = Blocks.BIRCH_SAPLING;
+        }
+        else if (biome.is(BiomeTags.IS_JUNGLE))
+        {
+            sapling = Blocks.JUNGLE_SAPLING;
+        }
+        else if (biome.is(BiomeTags.IS_SAVANNA) || biome.is(BiomeTags.IS_BADLANDS) || biome.is(Tags.Biomes.IS_DESERT))
+        {
+            sapling = Blocks.ACACIA_SAPLING;
+        }
+        else if (biome.is(BiomeTags.IS_TAIGA) || biome.is(Tags.Biomes.IS_SNOWY) || biome.is(BiomeTags.IS_MOUNTAIN))
+        {
+            sapling = Blocks.SPRUCE_SAPLING;
+        }
+        else
+        {
+            sapling = level.random.nextFloat() < 0.25F ? Blocks.BIRCH_SAPLING : Blocks.OAK_SAPLING;
+        }
+        return sapling.defaultBlockState();
     }
 
     /**
-     * Bare grass or dirt with room for a tree above.
+     * Natural ground (soil, or sand in arid biomes) all around, and nothing but air, plants or leaves where the tree
+     * will stand and spread: no path, wall, farmland or block placed by anyone.
      */
-    private static boolean canPlant(final ServerLevel level, final BlockPos pos)
+    private static boolean untouched(final ServerLevel level, final BlockPos spot)
     {
-        if (!level.getBlockState(pos.below()).is(BlockTags.DIRT) || !Blocks.OAK_SAPLING.defaultBlockState().canSurvive(level, pos))
+        for (int dx = -1; dx <= 1; dx++)
         {
-            return false;
-        }
-        for (int dy = 0; dy < 6; dy++)
-        {
-            if (!level.getBlockState(pos.above(dy)).isAir())
+            for (int dz = -1; dz <= 1; dz++)
             {
-                return false;
+                final BlockState ground = level.getBlockState(spot.offset(dx, -1, dz));
+                if (!(ground.is(BlockTags.DIRT) || ground.is(BlockTags.SAND) || ground.is(Blocks.SNOW_BLOCK)) || ground.is(Blocks.FARMLAND))
+                {
+                    return false;
+                }
+            }
+        }
+        for (int dx = -2; dx <= 2; dx++)
+        {
+            for (int dz = -2; dz <= 2; dz++)
+            {
+                for (int dy = 0; dy < CANOPY; dy++)
+                {
+                    final BlockState state = level.getBlockState(spot.offset(dx, dy, dz));
+                    if (!state.isAir() && !state.is(BlockTags.LEAVES) && !(state.canBeReplaced() && state.getFluidState().isEmpty()))
+                    {
+                        return false;
+                    }
+                }
             }
         }
         return true;
     }
 
-    private static boolean insideFootprint(final Tuple<BlockPos, BlockPos> corners, final int x, final int z)
+    private static boolean nearFootprint(final List<Tuple<BlockPos, BlockPos>> footprints, final BlockPos spot)
     {
-        final int minX = Math.min(corners.getA().getX(), corners.getB().getX()) - 2;
-        final int maxX = Math.max(corners.getA().getX(), corners.getB().getX()) + 2;
-        final int minZ = Math.min(corners.getA().getZ(), corners.getB().getZ()) - 2;
-        final int maxZ = Math.max(corners.getA().getZ(), corners.getB().getZ()) + 2;
-        return x >= minX && x <= maxX && z >= minZ && z <= maxZ;
+        for (final Tuple<BlockPos, BlockPos> corners : footprints)
+        {
+            if (spot.getX() >= Math.min(corners.getA().getX(), corners.getB().getX()) - 3 && spot.getX() <= Math.max(corners.getA().getX(), corners.getB().getX()) + 3
+                  && spot.getZ() >= Math.min(corners.getA().getZ(), corners.getB().getZ()) - 3 && spot.getZ() <= Math.max(corners.getA().getZ(), corners.getB().getZ()) + 3)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static double distanceToChosen(final List<BlockPos> chosen, final BlockPos candidate)
+    {
+        double best = Double.MAX_VALUE;
+        for (final BlockPos pos : chosen)
+        {
+            best = Math.min(best, Math.sqrt(pos.distSqr(candidate)));
+        }
+        return best;
+    }
+
+    private static BlockState topBlock(final ServerLevel level, final int x, final int z, final Heightmap.Types type)
+    {
+        return level.getBlockState(new BlockPos(x, level.getHeight(type, x, z) - 1, z));
     }
 }

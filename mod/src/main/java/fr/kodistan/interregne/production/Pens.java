@@ -14,6 +14,7 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -122,7 +123,7 @@ public final class Pens
         // Strictest rule first, then relax: natural open floor, any open floor, anything walkable
         for (final Set<BlockPos> candidates : List.of(natural, open, walkable))
         {
-            final List<BlockPos> best = bestGroup(level, candidates);
+            final List<BlockPos> best = bestGroup(level, candidates, min, max);
             if (best.size() >= MIN_PEN)
             {
                 return best;
@@ -133,8 +134,9 @@ public final class Pens
 
     /**
      * Split the candidates into connected areas and keep the one most enclosed by fences, then the largest.
+     * An area reaching the edge of the footprint is the yard around the hut, not a pen: it only wins if nothing else is found.
      */
-    private static List<BlockPos> bestGroup(final ServerLevel level, final Set<BlockPos> candidates)
+    private static List<BlockPos> bestGroup(final ServerLevel level, final Set<BlockPos> candidates, final BlockPos min, final BlockPos max)
     {
         final Set<BlockPos> seen = new HashSet<>();
         List<BlockPos> best = new ArrayList<>();
@@ -149,14 +151,17 @@ public final class Pens
             final Deque<BlockPos> queue = new ArrayDeque<>();
             queue.add(start);
             int fences = 0;
+            boolean edge = false;
             while (!queue.isEmpty())
             {
                 final BlockPos pos = queue.poll();
                 group.add(pos);
+                edge |= pos.getX() <= Math.min(min.getX(), max.getX()) || pos.getX() >= Math.max(min.getX(), max.getX())
+                          || pos.getZ() <= Math.min(min.getZ(), max.getZ()) || pos.getZ() >= Math.max(min.getZ(), max.getZ());
                 for (final Direction side : Direction.Plane.HORIZONTAL)
                 {
                     final BlockPos next = pos.relative(side);
-                    if (isFence(level.getBlockState(next)))
+                    if (isFence(level, next))
                     {
                         fences++;
                     }
@@ -170,7 +175,7 @@ public final class Pens
                     }
                 }
             }
-            final int score = group.size() < MIN_PEN ? group.size() : fences * 4 + group.size();
+            final int score = group.size() < MIN_PEN ? group.size() : edge ? group.size() / 4 : 1000 + fences * 4 + group.size();
             if (score > bestScore)
             {
                 bestScore = score;
@@ -185,7 +190,7 @@ public final class Pens
     {
         final BlockState floor = level.getBlockState(feet.below());
         return floor.isFaceSturdy(level, feet.below(), Direction.UP)
-                 && !isFence(floor)
+                 && !isFence(level, feet.below())
                  && passable(level, feet)
                  && passable(level, feet.above());
     }
@@ -201,8 +206,17 @@ public final class Pens
         return state.is(BlockTags.DIRT) || state.is(Blocks.HAY_BLOCK) || state.is(BlockTags.SAND) || state.is(Blocks.FARMLAND) || state.is(Blocks.DIRT_PATH);
     }
 
-    private static boolean isFence(final BlockState state)
+    /**
+     * Fences, gates and walls, including other mods' (log walls, palisades...): anything taller than a block to jump over.
+     */
+    private static boolean isFence(final ServerLevel level, final BlockPos pos)
     {
-        return state.is(BlockTags.FENCES) || state.is(BlockTags.FENCE_GATES) || state.is(BlockTags.WALLS);
+        final BlockState state = level.getBlockState(pos);
+        if (state.is(BlockTags.FENCES) || state.is(BlockTags.FENCE_GATES) || state.is(BlockTags.WALLS))
+        {
+            return true;
+        }
+        final VoxelShape shape = state.getCollisionShape(level, pos);
+        return !shape.isEmpty() && shape.max(Direction.Axis.Y) > 1.0;
     }
 }
