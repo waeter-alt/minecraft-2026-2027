@@ -36,6 +36,8 @@
     "client.WindowFieldMixin",
     "client.WindowBuildBuildingMixin",
     "client.WindowBuildDecorationMixin",
-    "client.WindowExtendedBuildToolMixin"
+    "client.WindowExtendedBuildToolMixin",
+    "client.MinecraftMixin",
+    "client.EntityMixin"
   ]
 }

@@ -3,6 +3,7 @@ package fr.kodistan.interregne.client;
 import fr.kodistan.interregne.client.hud.InterregneHud;
 import fr.kodistan.interregne.network.CrateStockPayload;
 import fr.kodistan.interregne.network.FarmCropsSyncPayload;
+import fr.kodistan.interregne.network.WalletSyncPayload;
 import fr.kodistan.interregne.network.OpenFarmCropPayload;
 import fr.kodistan.interregne.network.InfluenceSyncPayload;
 import fr.kodistan.interregne.network.OpenThronePayload;
@@ -20,6 +21,11 @@ public final class ClientPayloads
     public static void openFarmCrop(final OpenFarmCropPayload payload)
     {
         WindowCropChoice.openForFarm(payload);
+    }
+
+    public static void syncWallet(final WalletSyncPayload payload)
+    {
+        InterregneHud.setWallet(payload.bank(), payload.regional());
     }
 
     public static void syncFarmCrops(final FarmCropsSyncPayload payload)

@@ -23,6 +23,17 @@ public final class InterregneHud
 {
     private static final ResourceLocation INFLUENCE_ICON = ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "textures/gui/hud_influence.png");
     private static final ResourceLocation COIN_ICON      = ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "textures/gui/hud_coin.png");
+    private static final ResourceLocation BANK_ICON      = ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "textures/gui/hud_bank.png");
+    private static final ResourceLocation REGION_ICON    = ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "textures/gui/hud_region.png");
+    private static final ResourceLocation PURSE_ICON     = ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "textures/gui/hud_purse.png");
+
+    private static final int PAPER       = 0xFFE9D8A6;
+    private static final int PAPER_EDGE  = 0xFF4A2E16;
+    private static final int PAPER_LIGHT = 0xFFFFF4D2;
+    private static final int INK         = 0xFF4A2A10;
+    private static final int TAB         = 14;
+    private static final int TAB_ICON    = 10;
+    private static final int TAB_GAP     = 2;
 
     private static final int PURPLE = 0xFFB27CFF;
     private static final int GOLD   = 0xFFFFC940;
@@ -48,6 +59,10 @@ public final class InterregneHud
     private static long influenceDelta;
     private static long influenceChangedAt;
 
+    private static long bank;
+    private static long regional;
+    private static boolean walletKnown;
+
     private static long gold = -1;
     private static long goldDelta;
     private static long goldChangedAt;
@@ -60,6 +75,21 @@ public final class InterregneHud
     public static void onRegisterLayers(final RegisterGuiLayersEvent event)
     {
         event.registerAbove(VanillaGuiLayers.HOTBAR, ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "score"), InterregneHud::render);
+    }
+
+    /**
+     * Called when the server sends the player's Imperial Bank and regional treasury balances.
+     */
+    public static void setWallet(final long bankBalance, final long regionalBalance)
+    {
+        if (!walletKnown)
+        {
+            // The first balances are not a gain: no floating "+N"
+            walletKnown = true;
+            gold = -1;
+        }
+        bank = bankBalance;
+        regional = regionalBalance;
     }
 
     /**
@@ -84,22 +114,48 @@ public final class InterregneHud
         }
 
         final long carried = Wallet.value(new PlayerMainInvWrapper(minecraft.player.getInventory()));
-        if (gold >= 0 && carried != gold)
+        final long total = carried + bank + regional;
+        if (gold >= 0 && total != gold)
         {
-            goldDelta = carried - gold;
+            goldDelta = total - gold;
             goldChangedAt = System.currentTimeMillis();
         }
-        gold = carried;
+        gold = total;
 
         final Font font = minecraft.font;
         final int right = graphics.guiWidth() - MARGIN;
         final String influenceText = Wallet.format(influence);
         final String goldText = Wallet.format(gold);
-        final int textWidth = Math.max(font.width(MIN_WIDTH_SAMPLE), Math.max(font.width(influenceText), font.width(goldText)));
+        final String[] tabs = {compact(bank), compact(regional), compact(carried)};
+        int tabWidth = 0;
+        for (final String tab : tabs)
+        {
+            tabWidth = Math.max(tabWidth, 3 + TAB_ICON + 2 + font.width(tab) + 3);
+        }
+        final int plateWidth = 3 * tabWidth + 2 * TAB_GAP;
+        final int textWidth = Math.max(Math.max(font.width(MIN_WIDTH_SAMPLE), plateWidth - 28), Math.max(font.width(influenceText), font.width(goldText)));
         drawLine(graphics, font, right, MARGIN, textWidth, INFLUENCE_ICON, STAR_ICON, VELVET, VELVET_EDGE, VELVET_LIGHT,
           influenceText, PURPLE, influenceDelta, influenceChangedAt);
-        drawLine(graphics, font, right, MARGIN + LINE, textWidth, COIN_ICON, COIN_ICON_SIZE, LEATHER, LEATHER_EDGE, LEATHER_LIGHT,
+
+        // The three papers slide out from under the leather wallet: Imperial Bank, regional treasury, carried
+        final int goldY = MARGIN + LINE;
+        final int left = right - (textWidth + 28);
+        final int width = (right - left - 2 * TAB_GAP) / 3;
+        final ResourceLocation[] icons = {BANK_ICON, REGION_ICON, PURSE_ICON};
+        for (int i = 0; i < 3; i++)
+        {
+            final int x = left + i * (width + TAB_GAP);
+            final int top = goldY + PILL - 3;
+            roundedPlate(graphics, x, top, x + width, top + TAB, PAPER, PAPER_EDGE, PAPER_LIGHT);
+            final int textW = font.width(tabs[i]);
+            final int contentX = x + (width - (TAB_ICON + 2 + textW)) / 2;
+            graphics.blit(icons[i], contentX, top + 3, TAB_ICON, TAB_ICON, 0, 0, 16, 16, 16, 16);
+            graphics.drawString(font, tabs[i], contentX + TAB_ICON + 2, top + 4, INK, false);
+        }
+        drawLine(graphics, font, right, goldY, textWidth, COIN_ICON, COIN_ICON_SIZE, LEATHER, LEATHER_EDGE, LEATHER_LIGHT,
           goldText, GOLD, goldDelta, goldChangedAt);
+
+        Grievances.render(graphics, font, right, goldY + PILL - 3 + TAB + 4);
     }
 
     /**
@@ -140,6 +196,22 @@ public final class InterregneHud
             final int rise = (int) ((1.0F - fade) * 6);
             graphics.drawString(font, text, left - 4 - font.width(text), textY - rise, ((change > 0 ? GAIN : LOSS) & 0xFFFFFF) | alpha, true);
         }
+    }
+
+    /**
+     * Short amounts for the small papers: 950, 5,7k, 12k, 1,2M.
+     */
+    private static String compact(final long value)
+    {
+        if (value < 1_000)
+        {
+            return Long.toString(value);
+        }
+        if (value < 1_000_000)
+        {
+            return value < 10_000 ? String.format(java.util.Locale.FRANCE, "%.1fk", value / 1_000.0) : (value / 1_000) + "k";
+        }
+        return value < 10_000_000 ? String.format(java.util.Locale.FRANCE, "%.1fM", value / 1_000_000.0) : (value / 1_000_000) + "M";
     }
 
     /**

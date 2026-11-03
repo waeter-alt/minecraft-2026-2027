@@ -17,6 +17,7 @@ import fr.kodistan.interregne.economy.RegionalBanks;
 import fr.kodistan.interregne.network.BankActionPayload;
 import fr.kodistan.interregne.network.CrateStockPayload;
 import fr.kodistan.interregne.network.FarmCropPayload;
+import fr.kodistan.interregne.network.WalletSyncPayload;
 import fr.kodistan.interregne.network.FarmCropsSyncPayload;
 import fr.kodistan.interregne.network.OpenFarmCropPayload;
 import fr.kodistan.interregne.colony.FarmChoice;
@@ -90,6 +91,12 @@ public class InterregneMod
     private void registerPayloads(final RegisterPayloadHandlersEvent event)
     {
         event.registrar("1")
+          .playToClient(WalletSyncPayload.TYPE, WalletSyncPayload.STREAM_CODEC, (payload, context) -> {
+              if (FMLEnvironment.dist.isClient())
+              {
+                  ClientPayloads.syncWallet(payload);
+              }
+          })
           .playToServer(FarmCropPayload.TYPE, FarmCropPayload.STREAM_CODEC, FarmChoice::onChoice)
           .playToClient(OpenFarmCropPayload.TYPE, OpenFarmCropPayload.STREAM_CODEC, (payload, context) -> {
               if (FMLEnvironment.dist.isClient())

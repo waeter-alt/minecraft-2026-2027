@@ -4,3 +4,5 @@ set_B: "Kyrise's Free 16x16 RPG Icon Pack" v1.2 by Kyrise, CC-BY 4.0 - https://o
 set_C: "DawnLike 16x16 Universal Rogue-like tileset v1.81" by DragonDePlatino, palette by DawnBringer, CC-BY 4.0 (author also asks to hide his "Platino" sprite in-game) - https://opengameart.org/content/dawnlike-16x16-universal-rogue-like-tileset-v181
 influence star (all sets): purple recolor of "special.png" from "RPG UI Icons" by OwlishMedia, CC0 - https://opengameart.org/content/rpg-ui-icons
 extras_crates: "Various Containers" by zwonky, CC0 - https://opengameart.org/content/various-containers
+
+Wallet HUD tabs: hud_bank.png = crown from "Gold treasure icons 16x16" by Bonsaiheldin (CC0); hud_region.png = shield_02e from Kyrise's Free 16x16 RPG Icon Pack (CC-BY 4.0); hud_purse.png = our own sack.
