@@ -51,7 +51,7 @@ public final class CatalogueIndex
         WOOD_STONE("Bois et pierre", Items.IRON_AXE, "Les matières premières : bûcheron, mine, carrières."),
         HOUSING("Logement", Items.RED_BED, "Loger, soigner et rassembler vos citoyens."),
         CRAFT("Artisanat", Items.ANVIL, "Les ateliers qui transforment les matières premières."),
-        LOGISTICS("Logistique", Items.CHEST, "Construire, stocker et livrer."),
+        LOGISTICS("Logistique", Items.CHEST, "Stocker et livrer."),
         DEFENSE("Défense", Items.SHIELD, "Gardes, casernes et entraînement."),
         KNOWLEDGE("Savoir", Items.BOOK, "Éducation, recherche et enchantements."),
         GROUNDS("Aménagements", Items.DIRT_PATH, "Routes, voies ferrées, ponts, murs et canaux, payés à la taille."),
@@ -119,10 +119,15 @@ public final class CatalogueIndex
         put(Need.PLANTATION, "plantation");
         put(Need.WOOD_STONE, "lumberjack", "miner", "simplequarry", "mediumquarry", "largequarry", "sifter", "crusher");
         put(Need.HOUSING, "townhall", "residence", "tavern", "hospital", "graveyard");
-        put(Need.LOGISTICS, "builder", "warehouse", "deliveryman", "postbox", "stash");
+        put(Need.LOGISTICS, "warehouse", "postbox", "stash");
         put(Need.DEFENSE, "archery", "barracks", "barrackstower", "combatacademy", "guardtower");
         put(Need.KNOWLEDGE, "library", "school", "university", "enchanter", "mysticalsite");
     }
+
+    /**
+     * Huts the modpack no longer uses: our timed sites replace the builders, the magic network the couriers.
+     */
+    private static final Set<String> HIDDEN = Set.of("builder", "deliveryman");
 
     private static final Map<String, CompletableFuture<List<Entry>>> CACHE = new ConcurrentHashMap<>();
     private static Map<String, JsonObject> names;
@@ -218,6 +223,10 @@ public final class CatalogueIndex
             if (anchor instanceof AbstractBlockHut<?> hut)
             {
                 final String id = hut.getBuildingEntry().getRegistryName().getPath();
+                if (HIDDEN.contains(id))
+                {
+                    continue;
+                }
                 byBuilding.computeIfAbsent(id, k -> new ArrayList<>()).add(ref);
                 huts.put(id, hut);
                 hutFolders.putIfAbsent(id, folder);

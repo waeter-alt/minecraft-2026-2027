@@ -44,6 +44,17 @@ Le catalogue de la baguette et la galerie de styles ont été jugés « PARFAIT 
 - **Rhabiller** les écrans rares : textures, XML BlockUI, traductions (layouts surchargés sous `assets/minecolonies/gui/`, ou mixins sur les fenêtres).
 - Ouvrir nos écrans à la place des leurs : un mixin client sur la méthode `open`/le constructeur de la fenêtre BlockUI concernée, comme `WindowExtendedBuildToolMixin` → `BuildCatalogue.openFor`.
 
+## Décisions du 2026-11-04
+
+- **Maquette d'abord** : on commence par une maquette HTML de la fiche hutte, construite avec les composants du futur kit. Le kit Java (phase 0) est codé d'après la maquette validée, pas l'inverse.
+- **Navigation double** :
+  - chaque fenêtre reste accessible depuis son bloc ou son citoyen, comme dans MineColonies ;
+  - un **hub de colonie** (l'hôtel de ville repensé) donne aussi accès à tout, avec des onglets Bâtiments / Citoyens / Demandes / Économie, depuis n'importe quelle hutte.
+  - Conséquence : les écrans de la phase 1 sont pensés comme des pages qui s'ouvrent seules **ou** dans le hub. Le kit prévoit un fil d'Ariane / retour (Échap revient au hub si on en vient).
+- **Premier écran de la phase 1 : la fiche hutte.**
+- **Traquer ce qui ne sert plus** : les bâtisseurs ne sont plus utilisés dans le modpack, donc tout ce qui s'y rapporte disparaît. Pour chaque écran, la checklist de couverture marque ce qui ne sert plus ; **en cas de doute, on demande à l'utilisateur**.
+- **Icônes** : une icône Minecraft ou MineColonies systématiquement quand elle a du sens (les icônes de modules `minecolonies:textures/gui/modules/` couvrent statistiques, réglages, recettes…). Sinon, du pixel art trouvé en ligne ou dessiné. Une icône doit toujours avoir du SENS.
+
 ## Phases
 
 ### Phase 0 — Kit d'interface commun (environ 1 session)
@@ -55,6 +66,15 @@ Extraire et généraliser les éléments du catalogue dans `client/ui/` :
 - barres de progression.
 
 Ensuite, rebrancher `CatalogueScreen` et `StyleScreen` dessus, sans changement visuel.
+
+**Fait le 2026-11-04** (compile, le serveur démarre ; à vérifier en jeu) — `client/ui/` :
+- `ParchmentScreen` : la fenêtre (480 × 260 max), le titre, un fil d'Ariane optionnel (`crumb()`), la ✕. Échap et ✕ reviennent au `parent` (le hub, le catalogue…). `renderContent` / `clicked` pour le contenu, `verticalRule`, `detailPanel`, `actionY`.
+- `Palette` : les couleurs du parchemin et les trois couleurs d'état.
+- `Ui` : `navItem`, `card`, `button` (principal / secondaire / danger / désactivé), `banner` et `chip` (états OK / WAIT / BAD), `progressBar`, `coin`, `priceLine`, `crateLine`, `label`, `wrapped`, `fit`, `inside`.
+- `Icon` : un objet du jeu ou une texture en pixel art (`Icon.module("stats")` pour les icônes de modules MineColonies).
+- `ScrollGrid` : la grille de cartes avec défilement à la molette et sa barre de défilement.
+
+`CatalogueScreen` et `StyleScreen` sont rebranchés dessus.
 
 ### Phase 1 — Écrans de la première heure (2 à 3 sessions)
 - Fenêtre principale de hutte (`layouthuts/layouthutpageactions*`, `windowhutworkerplaceholder`) : niveau, ouvriers, amélioration (avec notre prix et notre durée), production.
