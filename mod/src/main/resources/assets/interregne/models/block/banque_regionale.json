@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "interregne:block/banque_regionale_top",
+    "bottom": "minecraft:block/stone_bricks",
+    "side": "interregne:block/banque_regionale"
+  }
+}

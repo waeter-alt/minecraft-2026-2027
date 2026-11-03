@@ -53,6 +53,7 @@ public final class Couronnes
       .displayItems((parameters, output) -> {
           TIERS_DESCENDING.reversed().forEach(tier -> output.accept(tier.get()));
           output.accept(GUICHET_ITEM.get());
+          output.accept(RegionalBanks.BANK_ITEM.get());
       })
       .build());
 

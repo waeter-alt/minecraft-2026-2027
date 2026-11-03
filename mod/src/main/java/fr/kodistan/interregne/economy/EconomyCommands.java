@@ -51,7 +51,9 @@ public final class EconomyCommands
         final ImperialBank bank = ImperialBank.get(player.server);
         final long banked = bank.balance(player.getUUID());
         final IColony colony = ImperialBank.colonyOf(player);
-        final String treasury = colony == null ? "" : " · Trésor de " + colony.getName() + " : " + Wallet.format(bank.balance(ImperialBank.treasuryOf(colony)));
+        final RegionalTreasury regional = RegionalTreasury.get(player.server);
+        final String treasury = colony == null ? "" : " · Trésor régional de " + colony.getName() + " : " + Wallet.format(regional.balance(colony))
+                                                        + " / " + Wallet.format(regional.capacity(colony)) + " (banque niveau " + regional.level(colony) + ")";
         source.sendSuccess(() -> Component.literal("Sur toi : " + Wallet.format(carried) + " · À la Banque impériale : " + Wallet.format(banked) + treasury)
                                    .withStyle(ChatFormatting.GOLD), false);
         return 1;

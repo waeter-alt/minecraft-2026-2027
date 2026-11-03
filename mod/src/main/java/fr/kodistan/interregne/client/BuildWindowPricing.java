@@ -74,7 +74,10 @@ public final class BuildWindowPricing
         final Player player = Minecraft.getInstance().player;
         final Item payment = BuildCosts.paymentItem();
         final boolean free = player.isCreative();
-        final long owned = Wallet.value(new PlayerMainInvWrapper(player.getInventory()));
+        final long carried = Wallet.value(new PlayerMainInvWrapper(player.getInventory()));
+        // Regional treasury: constructions are paid from it first, so it counts towards what the player can afford
+        final long treasury = ClientTreasury.of(building.getColony());
+        final long owned = carried + treasury;
         final List<PriceRow> rows = new ArrayList<>();
 
         // No builders any more: the builder picker is meaningless
@@ -115,7 +118,8 @@ public final class BuildWindowPricing
 
         addProductionRows(rows, building);
 
-        rows.add(new PriceRow(free ? Component.literal("Mode créatif : gratuit") : Component.literal("Couronnes sur toi"), (int) Math.min(Integer.MAX_VALUE, owned), true));
+        rows.add(new PriceRow(Component.literal("Trésor régional"), (int) Math.min(Integer.MAX_VALUE, treasury), true));
+        rows.add(new PriceRow(free ? Component.literal("Mode créatif : gratuit") : Component.literal("Couronnes sur toi"), (int) Math.min(Integer.MAX_VALUE, carried), true));
 
         final ScrollingList list = window.findPaneOfTypeByID(LIST_RESOURCES, ScrollingList.class);
         list.enable();

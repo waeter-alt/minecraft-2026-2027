@@ -15,8 +15,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.Locale;
 
 /**
- * A bank counter's window: the balance, one button to deposit every Couronne carried, quick and custom withdrawals,
- * and the colony treasury the Intendance spends from.
+ * A bank counter's window: the player's personal balance, one button to deposit every Couronne carried,
+ * quick and custom withdrawals.
  */
 public class WindowBank extends AbstractWindowSkeleton
 {
@@ -31,7 +31,6 @@ public class WindowBank extends AbstractWindowSkeleton
         registerButton("take100", () -> send(BankActionPayload.WITHDRAW, 100));
         registerButton("take1000", () -> send(BankActionPayload.WITHDRAW, 1_000));
         registerButton("take10000", () -> send(BankActionPayload.WITHDRAW, 10_000));
-        registerButton("fundTreasury", () -> send(BankActionPayload.FUND_TREASURY, 0));
         registerButton("takeAmount", this::withdrawTyped);
         registerButton("close", this::close);
         show(account);
@@ -55,17 +54,6 @@ public class WindowBank extends AbstractWindowSkeleton
         findPaneOfTypeByID("balance", Text.class).setText(Component.literal("Solde : " + Wallet.format(account.balance()) + " couronnes"));
         final String fee = String.format(Locale.FRANCE, "%.1f", account.feeRate() * 100).replace(",0", "");
         findPaneOfTypeByID("fee", Text.class).setText(Component.literal("Dépôt gratuit · retrait : " + fee + " % de frais"));
-        if (account.colonyName().isEmpty())
-        {
-            findPaneOfTypeByID("treasury", Text.class).setText(Component.literal("Pas de colonie : pas de trésor"));
-            findPaneByID("fundTreasury").hide();
-        }
-        else
-        {
-            findPaneOfTypeByID("treasury", Text.class).setText(Component.literal("Trésor de " + account.colonyName() + " : " + Wallet.format(account.treasury())
-                                                                                  + " couronnes, dépensées par l'Intendance"));
-            findPaneByID("fundTreasury").show();
-        }
     }
 
     private void withdrawTyped()

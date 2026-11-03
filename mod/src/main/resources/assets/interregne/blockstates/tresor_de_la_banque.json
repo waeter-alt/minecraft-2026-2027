@@ -1,0 +1,22 @@
+{
+  "variants": {
+    "stage=1": {
+      "model": "interregne:block/tresor_de_la_banque_1"
+    },
+    "stage=2": {
+      "model": "interregne:block/tresor_de_la_banque_2"
+    },
+    "stage=3": {
+      "model": "interregne:block/tresor_de_la_banque_3"
+    },
+    "stage=4": {
+      "model": "interregne:block/tresor_de_la_banque_4"
+    },
+    "stage=5": {
+      "model": "interregne:block/tresor_de_la_banque_5"
+    },
+    "stage=6": {
+      "model": "interregne:block/tresor_de_la_banque_6"
+    }
+  }
+}

@@ -6,5 +6,7 @@
   "item.interregne.coffret_imperial": "Coffret impérial",
   "item.interregne.tresor_du_dragon": "Trésor du dragon",
   "block.interregne.guichet_imperial": "Guichet de la Banque impériale",
-  "tag.item.interregne.drops_on_death": "Perdu à la mort"
+  "tag.item.interregne.drops_on_death": "Perdu à la mort",
+  "block.interregne.banque_regionale": "Banque régionale",
+  "block.interregne.tresor_de_la_banque": "Trésor de la banque"
 }

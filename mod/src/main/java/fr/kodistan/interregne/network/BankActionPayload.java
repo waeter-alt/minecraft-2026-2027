@@ -23,11 +23,6 @@ public record BankActionPayload(BlockPos counter, int action, long amount) imple
      */
     public static final int WITHDRAW = 1;
 
-    /**
-     * Give every Couronne carried to the player's colony treasury.
-     */
-    public static final int FUND_TREASURY = 2;
-
     public static final Type<BankActionPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "bank_action"));
 
     public static final StreamCodec<ByteBuf, BankActionPayload> STREAM_CODEC = StreamCodec.composite(

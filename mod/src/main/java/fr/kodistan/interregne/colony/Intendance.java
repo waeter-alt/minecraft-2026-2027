@@ -9,7 +9,7 @@ import com.minecolonies.api.colony.requestsystem.requestable.IDeliverable;
 import com.minecolonies.api.colony.requestsystem.token.IToken;
 import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.InterregneMod;
-import fr.kodistan.interregne.economy.ImperialBank;
+import fr.kodistan.interregne.economy.RegionalTreasury;
 import fr.kodistan.interregne.economy.Wallet;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
@@ -40,11 +40,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * The Intendance: when nobody in a colony can fill a request, it buys common items with the colony treasury
- * (an Imperial Bank account players fund at a bank counter)
+ * (kept at the colony's Banque régionale, where its members deposit)
  * after a grace period. The colony is never stuck for want of seeds or coal, but neglect costs gold.
  * Strategic items (rare, modded, or tagged interregne:intendance_excluded) are never bought: players get a clear
  * alert instead. A single bar per colony shows the next purchase's countdown and the total cost pending.
@@ -198,14 +197,13 @@ public final class Intendance
      */
     private static boolean buy(final IColony colony, final IRequestManager manager, final Purchase purchase)
     {
-        final ImperialBank bank = ImperialBank.get(colony.getWorld().getServer());
-        final UUID treasury = ImperialBank.treasuryOf(colony);
+        final RegionalTreasury treasury = RegionalTreasury.get(colony.getWorld().getServer());
         final IItemHandler hut = inventory(purchase.building());
         if (hut == null)
         {
             return false;
         }
-        if (bank.balance(treasury) < purchase.cost())
+        if (treasury.balance(colony) < purchase.cost())
         {
             return false;
         }
@@ -215,7 +213,7 @@ public final class Intendance
             // The hut is full: try again next time rather than lose the goods
             return true;
         }
-        bank.spend(treasury, purchase.cost());
+        treasury.spend(colony, purchase.cost());
         ItemHandlerHelper.insertItemStacked(hut, purchase.stack().copy(), false);
         manager.overruleRequest(purchase.token(), purchase.stack().copy());
         FIRST_SEEN.remove(purchase.token());
@@ -255,10 +253,10 @@ public final class Intendance
 
         if (broke)
         {
-            final long owned = ImperialBank.get(colony.getWorld().getServer()).balance(ImperialBank.treasuryOf(colony));
+            final long owned = RegionalTreasury.get(colony.getWorld().getServer()).balance(colony);
             bar.setColor(BossEvent.BossBarColor.RED);
             bar.setProgress(1);
-            bar.setName(Component.literal("⚖ Intendance · " + count + " · " + total + " couronnes — trésor insuffisant (" + Wallet.format(owned) + ", à verser au guichet de la Banque)"));
+            bar.setName(Component.literal("⚖ Intendance · " + count + " · " + total + " couronnes — trésor insuffisant (" + Wallet.format(owned) + ", à déposer à la Banque régionale)"));
         }
         else
         {

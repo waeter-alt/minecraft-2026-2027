@@ -2,6 +2,8 @@ package fr.kodistan.interregne;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
 
+import java.util.List;
+
 public final class Config
 {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
@@ -170,6 +172,35 @@ public final class Config
     public static final ModConfigSpec.DoubleValue WITHDRAWAL_FEE = BUILDER
       .comment("Share the Imperial Bank keeps on every withdrawal (0.02 = 2%, at least one Couronne)")
       .defineInRange("withdrawalFee", 0.02, 0.0, 1.0);
+
+    static
+    {
+        BUILDER.pop();
+        BUILDER.push("regionalBank");
+    }
+
+    /**
+     * Treasury capacity of a regional bank, by bank level (index 0 is level 1).
+     */
+    public static final List<ModConfigSpec.LongValue> BANK_CAPACITY = List.of(
+      BUILDER.comment("Treasury capacity of a level 1 regional bank; deposits beyond it are refused").defineInRange("capacityLevel1", 10_000L, 0L, Long.MAX_VALUE),
+      BUILDER.comment("Treasury capacity at level 2").defineInRange("capacityLevel2", 25_000L, 0L, Long.MAX_VALUE),
+      BUILDER.comment("Treasury capacity at level 3").defineInRange("capacityLevel3", 50_000L, 0L, Long.MAX_VALUE),
+      BUILDER.comment("Treasury capacity at level 4").defineInRange("capacityLevel4", 100_000L, 0L, Long.MAX_VALUE),
+      BUILDER.comment("Treasury capacity at level 5").defineInRange("capacityLevel5", 250_000L, 0L, Long.MAX_VALUE));
+
+    /**
+     * Price of upgrading a regional bank to each level (index 0 is level 2).
+     */
+    public static final List<ModConfigSpec.LongValue> BANK_UPGRADE_COST = List.of(
+      BUILDER.comment("Price of upgrading a regional bank to level 2, paid from the treasury first, then from the coins carried").defineInRange("upgradeCostLevel2", 1_000L, 0L, Long.MAX_VALUE),
+      BUILDER.comment("Price of the upgrade to level 3").defineInRange("upgradeCostLevel3", 2_500L, 0L, Long.MAX_VALUE),
+      BUILDER.comment("Price of the upgrade to level 4").defineInRange("upgradeCostLevel4", 5_000L, 0L, Long.MAX_VALUE),
+      BUILDER.comment("Price of the upgrade to level 5").defineInRange("upgradeCostLevel5", 10_000L, 0L, Long.MAX_VALUE));
+
+    public static final ModConfigSpec.BooleanValue VAULT_DECORATIONS = BUILDER
+      .comment("The bank fills the 5x5 floor around itself with coin piles, ingots, chests and a hoard as the treasury grows")
+      .define("vaultDecorations", true);
 
     static
     {
