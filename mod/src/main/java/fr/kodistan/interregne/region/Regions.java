@@ -5,6 +5,7 @@ import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.buildings.IBuilding;
 import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.InterregneMod;
+import fr.kodistan.interregne.heraldry.Heraldry;
 import fr.kodistan.interregne.network.RegionActionPayload;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -108,6 +109,8 @@ public final class Regions
     public static void assign(final MinecraftServer server, final IColony colony, final Crate crate)
     {
         RegionData.get(server).setRegion(colony, crate);
+        // The region's emblem goes on top of the colony flag
+        Heraldry.applyRegionEmblem(colony, crate.id());
         server.getPlayerList().broadcastSystemMessage(Component.literal(colony.getName() + " devient " + crate.regionName())
                                                         .withStyle(ChatFormatting.GOLD), false);
         InterregneMod.LOGGER.info("Region: colony {} ({}) produces {}", colony.getID(), colony.getName(), crate.id());
