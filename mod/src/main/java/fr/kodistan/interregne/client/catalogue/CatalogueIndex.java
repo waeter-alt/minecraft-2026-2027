@@ -1,15 +1,28 @@
 package fr.kodistan.interregne.client.catalogue;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.ldtteam.structurize.blueprints.v1.Blueprint;
+import com.ldtteam.structurize.storage.StructurePackMeta;
 import com.ldtteam.structurize.storage.StructurePacks;
 import com.minecolonies.api.blocks.AbstractBlockHut;
+import fr.kodistan.interregne.Config;
+import fr.kodistan.interregne.InterregneMod;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -23,7 +36,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Every blueprint of a style, sorted by what the player needs instead of by the pack's folders:
- * huts by the building they hold (the same in every style), the rest by the folder they sit in.
+ * huts by the building they hold (the same in every style), the rest by what they are.
+ * Entries only keep where each blueprint lives; the blueprint itself is read again when placed.
  */
 public final class CatalogueIndex
 {
@@ -32,23 +46,26 @@ public final class CatalogueIndex
      */
     public enum Need
     {
-        FOOD("Nourriture", Items.COOKED_CHICKEN),
-        WOOD_STONE("Bois et pierre", Items.IRON_AXE),
-        HOUSING("Logement", Items.RED_BED),
-        CRAFT("Artisanat", Items.ANVIL),
-        LOGISTICS("Logistique", Items.CHEST),
-        DEFENSE("Défense", Items.SHIELD),
-        KNOWLEDGE("Savoir", Items.BOOK),
-        GROUNDS("Aménagements", Items.RAIL),
-        DECORATION("Décoration", Items.POPPY);
+        FOOD("Nourriture", Items.COOKED_CHICKEN, "Ce qui nourrit vos citoyens et remplit l'entrepôt : élevages, ferme, pêche, restaurant."),
+        PLANTATION("Plantations", Items.SUGAR_CANE, "La Plantation cultive bambou, canne à sucre, cactus, cacao, lianes… Posez ses champs à côté : ses ouvriers y récoltent ce qui sert au papier, au sucre et aux teintures."),
+        WOOD_STONE("Bois et pierre", Items.IRON_AXE, "Les matières premières : bûcheron, mine, carrières."),
+        HOUSING("Logement", Items.RED_BED, "Loger, soigner et rassembler vos citoyens."),
+        CRAFT("Artisanat", Items.ANVIL, "Les ateliers qui transforment les matières premières."),
+        LOGISTICS("Logistique", Items.CHEST, "Construire, stocker et livrer."),
+        DEFENSE("Défense", Items.SHIELD, "Gardes, casernes et entraînement."),
+        KNOWLEDGE("Savoir", Items.BOOK, "Éducation, recherche et enchantements."),
+        GROUNDS("Aménagements", Items.DIRT_PATH, "Routes, voies ferrées, ponts, murs et canaux, payés à la taille."),
+        DECORATION("Décoration", Items.FLOWER_POT, "Pour embellir la ville, payé à la taille.");
 
         private final String label;
         private final Item icon;
+        private final String desc;
 
-        Need(final String label, final Item icon)
+        Need(final String label, final Item icon, final String desc)
         {
             this.label = label;
             this.icon = icon;
+            this.desc = desc;
         }
 
         public String label()
@@ -60,16 +77,37 @@ public final class CatalogueIndex
         {
             return new ItemStack(icon);
         }
+
+        public String desc()
+        {
+            return desc;
+        }
     }
 
     /**
-     * One card: a building (all its styles' variants, at their lowest level) or one decoration.
+     * Where a blueprint lives, to read it again when the player places it.
      */
-    public record Entry(Need need, @Nullable AbstractBlockHut<?> hut, String buildingId, String name, String folder, List<Blueprint> variants, long blocks)
+    public record Ref(String pack, Path file)
     {
-        public ItemStack icon()
+        @Nullable
+        public Blueprint load(final HolderLookup.Provider provider)
         {
-            return hut != null ? new ItemStack(hut) : need.icon();
+            return StructurePacks.getBlueprint(pack, file, provider);
+        }
+    }
+
+    /**
+     * One card: a building (all its variants in this style, at their lowest level) or one decoration.
+     */
+    public record Entry(Need need, @Nullable AbstractBlockHut<?> hut, String buildingId, String name, ItemStack icon, String folder,
+                        List<Ref> variants, long blocks, @Nullable String about)
+    {
+        /**
+         * The same card in another style: same building, or same blueprint name.
+         */
+        public String key()
+        {
+            return hut != null ? "hut:" + buildingId : "deco:" + name;
         }
     }
 
@@ -78,6 +116,7 @@ public final class CatalogueIndex
     static
     {
         put(Need.FOOD, "chickenherder", "cowboy", "shepherd", "swineherder", "rabbithutch", "fisherman", "farmer", "cook", "baker", "beekeeper", "kitchen");
+        put(Need.PLANTATION, "plantation");
         put(Need.WOOD_STONE, "lumberjack", "miner", "simplequarry", "mediumquarry", "largequarry", "sifter", "crusher");
         put(Need.HOUSING, "townhall", "residence", "tavern", "hospital", "graveyard");
         put(Need.LOGISTICS, "builder", "warehouse", "deliveryman", "postbox", "stash");
@@ -86,6 +125,8 @@ public final class CatalogueIndex
     }
 
     private static final Map<String, CompletableFuture<List<Entry>>> CACHE = new ConcurrentHashMap<>();
+    private static Map<String, JsonObject> names;
+    private static boolean preloading;
 
     private CatalogueIndex()
     {
@@ -100,20 +141,52 @@ public final class CatalogueIndex
     }
 
     /**
-     * The style's entries, loaded once in the background.
+     * The style's entries, read once in the background.
      */
     public static CompletableFuture<List<Entry>> of(final String pack, final HolderLookup.Provider provider)
     {
         return CACHE.computeIfAbsent(pack, name -> CompletableFuture.supplyAsync(() -> build(name, provider)));
     }
 
+    /**
+     * Read every style one after the other in the background, so switching style in the catalogue is instant.
+     */
+    public static void preloadAll()
+    {
+        final Minecraft minecraft = Minecraft.getInstance();
+        if (preloading || minecraft.level == null)
+        {
+            return;
+        }
+        preloading = true;
+        final HolderLookup.Provider provider = minecraft.level.registryAccess();
+        final Thread thread = new Thread(() -> {
+            StructurePacks.waitUntilFinishedLoading();
+            final List<StructurePackMeta> packs = new ArrayList<>(StructurePacks.getPackMetas());
+            final StructurePackMeta selected = StructurePacks.getSelectedPack();
+            packs.sort(Comparator.comparing((StructurePackMeta p) -> p != selected).thenComparing(StructurePackMeta::getName));
+            for (final StructurePackMeta pack : packs)
+            {
+                if (!pack.isDisabled())
+                {
+                    of(pack.getName(), provider).join();
+                }
+            }
+        }, "Interregne catalogue preload");
+        thread.setDaemon(true);
+        thread.setPriority(Thread.MIN_PRIORITY);
+        thread.start();
+    }
+
     public static void clear()
     {
         CACHE.clear();
+        preloading = false;
     }
 
     private static List<Entry> build(final String pack, final HolderLookup.Provider provider)
     {
+        final StructurePackMeta meta = StructurePacks.getStructurePack(pack);
         final List<Blueprint> all = new ArrayList<>();
         walk(pack, "", provider, all, 0);
 
@@ -125,7 +198,7 @@ public final class CatalogueIndex
             final String file = blueprint.getFileName();
             final String base = file.replaceAll("\\d+$", "");
             final int level = base.length() == file.length() ? 1 : parse(file.substring(base.length()));
-            final String key = folderOf(blueprint) + "/" + base;
+            final String key = blueprint.getFilePath() + "/" + base;
             if (!lowest.containsKey(key) || level < lowestLevel.get(key))
             {
                 lowest.put(key, blueprint);
@@ -133,30 +206,52 @@ public final class CatalogueIndex
             }
         }
 
-        final Map<String, List<Blueprint>> byBuilding = new LinkedHashMap<>();
+        final Map<String, List<Ref>> byBuilding = new LinkedHashMap<>();
         final Map<String, AbstractBlockHut<?>> huts = new HashMap<>();
+        final Map<String, String> hutFolders = new HashMap<>();
         final List<Entry> entries = new ArrayList<>();
         for (final Blueprint blueprint : lowest.values())
         {
-            final AbstractBlockHut<?> hut = hutOf(blueprint);
-            if (hut != null)
+            final Ref ref = new Ref(pack, blueprint.getFilePath().resolve(blueprint.getFileName() + ".blueprint"));
+            final String folder = folderOf(meta, blueprint);
+            final Block anchor = anchorOf(blueprint);
+            if (anchor instanceof AbstractBlockHut<?> hut)
             {
                 final String id = hut.getBuildingEntry().getRegistryName().getPath();
-                byBuilding.computeIfAbsent(id, k -> new ArrayList<>()).add(blueprint);
+                byBuilding.computeIfAbsent(id, k -> new ArrayList<>()).add(ref);
                 huts.put(id, hut);
+                hutFolders.putIfAbsent(id, folder);
+                continue;
             }
-            else
-            {
-                final String folder = folderOf(blueprint);
-                entries.add(new Entry(needOfFolder(folder), null, "", pretty(blueprint.getFileName()), folder, List.of(blueprint), solidBlocks(blueprint)));
-            }
+            final String base = blueprint.getFileName().replaceAll("\\d+$", "").toLowerCase(Locale.ROOT);
+            final JsonObject named = names().get(base);
+            final String name = named != null ? named.get("name").getAsString() : pretty(base);
+            final ItemStack icon = named != null ? item(named.get("icon").getAsString()) : ItemStack.EMPTY;
+            final String anchorId = anchor == null ? "" : BuiltInRegistries.BLOCK.getKey(anchor).getPath();
+            final Need need = anchorId.contains("plantationfield") ? Need.PLANTATION : needOfFolder(folder);
+            final long blocks = blueprint.getBlockInfoAsList().stream().filter(info -> !info.getState().isAir()).count();
+            entries.add(new Entry(need, null, "", name, icon.isEmpty() ? need.icon() : icon, folder, List.of(ref), blocks, aboutDeco(need, anchorId, name)));
         }
         byBuilding.forEach((id, variants) -> {
             final AbstractBlockHut<?> hut = huts.get(id);
-            entries.add(new Entry(NEEDS.getOrDefault(id, Need.CRAFT), hut, id, hutName(hut), folderOf(variants.get(0)), List.copyOf(variants), 0));
+            entries.add(new Entry(NEEDS.getOrDefault(id, Need.CRAFT), hut, id, hutName(hut), new ItemStack(hut), hutFolders.get(id), List.copyOf(variants), 0, null));
         });
         entries.sort(Comparator.comparing((Entry e) -> e.hut() == null).thenComparing(Entry::folder).thenComparing(Entry::name));
         return List.copyOf(entries);
+    }
+
+    @Nullable
+    private static String aboutDeco(final Need need, final String anchorId, final String name)
+    {
+        if (need == Need.PLANTATION)
+        {
+            return "Champ de la Plantation : ses ouvriers y cultivent et récoltent. Il faut une Plantation pour qu'il serve.";
+        }
+        if (anchorId.contains("field"))
+        {
+            return "Champ décoratif : jamais récolté, il renforce la ferme qui cultive la même plante.";
+        }
+        return need == Need.GROUNDS ? "Aménagement, payé à la taille." : "Décoration, payée à la taille.";
     }
 
     private static void walk(final String pack, final String path, final HolderLookup.Provider provider, final List<Blueprint> out, final int depth)
@@ -180,11 +275,11 @@ public final class CatalogueIndex
     }
 
     @Nullable
-    private static AbstractBlockHut<?> hutOf(final Blueprint blueprint)
+    private static Block anchorOf(final Blueprint blueprint)
     {
         try
         {
-            return blueprint.getBlockState(blueprint.getPrimaryBlockOffset()).getBlock() instanceof AbstractBlockHut<?> hut ? hut : null;
+            return blueprint.getBlockState(blueprint.getPrimaryBlockOffset()).getBlock();
         }
         catch (final RuntimeException e)
         {
@@ -192,22 +287,21 @@ public final class CatalogueIndex
         }
     }
 
-    private static String folderOf(final Blueprint blueprint)
+    private static String folderOf(@Nullable final StructurePackMeta meta, final Blueprint blueprint)
     {
-        final StringBuilder folder = new StringBuilder();
-        final java.nio.file.Path parent = blueprint.getFilePath();
-        if (parent != null)
+        final Path parent = blueprint.getFilePath();
+        if (parent == null)
         {
-            for (final java.nio.file.Path part : parent)
-            {
-                if (!folder.isEmpty())
-                {
-                    folder.append('/');
-                }
-                folder.append(part.toString().toLowerCase(Locale.ROOT));
-            }
+            return "";
         }
-        return folder.toString();
+        try
+        {
+            return meta == null ? parent.toString() : meta.getSubPath(parent).replace('\\', '/').toLowerCase(Locale.ROOT);
+        }
+        catch (final RuntimeException e)
+        {
+            return parent.toString().replace('\\', '/').toLowerCase(Locale.ROOT);
+        }
     }
 
     private static Need needOfFolder(final String folder)
@@ -216,16 +310,41 @@ public final class CatalogueIndex
         {
             return Need.FOOD;
         }
-        if (folder.contains("infrastructure") || folder.contains("road") || folder.contains("mineshaft") || folder.contains("rail"))
+        for (final String grounds : List.of("infrastructure", "road", "mineshaft", "rail", "wall", "bridge", "canal"))
         {
-            return Need.GROUNDS;
+            if (folder.contains(grounds))
+            {
+                return Need.GROUNDS;
+            }
         }
         return Need.DECORATION;
     }
 
-    private static long solidBlocks(final Blueprint blueprint)
+    private static synchronized Map<String, JsonObject> names()
     {
-        return blueprint.getBlockInfoAsList().stream().filter(info -> !info.getState().isAir()).count();
+        if (names == null)
+        {
+            names = new HashMap<>();
+            try (Reader reader = new InputStreamReader(CatalogueIndex.class.getResourceAsStream("/assets/" + InterregneMod.MODID + "/catalogue_names.json"), StandardCharsets.UTF_8))
+            {
+                JsonParser.parseReader(reader).getAsJsonObject().entrySet().forEach(e -> names.put(e.getKey(), e.getValue().getAsJsonObject()));
+            }
+            catch (final Exception e)
+            {
+                InterregneMod.LOGGER.warn("L'Interregne: catalogue names unreadable", e);
+            }
+        }
+        return names;
+    }
+
+    private static ItemStack item(final String id)
+    {
+        if (id.isEmpty())
+        {
+            return ItemStack.EMPTY;
+        }
+        final Item item = BuiltInRegistries.ITEM.get(ResourceLocation.withDefaultNamespace(id));
+        return item == Items.AIR ? ItemStack.EMPTY : new ItemStack(item);
     }
 
     /**
@@ -245,11 +364,10 @@ public final class CatalogueIndex
         return capitalize(name);
     }
 
-    private static String pretty(final String file)
+    private static String pretty(final String base)
     {
-        final String base = file.replaceAll("\\d+$", "").replace('_', ' ').replace('-', ' ')
-          .replaceAll("([a-z])([A-Z])", "$1 $2").trim();
-        return capitalize(base.isEmpty() ? file : base.toLowerCase(Locale.ROOT));
+        final String text = base.replace('_', ' ').replace('-', ' ').trim();
+        return capitalize(text.isEmpty() ? base : text);
     }
 
     private static String capitalize(final String text)
@@ -275,7 +393,7 @@ public final class CatalogueIndex
     @Nullable
     public static Component production(final String buildingId)
     {
-        final int perMinute = Math.max(1, 60 / Math.max(1, fr.kodistan.interregne.Config.PRODUCTION_SECONDS.get())) * fr.kodistan.interregne.Config.PRODUCTION_PER_LEVEL.get();
+        final int perMinute = Math.max(1, 60 / Math.max(1, Config.PRODUCTION_SECONDS.get())) * Config.PRODUCTION_PER_LEVEL.get();
         return switch (buildingId)
         {
             case "chickenherder" -> rate(Items.CHICKEN, perMinute);
@@ -287,6 +405,7 @@ public final class CatalogueIndex
             case "farmer" -> Component.literal("La culture choisie : " + perMinute + " par minute au niveau 1, plus à chaque niveau.");
             case "cook" -> Component.literal("Cuisine sans combustible et remplit l'entrepôt de plats.");
             case "lumberjack" -> Component.literal("Plante des arbres autour de lui, qui poussent vite.");
+            case "plantation" -> Component.literal("Récolte les champs de plantation posés à côté : bambou, canne à sucre, cactus…");
             default -> null;
         };
     }
@@ -310,6 +429,7 @@ public final class CatalogueIndex
             case "farmer" -> new ItemStack(Items.WHEAT);
             case "cook" -> new ItemStack(Items.COOKED_CHICKEN);
             case "lumberjack" -> new ItemStack(Items.OAK_SAPLING);
+            case "plantation" -> new ItemStack(Items.SUGAR_CANE);
             default -> null;
         };
     }

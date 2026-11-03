@@ -1,0 +1,4998 @@
+{
+ "1by1empty": {
+  "icon": "structure_void",
+  "name": "Emplacement vide 1×1"
+ },
+ "1by1flowergarden": {
+  "icon": "poppy",
+  "name": "Parterre de fleurs 1×1"
+ },
+ "1by1incornerstairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier d'angle 1×1"
+ },
+ "1by1outcornerstairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier extérieur d'angle 1×1"
+ },
+ "1by1stairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier 1×1"
+ },
+ "1road": {
+  "icon": "dirt_path",
+  "name": "Route 1"
+ },
+ "2by2empty": {
+  "icon": "structure_void",
+  "name": "Emplacement vide 2×2"
+ },
+ "2parallelroads": {
+  "icon": "dirt_path",
+  "name": "Route parallèle 2"
+ },
+ "2perpendicularroads": {
+  "icon": "dirt_path",
+  "name": "Route de perpendiculaire 2"
+ },
+ "3ushapedroads": {
+  "icon": "dirt_path",
+  "name": "Route en U 3"
+ },
+ "4roads": {
+  "icon": "dirt_path",
+  "name": "Route 4"
+ },
+ "advancedovergroundcorner": {
+  "icon": "rail",
+  "name": "Angle élaboré en surface"
+ },
+ "advancedovergroundintersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour élaboré en surface"
+ },
+ "advancedovergroundstraight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite élaborée en surface"
+ },
+ "advancedovergroundtjumction": {
+  "icon": "rail",
+  "name": "Carrefour en T élaboré en surface"
+ },
+ "advancedundergroundcorner": {
+  "icon": "rail",
+  "name": "Angle élaboré souterrain"
+ },
+ "advancedundergroundentrance": {
+  "icon": "rail",
+  "name": "Entrée élaborée souterraine"
+ },
+ "advancedundergroundintersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour élaboré souterrain"
+ },
+ "advancedundergroundramp": {
+  "icon": "rail",
+  "name": "Rampe élaborée souterraine"
+ },
+ "advancedundergroundstraight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite élaborée souterraine"
+ },
+ "advancedundergroundtjumction": {
+  "icon": "rail",
+  "name": "Carrefour en T élaboré souterrain"
+ },
+ "alchemisttower": {
+  "icon": "stone_brick_wall",
+  "name": "Tour d'alchimiste"
+ },
+ "alt_restaurant": {
+  "icon": "cooked_beef",
+  "name": "Restaurant"
+ },
+ "altbakery": {
+  "icon": "bread",
+  "name": "Boulangerie"
+ },
+ "alternativefield": {
+  "icon": "wheat_seeds",
+  "name": "Champ alternatif"
+ },
+ "althouse": {
+  "icon": "oak_door",
+  "name": "Maison"
+ },
+ "andesite": {
+  "icon": "lantern",
+  "name": "Lanterne en andésite"
+ },
+ "apiary": {
+  "icon": "beehive",
+  "name": "Rucher"
+ },
+ "apiarygreenhouse": {
+  "icon": "beehive",
+  "name": "Serre de rucher"
+ },
+ "apiaryopenair": {
+  "icon": "beehive",
+  "name": "Rucher en plein air"
+ },
+ "aqueduct_basin": {
+  "icon": "water_bucket",
+  "name": "Base d'aqueduc"
+ },
+ "aqueduct_end": {
+  "icon": "water_bucket",
+  "name": "Extrémité d'aqueduc"
+ },
+ "aqueduct_pillar": {
+  "icon": "water_bucket",
+  "name": "Pilier d'aqueduc"
+ },
+ "aqueduct_pillar_one": {
+  "icon": "water_bucket",
+  "name": "Pilier d'aqueduc"
+ },
+ "aqueduct_pillar_two": {
+  "icon": "water_bucket",
+  "name": "Double pilier d'aqueduc"
+ },
+ "aqueduct_start": {
+  "icon": "water_bucket",
+  "name": "Départ d'aqueduc"
+ },
+ "aqueduct_straight": {
+  "icon": "water_bucket",
+  "name": "Ligne droite d'aqueduc"
+ },
+ "auto_smelter": {
+  "icon": "blast_furnace",
+  "name": "Fonderie automatique"
+ },
+ "bag_end": {
+  "icon": "oak_door",
+  "name": "Cul-de-Sac (trou de hobbit)"
+ },
+ "bakery": {
+  "icon": "bread",
+  "name": "Boulangerie"
+ },
+ "bamboo": {
+  "icon": "bamboo",
+  "name": "Champ de bambou"
+ },
+ "barracks_bricks": {
+  "icon": "stone_bricks",
+  "name": "Caserne en briques"
+ },
+ "barracks_cobble": {
+  "icon": "stone_bricks",
+  "name": "Caserne en pierres"
+ },
+ "barrackstowerleft": {
+  "icon": "stone_brick_wall",
+  "name": "Tour de caserne gauche"
+ },
+ "barrackstowerlower": {
+  "icon": "stone_brick_wall",
+  "name": "Partie basse de tour de caserne"
+ },
+ "barrackstowerright": {
+  "icon": "stone_brick_wall",
+  "name": "Tour de caserne droite"
+ },
+ "barrackstowerupper": {
+  "icon": "stone_brick_wall",
+  "name": "Partie haute de tour de caserne"
+ },
+ "base": {
+  "icon": "cobblestone_wall",
+  "name": "Base"
+ },
+ "base_a": {
+  "icon": "cobblestone_wall",
+  "name": "Base"
+ },
+ "base_b": {
+  "icon": "cobblestone_wall",
+  "name": "Base B"
+ },
+ "basic_farm": {
+  "icon": "wooden_hoe",
+  "name": "Ferme simple"
+ },
+ "basicfield": {
+  "icon": "wheat_seeds",
+  "name": "Champ simple"
+ },
+ "basicroad2stair": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier simple de route 2"
+ },
+ "basicroad4stair": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier simple de route 4"
+ },
+ "basicroad4straight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite simple de route 4"
+ },
+ "basicroad8straight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite simple de route 8"
+ },
+ "basicroadintersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour simple de route"
+ },
+ "bathhouse": {
+  "icon": "oak_door",
+  "name": "Bains"
+ },
+ "batpole": {
+  "icon": "dirt_path",
+  "name": "Perche"
+ },
+ "beach": {
+  "icon": "sand",
+  "name": "Plage"
+ },
+ "beginning_left": {
+  "icon": "dirt_path",
+  "name": "Départ gauche"
+ },
+ "beginning_right": {
+  "icon": "dirt_path",
+  "name": "Départ droite"
+ },
+ "bench": {
+  "icon": "oak_stairs",
+  "name": "Banc"
+ },
+ "big_log_cart": {
+  "icon": "minecart",
+  "name": "Grande charrette de tronc"
+ },
+ "big_medal_bw": {
+  "icon": "gold_ingot",
+  "name": "Grande médaille noire et blanche"
+ },
+ "big_medal_ry": {
+  "icon": "gold_ingot",
+  "name": "Grande médaille rouge et jaune"
+ },
+ "big_norsemen_ship": {
+  "icon": "oak_boat",
+  "name": "Grand navire de Nordiques"
+ },
+ "big_pirate_ship": {
+  "icon": "oak_boat",
+  "name": "Grand navire pirate"
+ },
+ "big_sunk_ship": {
+  "icon": "oak_boat",
+  "name": "Grand navire d'épave"
+ },
+ "bigwell": {
+  "icon": "water_bucket",
+  "name": "Grand puits"
+ },
+ "birch": {
+  "icon": "oak_boat",
+  "name": "Navire en bouleau"
+ },
+ "birchquarrycap": {
+  "icon": "iron_pickaxe",
+  "name": "Couvercle de carrière en bouleau"
+ },
+ "bireme": {
+  "icon": "oak_boat",
+  "name": "Birème"
+ },
+ "bireme_docked": {
+  "icon": "oak_planks",
+  "name": "Birème à quai"
+ },
+ "blackminimarket": {
+  "icon": "emerald",
+  "name": "Échoppe noire"
+ },
+ "blue": {
+  "icon": "oak_boat",
+  "name": "Navire bleu"
+ },
+ "blueminimarket": {
+  "icon": "emerald",
+  "name": "Échoppe bleue"
+ },
+ "brandybuck_cafe": {
+  "icon": "cake",
+  "name": "Café Brandebouc"
+ },
+ "brickgate": {
+  "icon": "oak_fence_gate",
+  "name": "Porte en briques"
+ },
+ "brickinnerwall": {
+  "icon": "cobblestone_wall",
+  "name": "Mur d'intérieur en briques"
+ },
+ "bricklong": {
+  "icon": "dirt_path",
+  "name": "Longue route en briques"
+ },
+ "bricklongwall": {
+  "icon": "cobblestone_wall",
+  "name": "Long mur en briques"
+ },
+ "brickmini": {
+  "icon": "dirt_path",
+  "name": "Petite route en briques"
+ },
+ "brickouterwall": {
+  "icon": "cobblestone_wall",
+  "name": "Mur d'extérieur en briques"
+ },
+ "bricks_house": {
+  "icon": "oak_door",
+  "name": "Maison en briques"
+ },
+ "brickshort": {
+  "icon": "dirt_path",
+  "name": "Route courte en briques"
+ },
+ "brickshortwall": {
+  "icon": "cobblestone_wall",
+  "name": "Mur court en briques"
+ },
+ "brickstairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier en briques"
+ },
+ "brickstepup": {
+  "icon": "stone_brick_stairs",
+  "name": "Marche en briques"
+ },
+ "brickwallincrease": {
+  "icon": "cobblestone_wall",
+  "name": "Pli de mur en briques"
+ },
+ "bridge": {
+  "icon": "oak_planks",
+  "name": "Pont"
+ },
+ "bridge_powered": {
+  "icon": "powered_rail",
+  "name": "Pont alimenté"
+ },
+ "bridgeintersection": {
+  "icon": "oak_planks",
+  "name": "Carrefour de pont"
+ },
+ "bridgestairs": {
+  "icon": "oak_planks",
+  "name": "Escalier de pont"
+ },
+ "bridgestraight": {
+  "icon": "oak_planks",
+  "name": "Ligne droite de pont"
+ },
+ "brownminimarket": {
+  "icon": "emerald",
+  "name": "Échoppe brune"
+ },
+ "buddha_acacia": {
+  "icon": "armor_stand",
+  "name": "Bouddha en acacia"
+ },
+ "buddha_andesite": {
+  "icon": "armor_stand",
+  "name": "Bouddha en andésite"
+ },
+ "buddha_birch": {
+  "icon": "armor_stand",
+  "name": "Bouddha en bouleau"
+ },
+ "buddha_darkoak": {
+  "icon": "armor_stand",
+  "name": "Bouddha en chêne noir"
+ },
+ "buddha_diorite": {
+  "icon": "armor_stand",
+  "name": "Bouddha en diorite"
+ },
+ "buddha_jungle": {
+  "icon": "armor_stand",
+  "name": "Bouddha en bois exotique"
+ },
+ "buddha_oak": {
+  "icon": "armor_stand",
+  "name": "Bouddha en chêne"
+ },
+ "buddha_quartz": {
+  "icon": "armor_stand",
+  "name": "Bouddha en quartz"
+ },
+ "buddha_spruce": {
+  "icon": "armor_stand",
+  "name": "Bouddha en sapin"
+ },
+ "buddha_stone": {
+  "icon": "armor_stand",
+  "name": "Bouddha en pierre"
+ },
+ "builderalt": {
+  "icon": "iron_shovel",
+  "name": "Bâtisseur"
+ },
+ "buoy": {
+  "icon": "lantern",
+  "name": "Bouée"
+ },
+ "bush_large": {
+  "icon": "sweet_berries",
+  "name": "Grand buisson"
+ },
+ "bush_medium": {
+  "icon": "sweet_berries",
+  "name": "Moyen buisson"
+ },
+ "bush_seat": {
+  "icon": "sweet_berries",
+  "name": "Siège de buisson"
+ },
+ "bush_small": {
+  "icon": "sweet_berries",
+  "name": "Petit buisson"
+ },
+ "cacao": {
+  "icon": "wheat_seeds",
+  "name": "Champ de cacao"
+ },
+ "cactbamboo": {
+  "icon": "bamboo",
+  "name": "Champ de bambou"
+ },
+ "cactus": {
+  "icon": "cactus",
+  "name": "Champ de cactus"
+ },
+ "camp": {
+  "icon": "white_wool",
+  "name": "Campement"
+ },
+ "canal_bridge": {
+  "icon": "water_bucket",
+  "name": "Pont de canal"
+ },
+ "canal_corner": {
+  "icon": "water_bucket",
+  "name": "Angle de canal"
+ },
+ "canal_innercorner": {
+  "icon": "water_bucket",
+  "name": "Angle d'intérieur de canal"
+ },
+ "canal_straight": {
+  "icon": "water_bucket",
+  "name": "Ligne droite de canal"
+ },
+ "canalbridge": {
+  "icon": "water_bucket",
+  "name": "Pont de canal"
+ },
+ "canalintersection": {
+  "icon": "water_bucket",
+  "name": "Carrefour de canaux"
+ },
+ "canalstraight": {
+  "icon": "water_bucket",
+  "name": "Ligne droite de canal"
+ },
+ "canalwaterfall": {
+  "icon": "water_bucket",
+  "name": "Cascade de canal"
+ },
+ "cargo": {
+  "icon": "barrel",
+  "name": "Cargaison"
+ },
+ "cargo_docked": {
+  "icon": "barrel",
+  "name": "Cargaison à quai"
+ },
+ "cargo_hay": {
+  "icon": "barrel",
+  "name": "Foin de cargaison"
+ },
+ "cargo_large": {
+  "icon": "barrel",
+  "name": "Grande cargaison"
+ },
+ "cargo_large_docked": {
+  "icon": "barrel",
+  "name": "Grande cargaison à quai"
+ },
+ "cargo_wood": {
+  "icon": "barrel",
+  "name": "Cargaison en bois"
+ },
+ "carpenter": {
+  "icon": "crafting_table",
+  "name": "Menuiserie"
+ },
+ "cavernfarm": {
+  "icon": "wooden_hoe",
+  "name": "Ferme de caverne"
+ },
+ "caverntrees": {
+  "icon": "oak_sapling",
+  "name": "Champ de arbre de caverne"
+ },
+ "ccourier": {
+  "icon": "leather_boots",
+  "name": "Relais des coursiers"
+ },
+ "centertower": {
+  "icon": "stone_brick_wall",
+  "name": "Tour centrale"
+ },
+ "citizenalt": {
+  "icon": "red_bed",
+  "name": "Maison de citoyen"
+ },
+ "citysquare": {
+  "icon": "bell",
+  "name": "Grand-place"
+ },
+ "citytower": {
+  "icon": "stone_brick_wall",
+  "name": "Tour de cité"
+ },
+ "claygate": {
+  "icon": "oak_fence_gate",
+  "name": "Porte en argile"
+ },
+ "clayinnerwall": {
+  "icon": "cobblestone_wall",
+  "name": "Mur d'intérieur en argile"
+ },
+ "claylongwall": {
+  "icon": "cobblestone_wall",
+  "name": "Long mur en argile"
+ },
+ "clayouterwall": {
+  "icon": "cobblestone_wall",
+  "name": "Mur d'extérieur en argile"
+ },
+ "clayshortwall": {
+  "icon": "cobblestone_wall",
+  "name": "Mur court en argile"
+ },
+ "claywallincrease": {
+  "icon": "cobblestone_wall",
+  "name": "Pli de mur en argile"
+ },
+ "cliffclimbbase": {
+  "icon": "stone",
+  "name": "Base de montée de falaise"
+ },
+ "cliffclimblandinglong": {
+  "icon": "stone",
+  "name": "Long palier de montée de falaise"
+ },
+ "cliffclimblandingshort": {
+  "icon": "stone",
+  "name": "Palier court de montée de falaise"
+ },
+ "cliffclimbsegment": {
+  "icon": "stone",
+  "name": "Tronçon de montée de falaise"
+ },
+ "climbrails": {
+  "icon": "rail",
+  "name": "Voie ferrée de montée"
+ },
+ "climbrails_powered": {
+  "icon": "powered_rail",
+  "name": "Voie ferrée alimentée de montée"
+ },
+ "cobble_corner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle en pierres"
+ },
+ "cobble_gate": {
+  "icon": "oak_fence_gate",
+  "name": "Porte en pierres"
+ },
+ "cobble_segment_large": {
+  "icon": "cobblestone_wall",
+  "name": "Grand tronçon en pierres"
+ },
+ "cobble_segment_small": {
+  "icon": "cobblestone_wall",
+  "name": "Petit tronçon en pierres"
+ },
+ "cobble_stairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier en pierres"
+ },
+ "cobble_tower": {
+  "icon": "stone_brick_wall",
+  "name": "Tour en pierres"
+ },
+ "cobblegate": {
+  "icon": "oak_fence_gate",
+  "name": "Porte en pierres"
+ },
+ "cobbleinnerwall": {
+  "icon": "cobblestone_wall",
+  "name": "Mur d'intérieur en pierres"
+ },
+ "cobblelong": {
+  "icon": "dirt_path",
+  "name": "Longue route en pierres"
+ },
+ "cobblelongwall": {
+  "icon": "cobblestone_wall",
+  "name": "Long mur en pierres"
+ },
+ "cobblemini": {
+  "icon": "dirt_path",
+  "name": "Petite route en pierres"
+ },
+ "cobbleouterwall": {
+  "icon": "cobblestone_wall",
+  "name": "Mur d'extérieur en pierres"
+ },
+ "cobbleshort": {
+  "icon": "dirt_path",
+  "name": "Route courte en pierres"
+ },
+ "cobbleshortwall": {
+  "icon": "cobblestone_wall",
+  "name": "Mur court en pierres"
+ },
+ "cobblestairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier en pierres"
+ },
+ "cobblestepup": {
+  "icon": "stone_brick_stairs",
+  "name": "Marche en pierres"
+ },
+ "cobblestone": {
+  "icon": "lantern",
+  "name": "Lanterne en pierres"
+ },
+ "cobblewallincrease": {
+  "icon": "cobblestone_wall",
+  "name": "Pli de mur en pierres"
+ },
+ "cocoa": {
+  "icon": "cocoa_beans",
+  "name": "Champ de cacao"
+ },
+ "cocoa_and_vines": {
+  "icon": "cocoa_beans",
+  "name": "Champ de lianes de cacao"
+ },
+ "cocoa_vine": {
+  "icon": "cocoa_beans",
+  "name": "Champ de lianes de cacao"
+ },
+ "cocoa_vines": {
+  "icon": "cocoa_beans",
+  "name": "Champ de lianes de cacao"
+ },
+ "composthut": {
+  "icon": "composter",
+  "name": "Champ de cabane à compost"
+ },
+ "concert": {
+  "icon": "note_block",
+  "name": "Scène de concert"
+ },
+ "concrete_machine": {
+  "icon": "white_concrete_powder",
+  "name": "Bétonnière"
+ },
+ "connector": {
+  "icon": "stone_bricks",
+  "name": "Raccord"
+ },
+ "cookery": {
+  "icon": "cooked_beef",
+  "name": "Cuisine"
+ },
+ "corner": {
+  "icon": "rail",
+  "name": "Angle"
+ },
+ "corner_a": {
+  "icon": "cobblestone_wall",
+  "name": "Angle"
+ },
+ "corner_a_base": {
+  "icon": "cobblestone_wall",
+  "name": "Base d'angle"
+ },
+ "corner_b": {
+  "icon": "cobblestone_wall",
+  "name": "Angle B"
+ },
+ "corner_b_base": {
+  "icon": "cobblestone_wall",
+  "name": "Base d'angle B"
+ },
+ "corner_bamboo": {
+  "icon": "bamboo",
+  "name": "Champ de bambou d'angle"
+ },
+ "corner_cactus": {
+  "icon": "cactus",
+  "name": "Champ de cactus d'angle"
+ },
+ "corner_cocoa": {
+  "icon": "cocoa_beans",
+  "name": "Champ de cacao d'angle"
+ },
+ "corner_crimson": {
+  "icon": "crimson_fungus",
+  "name": "Champ de angle pourpre"
+ },
+ "corner_inner": {
+  "icon": "cobblestone_wall",
+  "name": "Intérieur d'angle"
+ },
+ "corner_outer": {
+  "icon": "cobblestone_wall",
+  "name": "Extérieur d'angle"
+ },
+ "corner_sugar": {
+  "icon": "sugar_cane",
+  "name": "Champ de canne à sucre d'angle"
+ },
+ "corner_tower": {
+  "icon": "stone_brick_wall",
+  "name": "Tour d'angle"
+ },
+ "corner_vines": {
+  "icon": "vine",
+  "name": "Champ de lianes d'angle"
+ },
+ "corner_warped": {
+  "icon": "wheat_seeds",
+  "name": "Champ de angle biscornu"
+ },
+ "corneralt": {
+  "icon": "dirt_path",
+  "name": "Angle"
+ },
+ "corneraquarium": {
+  "icon": "tropical_fish_bucket",
+  "name": "Aquarium d'angle"
+ },
+ "cornerfountain": {
+  "icon": "water_bucket",
+  "name": "Fontaine d'angle"
+ },
+ "cornerguard": {
+  "icon": "iron_sword",
+  "name": "Poste d'angle"
+ },
+ "cornerinside": {
+  "icon": "oak_door",
+  "name": "Côté d'angle"
+ },
+ "cornerkelpfarm": {
+  "icon": "kelp",
+  "name": "Ferme à varech d'angle"
+ },
+ "cornerkennel": {
+  "icon": "bone",
+  "name": "Chenil d'angle"
+ },
+ "cornerknight": {
+  "icon": "iron_helmet",
+  "name": "Chevalier d'angle"
+ },
+ "cornermarket": {
+  "icon": "emerald",
+  "name": "Marché d'angle"
+ },
+ "cornerrailroad": {
+  "icon": "rail",
+  "name": "Voie ferrée d'angle"
+ },
+ "cornertrack": {
+  "icon": "rail",
+  "name": "Voie ferrée d'angle"
+ },
+ "cornerwalkway": {
+  "icon": "dirt_path",
+  "name": "Allée d'angle"
+ },
+ "corridorbridge": {
+  "icon": "glow_berries",
+  "name": "Pont de couloir"
+ },
+ "corridorgreens": {
+  "icon": "fern",
+  "name": "Verdure de couloir"
+ },
+ "corridormangrove": {
+  "icon": "mangrove_log",
+  "name": "Palétuvier de couloir"
+ },
+ "corridormelons": {
+  "icon": "melon_slice",
+  "name": "Pastèques de couloir"
+ },
+ "corridorpagodas": {
+  "icon": "spruce_planks",
+  "name": "Pagode de couloir"
+ },
+ "corridorstatues": {
+  "icon": "armor_stand",
+  "name": "Statue de couloir"
+ },
+ "corridorswords": {
+  "icon": "iron_sword",
+  "name": "Épées de couloir"
+ },
+ "corridorwaterfalls": {
+  "icon": "water_bucket",
+  "name": "Chutes de couloir d'eau"
+ },
+ "courier": {
+  "icon": "leather_boots",
+  "name": "Relais des coursiers"
+ },
+ "courier_offices": {
+  "icon": "leather_boots",
+  "name": "Bureau de relais des coursiers"
+ },
+ "courieralt": {
+  "icon": "leather_boots",
+  "name": "Relais des coursiers"
+ },
+ "courieroffices": {
+  "icon": "leather_boots",
+  "name": "Relais des coursiers"
+ },
+ "covered_end": {
+  "icon": "oak_planks",
+  "name": "Extrémité couverte"
+ },
+ "covered_endcap": {
+  "icon": "oak_planks",
+  "name": "Extrémité couverte"
+ },
+ "covered_footing_a": {
+  "icon": "oak_planks",
+  "name": "Semelle couverte"
+ },
+ "covered_footing_b": {
+  "icon": "oak_planks",
+  "name": "Semelle couverte B"
+ },
+ "covered_mid_a": {
+  "icon": "oak_planks",
+  "name": "Milieu couvert"
+ },
+ "covered_mid_b": {
+  "icon": "oak_planks",
+  "name": "Milieu couvert B"
+ },
+ "covered_mid_c": {
+  "icon": "oak_planks",
+  "name": "Milieu couvert C"
+ },
+ "covered_mid_d": {
+  "icon": "oak_planks",
+  "name": "Milieu couvert D"
+ },
+ "covered_mid_e": {
+  "icon": "oak_planks",
+  "name": "Milieu couvert E"
+ },
+ "covered_mid_f": {
+  "icon": "oak_planks",
+  "name": "Milieu couvert F"
+ },
+ "coveredstop": {
+  "icon": "rail",
+  "name": "Arrêt couvert"
+ },
+ "coveredwagonpark": {
+  "icon": "minecart",
+  "name": "Parc à chariots couvert"
+ },
+ "cowhand": {
+  "icon": "wheat",
+  "name": "Étable"
+ },
+ "crane": {
+  "icon": "chain",
+  "name": "Grue"
+ },
+ "cross": {
+  "icon": "dirt_path",
+  "name": "Carrefour"
+ },
+ "cross_base": {
+  "icon": "cobblestone_wall",
+  "name": "Base de carrefour"
+ },
+ "cross_intersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour"
+ },
+ "crossing": {
+  "icon": "rail",
+  "name": "Carrefour"
+ },
+ "curve": {
+  "icon": "dirt_path",
+  "name": "Virage"
+ },
+ "curvedhillfield": {
+  "icon": "wheat_seeds",
+  "name": "Champ en colline"
+ },
+ "cyanminimarket": {
+  "icon": "emerald",
+  "name": "Échoppe cyan"
+ },
+ "darkoakquarrycap": {
+  "icon": "iron_pickaxe",
+  "name": "Couvercle de carrière en chêne noir"
+ },
+ "deepslatelower": {
+  "icon": "stone_bricks",
+  "name": "Partie basse en ardoise des abîmes"
+ },
+ "deepslatestairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier en ardoise des abîmes"
+ },
+ "deepslatestairsinsert": {
+  "icon": "stone_brick_stairs",
+  "name": "Insert d'escalier en ardoise des abîmes"
+ },
+ "deepslatesurfacestairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier de surface en ardoise des abîmes"
+ },
+ "deepslateupper": {
+  "icon": "stone_bricks",
+  "name": "Partie haute en ardoise des abîmes"
+ },
+ "defense": {
+  "icon": "cobblestone_wall",
+  "name": "Défense"
+ },
+ "deliverymanalt": {
+  "icon": "chest",
+  "name": "Coursier"
+ },
+ "diagonal": {
+  "icon": "cobblestone_wall",
+  "name": "Diagonale"
+ },
+ "diagonal_base": {
+  "icon": "cobblestone_wall",
+  "name": "Base de diagonale"
+ },
+ "dig": {
+  "icon": "iron_shovel",
+  "name": "Excavation"
+ },
+ "diorite_house": {
+  "icon": "oak_door",
+  "name": "Maison en diorite"
+ },
+ "diorite_lrg": {
+  "icon": "polished_diorite",
+  "name": "Grande place en diorite"
+ },
+ "diorite_med": {
+  "icon": "polished_diorite",
+  "name": "Moyenne place en diorite"
+ },
+ "diorite_sml": {
+  "icon": "polished_diorite",
+  "name": "Petite place en diorite"
+ },
+ "dock": {
+  "icon": "oak_planks",
+  "name": "Quai"
+ },
+ "double": {
+  "icon": "cobblestone_wall",
+  "name": "Double arche"
+ },
+ "double_base": {
+  "icon": "cobblestone_wall",
+  "name": "Double base"
+ },
+ "double_house": {
+  "icon": "oak_door",
+  "name": "Double maison"
+ },
+ "doublea": {
+  "icon": "stone_bricks",
+  "name": "Double façade"
+ },
+ "doubleb": {
+  "icon": "stone_bricks",
+  "name": "Double façade B"
+ },
+ "doublec": {
+  "icon": "stone_bricks",
+  "name": "Double façade"
+ },
+ "doubled": {
+  "icon": "stone_bricks",
+  "name": "Double façade D"
+ },
+ "doublee": {
+  "icon": "stone_bricks",
+  "name": "Double façade E"
+ },
+ "down": {
+  "icon": "ladder",
+  "name": "Mur descendant"
+ },
+ "down_a": {
+  "icon": "ladder",
+  "name": "Ruelle descendante"
+ },
+ "down_b": {
+  "icon": "ladder",
+  "name": "Ruelle descendante B"
+ },
+ "drop_high": {
+  "icon": "water_bucket",
+  "name": "Haute chute"
+ },
+ "drop_low": {
+  "icon": "water_bucket",
+  "name": "Chute basse"
+ },
+ "dwarfking": {
+  "icon": "golden_helmet",
+  "name": "Statue du roi nain"
+ },
+ "dyeralt": {
+  "icon": "red_dye",
+  "name": "Teinturerie"
+ },
+ "enchanterstower": {
+  "icon": "stone_brick_wall",
+  "name": "Tour d'enchanteurs"
+ },
+ "end": {
+  "icon": "cobblestone_wall",
+  "name": "Extrémité"
+ },
+ "end_base": {
+  "icon": "cobblestone_wall",
+  "name": "Base d'extrémité"
+ },
+ "end_left": {
+  "icon": "dirt_path",
+  "name": "Extrémité gauche"
+ },
+ "end_right": {
+  "icon": "dirt_path",
+  "name": "Extrémité droite"
+ },
+ "end_tower": {
+  "icon": "stone_brick_wall",
+  "name": "Tour d'extrémité"
+ },
+ "endrail": {
+  "icon": "rail",
+  "name": "Voie ferrée d'extrémité"
+ },
+ "endroad": {
+  "icon": "dirt_path",
+  "name": "Route d'extrémité"
+ },
+ "endstatue": {
+  "icon": "armor_stand",
+  "name": "Statue d'extrémité"
+ },
+ "entrance": {
+  "icon": "rail",
+  "name": "Entrée"
+ },
+ "entrance_powered": {
+  "icon": "powered_rail",
+  "name": "Entrée alimentée"
+ },
+ "estate": {
+  "icon": "oak_door",
+  "name": "Domaine"
+ },
+ "fancy": {
+  "icon": "dirt_path",
+  "name": "Route ornée"
+ },
+ "fancy_a": {
+  "icon": "cobblestone_wall",
+  "name": "Clôture ornée"
+ },
+ "fancy_b": {
+  "icon": "cobblestone_wall",
+  "name": "Clôture ornée B"
+ },
+ "fancy_bridge_cross_pillars": {
+  "icon": "oak_planks",
+  "name": "Pilier orné de carrefour de pont"
+ },
+ "fancy_bridge_pillars": {
+  "icon": "oak_planks",
+  "name": "Pilier orné de pont"
+ },
+ "fancy_bridge_segment": {
+  "icon": "oak_planks",
+  "name": "Tronçon orné de pont"
+ },
+ "fancy_bridge_span": {
+  "icon": "oak_planks",
+  "name": "Travée ornée de pont"
+ },
+ "fancy_bridge_start": {
+  "icon": "oak_planks",
+  "name": "Départ orné de pont"
+ },
+ "fancy_bridge_support": {
+  "icon": "oak_planks",
+  "name": "Support orné de pont"
+ },
+ "fancy_bumpout": {
+  "icon": "cobblestone_wall",
+  "name": "Avancée ornée"
+ },
+ "fancy_corner": {
+  "icon": "rail",
+  "name": "Angle orné"
+ },
+ "fancy_corner_powered": {
+  "icon": "powered_rail",
+  "name": "Angle orné alimenté"
+ },
+ "fancy_gate": {
+  "icon": "oak_fence_gate",
+  "name": "Porte ornée"
+ },
+ "fancy_inner_corner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle orné d'intérieur"
+ },
+ "fancy_intersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour orné"
+ },
+ "fancy_lamp": {
+  "icon": "lantern",
+  "name": "Lampe ornée"
+ },
+ "fancy_outer_corner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle orné d'extérieur"
+ },
+ "fancy_plug_a": {
+  "icon": "stone_bricks",
+  "name": "Bouchon orné"
+ },
+ "fancy_plug_b": {
+  "icon": "stone_bricks",
+  "name": "Bouchon orné B"
+ },
+ "fancy_plug_c": {
+  "icon": "stone_bricks",
+  "name": "Bouchon orné C"
+ },
+ "fancy_round_barbican": {
+  "icon": "cobblestone_wall",
+  "name": "Barbacane ornée ronde"
+ },
+ "fancy_round_corner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle orné rond"
+ },
+ "fancy_round_tower": {
+  "icon": "stone_brick_wall",
+  "name": "Tour ornée ronde"
+ },
+ "fancy_segment_large": {
+  "icon": "cobblestone_wall",
+  "name": "Grand tronçon orné"
+ },
+ "fancy_segment_small": {
+  "icon": "cobblestone_wall",
+  "name": "Petit tronçon orné"
+ },
+ "fancy_short": {
+  "icon": "cobblestone_wall",
+  "name": "Clôture ornée courte"
+ },
+ "fancy_slope": {
+  "icon": "rail",
+  "name": "Rampe ornée"
+ },
+ "fancy_slope_powered": {
+  "icon": "powered_rail",
+  "name": "Rampe ornée alimentée"
+ },
+ "fancy_square_barbican": {
+  "icon": "cobblestone_wall",
+  "name": "Barbacane ornée de place"
+ },
+ "fancy_square_corner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle orné de place"
+ },
+ "fancy_square_tower": {
+  "icon": "stone_brick_wall",
+  "name": "Tour ornée de place"
+ },
+ "fancy_stairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier orné"
+ },
+ "fancy_stepup": {
+  "icon": "stone_brick_stairs",
+  "name": "Marche ornée"
+ },
+ "fancy_straight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite ornée"
+ },
+ "fancy_straight_powered": {
+  "icon": "powered_rail",
+  "name": "Ligne droite ornée alimentée"
+ },
+ "fancy_tjunction": {
+  "icon": "dirt_path",
+  "name": "Carrefour en T orné"
+ },
+ "fancy_tunnel_corner": {
+  "icon": "stone_bricks",
+  "name": "Angle orné de tunnel"
+ },
+ "fancy_tunnel_corner_powered": {
+  "icon": "powered_rail",
+  "name": "Angle orné alimenté de tunnel"
+ },
+ "fancy_tunnel_intersection": {
+  "icon": "stone_bricks",
+  "name": "Carrefour orné de tunnel"
+ },
+ "fancy_tunnel_slope": {
+  "icon": "stone_bricks",
+  "name": "Rampe ornée de tunnel"
+ },
+ "fancy_tunnel_slope_powered": {
+  "icon": "powered_rail",
+  "name": "Rampe ornée alimentée de tunnel"
+ },
+ "fancy_tunnel_straight": {
+  "icon": "stone_bricks",
+  "name": "Ligne droite ornée de tunnel"
+ },
+ "fancy_tunnel_straight_powered": {
+  "icon": "powered_rail",
+  "name": "Ligne droite ornée alimentée de tunnel"
+ },
+ "fancy_tunnel_tjunction": {
+  "icon": "stone_bricks",
+  "name": "Carrefour en T orné de tunnel"
+ },
+ "fancy_vertical_bottom": {
+  "icon": "cobblestone_wall",
+  "name": "Bas orné de verticale"
+ },
+ "fancy_vertical_middle": {
+  "icon": "cobblestone_wall",
+  "name": "Milieu orné de verticale"
+ },
+ "fancy_vertical_slope": {
+  "icon": "cobblestone_wall",
+  "name": "Rampe ornée de verticale"
+ },
+ "fancy_vertical_top": {
+  "icon": "cobblestone_wall",
+  "name": "Sommet orné de verticale"
+ },
+ "fancycornereven": {
+  "icon": "dirt_path",
+  "name": "Angle orné pair"
+ },
+ "fancycornerodd": {
+  "icon": "dirt_path",
+  "name": "Angle orné impair"
+ },
+ "fancyevenfork": {
+  "icon": "dirt_path",
+  "name": "Embranchement orné"
+ },
+ "fancyfield": {
+  "icon": "wheat_seeds",
+  "name": "Champ orné"
+ },
+ "fancyintersectioneven": {
+  "icon": "dirt_path",
+  "name": "Carrefour orné pair"
+ },
+ "fancyintersectionodd": {
+  "icon": "dirt_path",
+  "name": "Carrefour orné impair"
+ },
+ "fancylamppost": {
+  "icon": "lantern",
+  "name": "Poste orné de lampe"
+ },
+ "fancylong": {
+  "icon": "dirt_path",
+  "name": "Longue route ornée"
+ },
+ "fancymini": {
+  "icon": "dirt_path",
+  "name": "Petite route ornée"
+ },
+ "fancypatheven": {
+  "icon": "dirt_path",
+  "name": "Chemin orné pair"
+ },
+ "fancypathodd": {
+  "icon": "dirt_path",
+  "name": "Chemin orné impair"
+ },
+ "fancyrailbridge": {
+  "icon": "rail",
+  "name": "Pont orné de voie ferrée"
+ },
+ "fancyshort": {
+  "icon": "dirt_path",
+  "name": "Route ornée courte"
+ },
+ "fancystairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier orné"
+ },
+ "fancystepup": {
+  "icon": "stone_brick_stairs",
+  "name": "Marche ornée"
+ },
+ "fancyt": {
+  "icon": "dirt_path",
+  "name": "Carrefour orné en T"
+ },
+ "fancytjunctioneven": {
+  "icon": "dirt_path",
+  "name": "Carrefour en T orné pair"
+ },
+ "fancytjunctionodd": {
+  "icon": "dirt_path",
+  "name": "Carrefour en T orné impair"
+ },
+ "farm": {
+  "icon": "wooden_hoe",
+  "name": "Ferme"
+ },
+ "farmerhallbeige": {
+  "icon": "wooden_hoe",
+  "name": "Salle des fermiers beige"
+ },
+ "farmerhalldiorite": {
+  "icon": "wooden_hoe",
+  "name": "Salle des fermiers en diorite"
+ },
+ "farmerhallsand": {
+  "icon": "wooden_hoe",
+  "name": "Salle des fermiers en grès"
+ },
+ "farmerhallstone": {
+  "icon": "wooden_hoe",
+  "name": "Salle des fermiers en pierre"
+ },
+ "fence_a": {
+  "icon": "oak_fence",
+  "name": "Clôture"
+ },
+ "fence_b": {
+  "icon": "oak_fence",
+  "name": "Clôture B"
+ },
+ "fence_gate": {
+  "icon": "oak_fence",
+  "name": "Porte de clôture"
+ },
+ "fence_lamp": {
+  "icon": "oak_fence",
+  "name": "Lampe de clôture"
+ },
+ "fence_plug_a": {
+  "icon": "oak_fence",
+  "name": "Bouchon de clôture"
+ },
+ "fence_plug_b": {
+  "icon": "oak_fence",
+  "name": "Bouchon de clôture B"
+ },
+ "fence_short": {
+  "icon": "oak_fence",
+  "name": "Clôture courte"
+ },
+ "field": {
+  "icon": "wheat_seeds",
+  "name": "Champ"
+ },
+ "field_big": {
+  "icon": "wheat_seeds",
+  "name": "Grand champ"
+ },
+ "field_sloped": {
+  "icon": "wheat_seeds",
+  "name": "Champ en pente"
+ },
+ "fieldbasic": {
+  "icon": "wheat_seeds",
+  "name": "Champ simple"
+ },
+ "fieldfancy": {
+  "icon": "wheat_seeds",
+  "name": "Champ orné"
+ },
+ "fieldgreenhouse": {
+  "icon": "glass",
+  "name": "Serre de champ"
+ },
+ "fieldoutside": {
+  "icon": "wheat_seeds",
+  "name": "Extérieur de champ"
+ },
+ "fieldsloped": {
+  "icon": "wheat_seeds",
+  "name": "Champ en pente"
+ },
+ "fieldunderground": {
+  "icon": "wheat_seeds",
+  "name": "Champ souterrain"
+ },
+ "fill": {
+  "icon": "dirt",
+  "name": "Remblai"
+ },
+ "fisher": {
+  "icon": "fishing_rod",
+  "name": "Pêcherie"
+ },
+ "fisheralt": {
+  "icon": "fishing_rod",
+  "name": "Pêcherie"
+ },
+ "fishermanalt": {
+  "icon": "fishing_rod",
+  "name": "Pêcherie"
+ },
+ "flat": {
+  "icon": "wheat_seeds",
+  "name": "Champ plat"
+ },
+ "floating": {
+  "icon": "oak_boat",
+  "name": "Pont flottant"
+ },
+ "flourmill": {
+  "icon": "wheat",
+  "name": "Minoterie"
+ },
+ "flowershop": {
+  "icon": "poppy",
+  "name": "Houblon de parterre de fleurs"
+ },
+ "footpath": {
+  "icon": "dirt_path",
+  "name": "Chemin"
+ },
+ "footpathhosp": {
+  "icon": "dirt_path",
+  "name": "Chemin"
+ },
+ "footpathuni": {
+  "icon": "dirt_path",
+  "name": "Chemin uni"
+ },
+ "forester": {
+  "icon": "oak_sapling",
+  "name": "Forestier"
+ },
+ "foresteralt": {
+  "icon": "oak_sapling",
+  "name": "Forestier"
+ },
+ "forestryhallbeigestone": {
+  "icon": "bell",
+  "name": "Salle des forestiers beige en pierre"
+ },
+ "forestryhalldeepslate": {
+  "icon": "bell",
+  "name": "Salle des forestiers en ardoise des abîmes"
+ },
+ "forestryhallsandstone": {
+  "icon": "bell",
+  "name": "Salle des forestiers en grès"
+ },
+ "forestryhallstone": {
+  "icon": "bell",
+  "name": "Salle des forestiers en pierre"
+ },
+ "fortressfarma": {
+  "icon": "wooden_hoe",
+  "name": "Ferme de forteresse"
+ },
+ "fortressfarmb": {
+  "icon": "wooden_hoe",
+  "name": "Ferme de forteresse B"
+ },
+ "fortressfarmc": {
+  "icon": "wooden_hoe",
+  "name": "Ferme de forteresse C"
+ },
+ "fortressfield": {
+  "icon": "wheat_seeds",
+  "name": "Champ de forteresse"
+ },
+ "fountain": {
+  "icon": "water_bucket",
+  "name": "Fontaine"
+ },
+ "fourwayintersection": {
+  "icon": "dirt_path",
+  "name": "Quadruple carrefour"
+ },
+ "fullaquarium": {
+  "icon": "tropical_fish_bucket",
+  "name": "Aquarium"
+ },
+ "fullchunk": {
+  "icon": "grass_block",
+  "name": "Demi-chunk complet"
+ },
+ "fullkelpfarm": {
+  "icon": "kelp",
+  "name": "Ferme à varech complète"
+ },
+ "gallows": {
+  "icon": "chain",
+  "name": "Potence"
+ },
+ "garden": {
+  "icon": "poppy",
+  "name": "Jardin"
+ },
+ "garden_of_poseidon": {
+  "icon": "poppy",
+  "name": "Poséidon de jardin"
+ },
+ "garden_tower": {
+  "icon": "poppy",
+  "name": "Tour de jardin"
+ },
+ "gate": {
+  "icon": "oak_fence_gate",
+  "name": "Porte"
+ },
+ "gatehouse": {
+  "icon": "oak_fence_gate",
+  "name": "Porte"
+ },
+ "gatelarge": {
+  "icon": "oak_fence_gate",
+  "name": "Grande porte"
+ },
+ "gatelargeb": {
+  "icon": "oak_fence_gate",
+  "name": "Grande porte B"
+ },
+ "gatesmall": {
+  "icon": "oak_fence_gate",
+  "name": "Petite porte"
+ },
+ "geologydeepslate": {
+  "icon": "iron_ore",
+  "name": "Salle de géologie en ardoise des abîmes"
+ },
+ "geologyhall": {
+  "icon": "bell",
+  "name": "Grande salle de salle de géologie"
+ },
+ "geologyredconcrete": {
+  "icon": "iron_ore",
+  "name": "Salle de géologie en béton rouge"
+ },
+ "geologysandstone": {
+  "icon": "iron_ore",
+  "name": "Salle de géologie en grès"
+ },
+ "glowberries": {
+  "icon": "wheat_seeds",
+  "name": "Champ de baies lumineuses"
+ },
+ "glowberry": {
+  "icon": "wheat_seeds",
+  "name": "Champ de baies lumineuses"
+ },
+ "grachtenpand": {
+  "icon": "oak_door",
+  "name": "Maison de canal"
+ },
+ "gradual_stairs_long": {
+  "icon": "stone_brick_stairs",
+  "name": "Long escalier double"
+ },
+ "gradual_stairs_short": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier court double"
+ },
+ "grand_lamp_pot": {
+  "icon": "lantern",
+  "name": "Grand pot de lampe"
+ },
+ "grave_a": {
+  "icon": "skeleton_skull",
+  "name": "Tombe"
+ },
+ "grave_b": {
+  "icon": "skeleton_skull",
+  "name": "Tombe B"
+ },
+ "grave_c": {
+  "icon": "skeleton_skull",
+  "name": "Tombe C"
+ },
+ "grave_d": {
+  "icon": "skeleton_skull",
+  "name": "Tombe D"
+ },
+ "grayminimarket": {
+  "icon": "emerald",
+  "name": "Échoppe grise"
+ },
+ "green": {
+  "icon": "oak_boat",
+  "name": "Navire vert"
+ },
+ "green_open": {
+  "icon": "oak_boat",
+  "name": "Navire vert ouvert"
+ },
+ "greenhouse": {
+  "icon": "glass",
+  "name": "Serre"
+ },
+ "greenhouse_a": {
+  "icon": "glass",
+  "name": "Serre"
+ },
+ "greenhouse_b": {
+  "icon": "glass",
+  "name": "Serre B"
+ },
+ "greenminimarket": {
+  "icon": "emerald",
+  "name": "Échoppe verte"
+ },
+ "groundlevel": {
+  "icon": "rail",
+  "name": "Niveau"
+ },
+ "guard_post": {
+  "icon": "iron_sword",
+  "name": "Poste de garde"
+ },
+ "guardalt": {
+  "icon": "iron_sword",
+  "name": "Garde"
+ },
+ "guardstation": {
+  "icon": "powered_rail",
+  "name": "Gare de garde"
+ },
+ "guardtoweralt": {
+  "icon": "stone_brick_wall",
+  "name": "Tour de garde"
+ },
+ "halfchunk": {
+  "icon": "grass_block",
+  "name": "Demi-chunk"
+ },
+ "harborcourier": {
+  "icon": "oak_boat",
+  "name": "Relais des coursiers de port"
+ },
+ "harborfisher": {
+  "icon": "fishing_rod",
+  "name": "Pêcherie de port"
+ },
+ "harborintegratedcourier": {
+  "icon": "oak_boat",
+  "name": "Relais des coursiers intégré de port"
+ },
+ "hatch": {
+  "icon": "oak_trapdoor",
+  "name": "Trappe"
+ },
+ "head": {
+  "icon": "oak_planks",
+  "name": "Tête"
+ },
+ "headsman_post": {
+  "icon": "iron_axe",
+  "name": "Billot du bourreau"
+ },
+ "hedgemaze": {
+  "icon": "grass_block",
+  "name": "Labyrinthe d'haie"
+ },
+ "herderhallbeige": {
+  "icon": "bell",
+  "name": "Salle des éleveurs beige"
+ },
+ "herderhallsand": {
+  "icon": "bell",
+  "name": "Salle des éleveurs en grès"
+ },
+ "herderhallstone": {
+  "icon": "bell",
+  "name": "Salle des éleveurs en pierre"
+ },
+ "highlander": {
+  "icon": "oak_door",
+  "name": "Maison des Highlands"
+ },
+ "hillside": {
+  "icon": "oak_door",
+  "name": "Côté en colline"
+ },
+ "hive": {
+  "icon": "beehive",
+  "name": "Champ de ruche"
+ },
+ "hole_in_the_wall": {
+  "icon": "cobblestone_wall",
+  "name": "Mur de trou"
+ },
+ "home_lrg": {
+  "icon": "oak_door",
+  "name": "Grande maison"
+ },
+ "home_med": {
+  "icon": "oak_door",
+  "name": "Moyenne maison"
+ },
+ "home_sml": {
+  "icon": "oak_door",
+  "name": "Petite maison"
+ },
+ "honored_grave": {
+  "icon": "skeleton_skull",
+  "name": "Tombe d'honneur"
+ },
+ "hot_cage": {
+  "icon": "iron_bars",
+  "name": "Cage ardente"
+ },
+ "house": {
+  "icon": "oak_door",
+  "name": "Maison"
+ },
+ "housealt": {
+  "icon": "oak_door",
+  "name": "Maison"
+ },
+ "icerink": {
+  "icon": "grass_block",
+  "name": "Patinoire de glace"
+ },
+ "illumination_orb_fruit_cultivation_unit": {
+  "icon": "glow_berries",
+  "name": "Serre à baies lumineuses"
+ },
+ "imperial_aquatic_plant_cultivation_facility": {
+  "icon": "wheat_seeds",
+  "name": "Installation aquatique de culture de plantes d'impérial"
+ },
+ "inclinetrack": {
+  "icon": "rail",
+  "name": "Voie ferrée de rampe"
+ },
+ "inner_corner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle d'intérieur"
+ },
+ "innercorner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle d'intérieur"
+ },
+ "integratedcourier": {
+  "icon": "leather_boots",
+  "name": "Relais des coursiers intégré"
+ },
+ "intersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour"
+ },
+ "intersectionwalk": {
+  "icon": "dirt_path",
+  "name": "Allée de carrefour"
+ },
+ "intersectrail": {
+  "icon": "rail",
+  "name": "Voie ferrée de carrefour"
+ },
+ "inverted": {
+  "icon": "cobblestone_wall",
+  "name": "Angle inversé"
+ },
+ "ivycoveredbenches": {
+  "icon": "oak_stairs",
+  "name": "Banc envahi de lierre"
+ },
+ "jetty": {
+  "icon": "oak_boat",
+  "name": "Quai"
+ },
+ "junction": {
+  "icon": "dirt_path",
+  "name": "Carrefour"
+ },
+ "junctiona": {
+  "icon": "dirt_path",
+  "name": "Carrefour"
+ },
+ "junctionb": {
+  "icon": "dirt_path",
+  "name": "Carrefour B"
+ },
+ "junctionc": {
+  "icon": "dirt_path",
+  "name": "Carrefour C"
+ },
+ "jungle": {
+  "icon": "jungle_log",
+  "name": "Élément en bois exotique"
+ },
+ "junglequarrycap": {
+  "icon": "iron_pickaxe",
+  "name": "Couvercle de carrière en bois exotique"
+ },
+ "kelp": {
+  "icon": "kelp",
+  "name": "Champ de varech"
+ },
+ "kelp_farm": {
+  "icon": "kelp",
+  "name": "Ferme de varech"
+ },
+ "kelp_seapickles_seagrass": {
+  "icon": "kelp",
+  "name": "Champ de herbe de mer de cornichons de mer de mer de varech"
+ },
+ "kelpfarm": {
+  "icon": "kelp",
+  "name": "Ferme à varech"
+ },
+ "kelpfarmcombo": {
+  "icon": "kelp",
+  "name": "Ensemble de ferme à varech"
+ },
+ "kelpfarmdual": {
+  "icon": "kelp",
+  "name": "Ferme à varech double"
+ },
+ "kelpsmoked": {
+  "icon": "kelp",
+  "name": "Élément fumé"
+ },
+ "kelpsmokeddual": {
+  "icon": "kelp",
+  "name": "Élément fumé double"
+ },
+ "kongming_blue": {
+  "icon": "lantern",
+  "name": "Lanterne céleste bleue"
+ },
+ "kongming_green": {
+  "icon": "lantern",
+  "name": "Lanterne céleste verte"
+ },
+ "kongming_group": {
+  "icon": "lantern",
+  "name": "Groupe de lanterne céleste"
+ },
+ "kongming_orange": {
+  "icon": "lantern",
+  "name": "Lanterne céleste orange"
+ },
+ "kongming_red": {
+  "icon": "lantern",
+  "name": "Lanterne céleste rouge"
+ },
+ "kongming_white": {
+  "icon": "lantern",
+  "name": "Lanterne céleste blanche"
+ },
+ "kongming_yellow": {
+  "icon": "lantern",
+  "name": "Lanterne céleste jaune"
+ },
+ "lamp_plaza": {
+  "icon": "polished_diorite",
+  "name": "Place de lampe"
+ },
+ "large": {
+  "icon": "polished_diorite",
+  "name": "Champ de grand port"
+ },
+ "large_bricks": {
+  "icon": "stone_bricks",
+  "name": "Grand mur en briques"
+ },
+ "large_cobble": {
+  "icon": "stone_bricks",
+  "name": "Grand mur en pierres"
+ },
+ "large_lock": {
+  "icon": "water_bucket",
+  "name": "Grande écluse"
+ },
+ "large_military": {
+  "icon": "oak_boat",
+  "name": "Grand port militaire"
+ },
+ "largefield": {
+  "icon": "wheat_seeds",
+  "name": "Grand champ"
+ },
+ "largegateatlas": {
+  "icon": "oak_fence_gate",
+  "name": "Grand Atlas de porte"
+ },
+ "largegateguardian": {
+  "icon": "oak_fence_gate",
+  "name": "Grand garde de porte"
+ },
+ "largegatelionandesite": {
+  "icon": "oak_fence_gate",
+  "name": "Grand lion de porte en andésite"
+ },
+ "largegatelionblkstone": {
+  "icon": "oak_fence_gate",
+  "name": "Grand bloc de lion de porte en pierre"
+ },
+ "largegateliondiorite": {
+  "icon": "oak_fence_gate",
+  "name": "Grande porte au lion en diorite"
+ },
+ "largegateliongranite": {
+  "icon": "oak_fence_gate",
+  "name": "Grand lion de porte en granit"
+ },
+ "largegatesword": {
+  "icon": "oak_fence_gate",
+  "name": "Grande épée de porte"
+ },
+ "largejog": {
+  "icon": "dirt_path",
+  "name": "Grand décrochement"
+ },
+ "largeplatformbricka": {
+  "icon": "smooth_stone_slab",
+  "name": "Grande plateforme en briques"
+ },
+ "largeplatformbrickb": {
+  "icon": "smooth_stone_slab",
+  "name": "Grande plateforme en briques B"
+ },
+ "largeplatformbrickc": {
+  "icon": "smooth_stone_slab",
+  "name": "Grande plateforme en briques C"
+ },
+ "largeplatformcobblea": {
+  "icon": "smooth_stone_slab",
+  "name": "Grande plateforme en pierres"
+ },
+ "largeplatformcobbleb": {
+  "icon": "smooth_stone_slab",
+  "name": "Grande plateforme en pierres B"
+ },
+ "largeplatformcobblec": {
+  "icon": "smooth_stone_slab",
+  "name": "Grande plateforme en pierres C"
+ },
+ "largeplatformpatha": {
+  "icon": "dirt_path",
+  "name": "Grand chemin de plateforme"
+ },
+ "largeplatformpathb": {
+  "icon": "dirt_path",
+  "name": "Grand chemin de plateforme B"
+ },
+ "largeplatformpathc": {
+  "icon": "dirt_path",
+  "name": "Grand chemin de plateforme C"
+ },
+ "largestairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Grand escalier"
+ },
+ "largestepup": {
+  "icon": "stone_brick_stairs",
+  "name": "Grande marche"
+ },
+ "largetreeplot": {
+  "icon": "oak_sapling",
+  "name": "Grande parcelle d'arbre"
+ },
+ "lavafall": {
+  "icon": "lava_bucket",
+  "name": "Cascade de lave"
+ },
+ "libraryalt": {
+  "icon": "bookshelf",
+  "name": "Bibliothèque"
+ },
+ "light": {
+  "icon": "torch",
+  "name": "Lumière"
+ },
+ "lightblueminimarket": {
+  "icon": "torch",
+  "name": "Échoppe bleue de lumière"
+ },
+ "lightglowstone": {
+  "icon": "torch",
+  "name": "Lumière lumineuse en pierre"
+ },
+ "lightgrayminimarket": {
+  "icon": "torch",
+  "name": "Échoppe gris clair"
+ },
+ "lighthouse": {
+  "icon": "torch",
+  "name": "Maison de lumière"
+ },
+ "lightprismarine": {
+  "icon": "torch",
+  "name": "Lumière en prismarine"
+ },
+ "lightwooden": {
+  "icon": "torch",
+  "name": "Lumière en bois"
+ },
+ "limeminimarket": {
+  "icon": "emerald",
+  "name": "Échoppe vert clair"
+ },
+ "long": {
+  "icon": "rail",
+  "name": "Long port"
+ },
+ "long_base": {
+  "icon": "cobblestone_wall",
+  "name": "Longue base"
+ },
+ "long_ladders": {
+  "icon": "ladder",
+  "name": "Longue échelle"
+ },
+ "long_pillar": {
+  "icon": "quartz_pillar",
+  "name": "Long pilier"
+ },
+ "long_powered": {
+  "icon": "powered_rail",
+  "name": "Longue voie ferrée alimentée"
+ },
+ "long_raised": {
+  "icon": "oak_boat",
+  "name": "Long port surélevé"
+ },
+ "long_stair": {
+  "icon": "stone_brick_stairs",
+  "name": "Long escalier"
+ },
+ "long_tree": {
+  "icon": "oak_sapling",
+  "name": "Long arbre"
+ },
+ "long_unpowered": {
+  "icon": "powered_rail",
+  "name": "Longue voie ferrée alimentée"
+ },
+ "longbridge": {
+  "icon": "oak_planks",
+  "name": "Long pont"
+ },
+ "longdiagonalwalk": {
+  "icon": "dirt_path",
+  "name": "Longue allée de diagonale"
+ },
+ "longpath": {
+  "icon": "dirt_path",
+  "name": "Long chemin"
+ },
+ "longrailroad": {
+  "icon": "rail",
+  "name": "Longue voie ferrée"
+ },
+ "longramp": {
+  "icon": "rail",
+  "name": "Longue rampe"
+ },
+ "longramp_powered": {
+  "icon": "powered_rail",
+  "name": "Longue rampe alimentée"
+ },
+ "longroad": {
+  "icon": "dirt_path",
+  "name": "Longue route"
+ },
+ "longstairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Long escalier"
+ },
+ "longstraight": {
+  "icon": "dirt_path",
+  "name": "Longue ligne droite"
+ },
+ "longtrack": {
+  "icon": "rail",
+  "name": "Longue voie ferrée"
+ },
+ "longwalkway": {
+  "icon": "dirt_path",
+  "name": "Longue allée"
+ },
+ "loweroffice": {
+  "icon": "stone_bricks",
+  "name": "Bureau de partie basse"
+ },
+ "magentaminimarket": {
+  "icon": "emerald",
+  "name": "Échoppe magenta"
+ },
+ "maingatecourtyard": {
+  "icon": "oak_fence_gate",
+  "name": "Cour de porte principale"
+ },
+ "maingatedock": {
+  "icon": "oak_fence_gate",
+  "name": "Quai de porte principale"
+ },
+ "market": {
+  "icon": "emerald",
+  "name": "Marché"
+ },
+ "market_plaza": {
+  "icon": "polished_diorite",
+  "name": "Place de marché"
+ },
+ "marketplace": {
+  "icon": "emerald",
+  "name": "Place de marché"
+ },
+ "marketsquare": {
+  "icon": "emerald",
+  "name": "Marché"
+ },
+ "mausoleum": {
+  "icon": "skeleton_skull",
+  "name": "Mausolée"
+ },
+ "meat_grinder": {
+  "icon": "grindstone",
+  "name": "Hachoir à viande"
+ },
+ "medal_bw": {
+  "icon": "gold_ingot",
+  "name": "Médaille noire et blanche"
+ },
+ "medal_ry": {
+  "icon": "gold_ingot",
+  "name": "Médaille rouge et jaune"
+ },
+ "medium": {
+  "icon": "polished_diorite",
+  "name": "Moyen port"
+ },
+ "medium_base": {
+  "icon": "cobblestone_wall",
+  "name": "Moyenne base"
+ },
+ "medium_bricks": {
+  "icon": "stone_bricks",
+  "name": "Moyen mur en briques"
+ },
+ "medium_cobble": {
+  "icon": "stone_bricks",
+  "name": "Moyen mur en pierres"
+ },
+ "medium_military": {
+  "icon": "oak_boat",
+  "name": "Moyen port militaire"
+ },
+ "medium_norsemen_ship": {
+  "icon": "oak_boat",
+  "name": "Moyen navire de Nordiques"
+ },
+ "medium_pirate_ship": {
+  "icon": "oak_boat",
+  "name": "Moyen navire pirate"
+ },
+ "medium_raised": {
+  "icon": "oak_boat",
+  "name": "Moyen port surélevé"
+ },
+ "medium_stair": {
+  "icon": "stone_brick_stairs",
+  "name": "Moyen escalier"
+ },
+ "medium_sunk_ship": {
+  "icon": "oak_boat",
+  "name": "Moyen navire d'épave"
+ },
+ "mediumbridge": {
+  "icon": "oak_planks",
+  "name": "Moyen pont"
+ },
+ "mediumfield": {
+  "icon": "wheat_seeds",
+  "name": "Moyen champ"
+ },
+ "mediumjog": {
+  "icon": "dirt_path",
+  "name": "Moyen décrochement"
+ },
+ "mediumpark": {
+  "icon": "grass_block",
+  "name": "Moyen parc"
+ },
+ "mediumquarryshaft": {
+  "icon": "iron_pickaxe",
+  "name": "Moyen puits de mine de carrière"
+ },
+ "mediumshort": {
+  "icon": "rail",
+  "name": "Moyenne voie ferrée courte"
+ },
+ "mediumstepup": {
+  "icon": "stone_brick_stairs",
+  "name": "Moyenne marche"
+ },
+ "megatreecrimson": {
+  "icon": "crimson_fungus",
+  "name": "Arbre géant pourpre"
+ },
+ "megatreemagma": {
+  "icon": "oak_sapling",
+  "name": "Arbre géant de magma"
+ },
+ "melonfarm": {
+  "icon": "wooden_hoe",
+  "name": "Ferme de pastèque"
+ },
+ "militaryhall": {
+  "icon": "bell",
+  "name": "Grande salle militaire"
+ },
+ "mine": {
+  "icon": "iron_pickaxe",
+  "name": "Mine"
+ },
+ "mineguard": {
+  "icon": "iron_pickaxe",
+  "name": "Garde de mine"
+ },
+ "mineralt": {
+  "icon": "iron_pickaxe",
+  "name": "Mineur"
+ },
+ "minermainshaft": {
+  "icon": "iron_pickaxe",
+  "name": "Puits de mine de mineur"
+ },
+ "minerx": {
+  "icon": "iron_pickaxe",
+  "name": "Mine"
+ },
+ "minerx2left": {
+  "icon": "iron_pickaxe",
+  "name": "Mine gauche 2"
+ },
+ "minerx2right": {
+  "icon": "iron_pickaxe",
+  "name": "Mine droite 2"
+ },
+ "minerx2top": {
+  "icon": "iron_pickaxe",
+  "name": "Sommet de mine 2"
+ },
+ "minerx3leftright": {
+  "icon": "iron_pickaxe",
+  "name": "Mine gauche droite 3"
+ },
+ "minerx3topleft": {
+  "icon": "iron_pickaxe",
+  "name": "Sommet de mine gauche 3"
+ },
+ "minerx3topright": {
+  "icon": "iron_pickaxe",
+  "name": "Sommet de mine droite 3"
+ },
+ "minipath": {
+  "icon": "dirt_path",
+  "name": "Petit chemin"
+ },
+ "minirail": {
+  "icon": "rail",
+  "name": "Mini-voie"
+ },
+ "moatcornercobble": {
+  "icon": "water_bucket",
+  "name": "Angle de douve en pierres"
+ },
+ "moatcornernether": {
+  "icon": "netherrack",
+  "name": "Nether d'angle de douve"
+ },
+ "moatcornerstone": {
+  "icon": "water_bucket",
+  "name": "Angle de douve en pierre"
+ },
+ "moatgatehouse": {
+  "icon": "water_bucket",
+  "name": "Porte de douve"
+ },
+ "moatinnercornercobble": {
+  "icon": "water_bucket",
+  "name": "Angle d'intérieur de douve en pierres"
+ },
+ "moatinnercornernether": {
+  "icon": "netherrack",
+  "name": "Nether d'angle d'intérieur de douve"
+ },
+ "moatinnercornerstone": {
+  "icon": "water_bucket",
+  "name": "Angle d'intérieur de douve en pierre"
+ },
+ "moatlargecobble": {
+  "icon": "water_bucket",
+  "name": "Grande douve en pierres"
+ },
+ "moatlargenether": {
+  "icon": "netherrack",
+  "name": "Grand Nether de douve"
+ },
+ "moatlargestone": {
+  "icon": "water_bucket",
+  "name": "Grande douve en pierre"
+ },
+ "moatsmallcobble": {
+  "icon": "water_bucket",
+  "name": "Petite douve en pierres"
+ },
+ "moatsmallgate": {
+  "icon": "water_bucket",
+  "name": "Petite porte de douve"
+ },
+ "moatsmallnether": {
+  "icon": "netherrack",
+  "name": "Petit Nether de douve"
+ },
+ "moatsmallstone": {
+  "icon": "water_bucket",
+  "name": "Petite douve en pierre"
+ },
+ "mossy_cobble": {
+  "icon": "lantern",
+  "name": "Lanterne moussue en pierres"
+ },
+ "mountdoom": {
+  "icon": "magma_block",
+  "name": "Montagne du Destin"
+ },
+ "mushroomfarm": {
+  "icon": "red_mushroom",
+  "name": "Champignonnière"
+ },
+ "mystichall": {
+  "icon": "bell",
+  "name": "Grande salle de site mystique"
+ },
+ "narrow_connector": {
+  "icon": "stone_bricks",
+  "name": "Raccord étroit"
+ },
+ "narrow_hall": {
+  "icon": "bell",
+  "name": "Grande salle étroite"
+ },
+ "narrow_intersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour étroit"
+ },
+ "narrowsafetystair": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier étroit de sécurité"
+ },
+ "nether": {
+  "icon": "netherrack",
+  "name": "Champ de nether"
+ },
+ "nether_crops": {
+  "icon": "netherrack",
+  "name": "Champ de cultures de Nether"
+ },
+ "nether_fungal_growth_facility": {
+  "icon": "netherrack",
+  "name": "Installation fongique de pousse de Nether"
+ },
+ "nether_fungi": {
+  "icon": "netherrack",
+  "name": "Champignons de Nether"
+ },
+ "nether_fungus": {
+  "icon": "warped_fungus",
+  "name": "Champignon de Nether"
+ },
+ "nether_gate": {
+  "icon": "netherrack",
+  "name": "Porte de Nether"
+ },
+ "nether_vinery_growth_facility": {
+  "icon": "vine",
+  "name": "Installation rouge et jaune de pousse de lianes de Nether"
+ },
+ "nether_vines": {
+  "icon": "vine",
+  "name": "Champ de lianes de Nether"
+ },
+ "nethermine": {
+  "icon": "netherrack",
+  "name": "Mine de Nether"
+ },
+ "netherportal": {
+  "icon": "netherrack",
+  "name": "Port de Nether"
+ },
+ "nethership": {
+  "icon": "netherrack",
+  "name": "Navire de Nether"
+ },
+ "netherstatue": {
+  "icon": "netherrack",
+  "name": "Statue de Nether"
+ },
+ "nice": {
+  "icon": "dirt_path",
+  "name": "Route ornée"
+ },
+ "nice_bridge_cross_pillars": {
+  "icon": "oak_planks",
+  "name": "Pilier orné de carrefour de pont"
+ },
+ "nice_bridge_pillars": {
+  "icon": "oak_planks",
+  "name": "Pilier orné de pont"
+ },
+ "nice_bridge_segment": {
+  "icon": "oak_planks",
+  "name": "Tronçon orné de pont"
+ },
+ "nice_bridge_span": {
+  "icon": "oak_planks",
+  "name": "Travée ornée de pont"
+ },
+ "nice_bridge_start": {
+  "icon": "oak_planks",
+  "name": "Départ orné de pont"
+ },
+ "nice_bridge_support": {
+  "icon": "oak_planks",
+  "name": "Support orné de pont"
+ },
+ "nice_bumpout": {
+  "icon": "cobblestone_wall",
+  "name": "Avancée ornée"
+ },
+ "nice_corner": {
+  "icon": "dirt_path",
+  "name": "Angle orné"
+ },
+ "nice_gate": {
+  "icon": "oak_fence_gate",
+  "name": "Porte ornée"
+ },
+ "nice_inner_corner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle orné d'intérieur"
+ },
+ "nice_intersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour orné"
+ },
+ "nice_outer_corner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle orné d'extérieur"
+ },
+ "nice_plug_a": {
+  "icon": "stone_bricks",
+  "name": "Bouchon orné"
+ },
+ "nice_plug_b": {
+  "icon": "stone_bricks",
+  "name": "Bouchon orné B"
+ },
+ "nice_plug_c": {
+  "icon": "stone_bricks",
+  "name": "Bouchon orné C"
+ },
+ "nice_short": {
+  "icon": "cobblestone_wall",
+  "name": "Élément orné court"
+ },
+ "nice_stairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier orné"
+ },
+ "nice_stepup": {
+  "icon": "stone_brick_stairs",
+  "name": "Marche ornée"
+ },
+ "nice_straight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite ornée"
+ },
+ "nice_tjunction": {
+  "icon": "dirt_path",
+  "name": "Carrefour en T orné"
+ },
+ "nice_vertical_bottom": {
+  "icon": "cobblestone_wall",
+  "name": "Bas orné de verticale"
+ },
+ "nice_vertical_middle": {
+  "icon": "cobblestone_wall",
+  "name": "Milieu orné de verticale"
+ },
+ "nice_vertical_slope": {
+  "icon": "cobblestone_wall",
+  "name": "Rampe ornée de verticale"
+ },
+ "nice_vertical_top": {
+  "icon": "cobblestone_wall",
+  "name": "Sommet orné de verticale"
+ },
+ "nicecornereven": {
+  "icon": "dirt_path",
+  "name": "Angle orné pair"
+ },
+ "nicecornerodd": {
+  "icon": "dirt_path",
+  "name": "Angle orné impair"
+ },
+ "niceintersectioneven": {
+  "icon": "dirt_path",
+  "name": "Carrefour orné pair"
+ },
+ "niceintersectionodd": {
+  "icon": "dirt_path",
+  "name": "Carrefour orné impair"
+ },
+ "nicelamppost": {
+  "icon": "lantern",
+  "name": "Poste orné de lampe"
+ },
+ "nicepatheven": {
+  "icon": "dirt_path",
+  "name": "Chemin orné pair"
+ },
+ "nicepathodd": {
+  "icon": "dirt_path",
+  "name": "Chemin orné impair"
+ },
+ "nicerailbridge": {
+  "icon": "rail",
+  "name": "Pont orné de voie ferrée"
+ },
+ "nicetjunctioneven": {
+  "icon": "dirt_path",
+  "name": "Carrefour en T orné pair"
+ },
+ "nicetjunctionodd": {
+  "icon": "dirt_path",
+  "name": "Carrefour en T orné impair"
+ },
+ "niflheim_crimson_fungus": {
+  "icon": "crimson_fungus",
+  "name": "Champignon pourpre de Niflheim"
+ },
+ "niflheim_crimson_vine": {
+  "icon": "crimson_fungus",
+  "name": "Champ de lianes pourpres de Niflheim"
+ },
+ "niflheim_warped_fungus": {
+  "icon": "warped_fungus",
+  "name": "Champignon biscornu de Niflheim"
+ },
+ "niflheim_warped_vines": {
+  "icon": "vine",
+  "name": "Champ de lianes biscornue de Niflheim"
+ },
+ "noble_guard_post": {
+  "icon": "iron_sword",
+  "name": "Poste de garde de noble"
+ },
+ "oak": {
+  "icon": "oak_boat",
+  "name": "Navire en chêne"
+ },
+ "oakquarrycap": {
+  "icon": "iron_pickaxe",
+  "name": "Couvercle de carrière en chêne"
+ },
+ "oakwallcorner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle de mur en chêne"
+ },
+ "oakwallgate": {
+  "icon": "oak_fence_gate",
+  "name": "Porte de mur en chêne"
+ },
+ "oakwallincorner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle de mur en chêne"
+ },
+ "oakwallsegment": {
+  "icon": "cobblestone_wall",
+  "name": "Tronçon de mur en chêne"
+ },
+ "oakwallstairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier de mur en chêne"
+ },
+ "oasis": {
+  "icon": "grass_block",
+  "name": "Oasis"
+ },
+ "old_stone_park": {
+  "icon": "grass_block",
+  "name": "Ancien parc en pierre"
+ },
+ "one_up": {
+  "icon": "rail",
+  "name": "Voie ferrée montante"
+ },
+ "orangeminimarket": {
+  "icon": "emerald",
+  "name": "Échoppe orange"
+ },
+ "outer_corner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle d'extérieur"
+ },
+ "pagoda": {
+  "icon": "spruce_planks",
+  "name": "Pagode"
+ },
+ "palisade_corner": {
+  "icon": "spruce_log",
+  "name": "Angle de palissade"
+ },
+ "palisade_gate": {
+  "icon": "spruce_log",
+  "name": "Porte de palissade"
+ },
+ "palisade_platform": {
+  "icon": "spruce_log",
+  "name": "Plateforme de palissade"
+ },
+ "palisade_wall": {
+  "icon": "spruce_log",
+  "name": "Mur de palissade"
+ },
+ "panel_a": {
+  "icon": "stone_bricks",
+  "name": "Panneau"
+ },
+ "panel_b": {
+  "icon": "stone_bricks",
+  "name": "Panneau B"
+ },
+ "park": {
+  "icon": "grass_block",
+  "name": "Parc"
+ },
+ "parklarge": {
+  "icon": "grass_block",
+  "name": "Grand parc"
+ },
+ "parkway": {
+  "icon": "grass_block",
+  "name": "Voie de parc"
+ },
+ "pathcorner": {
+  "icon": "dirt_path",
+  "name": "Angle de chemin"
+ },
+ "pathintersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour de chemin"
+ },
+ "pathlong": {
+  "icon": "dirt_path",
+  "name": "Long chemin"
+ },
+ "pathmini": {
+  "icon": "dirt_path",
+  "name": "Petit chemin"
+ },
+ "pathshort": {
+  "icon": "dirt_path",
+  "name": "Chemin court"
+ },
+ "pathstairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier de chemin"
+ },
+ "pathstepup": {
+  "icon": "stone_brick_stairs",
+  "name": "Marche de chemin"
+ },
+ "patrolpoint": {
+  "icon": "iron_sword",
+  "name": "Point de patrouille"
+ },
+ "pedastal_gold": {
+  "icon": "chiseled_stone_bricks",
+  "name": "Piédestal en or"
+ },
+ "pedastal_iron": {
+  "icon": "chiseled_stone_bricks",
+  "name": "Piédestal en fer"
+ },
+ "pedastal_oak": {
+  "icon": "chiseled_stone_bricks",
+  "name": "Piédestal en chêne"
+ },
+ "pedestal_gold": {
+  "icon": "chiseled_stone_bricks",
+  "name": "Piédestal en or"
+ },
+ "pedestal_iron": {
+  "icon": "chiseled_stone_bricks",
+  "name": "Piédestal en fer"
+ },
+ "pedestal_oak": {
+  "icon": "chiseled_stone_bricks",
+  "name": "Piédestal en chêne"
+ },
+ "pharao": {
+  "icon": "gold_block",
+  "name": "Statue de pharaon"
+ },
+ "pickle_seagrass": {
+  "icon": "wheat_seeds",
+  "name": "Champ de herbe de mer de cornichons de mer"
+ },
+ "pillar": {
+  "icon": "quartz_pillar",
+  "name": "Pilier"
+ },
+ "pillar_a": {
+  "icon": "quartz_pillar",
+  "name": "Pilier"
+ },
+ "pillar_b": {
+  "icon": "quartz_pillar",
+  "name": "Pilier B"
+ },
+ "pillar_c": {
+  "icon": "quartz_pillar",
+  "name": "Pilier C"
+ },
+ "pillar_d": {
+  "icon": "quartz_pillar",
+  "name": "Pilier D"
+ },
+ "pillarcorner": {
+  "icon": "quartz_pillar",
+  "name": "Angle de pilier"
+ },
+ "pillarintersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour de pilier"
+ },
+ "pillarwalk": {
+  "icon": "dirt_path",
+  "name": "Allée de pilier"
+ },
+ "pillory": {
+  "icon": "oak_fence",
+  "name": "Pilori"
+ },
+ "pinkminimarket": {
+  "icon": "emerald",
+  "name": "Échoppe rose"
+ },
+ "plain_bridge_cross_pillars": {
+  "icon": "oak_planks",
+  "name": "Pilier simple de carrefour de pont"
+ },
+ "plain_bridge_pillars": {
+  "icon": "oak_planks",
+  "name": "Pilier simple de pont"
+ },
+ "plain_bridge_segment": {
+  "icon": "oak_planks",
+  "name": "Tronçon simple de pont"
+ },
+ "plain_bridge_span": {
+  "icon": "oak_planks",
+  "name": "Travée simple de pont"
+ },
+ "plain_bridge_start": {
+  "icon": "oak_planks",
+  "name": "Départ simple de pont"
+ },
+ "plain_bridge_support": {
+  "icon": "oak_planks",
+  "name": "Support simple de pont"
+ },
+ "plain_bumpout": {
+  "icon": "cobblestone_wall",
+  "name": "Avancée simple"
+ },
+ "plain_corner": {
+  "icon": "dirt_path",
+  "name": "Angle simple"
+ },
+ "plain_gate": {
+  "icon": "oak_fence_gate",
+  "name": "Porte simple"
+ },
+ "plain_inner_corner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle simple d'intérieur"
+ },
+ "plain_intersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour simple"
+ },
+ "plain_outer_corner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle simple d'extérieur"
+ },
+ "plain_plug_a": {
+  "icon": "stone_bricks",
+  "name": "Bouchon simple"
+ },
+ "plain_plug_b": {
+  "icon": "stone_bricks",
+  "name": "Bouchon simple B"
+ },
+ "plain_plug_c": {
+  "icon": "stone_bricks",
+  "name": "Bouchon simple C"
+ },
+ "plain_short": {
+  "icon": "cobblestone_wall",
+  "name": "Élément simple court"
+ },
+ "plain_stairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier simple"
+ },
+ "plain_stepup": {
+  "icon": "stone_brick_stairs",
+  "name": "Marche simple"
+ },
+ "plain_straight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite simple"
+ },
+ "plain_tjunction": {
+  "icon": "dirt_path",
+  "name": "Carrefour en T simple"
+ },
+ "plain_vertical_bottom": {
+  "icon": "cobblestone_wall",
+  "name": "Bas simple de verticale"
+ },
+ "plain_vertical_middle": {
+  "icon": "cobblestone_wall",
+  "name": "Milieu simple de verticale"
+ },
+ "plain_vertical_slope": {
+  "icon": "cobblestone_wall",
+  "name": "Rampe simple de verticale"
+ },
+ "plain_vertical_top": {
+  "icon": "cobblestone_wall",
+  "name": "Sommet simple de verticale"
+ },
+ "playerconnector": {
+  "icon": "stone_bricks",
+  "name": "Raccord de joueur"
+ },
+ "playerhouse": {
+  "icon": "oak_door",
+  "name": "Maison de joueur"
+ },
+ "playermansion": {
+  "icon": "oak_door",
+  "name": "Manoir du seigneur"
+ },
+ "playermansion_invisible": {
+  "icon": "oak_door",
+  "name": "Manoir du seigneur visible"
+ },
+ "playground": {
+  "icon": "slime_ball",
+  "name": "Aire de jeux"
+ },
+ "playset": {
+  "icon": "grass_block",
+  "name": "Jeux"
+ },
+ "plub_b": {
+  "icon": "rail",
+  "name": "Double voie B"
+ },
+ "plug_a": {
+  "icon": "stone_bricks",
+  "name": "Bouchon"
+ },
+ "plug_b": {
+  "icon": "stone_bricks",
+  "name": "Bouchon B"
+ },
+ "plug_c": {
+  "icon": "stone_bricks",
+  "name": "Bouchon C"
+ },
+ "plug_pillar": {
+  "icon": "quartz_pillar",
+  "name": "Pilier de bouchon"
+ },
+ "plug_straight": {
+  "icon": "stone_bricks",
+  "name": "Ligne droite de bouchon"
+ },
+ "pond": {
+  "icon": "grass_block",
+  "name": "Mare"
+ },
+ "poor": {
+  "icon": "dirt_path",
+  "name": "Route simple"
+ },
+ "poor_corner": {
+  "icon": "dirt_path",
+  "name": "Angle simple"
+ },
+ "poor_guard_post": {
+  "icon": "iron_sword",
+  "name": "Poste simple de garde"
+ },
+ "poor_intersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour simple"
+ },
+ "poor_park": {
+  "icon": "grass_block",
+  "name": "Parc simple"
+ },
+ "poor_slope": {
+  "icon": "dirt_path",
+  "name": "Rampe simple"
+ },
+ "poor_stairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier simple"
+ },
+ "poor_stepup": {
+  "icon": "stone_brick_stairs",
+  "name": "Marche simple"
+ },
+ "poor_straight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite simple"
+ },
+ "poor_tjunction": {
+  "icon": "dirt_path",
+  "name": "Carrefour en T simple"
+ },
+ "poorcornereven": {
+  "icon": "dirt_path",
+  "name": "Angle simple pair"
+ },
+ "poorcornerodd": {
+  "icon": "dirt_path",
+  "name": "Angle simple impair"
+ },
+ "poorintersectioneven": {
+  "icon": "dirt_path",
+  "name": "Carrefour simple pair"
+ },
+ "poorintersectionodd": {
+  "icon": "dirt_path",
+  "name": "Carrefour simple impair"
+ },
+ "poorlamppost": {
+  "icon": "lantern",
+  "name": "Poste simple de lampe"
+ },
+ "poorpatheven": {
+  "icon": "dirt_path",
+  "name": "Chemin simple pair"
+ },
+ "poorpathodd": {
+  "icon": "dirt_path",
+  "name": "Chemin simple impair"
+ },
+ "poortjunctioneven": {
+  "icon": "dirt_path",
+  "name": "Carrefour en T simple pair"
+ },
+ "poortjunctionodd": {
+  "icon": "dirt_path",
+  "name": "Carrefour en T simple impair"
+ },
+ "powered": {
+  "icon": "powered_rail",
+  "name": "Voie ferrée alimentée"
+ },
+ "premiumovergroundcorner": {
+  "icon": "rail",
+  "name": "Angle élaboré en surface"
+ },
+ "premiumovergroundintersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour élaboré en surface"
+ },
+ "premiumovergroundstraight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite élaborée en surface"
+ },
+ "premiumovergroundtjumction": {
+  "icon": "rail",
+  "name": "Carrefour en T élaboré en surface"
+ },
+ "premiumundergroundcorner": {
+  "icon": "rail",
+  "name": "Angle élaboré souterrain"
+ },
+ "premiumundergroundentrance": {
+  "icon": "rail",
+  "name": "Entrée élaborée souterraine"
+ },
+ "premiumundergroundintersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour élaboré souterrain"
+ },
+ "premiumundergroundramp": {
+  "icon": "rail",
+  "name": "Rampe élaborée souterraine"
+ },
+ "premiumundergroundstraight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite élaborée souterraine"
+ },
+ "premiumundergroundtjumction": {
+  "icon": "rail",
+  "name": "Carrefour en T élaboré souterrain"
+ },
+ "purification_shrine": {
+  "icon": "candle",
+  "name": "Sanctuaire de purification"
+ },
+ "purple": {
+  "icon": "oak_boat",
+  "name": "Navire violet"
+ },
+ "purpleminimarket": {
+  "icon": "emerald",
+  "name": "Échoppe violette"
+ },
+ "quadfieldinsert": {
+  "icon": "wheat_seeds",
+  "name": "Insert de quatre champs"
+ },
+ "quartzstatue": {
+  "icon": "armor_stand",
+  "name": "Statue en quartz"
+ },
+ "railbasicbridge": {
+  "icon": "rail",
+  "name": "Pont simple de voie ferrée"
+ },
+ "railbridgecolumn": {
+  "icon": "rail",
+  "name": "Pilier de pont de voie ferrée"
+ },
+ "railbridgesegment": {
+  "icon": "rail",
+  "name": "Tronçon de pont de voie ferrée"
+ },
+ "railbridgestart": {
+  "icon": "rail",
+  "name": "Départ de pont de voie ferrée"
+ },
+ "railclimb": {
+  "icon": "rail",
+  "name": "Montée de voie ferrée"
+ },
+ "railcorner": {
+  "icon": "rail",
+  "name": "Angle de voie ferrée"
+ },
+ "railend": {
+  "icon": "rail",
+  "name": "Extrémité de voie ferrée"
+ },
+ "railfancybridge": {
+  "icon": "rail",
+  "name": "Pont orné de voie ferrée"
+ },
+ "railgroundcorner": {
+  "icon": "rail",
+  "name": "Angle de sol de voie ferrée"
+ },
+ "railgroundenter": {
+  "icon": "rail",
+  "name": "Entrée au sol de voie ferrée"
+ },
+ "railgroundreturn": {
+  "icon": "rail",
+  "name": "Retour de sol de voie ferrée"
+ },
+ "railgroundstraight": {
+  "icon": "rail",
+  "name": "Ligne droite de sol de voie ferrée"
+ },
+ "railnicebridge": {
+  "icon": "rail",
+  "name": "Pont orné de voie ferrée"
+ },
+ "railraisedcenter": {
+  "icon": "rail",
+  "name": "Centre surélevé de voie ferrée"
+ },
+ "railraisedend": {
+  "icon": "rail",
+  "name": "Extrémité surélevée de voie ferrée"
+ },
+ "railreturn": {
+  "icon": "rail",
+  "name": "Retour de voie ferrée"
+ },
+ "railstairs": {
+  "icon": "rail",
+  "name": "Escalier de voie ferrée"
+ },
+ "railstop": {
+  "icon": "rail",
+  "name": "Arrêt de voie ferrée"
+ },
+ "railstraight": {
+  "icon": "rail",
+  "name": "Ligne droite de voie ferrée"
+ },
+ "railuturn": {
+  "icon": "rail",
+  "name": "Demi-tour de voie ferrée"
+ },
+ "ramp": {
+  "icon": "rail",
+  "name": "Rampe"
+ },
+ "ramp_powered": {
+  "icon": "powered_rail",
+  "name": "Rampe alimentée"
+ },
+ "rcorner": {
+  "icon": "dirt_path",
+  "name": "Angle droit"
+ },
+ "red": {
+  "icon": "oak_boat",
+  "name": "Navire rouge"
+ },
+ "redminimarket": {
+  "icon": "emerald",
+  "name": "Échoppe rouge"
+ },
+ "redoubt": {
+  "icon": "cobblestone_wall",
+  "name": "Redoute"
+ },
+ "residencealt": {
+  "icon": "red_bed",
+  "name": "Résidence"
+ },
+ "residencelarge": {
+  "icon": "red_bed",
+  "name": "Grande résidence"
+ },
+ "residenceluxuryblue": {
+  "icon": "red_bed",
+  "name": "Résidence de luxe bleue"
+ },
+ "residenceluxuryred": {
+  "icon": "red_bed",
+  "name": "Résidence de luxe rouge"
+ },
+ "residencetower": {
+  "icon": "stone_brick_wall",
+  "name": "Tour de résidence"
+ },
+ "restaurant": {
+  "icon": "cooked_beef",
+  "name": "Restaurant"
+ },
+ "road_hatch": {
+  "icon": "dirt_path",
+  "name": "Trappe de route"
+ },
+ "road_hatch_ladder": {
+  "icon": "ladder",
+  "name": "Échelle de trappe de route"
+ },
+ "road_high": {
+  "icon": "dirt_path",
+  "name": "Haute route"
+ },
+ "road_inner_corner": {
+  "icon": "dirt_path",
+  "name": "Angle d'intérieur de route"
+ },
+ "road_junctiona": {
+  "icon": "dirt_path",
+  "name": "Carrefour de route"
+ },
+ "road_junctionb": {
+  "icon": "dirt_path",
+  "name": "Carrefour de route B"
+ },
+ "road_ladder": {
+  "icon": "ladder",
+  "name": "Échelle de route"
+ },
+ "road_low": {
+  "icon": "dirt_path",
+  "name": "Route basse"
+ },
+ "road_outer_corner": {
+  "icon": "dirt_path",
+  "name": "Angle d'extérieur de route"
+ },
+ "road_straight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite de route"
+ },
+ "roadniceevensplit": {
+  "icon": "dirt_path",
+  "name": "Embranchement orné pair de route"
+ },
+ "roadrailcorner": {
+  "icon": "rail",
+  "name": "Angle de voie ferrée de route"
+ },
+ "roadrailintersection": {
+  "icon": "rail",
+  "name": "Carrefour de voie ferrée de route"
+ },
+ "roadrailstraight": {
+  "icon": "rail",
+  "name": "Ligne droite de voie ferrée de route"
+ },
+ "roadrailtjunction": {
+  "icon": "rail",
+  "name": "Carrefour en T de voie ferrée de route"
+ },
+ "roadsimplecorner": {
+  "icon": "dirt_path",
+  "name": "Angle simple de route"
+ },
+ "roadsimpleintersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour simple de route"
+ },
+ "roadsimplesplit": {
+  "icon": "dirt_path",
+  "name": "Embranchement simple de route"
+ },
+ "roadsimplestraight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite simple de route"
+ },
+ "roadsimpletjunction": {
+  "icon": "dirt_path",
+  "name": "Carrefour en T simple de route"
+ },
+ "roofed_carriage": {
+  "icon": "minecart",
+  "name": "Carrosse couvert"
+ },
+ "rural_lantern": {
+  "icon": "lantern",
+  "name": "Lanterne rurale"
+ },
+ "rural_lantern_tall": {
+  "icon": "lantern",
+  "name": "Haute lanterne rurale"
+ },
+ "rural_light": {
+  "icon": "torch",
+  "name": "Lumière rurale"
+ },
+ "rural_light_tall": {
+  "icon": "torch",
+  "name": "Haute lumière rurale"
+ },
+ "safetystairinsert": {
+  "icon": "stone_brick_stairs",
+  "name": "Insert d’escalier de sécurité"
+ },
+ "sandstonewalkintersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour d'allée en grès"
+ },
+ "sandstonewalkstairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier d'allée en grès"
+ },
+ "sandstonewalkstraight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite d'allée en grès"
+ },
+ "scholarshall": {
+  "icon": "bell",
+  "name": "Grande salle de savants"
+ },
+ "scorcheddeepslate": {
+  "icon": "bell",
+  "name": "Grande salle brûlée en ardoise des abîmes"
+ },
+ "scorchedhall": {
+  "icon": "bell",
+  "name": "Grande salle brûlée"
+ },
+ "sea": {
+  "icon": "wheat_seeds",
+  "name": "Champ de mer"
+ },
+ "sea_grass": {
+  "icon": "wheat_seeds",
+  "name": "Champ de herbe de mer"
+ },
+ "sea_pickles": {
+  "icon": "wheat_seeds",
+  "name": "Champ de cornichons de mer de mer"
+ },
+ "sea_pickles_grass": {
+  "icon": "wheat_seeds",
+  "name": "Champ de herbe de cornichons de mer de mer"
+ },
+ "sea_plants": {
+  "icon": "seagrass",
+  "name": "Champ de plantes de mer"
+ },
+ "seagrass_and_sea_pickles": {
+  "icon": "wheat_seeds",
+  "name": "Champ de cornichons de mer de mer d'herbe de mer"
+ },
+ "seapickles_seagrass": {
+  "icon": "wheat_seeds",
+  "name": "Champ de herbe de mer de cornichons de mer de mer"
+ },
+ "seating": {
+  "icon": "oak_stairs",
+  "name": "Coin repos"
+ },
+ "seating_area_rural": {
+  "icon": "oak_stairs",
+  "name": "Espace rural de coin repos"
+ },
+ "seating_area_urban": {
+  "icon": "oak_stairs",
+  "name": "Espace urbain de coin repos"
+ },
+ "section": {
+  "icon": "oak_boat",
+  "name": "Tronçon"
+ },
+ "section_claw_crane": {
+  "icon": "chain",
+  "name": "Grue de griffe de tronçon"
+ },
+ "section_crane": {
+  "icon": "chain",
+  "name": "Grue de tronçon"
+ },
+ "section_diagonal": {
+  "icon": "oak_boat",
+  "name": "Diagonale de tronçon"
+ },
+ "section_diagonal_large": {
+  "icon": "oak_boat",
+  "name": "Grande diagonale de tronçon"
+ },
+ "section_dock": {
+  "icon": "oak_planks",
+  "name": "Quai de tronçon"
+ },
+ "section_end": {
+  "icon": "cobblestone_wall",
+  "name": "Extrémité de tronçon"
+ },
+ "section_incline_high": {
+  "icon": "cobblestone_wall",
+  "name": "Haute rampe de tronçon"
+ },
+ "section_incline_highest": {
+  "icon": "cobblestone_wall",
+  "name": "Haute rampe de tronçon"
+ },
+ "section_incline_low": {
+  "icon": "cobblestone_wall",
+  "name": "Rampe basse de tronçon"
+ },
+ "section_incline_medium": {
+  "icon": "cobblestone_wall",
+  "name": "Moyenne rampe de tronçon"
+ },
+ "section_inner_corner": {
+  "icon": "oak_boat",
+  "name": "Angle d'intérieur de tronçon"
+ },
+ "section_large": {
+  "icon": "oak_boat",
+  "name": "Grand tronçon"
+ },
+ "section_long": {
+  "icon": "dirt_path",
+  "name": "Long tronçon"
+ },
+ "section_long_glowing": {
+  "icon": "dirt_path",
+  "name": "Long tronçon lumineux"
+ },
+ "section_medium": {
+  "icon": "dirt_path",
+  "name": "Moyen tronçon"
+ },
+ "section_medium_glowing": {
+  "icon": "dirt_path",
+  "name": "Moyen tronçon lumineux"
+ },
+ "section_outer_corner": {
+  "icon": "oak_boat",
+  "name": "Angle d'extérieur de tronçon"
+ },
+ "section_short": {
+  "icon": "dirt_path",
+  "name": "Tronçon court"
+ },
+ "section_short_glowing": {
+  "icon": "dirt_path",
+  "name": "Tronçon court lumineux"
+ },
+ "section_small": {
+  "icon": "cobblestone_wall",
+  "name": "Petit tronçon"
+ },
+ "section_stairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier de tronçon"
+ },
+ "section_stilts": {
+  "icon": "oak_planks",
+  "name": "Pilotis de tronçon"
+ },
+ "section_tiny": {
+  "icon": "poppy",
+  "name": "Petit tronçon"
+ },
+ "segment": {
+  "icon": "cobblestone_wall",
+  "name": "Tronçon"
+ },
+ "sewer": {
+  "icon": "iron_bars",
+  "name": "Égout"
+ },
+ "shepherdalt": {
+  "icon": "white_wool",
+  "name": "Bergerie"
+ },
+ "ship": {
+  "icon": "oak_boat",
+  "name": "Navire"
+ },
+ "ship_construction": {
+  "icon": "oak_boat",
+  "name": "Chantier naval de navire"
+ },
+ "ship_construction_large": {
+  "icon": "oak_boat",
+  "name": "Grand chantier naval de navire"
+ },
+ "shipwright": {
+  "icon": "oak_boat",
+  "name": "Épave droite"
+ },
+ "short": {
+  "icon": "rail",
+  "name": "Port court"
+ },
+ "short_base": {
+  "icon": "cobblestone_wall",
+  "name": "Base courte"
+ },
+ "short_bench": {
+  "icon": "oak_stairs",
+  "name": "Banc court"
+ },
+ "short_bush": {
+  "icon": "sweet_berries",
+  "name": "Buisson court"
+ },
+ "short_ladders": {
+  "icon": "ladder",
+  "name": "Échelle courte"
+ },
+ "short_light": {
+  "icon": "torch",
+  "name": "Lumière courte"
+ },
+ "short_pillar": {
+  "icon": "quartz_pillar",
+  "name": "Pilier court"
+ },
+ "short_powered": {
+  "icon": "powered_rail",
+  "name": "Voie ferrée courte alimentée"
+ },
+ "short_raised": {
+  "icon": "oak_boat",
+  "name": "Port court surélevé"
+ },
+ "short_span": {
+  "icon": "oak_planks",
+  "name": "Travée courte"
+ },
+ "short_stair_a": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier court"
+ },
+ "short_stair_b": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier court B"
+ },
+ "short_tree": {
+  "icon": "oak_sapling",
+  "name": "Arbre court"
+ },
+ "short_unpowered": {
+  "icon": "powered_rail",
+  "name": "Voie ferrée courte alimentée"
+ },
+ "shortbridge": {
+  "icon": "oak_planks",
+  "name": "Pont court"
+ },
+ "shortdiagonalwalk": {
+  "icon": "dirt_path",
+  "name": "Allée courte de diagonale"
+ },
+ "shortpath": {
+  "icon": "dirt_path",
+  "name": "Chemin court"
+ },
+ "shortrailroad": {
+  "icon": "rail",
+  "name": "Voie ferrée courte"
+ },
+ "shortramp": {
+  "icon": "rail",
+  "name": "Rampe courte"
+ },
+ "shortramp_powered": {
+  "icon": "powered_rail",
+  "name": "Rampe courte alimentée"
+ },
+ "shortroad": {
+  "icon": "dirt_path",
+  "name": "Route courte"
+ },
+ "shortstairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier court"
+ },
+ "shortstraight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite courte"
+ },
+ "shorttrack": {
+  "icon": "rail",
+  "name": "Voie ferrée courte"
+ },
+ "shortwalkway": {
+  "icon": "dirt_path",
+  "name": "Allée courte"
+ },
+ "shrine": {
+  "icon": "candle",
+  "name": "Sanctuaire"
+ },
+ "side": {
+  "icon": "cobblestone_wall",
+  "name": "Côté"
+ },
+ "side_base": {
+  "icon": "cobblestone_wall",
+  "name": "Base de côté"
+ },
+ "simple": {
+  "icon": "dirt_path",
+  "name": "Route simple"
+ },
+ "simple_bridge_cross_pillars": {
+  "icon": "oak_planks",
+  "name": "Pilier simple de carrefour de pont"
+ },
+ "simple_bridge_pillars": {
+  "icon": "oak_planks",
+  "name": "Pilier simple de pont"
+ },
+ "simple_bridge_segment": {
+  "icon": "oak_planks",
+  "name": "Tronçon simple de pont"
+ },
+ "simple_bridge_start": {
+  "icon": "oak_planks",
+  "name": "Départ simple de pont"
+ },
+ "simple_corner": {
+  "icon": "rail",
+  "name": "Angle simple"
+ },
+ "simple_corner_powered": {
+  "icon": "powered_rail",
+  "name": "Angle simple alimenté"
+ },
+ "simple_intersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour simple"
+ },
+ "simple_slope": {
+  "icon": "rail",
+  "name": "Rampe simple"
+ },
+ "simple_slope_powered": {
+  "icon": "powered_rail",
+  "name": "Rampe simple alimentée"
+ },
+ "simple_stairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier simple"
+ },
+ "simple_stepup": {
+  "icon": "stone_brick_stairs",
+  "name": "Marche simple"
+ },
+ "simple_straight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite simple"
+ },
+ "simple_straight_powered": {
+  "icon": "powered_rail",
+  "name": "Ligne droite simple alimentée"
+ },
+ "simple_tjunction": {
+  "icon": "dirt_path",
+  "name": "Carrefour en T simple"
+ },
+ "simple_tunnel_corner": {
+  "icon": "stone_bricks",
+  "name": "Angle simple de tunnel"
+ },
+ "simple_tunnel_corner_powered": {
+  "icon": "powered_rail",
+  "name": "Angle simple alimenté de tunnel"
+ },
+ "simple_tunnel_intersection": {
+  "icon": "stone_bricks",
+  "name": "Carrefour simple de tunnel"
+ },
+ "simple_tunnel_slope": {
+  "icon": "stone_bricks",
+  "name": "Rampe simple de tunnel"
+ },
+ "simple_tunnel_slope_powered": {
+  "icon": "powered_rail",
+  "name": "Rampe simple alimentée de tunnel"
+ },
+ "simple_tunnel_straight": {
+  "icon": "stone_bricks",
+  "name": "Ligne droite simple de tunnel"
+ },
+ "simple_tunnel_straight_powered": {
+  "icon": "powered_rail",
+  "name": "Ligne droite simple alimentée de tunnel"
+ },
+ "simple_tunnel_tjunction": {
+  "icon": "stone_bricks",
+  "name": "Carrefour en T simple de tunnel"
+ },
+ "simplecornereven": {
+  "icon": "dirt_path",
+  "name": "Angle simple pair"
+ },
+ "simplecornerodd": {
+  "icon": "dirt_path",
+  "name": "Angle simple impair"
+ },
+ "simplefountain": {
+  "icon": "water_bucket",
+  "name": "Fontaine simple"
+ },
+ "simpleintersectioneven": {
+  "icon": "dirt_path",
+  "name": "Carrefour simple pair"
+ },
+ "simpleintersectionodd": {
+  "icon": "dirt_path",
+  "name": "Carrefour simple impair"
+ },
+ "simplelamppost": {
+  "icon": "lantern",
+  "name": "Poste simple de lampe"
+ },
+ "simpleovergroundcorner": {
+  "icon": "rail",
+  "name": "Angle simple en surface"
+ },
+ "simpleovergroundintersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour simple en surface"
+ },
+ "simpleovergroundstraight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite simple en surface"
+ },
+ "simpleovergroundtjumction": {
+  "icon": "rail",
+  "name": "Carrefour en T simple en surface"
+ },
+ "simplepatheven": {
+  "icon": "dirt_path",
+  "name": "Chemin simple pair"
+ },
+ "simplepathodd": {
+  "icon": "dirt_path",
+  "name": "Chemin simple impair"
+ },
+ "simplequarryshaft": {
+  "icon": "iron_pickaxe",
+  "name": "Puits de mine simple de carrière"
+ },
+ "simplerailbridge": {
+  "icon": "rail",
+  "name": "Pont simple de voie ferrée"
+ },
+ "simpletjunctioneven": {
+  "icon": "dirt_path",
+  "name": "Carrefour en T simple pair"
+ },
+ "simpletjunctionodd": {
+  "icon": "dirt_path",
+  "name": "Carrefour en T simple impair"
+ },
+ "simpleundergroundcorner": {
+  "icon": "rail",
+  "name": "Angle simple souterrain"
+ },
+ "simpleundergroundentrance": {
+  "icon": "rail",
+  "name": "Entrée simple souterraine"
+ },
+ "simpleundergroundintersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour simple souterrain"
+ },
+ "simpleundergroundramp": {
+  "icon": "rail",
+  "name": "Rampe simple souterraine"
+ },
+ "simpleundergroundstraight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite simple souterraine"
+ },
+ "simpleundergroundtjumction": {
+  "icon": "rail",
+  "name": "Carrefour en T simple souterrain"
+ },
+ "single": {
+  "icon": "cobblestone_wall",
+  "name": "Arche simple"
+ },
+ "single_base": {
+  "icon": "cobblestone_wall",
+  "name": "Base simple"
+ },
+ "single_house": {
+  "icon": "oak_door",
+  "name": "Maison simple"
+ },
+ "singlea": {
+  "icon": "stone_bricks",
+  "name": "Façade simple"
+ },
+ "singleb": {
+  "icon": "stone_bricks",
+  "name": "Façade simple"
+ },
+ "singleblockwalk": {
+  "icon": "water_bucket",
+  "name": "Allée simple"
+ },
+ "singlec": {
+  "icon": "stone_bricks",
+  "name": "Façade simple C"
+ },
+ "singled": {
+  "icon": "stone_bricks",
+  "name": "Façade simple D"
+ },
+ "singlee": {
+  "icon": "stone_bricks",
+  "name": "Façade simple E"
+ },
+ "sitting_plaza": {
+  "icon": "polished_diorite",
+  "name": "Place assise"
+ },
+ "skadi's_rest": {
+  "icon": "grass_block",
+  "name": "Repos de Skadi"
+ },
+ "slope": {
+  "icon": "cobblestone_wall",
+  "name": "Rampe"
+ },
+ "sloped": {
+  "icon": "wheat_seeds",
+  "name": "Champ en pente"
+ },
+ "slopelong_powered": {
+  "icon": "powered_rail",
+  "name": "Longue rampe alimentée"
+ },
+ "slopelong_unpowered": {
+  "icon": "powered_rail",
+  "name": "Longue rampe alimentée"
+ },
+ "slopeshort_powered": {
+  "icon": "powered_rail",
+  "name": "Rampe courte alimentée"
+ },
+ "slopeshort_unpowered": {
+  "icon": "powered_rail",
+  "name": "Rampe courte alimentée"
+ },
+ "small": {
+  "icon": "polished_diorite",
+  "name": "Petit jardin"
+ },
+ "small_bricks": {
+  "icon": "stone_bricks",
+  "name": "Petit mur en briques"
+ },
+ "small_cart_a": {
+  "icon": "minecart",
+  "name": "Petite charrette"
+ },
+ "small_cart_b": {
+  "icon": "minecart",
+  "name": "Petite charrette B"
+ },
+ "small_cobble": {
+  "icon": "stone_bricks",
+  "name": "Petit mur en pierres"
+ },
+ "small_crossroads": {
+  "icon": "dirt_path",
+  "name": "Petite route de carrefour"
+ },
+ "small_end_a": {
+  "icon": "oak_planks",
+  "name": "Petite extrémité"
+ },
+ "small_end_b": {
+  "icon": "oak_planks",
+  "name": "Petite extrémité B"
+ },
+ "small_lock": {
+  "icon": "water_bucket",
+  "name": "Petite écluse"
+ },
+ "small_log_cart": {
+  "icon": "minecart",
+  "name": "Petite charrette de tronc"
+ },
+ "small_norsemen_ship": {
+  "icon": "oak_boat",
+  "name": "Petit navire de Nordiques"
+ },
+ "small_park": {
+  "icon": "grass_block",
+  "name": "Petit parc"
+ },
+ "small_pirate_ship": {
+  "icon": "oak_boat",
+  "name": "Petit navire pirate"
+ },
+ "small_roofed": {
+  "icon": "oak_boat",
+  "name": "Petit port couvert"
+ },
+ "small_span_a": {
+  "icon": "oak_planks",
+  "name": "Petite travée"
+ },
+ "small_span_b": {
+  "icon": "oak_planks",
+  "name": "Petite travée B"
+ },
+ "small_stable": {
+  "icon": "saddle",
+  "name": "Petite écurie"
+ },
+ "small_sunk_ship": {
+  "icon": "oak_boat",
+  "name": "Petit navire d'épave"
+ },
+ "small_well": {
+  "icon": "water_bucket",
+  "name": "Petit puits"
+ },
+ "small_wheat_cart": {
+  "icon": "wheat",
+  "name": "Petite charrette de blé"
+ },
+ "smallfield": {
+  "icon": "wheat_seeds",
+  "name": "Petit champ"
+ },
+ "smallgatelava": {
+  "icon": "oak_fence_gate",
+  "name": "Petite porte de lave"
+ },
+ "smallgatewater": {
+  "icon": "oak_fence_gate",
+  "name": "Petite porte d'eau"
+ },
+ "smallgatezen": {
+  "icon": "oak_fence_gate",
+  "name": "Petit zen de porte"
+ },
+ "smallintersection": {
+  "icon": "dirt_path",
+  "name": "Petit carrefour"
+ },
+ "smalljog": {
+  "icon": "dirt_path",
+  "name": "Petit décrochement"
+ },
+ "smallpark": {
+  "icon": "grass_block",
+  "name": "Petit parc"
+ },
+ "smallpillarintersection": {
+  "icon": "dirt_path",
+  "name": "Petit carrefour de pilier"
+ },
+ "smallplatformbricka": {
+  "icon": "smooth_stone_slab",
+  "name": "Petite plateforme en briques"
+ },
+ "smallplatformbrickb": {
+  "icon": "smooth_stone_slab",
+  "name": "Petite plateforme en briques B"
+ },
+ "smallplatformbrickc": {
+  "icon": "smooth_stone_slab",
+  "name": "Petite plateforme en briques C"
+ },
+ "smallplatformcobblea": {
+  "icon": "smooth_stone_slab",
+  "name": "Petite plateforme en pierres"
+ },
+ "smallplatformcobbleb": {
+  "icon": "smooth_stone_slab",
+  "name": "Petite plateforme en pierres B"
+ },
+ "smallplatformcobblec": {
+  "icon": "smooth_stone_slab",
+  "name": "Petite plateforme en pierres C"
+ },
+ "smallplatformpatha": {
+  "icon": "dirt_path",
+  "name": "Petit chemin de plateforme"
+ },
+ "smallplatformpathb": {
+  "icon": "dirt_path",
+  "name": "Petit chemin de plateforme B"
+ },
+ "smallplatformpathc": {
+  "icon": "dirt_path",
+  "name": "Petit chemin de plateforme C"
+ },
+ "smallship": {
+  "icon": "oak_boat",
+  "name": "Petit navire"
+ },
+ "smallstairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Petit escalier"
+ },
+ "smallstepup": {
+  "icon": "stone_brick_stairs",
+  "name": "Petite marche"
+ },
+ "smalltreeplot": {
+  "icon": "oak_sapling",
+  "name": "Petite parcelle d'arbre"
+ },
+ "smallwell": {
+  "icon": "water_bucket",
+  "name": "Petit puits"
+ },
+ "solid_corner": {
+  "icon": "water_bucket",
+  "name": "Angle plein"
+ },
+ "solid_straight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite pleine"
+ },
+ "span": {
+  "icon": "oak_planks",
+  "name": "Travée"
+ },
+ "spiraltrack": {
+  "icon": "rail",
+  "name": "Voie ferrée de colimaçon"
+ },
+ "spruce": {
+  "icon": "oak_boat",
+  "name": "Navire en sapin"
+ },
+ "stable": {
+  "icon": "saddle",
+  "name": "Écurie"
+ },
+ "stair": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier"
+ },
+ "stair_long": {
+  "icon": "stone_brick_stairs",
+  "name": "Long escalier"
+ },
+ "stair_short": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier court"
+ },
+ "stair_slope": {
+  "icon": "stone_brick_stairs",
+  "name": "Rampe d'escalier"
+ },
+ "stair_steep": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier en pente"
+ },
+ "staircaseone": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier"
+ },
+ "staircasetwo": {
+  "icon": "stone_brick_stairs",
+  "name": "Double escalier"
+ },
+ "stairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier"
+ },
+ "stairs_flat": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier plat"
+ },
+ "stairs_long": {
+  "icon": "stone_brick_stairs",
+  "name": "Long escalier"
+ },
+ "stairs_short": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier court"
+ },
+ "stairs_stilts": {
+  "icon": "stone_brick_stairs",
+  "name": "Pilotis d'escalier"
+ },
+ "stairsa": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier"
+ },
+ "stairsb": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier B"
+ },
+ "stairsc": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier C"
+ },
+ "stairscobble": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier en pierres"
+ },
+ "stairspath": {
+  "icon": "stone_brick_stairs",
+  "name": "Chemin d'escalier"
+ },
+ "stairswood": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier en bois"
+ },
+ "stall_cloth": {
+  "icon": "emerald",
+  "name": "Tissu d'étal"
+ },
+ "stall_dye": {
+  "icon": "emerald",
+  "name": "Teinture d'étal"
+ },
+ "stall_fish": {
+  "icon": "emerald",
+  "name": "Étal de poissonnier"
+ },
+ "stall_food": {
+  "icon": "emerald",
+  "name": "Nourriture d'étal"
+ },
+ "stall_general": {
+  "icon": "emerald",
+  "name": "Étal général"
+ },
+ "stall_meat_one": {
+  "icon": "emerald",
+  "name": "Étal de boucher"
+ },
+ "stall_meat_two": {
+  "icon": "emerald",
+  "name": "Grand étal de boucher"
+ },
+ "stall_pottery_one": {
+  "icon": "emerald",
+  "name": "Étal rouge et jaune"
+ },
+ "stall_pottery_two": {
+  "icon": "emerald",
+  "name": "Double étal rouge et jaune"
+ },
+ "starterconnector": {
+  "icon": "stone_bricks",
+  "name": "Raccord de départ"
+ },
+ "starterintersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour de départ"
+ },
+ "starterjunglehome": {
+  "icon": "oak_door",
+  "name": "Maison de départ en bois exotique"
+ },
+ "station": {
+  "icon": "powered_rail",
+  "name": "Gare"
+ },
+ "station_long": {
+  "icon": "powered_rail",
+  "name": "Longue gare"
+ },
+ "station_med": {
+  "icon": "powered_rail",
+  "name": "Moyenne gare"
+ },
+ "station_short": {
+  "icon": "powered_rail",
+  "name": "Gare courte"
+ },
+ "station_stair_l": {
+  "icon": "powered_rail",
+  "name": "Escalier de gare L"
+ },
+ "station_stair_m": {
+  "icon": "powered_rail",
+  "name": "Escalier de gare M"
+ },
+ "statue": {
+  "icon": "armor_stand",
+  "name": "Statue"
+ },
+ "statuearmsraised": {
+  "icon": "armor_stand",
+  "name": "Armes surélevée de statue"
+ },
+ "statuechair": {
+  "icon": "armor_stand",
+  "name": "Fauteuil de statue"
+ },
+ "statueflower": {
+  "icon": "poppy",
+  "name": "Parterre de fleurs de statue"
+ },
+ "statueposeidon": {
+  "icon": "armor_stand",
+  "name": "Poséidon de statue"
+ },
+ "statuepresent": {
+  "icon": "armor_stand",
+  "name": "Cadeau de statue"
+ },
+ "statuestaff": {
+  "icon": "armor_stand",
+  "name": "Bâton de statue"
+ },
+ "statueswordshield": {
+  "icon": "armor_stand",
+  "name": "Bouclier d'épée de statue"
+ },
+ "statueweight": {
+  "icon": "armor_stand",
+  "name": "Poids de statue"
+ },
+ "steep_stairs_long": {
+  "icon": "stone_brick_stairs",
+  "name": "Long escalier en pente"
+ },
+ "steep_stairs_short": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier en pente court"
+ },
+ "steepinstairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier en pente"
+ },
+ "steepoutstairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier en pente extérieur"
+ },
+ "steepstairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier en pente"
+ },
+ "step_rail_dual": {
+  "icon": "rail",
+  "name": "Voie ferrée de marche double"
+ },
+ "step_rail_quad": {
+  "icon": "rail",
+  "name": "Quadruple voie ferrée de marche"
+ },
+ "step_road_dual": {
+  "icon": "stone_brick_stairs",
+  "name": "Route de marche double"
+ },
+ "step_road_quad": {
+  "icon": "stone_brick_stairs",
+  "name": "Quadruple route de marche"
+ },
+ "step_wall_dual": {
+  "icon": "stone_brick_stairs",
+  "name": "Mur de marche double"
+ },
+ "step_wall_quad": {
+  "icon": "stone_brick_stairs",
+  "name": "Quadruple mur de marche"
+ },
+ "stepup": {
+  "icon": "stone_brick_stairs",
+  "name": "Marche"
+ },
+ "stepuptrack": {
+  "icon": "rail",
+  "name": "Voie ferrée de marche"
+ },
+ "stone": {
+  "icon": "lantern",
+  "name": "Lanterne en pierre"
+ },
+ "stone_bridge": {
+  "icon": "oak_planks",
+  "name": "Pont en pierre"
+ },
+ "stone_corner": {
+  "icon": "water_bucket",
+  "name": "Angle en pierre"
+ },
+ "stone_lion": {
+  "icon": "armor_stand",
+  "name": "Lion en pierre"
+ },
+ "stone_lion_b": {
+  "icon": "armor_stand",
+  "name": "Lion en pierre B"
+ },
+ "stone_lion_c": {
+  "icon": "armor_stand",
+  "name": "Lion en pierre C"
+ },
+ "stone_lion_l": {
+  "icon": "armor_stand",
+  "name": "Lion en pierre L"
+ },
+ "stone_lion_p": {
+  "icon": "armor_stand",
+  "name": "Lion en pierre P"
+ },
+ "stone_straight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite en pierre"
+ },
+ "stonebridgespan": {
+  "icon": "oak_planks",
+  "name": "Travée de pont en pierre"
+ },
+ "stonebridgestairs": {
+  "icon": "oak_planks",
+  "name": "Escalier de pont en pierre"
+ },
+ "stonelower": {
+  "icon": "stone_bricks",
+  "name": "Partie basse en pierre"
+ },
+ "stonelower_for_up": {
+  "icon": "stone_bricks",
+  "name": "Partie basse montante en pierre"
+ },
+ "stonestairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier en pierre"
+ },
+ "stonestairsinsert": {
+  "icon": "stone_brick_stairs",
+  "name": "Insert d'escalier en pierre"
+ },
+ "stonesurfacestairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier de surface en pierre"
+ },
+ "stoneupper": {
+  "icon": "stone_bricks",
+  "name": "Partie haute en pierre"
+ },
+ "stoneupper_safetystair": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier de sécurité de partie haute en pierre"
+ },
+ "storage_shed": {
+  "icon": "chest",
+  "name": "Remise d'entrepôt"
+ },
+ "storagehall": {
+  "icon": "chest",
+  "name": "Grande salle d'entrepôt"
+ },
+ "straight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite"
+ },
+ "straight_both": {
+  "icon": "dirt_path",
+  "name": "Double ligne droite"
+ },
+ "straight_left": {
+  "icon": "dirt_path",
+  "name": "Ligne droite gauche"
+ },
+ "straight_long": {
+  "icon": "dirt_path",
+  "name": "Longue ligne droite"
+ },
+ "straight_medium": {
+  "icon": "dirt_path",
+  "name": "Moyenne ligne droite"
+ },
+ "straight_pillar": {
+  "icon": "quartz_pillar",
+  "name": "Pilier de ligne droite"
+ },
+ "straight_powered": {
+  "icon": "powered_rail",
+  "name": "Ligne droite alimentée"
+ },
+ "straight_right": {
+  "icon": "dirt_path",
+  "name": "Ligne droite droite"
+ },
+ "straight_short": {
+  "icon": "dirt_path",
+  "name": "Ligne droite courte"
+ },
+ "straight_small": {
+  "icon": "dirt_path",
+  "name": "Petite ligne droite"
+ },
+ "straight_stair": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier de ligne droite"
+ },
+ "straight_tower": {
+  "icon": "stone_brick_wall",
+  "name": "Tour de ligne droite"
+ },
+ "straighta": {
+  "icon": "dirt_path",
+  "name": "Ligne droite"
+ },
+ "straightb": {
+  "icon": "dirt_path",
+  "name": "Ligne droite B"
+ },
+ "straightc": {
+  "icon": "dirt_path",
+  "name": "Ligne droite C"
+ },
+ "straighthillfield": {
+  "icon": "wheat_seeds",
+  "name": "Champ en colline de ligne droite"
+ },
+ "subway": {
+  "icon": "powered_rail",
+  "name": "Métro"
+ },
+ "subwaycorner": {
+  "icon": "powered_rail",
+  "name": "Angle de métro"
+ },
+ "subwaystraight": {
+  "icon": "powered_rail",
+  "name": "Ligne droite de métro"
+ },
+ "subwaytunnelentrance": {
+  "icon": "powered_rail",
+  "name": "Entrée de tunnel de métro"
+ },
+ "subwayuturn": {
+  "icon": "powered_rail",
+  "name": "Demi-tour de métro"
+ },
+ "sugar": {
+  "icon": "sugar_cane",
+  "name": "Champ de canne à sucre"
+ },
+ "sugar_cane": {
+  "icon": "sugar_cane",
+  "name": "Champ de canne de canne à sucre"
+ },
+ "sugarcane": {
+  "icon": "sugar_cane",
+  "name": "Champ de canne à sucre"
+ },
+ "supply_camp": {
+  "icon": "white_wool",
+  "name": "Campement de ravitaillement"
+ },
+ "supplycamp": {
+  "icon": "white_wool",
+  "name": "Campement de ravitaillement"
+ },
+ "supplyship": {
+  "icon": "oak_boat",
+  "name": "Ravitaillement"
+ },
+ "support": {
+  "icon": "rail",
+  "name": "Support"
+ },
+ "support_corner": {
+  "icon": "rail",
+  "name": "Angle de support"
+ },
+ "support_powered": {
+  "icon": "powered_rail",
+  "name": "Support alimenté"
+ },
+ "swineherd": {
+  "icon": "porkchop",
+  "name": "Porcherie"
+ },
+ "tastyhall": {
+  "icon": "bell",
+  "name": "Grande salle gourmande"
+ },
+ "tavernalt": {
+  "icon": "honey_bottle",
+  "name": "Auberge"
+ },
+ "tavernrestaurant": {
+  "icon": "honey_bottle",
+  "name": "Restaurant d'auberge"
+ },
+ "tcorner": {
+  "icon": "cobblestone_wall",
+  "name": "Carrefour en T"
+ },
+ "tee": {
+  "icon": "dirt_path",
+  "name": "Carrefour en T"
+ },
+ "tee_base": {
+  "icon": "cobblestone_wall",
+  "name": "Base de carrefour en T"
+ },
+ "temple_of_zeus": {
+  "icon": "chiseled_quartz_block",
+  "name": "Temple de Zeus"
+ },
+ "threeblockwalk": {
+  "icon": "water_bucket",
+  "name": "Triple allée de bloc"
+ },
+ "threelong": {
+  "icon": "oak_door",
+  "name": "Triple élément"
+ },
+ "threewayintersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour à trois voies"
+ },
+ "threewaystation": {
+  "icon": "powered_rail",
+  "name": "Gare à trois voies"
+ },
+ "tiny": {
+  "icon": "poppy",
+  "name": "Petit jardin"
+ },
+ "tjunction": {
+  "icon": "dirt_path",
+  "name": "Carrefour en T"
+ },
+ "tower": {
+  "icon": "stone_brick_wall",
+  "name": "Tour"
+ },
+ "tower_incline": {
+  "icon": "stone_brick_wall",
+  "name": "Rampe de tour"
+ },
+ "towncenter": {
+  "icon": "bell",
+  "name": "Centre-ville"
+ },
+ "townhallentrance": {
+  "icon": "bell",
+  "name": "Entrée d'hôtel de ville"
+ },
+ "trail": {
+  "icon": "rail",
+  "name": "Piste"
+ },
+ "trans_alley": {
+  "icon": "dirt_path",
+  "name": "Ruelle de transition"
+ },
+ "trans_nature": {
+  "icon": "dirt_path",
+  "name": "Nature de transition"
+ },
+ "tree_large": {
+  "icon": "oak_sapling",
+  "name": "Grand arbre"
+ },
+ "tree_small": {
+  "icon": "oak_sapling",
+  "name": "Petit arbre"
+ },
+ "treeblue": {
+  "icon": "oak_sapling",
+  "name": "Arbre bleu"
+ },
+ "treefarm": {
+  "icon": "oak_sapling",
+  "name": "Ferme forestière"
+ },
+ "treefarmraised": {
+  "icon": "oak_sapling",
+  "name": "Ferme forestière surélevée"
+ },
+ "treegreen": {
+  "icon": "oak_sapling",
+  "name": "Arbre vert"
+ },
+ "treeleaves": {
+  "icon": "oak_sapling",
+  "name": "Feuillage d'arbre"
+ },
+ "treepurple": {
+  "icon": "oak_sapling",
+  "name": "Arbre violet"
+ },
+ "treered": {
+  "icon": "oak_sapling",
+  "name": "Arbre rouge"
+ },
+ "trees": {
+  "icon": "oak_sapling",
+  "name": "Arbre"
+ },
+ "trireme": {
+  "icon": "oak_boat",
+  "name": "Trirème"
+ },
+ "trireme_docked": {
+  "icon": "oak_boat",
+  "name": "Trirème à quai"
+ },
+ "tunnelintersect": {
+  "icon": "stone_bricks",
+  "name": "Carrefour de tunnel"
+ },
+ "tunnellong": {
+  "icon": "stone_bricks",
+  "name": "Long tunnel"
+ },
+ "tunnelmini": {
+  "icon": "stone_bricks",
+  "name": "Petit tunnel"
+ },
+ "tunnelshort": {
+  "icon": "stone_bricks",
+  "name": "Tunnel court"
+ },
+ "tunnelt": {
+  "icon": "stone_bricks",
+  "name": "Tunnel en T"
+ },
+ "turn": {
+  "icon": "dirt_path",
+  "name": "Virage"
+ },
+ "twisted_vines": {
+  "icon": "vine",
+  "name": "Champ de lianes tordue"
+ },
+ "two_up": {
+  "icon": "rail",
+  "name": "Double voie ferrée montante"
+ },
+ "twoblockwalk": {
+  "icon": "water_bucket",
+  "name": "Double allée de bloc"
+ },
+ "twosquared": {
+  "icon": "oak_door",
+  "name": "Double élément"
+ },
+ "twowaystation": {
+  "icon": "powered_rail",
+  "name": "Gare à deux voies"
+ },
+ "twowide": {
+  "icon": "oak_door",
+  "name": "Double élément"
+ },
+ "upperoffice": {
+  "icon": "stone_bricks",
+  "name": "Bureau de partie haute"
+ },
+ "urban_lantern": {
+  "icon": "lantern",
+  "name": "Lanterne urbaine"
+ },
+ "vertical_bottom": {
+  "icon": "rail",
+  "name": "Bas de verticale"
+ },
+ "vertical_middle": {
+  "icon": "rail",
+  "name": "Milieu de verticale"
+ },
+ "vertical_top": {
+  "icon": "rail",
+  "name": "Sommet de verticale"
+ },
+ "villa": {
+  "icon": "oak_door",
+  "name": "Villa"
+ },
+ "vines": {
+  "icon": "vine",
+  "name": "Champ de lianes"
+ },
+ "volleyballcourt": {
+  "icon": "grass_block",
+  "name": "Terrain de volley"
+ },
+ "walkway_endcap": {
+  "icon": "dirt_path",
+  "name": "Extrémité d'allée"
+ },
+ "walkwaytrackone": {
+  "icon": "rail",
+  "name": "Voie ferrée d'allée"
+ },
+ "walkwaytracktwo": {
+  "icon": "rail",
+  "name": "Double voie ferrée d'allée"
+ },
+ "wall": {
+  "icon": "cobblestone_wall",
+  "name": "Mur"
+ },
+ "wall_a": {
+  "icon": "cobblestone_wall",
+  "name": "Mur"
+ },
+ "wall_b": {
+  "icon": "cobblestone_wall",
+  "name": "Mur B"
+ },
+ "wall_c": {
+  "icon": "cobblestone_wall",
+  "name": "Mur C"
+ },
+ "wallcorner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle de mur"
+ },
+ "wallcourier": {
+  "icon": "cobblestone_wall",
+  "name": "Relais des coursiers de mur"
+ },
+ "walldrawbridge": {
+  "icon": "oak_planks",
+  "name": "Pont-levis de mur"
+ },
+ "wallgate": {
+  "icon": "oak_fence_gate",
+  "name": "Porte de mur"
+ },
+ "wallincorner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle de mur"
+ },
+ "wallinnercorner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle d'intérieur de mur"
+ },
+ "wallinnercornertower": {
+  "icon": "stone_brick_wall",
+  "name": "Tour d'angle d'intérieur de mur"
+ },
+ "wallinsidecorner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle de côté de mur"
+ },
+ "walloutercornertower": {
+  "icon": "stone_brick_wall",
+  "name": "Tour d'angle d'extérieur de mur"
+ },
+ "walloutsidecorner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle d'extérieur de mur"
+ },
+ "wallseahorse": {
+  "icon": "cobblestone_wall",
+  "name": "Cheval de mer de mur"
+ },
+ "wallstair": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier de mur"
+ },
+ "wallstairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier de mur"
+ },
+ "wallstraight": {
+  "icon": "cobblestone_wall",
+  "name": "Ligne droite de mur"
+ },
+ "wallstraightlong": {
+  "icon": "cobblestone_wall",
+  "name": "Longue ligne droite de mur"
+ },
+ "wallstraightshort": {
+  "icon": "cobblestone_wall",
+  "name": "Ligne droite courte de mur"
+ },
+ "wallstraighttower": {
+  "icon": "stone_brick_wall",
+  "name": "Tour de ligne droite de mur"
+ },
+ "wallsword": {
+  "icon": "cobblestone_wall",
+  "name": "Épée"
+ },
+ "walltower": {
+  "icon": "stone_brick_wall",
+  "name": "Tour de rempart"
+ },
+ "war_encampment": {
+  "icon": "white_wool",
+  "name": "Campement de guerre"
+ },
+ "warehouse_large": {
+  "icon": "oak_door",
+  "name": "Grand entrepôt"
+ },
+ "warehousealt": {
+  "icon": "oak_door",
+  "name": "Entrepôt"
+ },
+ "warehousecourier": {
+  "icon": "oak_door",
+  "name": "Relais des coursiers d'entrepôt"
+ },
+ "warm_water_vegetation_cultivation_unit": {
+  "icon": "wheat_seeds",
+  "name": "Champ de unité chaude de culture de végétation d'eau"
+ },
+ "warped_crimson_plants": {
+  "icon": "crimson_fungus",
+  "name": "Champ de plantes biscornue pourpre"
+ },
+ "warpedquarrycap": {
+  "icon": "iron_pickaxe",
+  "name": "Couvercle biscornu de carrière"
+ },
+ "waterfall": {
+  "icon": "water_bucket",
+  "name": "Cascade"
+ },
+ "waterside_park": {
+  "icon": "grass_block",
+  "name": "Parc de côté d'eau"
+ },
+ "waypoint": {
+  "icon": "lodestone",
+  "name": "Balise"
+ },
+ "waystone": {
+  "icon": "lodestone",
+  "name": "Pierre de passage"
+ },
+ "weeping_twisting": {
+  "icon": "weeping_vines",
+  "name": "Champ pleureur tordu G"
+ },
+ "weeping_vines": {
+  "icon": "weeping_vines",
+  "name": "Champ de lianes pleureuses"
+ },
+ "well": {
+  "icon": "water_bucket",
+  "name": "Puits"
+ },
+ "well_a": {
+  "icon": "water_bucket",
+  "name": "Puits"
+ },
+ "well_b": {
+  "icon": "water_bucket",
+  "name": "Puits B"
+ },
+ "windmill": {
+  "icon": "white_wool",
+  "name": "Moulin à vent"
+ },
+ "wisteria": {
+  "icon": "purple_dye",
+  "name": "Glycine"
+ },
+ "wood_bridge": {
+  "icon": "oak_planks",
+  "name": "Pont en bois"
+ },
+ "wooden_cage": {
+  "icon": "iron_bars",
+  "name": "Cage en bois"
+ },
+ "wooden_corner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle en bois"
+ },
+ "wooden_gate": {
+  "icon": "oak_fence_gate",
+  "name": "Porte en bois"
+ },
+ "wooden_inner_corner": {
+  "icon": "cobblestone_wall",
+  "name": "Angle d'intérieur en bois"
+ },
+ "wooden_segment_large": {
+  "icon": "cobblestone_wall",
+  "name": "Grand tronçon en bois"
+ },
+ "wooden_stairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier en bois"
+ },
+ "woodenwalkintersection": {
+  "icon": "dirt_path",
+  "name": "Carrefour d'allée en bois"
+ },
+ "woodenwalkstairs": {
+  "icon": "stone_brick_stairs",
+  "name": "Escalier d'allée en bois"
+ },
+ "woodenwalkstraight": {
+  "icon": "dirt_path",
+  "name": "Ligne droite d'allée en bois"
+ },
+ "workshopconnector": {
+  "icon": "crafting_table",
+  "name": "Raccord d'atelier"
+ },
+ "workshopdiorite": {
+  "icon": "crafting_table",
+  "name": "Atelier en diorite"
+ },
+ "workshopfields": {
+  "icon": "wheat_seeds",
+  "name": "Champ d'atelier"
+ },
+ "workshopleaves": {
+  "icon": "crafting_table",
+  "name": "Feuillage d'atelier"
+ },
+ "workshopoak": {
+  "icon": "crafting_table",
+  "name": "Atelier en chêne"
+ },
+ "yellow": {
+  "icon": "oak_boat",
+  "name": "Navire jaune"
+ },
+ "yellowminimarket": {
+  "icon": "emerald",
+  "name": "Échoppe jaune"
+ },
+ "yinyang_bw": {
+  "icon": "ender_eye",
+  "name": "Yin-yang noir et blanc"
+ },
+ "yinyang_yr": {
+  "icon": "ender_eye",
+  "name": "Yin-yang"
+ },
+ "zenstatue": {
+  "icon": "armor_stand",
+  "name": "Statue de zen"
+ }
+}

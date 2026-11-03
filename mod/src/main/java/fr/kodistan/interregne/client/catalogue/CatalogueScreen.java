@@ -68,6 +68,7 @@ public final class CatalogueScreen extends Screen
     private final WindowExtendedBuildTool buildTool;
     private final BlockPos anchor;
     private CompletableFuture<List<CatalogueIndex.Entry>> loading;
+    private boolean loaded;
     private List<CatalogueIndex.Entry> entries = List.of();
     private CatalogueIndex.Need need = lastNeed;
     @Nullable
@@ -114,23 +115,26 @@ public final class CatalogueScreen extends Screen
     {
         StructurePacks.ensureSelectedPack();
         final StructurePackMeta pack = StructurePacks.getSelectedPack();
-        entries = List.of();
-        selected = null;
-        requirements.clear();
+        loaded = false;
         loading = pack == null || minecraft.level == null ? CompletableFuture.completedFuture(List.of())
           : CatalogueIndex.of(pack.getName(), minecraft.level.registryAccess());
+        CatalogueIndex.preloadAll();
+        tick();
     }
 
     @Override
     public void tick()
     {
-        if (entries.isEmpty() && loading != null && loading.isDone())
+        if (!loaded && loading != null && loading.isDone())
         {
+            loaded = true;
+            final String previous = selected == null ? null : selected.key();
             entries = loading.getNow(List.of());
-            if (selected == null)
-            {
-                visible().stream().findFirst().ifPresent(this::select);
-            }
+            requirements.clear();
+            selected = null;
+            variant = 0;
+            visible().stream().filter(e -> e.key().equals(previous)).findFirst()
+              .or(() -> visible().stream().findFirst()).ifPresent(this::select);
         }
     }
 
@@ -223,7 +227,12 @@ public final class CatalogueScreen extends Screen
         final String name = pack == null ? "—" : fit(pack.getName(), LEFT_W - 30);
         graphics.drawString(font, "◀", x + 4, y + 4, inside(mouseX, mouseY, x, y, 14, 16) ? 0xFFFFFFFF : GOLD_TEXT, false);
         graphics.drawString(font, "▶", x + LEFT_W - 17, y + 4, inside(mouseX, mouseY, x + LEFT_W - 22, y, 14, 16) ? 0xFFFFFFFF : GOLD_TEXT, false);
-        graphics.drawCenteredString(font, name, x + (LEFT_W - 8) / 2, y + 4, GOLD_TEXT);
+        final boolean overName = inside(mouseX, mouseY, x + 14, y, LEFT_W - 36, 16);
+        graphics.drawCenteredString(font, name, x + (LEFT_W - 8) / 2, y + 4, overName ? 0xFFFFFFFF : GOLD_TEXT);
+        if (overName)
+        {
+            graphics.renderTooltip(font, Component.literal("Voir tous les styles"), (int) mouseX, (int) mouseY);
+        }
         y += 24;
         graphics.drawString(font, "BESOINS", x, y, MUTED, false);
         y += 11;
@@ -261,19 +270,39 @@ public final class CatalogueScreen extends Screen
         return (centerWidth() - GAP) / 2;
     }
 
+    private List<FormattedCharSequence> needDesc()
+    {
+        return font.split(Component.literal(need.desc()), centerWidth());
+    }
+
+    private int cardsTop()
+    {
+        return y0 + 25 + needDesc().size() * 9 + 5;
+    }
+
     private int visibleRows()
     {
-        return Math.max(1, (h - 30) / (CARD_H + GAP));
+        return Math.max(1, (y0 + h - 6 - cardsTop() + GAP) / (CARD_H + GAP));
     }
 
     private void renderCards(final GuiGraphics graphics, final int mouseX, final int mouseY)
     {
         final int left = centerLeft();
-        final int top = y0 + 25;
-        if (!loading.isDone())
+        int descY = y0 + 25;
+        for (final FormattedCharSequence line : needDesc())
+        {
+            graphics.drawString(font, line, left, descY, MUTED, false);
+            descY += 9;
+        }
+        final int top = cardsTop();
+        if (entries.isEmpty() && !loaded)
         {
             graphics.drawCenteredString(font, "Chargement des plans…", left + centerWidth() / 2, top + 40, MUTED);
             return;
+        }
+        if (!loaded)
+        {
+            graphics.drawString(font, "⟳", left + centerWidth() - 6, y0 + 7, MUTED, false);
         }
         final List<CatalogueIndex.Entry> list = visible();
         if (list.isEmpty())
@@ -365,8 +394,12 @@ public final class CatalogueScreen extends Screen
         }
         else
         {
-            graphics.drawString(font, selected.blocks() + " blocs", x, y, MUTED, false);
-            y += 9;
+            final String about = (selected.about() == null ? "" : selected.about() + " ") + selected.blocks() + " blocs.";
+            for (final FormattedCharSequence line : font.split(Component.literal(about), width))
+            {
+                graphics.drawString(font, line, x, y, MUTED, false);
+                y += 9;
+            }
         }
         y += 4;
 
@@ -468,6 +501,11 @@ public final class CatalogueScreen extends Screen
             cyclePack(1);
             return true;
         }
+        if (inside(mouseX, mouseY, lx + 14, styleY, LEFT_W - 36, 16))
+        {
+            BuildCatalogue.openStyles(buildTool);
+            return true;
+        }
         int y = styleY + 24 + 11;
         for (final CatalogueIndex.Need each : CatalogueIndex.Need.values())
         {
@@ -486,7 +524,7 @@ public final class CatalogueScreen extends Screen
         for (int i = scroll * 2; i < list.size() && i < (scroll + visibleRows()) * 2; i++)
         {
             final int cx = centerLeft() + (i % 2) * (cardWidth() + GAP);
-            final int cy = y0 + 25 + (i / 2 - scroll) * (CARD_H + GAP);
+            final int cy = cardsTop() + (i / 2 - scroll) * (CARD_H + GAP);
             if (inside(mouseX, mouseY, cx, cy, cardWidth(), CARD_H))
             {
                 select(list.get(i));
@@ -540,7 +578,12 @@ public final class CatalogueScreen extends Screen
 
     private void place()
     {
-        final Blueprint blueprint = selected.variants().get(Math.min(variant, selected.variants().size() - 1));
+        final CatalogueIndex.Ref ref = selected.variants().get(Math.min(variant, selected.variants().size() - 1));
+        final Blueprint blueprint = minecraft.level == null ? null : ref.load(minecraft.level.registryAccess());
+        if (blueprint == null)
+        {
+            return;
+        }
         ((WindowExtendedBuildToolAccessor) (Object) buildTool).interregne$setBlueprint(blueprint);
         buildTool.open();
     }
