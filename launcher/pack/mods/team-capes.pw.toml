@@ -1,0 +1,14 @@
+name = "Team Capes"
+filename = "team_capes-neoforge-1.1.1+1.21.jar"
+side = "client"
+pin = true
+
+[download]
+url = "https://cdn.modrinth.com/data/Sw4LxdbE/versions/lKJr4Icc/team_capes-neoforge-1.1.1%2B1.21.jar"
+hash-format = "sha512"
+hash = "49baa13978600f293e9428badda799c2755ca6b8c4cb0a39250cf33faffbfb7ef77ad87392bbf6e68c5c2b6de0dac89556b1df1a0e67041bf3a84c7ae6e8c605"
+
+[update]
+[update.modrinth]
+mod-id = "Sw4LxdbE"
+version = "lKJr4Icc"

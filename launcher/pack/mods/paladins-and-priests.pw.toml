@@ -1,0 +1,14 @@
+name = "Paladins & Priests (RPG Series)"
+filename = "paladins-neoforge-2.6.4+1.21.1.jar"
+side = "both"
+pin = true
+
+[download]
+url = "https://cdn.modrinth.com/data/FxXkHaLe/versions/RWrztPGW/paladins-neoforge-2.6.4%2B1.21.1.jar"
+hash-format = "sha512"
+hash = "8128a8b05344678965ea8d95034127a14a7e10f2c5556c65eb37cc1f225136d3afcc2aa95b1f3a8796971e1908eb623bbfa27a0572ac1db78ab656cbbeec78eb"
+
+[update]
+[update.modrinth]
+mod-id = "FxXkHaLe"
+version = "RWrztPGW"

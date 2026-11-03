@@ -1,0 +1,6 @@
+# Fichiers servis par le site statique mais PAS installes tels quels chez les joueurs
+files/
+.nojekyll
+.gitattributes
+.packwizignore
+README.md

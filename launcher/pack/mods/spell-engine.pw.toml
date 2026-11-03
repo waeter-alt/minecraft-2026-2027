@@ -1,0 +1,14 @@
+name = "Spell Engine"
+filename = "spell_engine-neoforge-1.8.16+1.21.1.jar"
+side = "both"
+pin = true
+
+[download]
+url = "https://cdn.modrinth.com/data/XvoWJaA2/versions/JgEwYqGp/spell_engine-neoforge-1.8.16%2B1.21.1.jar"
+hash-format = "sha512"
+hash = "970d4113a4cc007c664c410489c314d76700e8abfe7ae22d849806888b94017ac2097fce7d10ce142b27f1fd8f785eae76bec1924c83b7acd796ee7dd5bc0140"
+
+[update]
+[update.modrinth]
+mod-id = "XvoWJaA2"
+version = "JgEwYqGp"
