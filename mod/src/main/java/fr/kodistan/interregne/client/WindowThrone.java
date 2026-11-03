@@ -26,7 +26,7 @@ public class WindowThrone extends AbstractWindowSkeleton
         registerButton("clemente", () -> send(ThroneActionPayload.CLEMENTE));
         registerButton("ordinaire", () -> send(ThroneActionPayload.ORDINAIRE));
         registerButton("ecrasante", () -> send(ThroneActionPayload.ECRASANTE));
-        registerButton("amnesty", () -> send(ThroneActionPayload.AMNESTY));
+        registerButton("fund", () -> send(ThroneActionPayload.FUND));
         registerButton("favor", () -> send(ThroneActionPayload.FAVOR));
         registerButton("disgrace", () -> send(ThroneActionPayload.DISGRACE));
         show(payload);

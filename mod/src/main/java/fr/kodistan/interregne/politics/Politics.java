@@ -176,8 +176,7 @@ public final class Politics
                           .then(Commands.argument("montant", IntegerArgumentType.integer(1)).executes(context -> {
                               Edicts.disgrace(context.getSource().getServer(), EntityArgument.getPlayer(context, "joueur"), IntegerArgumentType.getInteger(context, "montant"));
                               return 1;
-                          }))))
-                  .then(Commands.literal("amnistie").executes(context -> Edicts.amnesty(context.getSource().getServer(), context.getSource().getPlayerOrException()) ? 1 : 0))));
+                          }))))));
     }
 
     private static int showInfluence(final CommandSourceStack source)
@@ -259,7 +258,7 @@ public final class Politics
                 }
             }
         }
-        text.append("\nGrogne : ").append(empire.grogne()).append(" · Trésor impérial : ").append(empire.treasury());
+        text.append("\nTrésor impérial : ").append(empire.treasury());
         source.sendSuccess(() -> Component.literal(text.toString()).withStyle(ChatFormatting.LIGHT_PURPLE), false);
         return 1;
     }

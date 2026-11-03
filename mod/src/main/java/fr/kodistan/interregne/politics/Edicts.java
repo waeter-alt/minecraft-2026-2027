@@ -1,28 +1,18 @@
 package fr.kodistan.interregne.politics;
 
 import fr.kodistan.interregne.Config;
+import fr.kodistan.interregne.economy.Wallet;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
 
 /**
- * The edicts the Intendants can enact from the Trône impérial. Each one is proclaimed to the whole server;
- * harsh ones feed the Grogne, the discontent that should push players toward revolt.
+ * The edicts the Intendants can enact from the Trône impérial. Each one is proclaimed to the whole server.
  */
 public final class Edicts
 {
-    /**
-     * Grogne gained when the tithe is set to Écrasante, or someone is disgraced.
-     */
-    private static final int HARSH_GROGNE = 2;
-
-    /**
-     * What an amnesty costs the imperial treasury, and the Grogne it calms.
-     */
-    private static final long AMNESTY_COST = 500;
-    private static final int  AMNESTY_CALM = 3;
-
     private Edicts()
     {
     }
@@ -35,10 +25,6 @@ public final class Edicts
             return;
         }
         empire.setTitheWeight(weight);
-        if (weight == Empire.TitheWeight.ECRASANTE)
-        {
-            empire.addGrogne(HARSH_GROGNE);
-        }
         Proclamations.announce(server, "le poids de la dîme est désormais " + weight.label().toLowerCase() + ".");
     }
 
@@ -53,21 +39,23 @@ public final class Edicts
     {
         final int removed = Math.clamp(amount, 1, Config.FAVOR_CAP.get());
         Influence.remove(server, target.getUUID(), removed, "disgrâce impériale");
-        Empire.get(server).addGrogne(HARSH_GROGNE);
         Proclamations.announce(server, target.getGameProfile().getName() + " tombe en disgrâce (−" + removed + " d'Influence).");
     }
 
-    public static boolean amnesty(final MinecraftServer server, final ServerPlayer by)
+
+    /**
+     * Put every Couronne the player carries into the imperial treasury.
+     */
+    public static void fundTreasury(final MinecraftServer server, final ServerPlayer player)
     {
-        final Empire empire = Empire.get(server);
-        if (empire.treasury() < AMNESTY_COST)
+        final PlayerMainInvWrapper purse = new PlayerMainInvWrapper(player.getInventory());
+        final long carried = Wallet.value(purse);
+        if (carried <= 0 || !Wallet.pay(purse, carried, stack -> player.drop(stack, false)))
         {
-            by.sendSystemMessage(Component.literal("Le trésor impérial ne peut pas payer l'amnistie (" + AMNESTY_COST + " couronnes).").withStyle(ChatFormatting.RED));
-            return false;
+            player.sendSystemMessage(Component.literal("Tu ne portes aucune couronne.").withStyle(ChatFormatting.GRAY));
+            return;
         }
-        empire.addTreasury(-AMNESTY_COST);
-        empire.addGrogne(-AMNESTY_CALM);
-        Proclamations.announce(server, "une amnistie générale apaise le peuple.");
-        return true;
+        Empire.get(server).addTreasury(carried);
+        player.sendSystemMessage(Component.literal(Wallet.couronnes(carried, "versée") + " au trésor impérial.").withStyle(ChatFormatting.GOLD));
     }
 }

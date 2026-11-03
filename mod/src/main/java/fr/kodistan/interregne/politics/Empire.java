@@ -15,8 +15,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * The Empire's state, saved with the world: who the Intendants are, the edicts in force, the discontent ("Grogne"),
- * the imperial treasury, the tithe schedule and what each colony has delivered for the current tithe.
+ * The Empire's state, saved with the world: who the Intendants are, the edicts in force, the imperial treasury, the tithe schedule and what each colony has delivered for the current tithe.
  */
 public final class Empire extends SavedData
 {
@@ -53,7 +52,6 @@ public final class Empire extends SavedData
 
     private final Set<UUID> intendants = new HashSet<>();
     private TitheWeight titheWeight = TitheWeight.ORDINAIRE;
-    private int grogne;
     private long treasury;
     private long titheDueAt;
     private boolean titheActive;
@@ -92,17 +90,6 @@ public final class Empire extends SavedData
     public void setTitheWeight(final TitheWeight weight)
     {
         titheWeight = weight;
-        setDirty();
-    }
-
-    public int grogne()
-    {
-        return grogne;
-    }
-
-    public void addGrogne(final int amount)
-    {
-        grogne = Math.max(0, grogne + amount);
         setDirty();
     }
 
@@ -178,7 +165,6 @@ public final class Empire extends SavedData
         intendants.forEach(uuid -> list.add(StringTag.valueOf(uuid.toString())));
         tag.put("intendants", list);
         tag.putString("titheWeight", titheWeight.name());
-        tag.putInt("grogne", grogne);
         tag.putLong("treasury", treasury);
         tag.putLong("titheDueAt", titheDueAt);
         tag.putBoolean("titheActive", titheActive);
@@ -204,7 +190,6 @@ public final class Empire extends SavedData
         {
             empire.titheWeight = TitheWeight.ORDINAIRE;
         }
-        empire.grogne = tag.getInt("grogne");
         empire.treasury = tag.getLong("treasury");
         empire.titheDueAt = tag.getLong("titheDueAt");
         empire.titheActive = tag.getBoolean("titheActive");

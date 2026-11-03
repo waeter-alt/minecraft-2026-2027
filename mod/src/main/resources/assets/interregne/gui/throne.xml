@@ -5,8 +5,10 @@
     <text id="title" size="180 11" pos="15 12" color="dark_purple" textalign="MIDDLE" label="⚜ Trône impérial ⚜"/>
     <text id="state" size="180 56" pos="15 28" color="black" label=""/>
     <text id="colony" size="180 22" pos="15 86" color="dark_red" label=""/>
-    <button id="deliver" size="180 17" pos="15 110" color="black"
-            source="minecolonies:textures/gui/builderhut/builder_button_medium_large.png" label="Livrer la dîme"/>
+    <button id="deliver" size="88 17" pos="15 110" color="black"
+            source="minecolonies:textures/gui/builderhut/builder_button_mini.png" label="Livrer la dîme"/>
+    <button id="fund" size="88 17" pos="107 110" color="black"
+            source="minecolonies:textures/gui/builderhut/builder_button_mini.png" label="Verser au trésor"/>
 
     <view id="rule" size="180 96" pos="15 132">
         <text id="ruleTitle" size="180 11" pos="0 0" color="dark_purple" textalign="MIDDLE" label="Édits de l'Intendance"/>
@@ -22,7 +24,5 @@
                 source="minecolonies:textures/gui/builderhut/builder_button_mini.png" label="Faveur"/>
         <button id="disgrace" size="88 17" pos="92 57" color="black"
                 source="minecolonies:textures/gui/builderhut/builder_button_mini.png" label="Disgrâce"/>
-        <button id="amnesty" size="180 17" pos="0 78" color="black"
-                source="minecolonies:textures/gui/builderhut/builder_button_medium_large.png" label="Amnistie (500 du trésor)"/>
     </view>
 </window>

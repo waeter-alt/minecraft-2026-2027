@@ -21,7 +21,7 @@ import java.util.Map;
 
 /**
  * The imperial tithe: every few days each colony owes a basket of crates of the other regions, delivered at the
- * Trône impérial. Paying earns Influence; missing the deadline costs the colony owner Influence and raises the Grogne.
+ * Trône impérial. Paying earns Influence; missing the deadline costs the colony owner Influence.
  * The cycle runs on its own once launched (autopilot), so absent Intendants never stall it.
  */
 public final class Tithe
@@ -144,7 +144,6 @@ public final class Tithe
         {
             return;
         }
-        int defaulters = 0;
         for (final IColony colony : IColonyManager.getInstance().getAllColonies())
         {
             final Map<Crate, Integer> left = remaining(server, colony);
@@ -152,16 +151,11 @@ public final class Tithe
             {
                 continue;
             }
-            defaulters++;
             final int penalty = Config.TITHE_PENALTY.get();
             Influence.remove(server, colony.getPermissions().getOwner(), penalty, "dîme impayée");
             empire.addTreasury(100L * left.values().stream().mapToInt(Integer::intValue).sum());
             server.getPlayerList().broadcastSystemMessage(Component.literal("⚜ " + colony.getName() + " n'a pas acquitté la dîme : son seigneur perd "
                                                                               + penalty + " d'Influence.").withStyle(ChatFormatting.DARK_PURPLE), false);
-        }
-        if (defaulters > 0)
-        {
-            empire.addGrogne(defaulters);
         }
         empire.endTithe();
         launch(server);

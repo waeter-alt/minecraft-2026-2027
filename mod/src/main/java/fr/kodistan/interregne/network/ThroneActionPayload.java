@@ -17,7 +17,7 @@ public record ThroneActionPayload(BlockPos throne, int action, String target, in
     public static final int CLEMENTE  = 1;
     public static final int ORDINAIRE = 2;
     public static final int ECRASANTE = 3;
-    public static final int AMNESTY   = 4;
+    public static final int FUND      = 4;
     public static final int FAVOR     = 5;
     public static final int DISGRACE  = 6;
 

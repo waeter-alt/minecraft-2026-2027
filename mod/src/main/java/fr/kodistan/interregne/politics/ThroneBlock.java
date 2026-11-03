@@ -1,6 +1,7 @@
 package fr.kodistan.interregne.politics;
 
 import com.minecolonies.api.colony.IColony;
+import fr.kodistan.interregne.economy.Wallet;
 import fr.kodistan.interregne.network.OpenThronePayload;
 import fr.kodistan.interregne.network.ThroneActionPayload;
 import net.minecraft.ChatFormatting;
@@ -49,9 +50,16 @@ public class ThroneBlock extends Block
             return;
         }
         final MinecraftServer server = player.server;
-        if (payload.action() == ThroneActionPayload.DELIVER)
+        if (payload.action() == ThroneActionPayload.DELIVER || payload.action() == ThroneActionPayload.FUND)
         {
-            Tithe.deliver(player);
+            if (payload.action() == ThroneActionPayload.DELIVER)
+            {
+                Tithe.deliver(player);
+            }
+            else
+            {
+                Edicts.fundTreasury(server, player);
+            }
             open(player, payload.throne());
             return;
         }
@@ -65,7 +73,6 @@ public class ThroneBlock extends Block
             case ThroneActionPayload.CLEMENTE -> Edicts.setTitheWeight(server, Empire.TitheWeight.CLEMENTE);
             case ThroneActionPayload.ORDINAIRE -> Edicts.setTitheWeight(server, Empire.TitheWeight.ORDINAIRE);
             case ThroneActionPayload.ECRASANTE -> Edicts.setTitheWeight(server, Empire.TitheWeight.ECRASANTE);
-            case ThroneActionPayload.AMNESTY -> Edicts.amnesty(server, player);
             case ThroneActionPayload.FAVOR, ThroneActionPayload.DISGRACE -> {
                 final ServerPlayer target = server.getPlayerList().getPlayerByName(payload.target().trim());
                 if (target == null)
@@ -94,8 +101,7 @@ public class ThroneBlock extends Block
         final Empire empire = Empire.get(server);
         final boolean intendantOnline = server.getPlayerList().getPlayers().stream().anyMatch(online -> empire.isIntendant(online.getUUID()));
 
-        final String state = "Grogne du peuple : " + empire.grogne()
-                               + "\nTrésor impérial : " + empire.treasury() + " couronnes"
+        final String state = "Trésor impérial : " + Wallet.format(empire.treasury()) + " couronnes"
                                + "\nPoids de la dîme : " + empire.titheWeight().label()
                                + "\nDîme : " + (empire.titheActive() ? "échéance dans " + Proclamations.formatDelay(empire.titheDueAt() - System.currentTimeMillis()) : "aucune en cours")
                                + (intendantOnline ? "" : "\nPilote automatique : actif");

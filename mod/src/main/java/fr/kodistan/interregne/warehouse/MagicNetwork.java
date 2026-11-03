@@ -266,6 +266,7 @@ public final class MagicNetwork
         }
 
         sparkle(level, startPos, false);
+        trail(level, startPos, targetPos);
         sparkle(level, targetPos, true);
         return true;
     }
@@ -335,6 +336,7 @@ public final class MagicNetwork
         {
             hut.markDirty();
             sparkle(level, hut.getPosition(), false);
+            trail(level, hut.getPosition(), warehousePos);
             sparkle(level, warehousePos, true);
         }
         return movedAny;
@@ -423,6 +425,27 @@ public final class MagicNetwork
         {
             InterregneMod.LOGGER.warn("Magic network: {} could not be put back and was dropped at the warehouse", rest);
             net.minecraft.world.Containers.dropItemStack(transfer.colony.getWorld(), transfer.warehouse.getX(), transfer.warehouse.getY() + 1, transfer.warehouse.getZ(), rest);
+        }
+    }
+
+    /**
+     * A glowing arc from one building to the other, so players see goods travel along the network.
+     */
+    private static void trail(final ServerLevel level, final BlockPos from, final BlockPos to)
+    {
+        final double dx = to.getX() - from.getX();
+        final double dy = to.getY() - from.getY();
+        final double dz = to.getZ() - from.getZ();
+        final double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        final int points = (int) Math.clamp(length / 1.2, 4, 160);
+        final double lift = Math.min(8.0, 1.5 + length / 8);
+        for (int i = 1; i < points; i++)
+        {
+            final double t = (double) i / points;
+            // A parabola above the straight line, highest halfway
+            final double arc = 4 * t * (1 - t) * lift;
+            level.sendParticles(ParticleTypes.END_ROD,
+              from.getX() + 0.5 + dx * t, from.getY() + 1.5 + dy * t + arc, from.getZ() + 0.5 + dz * t, 1, 0.05, 0.05, 0.05, 0.0);
         }
     }
 
