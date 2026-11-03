@@ -9,6 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
@@ -38,6 +39,11 @@ public final class Citadel
 
     @Nullable
     private static Job job;
+
+    @Nullable
+    private static Preview preview;
+
+    private static int previewAge;
 
     private Citadel()
     {
@@ -137,6 +143,11 @@ public final class Citadel
     @SubscribeEvent
     public static void onServerTick(final ServerTickEvent.Post event)
     {
+        if (preview != null && preview.draw(previewAge++))
+        {
+            preview = null;
+            previewAge = 0;
+        }
         if (job != null)
         {
             try
@@ -191,20 +202,48 @@ public final class Citadel
     }
 
     /**
-     * Outline the footprint with particles, to choose the spot before building.
+     * Outline the footprint with particles for a few seconds, to choose the spot before building.
      */
     private static int preview(final CommandSourceStack source, final int half)
     {
-        final ServerLevel level = source.getLevel();
-        final BlockPos origin = BlockPos.containing(source.getPosition());
-        for (int i = -half; i <= half; i += 2)
+        final ServerPlayer player = source.getPlayer();
+        if (player == null)
         {
-            for (final int[] spot : new int[][]{{i, -half}, {i, half}, {-half, i}, {half, i}})
-            {
-                level.sendParticles(ParticleTypes.END_ROD, origin.getX() + spot[0] + 0.5, origin.getY() + 1.5, origin.getZ() + spot[1] + 0.5, 3, 0, 0.6, 0, 0.0);
-            }
+            source.sendFailure(Component.literal("L'aperçu doit être lancé par un joueur."));
+            return 0;
         }
-        source.sendSuccess(() -> Component.literal("Contour de la citadelle affiché (la porte est au sud)."), false);
+        preview = new Preview(player, BlockPos.containing(source.getPosition()), half);
+        previewAge = 0;
+        source.sendSuccess(() -> Component.literal("Contour de la citadelle affiché pendant 15 secondes (la porte est au sud)."), false);
         return 1;
+    }
+
+    /**
+     * The footprint outline shown to one player. Particles are forced so they show beyond the usual 32-block range.
+     */
+    private record Preview(ServerPlayer player, BlockPos origin, int half)
+    {
+        private static final int DURATION = 15 * 20;
+        private static final int EVERY    = 10;
+
+        /**
+         * @return true when the preview is over.
+         */
+        private boolean draw(final int age)
+        {
+            if (age % EVERY == 0)
+            {
+                final ServerLevel level = player.serverLevel();
+                for (int i = -half; i <= half; i += 2)
+                {
+                    for (final int[] spot : new int[][]{{i, -half}, {i, half}, {-half, i}, {half, i}})
+                    {
+                        level.sendParticles(player, spot[1] == half && Math.abs(spot[0]) <= 3 ? ParticleTypes.FLAME : ParticleTypes.END_ROD, true,
+                          origin.getX() + spot[0] + 0.5, origin.getY() + 1.0, origin.getZ() + spot[1] + 0.5, 4, 0, 0.8, 0, 0.0);
+                    }
+                }
+            }
+            return age >= DURATION || player.isRemoved();
+        }
     }
 }
