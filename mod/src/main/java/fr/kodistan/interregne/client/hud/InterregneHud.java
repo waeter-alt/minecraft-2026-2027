@@ -50,7 +50,7 @@ public final class InterregneHud
     private static final int STAR_ICON   = 11;
     private static final int COIN_ICON_SIZE = 14;
     private static final int PILL        = 18;
-    private static final float SCALE     = 0.65F;
+    private static final double SCREEN_SIZE = 1.95;
     private static final int MARGIN      = 6;
     private static final int LINE        = 21;
     private static final long FLOAT_MS   = 1800;
@@ -124,10 +124,12 @@ public final class InterregneHud
         gold = total;
 
         final Font font = minecraft.font;
-        // The whole corner (plates, papers, grievances) at 65 %, anchored top-right
+        // Same size on screen as at GUI scale 2: 65 % at scale 3, smaller still above, anchored top-right
+        final double guiScale = minecraft.getWindow().getGuiScale();
+        final float scale = guiScale > 2 ? (float) (SCREEN_SIZE / guiScale) : 1F;
         graphics.pose().pushPose();
-        graphics.pose().scale(SCALE, SCALE, 1);
-        final int right = (int) (graphics.guiWidth() / SCALE) - MARGIN;
+        graphics.pose().scale(scale, scale, 1);
+        final int right = (int) (graphics.guiWidth() / scale) - MARGIN;
         final String influenceText = Wallet.format(influence);
         final String goldText = Wallet.format(gold);
         final String[] tabs = {compact(bank), compact(regional), compact(carried)};
