@@ -47,6 +47,21 @@ public final class CrateRequirements
     }
 
     /**
+     * Crates a decoration of this many blocks needs: one per so many blocks, wood and stone in turn.
+     */
+    public static Map<Crate, Integer> forDecoration(final long blocks)
+    {
+        final Map<Crate, Integer> needs = new EnumMap<>(Crate.class);
+        final int per = Config.DECORATION_BLOCKS_PER_CRATE.get();
+        final long count = per <= 0 ? 0 : blocks / per;
+        for (int i = 0; i < count; i++)
+        {
+            needs.merge(Crate.byId(i % 2 == 0 ? "bois" : "pierre"), 1, Integer::sum);
+        }
+        return needs;
+    }
+
+    /**
      * "bois:1,pierre:1" into crate counts; unknown types and bad numbers are skipped.
      */
     public static Map<Crate, Integer> parse(final String recipe)

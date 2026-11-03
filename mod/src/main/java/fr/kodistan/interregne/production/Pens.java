@@ -1,6 +1,15 @@
 package fr.kodistan.interregne.production;
 
+import com.minecolonies.api.colony.IColony;
+import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.buildings.IBuilding;
+import fr.kodistan.interregne.InterregneMod;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import com.minecolonies.api.util.WorldUtil;
 import fr.kodistan.interregne.Config;
 import net.minecraft.core.BlockPos;
@@ -31,6 +40,7 @@ import java.util.Set;
  * MineColonies' herders look for their animals anywhere in the hut's footprint, so the pen is found by scoring that
  * footprint rather than by knowing each style: walkable, open to the sky, natural floor, and fenced in.
  */
+@EventBusSubscriber(modid = InterregneMod.MODID)
 public final class Pens
 {
     private static final Map<String, EntityType<? extends Animal>> ANIMALS = Map.of(
@@ -47,6 +57,43 @@ public final class Pens
 
     private Pens()
     {
+    }
+
+    /**
+     * /interregne enclos: in a breeder hut, outline the pen found and restock the herd (to check a style without upgrading).
+     */
+    @SubscribeEvent
+    public static void onRegister(final RegisterCommandsEvent event)
+    {
+        event.getDispatcher().register(Commands.literal("interregne")
+          .then(Commands.literal("enclos").requires(source -> source.hasPermission(2)).executes(context -> {
+              final ServerPlayer player = context.getSource().getPlayerOrException();
+              final ServerLevel level = player.serverLevel();
+              final IColony colony = IColonyManager.getInstance().getColonyByPosFromWorld(level, player.blockPosition());
+              final IBuilding hut = colony == null ? null : colony.getBuildingManager().getBuildings().values().stream()
+                .filter(building -> isBreeder(building) && inside(building, player.blockPosition())).findFirst().orElse(null);
+              if (hut == null)
+              {
+                  context.getSource().sendFailure(Component.literal("Place-toi dans l'emprise d'une hutte d'éleveur."));
+                  return 0;
+              }
+              final List<BlockPos> pen = findPen(level, hut);
+              for (final BlockPos spot : pen)
+              {
+                  level.sendParticles(player, ParticleTypes.END_ROD, true, spot.getX() + 0.5, spot.getY() + 0.2, spot.getZ() + 0.5, 2, 0.1, 0.1, 0.1, 0.0);
+              }
+              restock(level, hut);
+              context.getSource().sendSuccess(() -> Component.literal(pen.isEmpty() ? "Aucun enclos trouvé : les bêtes vont devant la hutte."
+                                                                        : "Enclos trouvé : " + pen.size() + " cases (en surbrillance). Troupeau complété."), false);
+              return 1;
+          })));
+    }
+
+    private static boolean inside(final IBuilding building, final BlockPos pos)
+    {
+        final Tuple<BlockPos, BlockPos> corners = building.getCorners();
+        return pos.getX() >= Math.min(corners.getA().getX(), corners.getB().getX()) && pos.getX() <= Math.max(corners.getA().getX(), corners.getB().getX())
+                 && pos.getZ() >= Math.min(corners.getA().getZ(), corners.getB().getZ()) && pos.getZ() <= Math.max(corners.getA().getZ(), corners.getB().getZ());
     }
 
     public static boolean isBreeder(final IBuilding building)

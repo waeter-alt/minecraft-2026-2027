@@ -38,8 +38,6 @@ import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.EnumMap;
-import java.util.Map;
 
 import static com.ldtteam.structurize.blockentities.interfaces.IBlueprintDataProviderBE.TAG_BLUEPRINTDATA;
 import static com.minecolonies.api.util.constant.NbtTagConstants.TAG_NAME;
@@ -235,8 +233,8 @@ public final class InstantBuilder
             }
             final long blocks = blueprint.getBlockInfoAsList().stream().filter(info -> !info.getState().isAir()).count();
             final boolean free = player == null || player.isCreative();
-            final int cost = free ? 0 : (int) Math.max(BuildCosts.forDecoration(), blocks / Config.DECORATION_BLOCKS_PER_COURONNE.get());
-            final CrateRequirements.Plan crates = free ? CrateRequirements.Plan.NONE : CrateRequirements.plan(colony, player, decorationCrates(blocks));
+            final int cost = free ? 0 : BuildCosts.forDecoration(blocks);
+            final CrateRequirements.Plan crates = free ? CrateRequirements.Plan.NONE : CrateRequirements.plan(colony, player, CrateRequirements.forDecoration(blocks));
             if (crates.refused())
             {
                 return;
@@ -264,21 +262,6 @@ public final class InstantBuilder
                                            .withStyle(ChatFormatting.GOLD));
             }
         }));
-    }
-
-    /**
-     * One crate per so many blocks, alternating wood and stone.
-     */
-    private static Map<Crate, Integer> decorationCrates(final long blocks)
-    {
-        final Map<Crate, Integer> needs = new EnumMap<>(Crate.class);
-        final int per = Config.DECORATION_BLOCKS_PER_CRATE.get();
-        final long count = per <= 0 ? 0 : blocks / per;
-        for (int i = 0; i < count; i++)
-        {
-            needs.merge(Crate.byId(i % 2 == 0 ? "bois" : "pierre"), 1, Integer::sum);
-        }
-        return needs;
     }
 
     private static int costOf(final IServerWorkOrder order)

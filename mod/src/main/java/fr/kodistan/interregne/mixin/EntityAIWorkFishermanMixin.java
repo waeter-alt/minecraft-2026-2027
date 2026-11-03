@@ -7,6 +7,8 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
+import com.minecolonies.api.colony.ICitizenData;
+import com.minecolonies.api.colony.interactionhandling.IInteractionResponseHandler;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -17,6 +19,15 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(value = EntityAIWorkFisherman.class, remap = false)
 public abstract class EntityAIWorkFishermanMixin
 {
+    /**
+     * The fisher produces by level without water of its own (HutProduction): no complaint about ponds.
+     */
+    @Redirect(method = "*", at = @At(value = "INVOKE",
+      target = "Lcom/minecolonies/api/colony/ICitizenData;triggerInteraction(Lcom/minecolonies/api/colony/interactionhandling/IInteractionResponseHandler;)V"))
+    private void interregne$noPondComplaint(final ICitizenData citizen, final IInteractionResponseHandler handler)
+    {
+    }
+
     @Redirect(method = "generateBonusLoot", at = @At(value = "INVOKE",
       target = "Lnet/minecraft/world/level/storage/loot/LootTable;getRandomItems(Lnet/minecraft/world/level/storage/loot/LootParams;)Lit/unimi/dsi/fastutil/objects/ObjectArrayList;"))
     private ObjectArrayList<ItemStack> interregne$boostBonus(final LootTable table, final LootParams params)

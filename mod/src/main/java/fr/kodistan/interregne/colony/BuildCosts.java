@@ -43,6 +43,14 @@ public final class BuildCosts
     }
 
     /**
+     * A decoration of this many blocks: one Couronne per so many blocks, at least the flat decoration cost.
+     */
+    public static int forDecoration(final long blocks)
+    {
+        return (int) Math.max(forDecoration(), blocks / Config.DECORATION_BLOCKS_PER_COURONNE.get());
+    }
+
+    /**
      * Construction time of a building reaching this level: from the minimum at level 1 to the maximum at level 5.
      */
     public static int secondsForLevel(final int targetLevel)

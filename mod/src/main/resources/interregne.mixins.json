@@ -35,6 +35,7 @@
     "client.AbstractWindowModuleBuildingMixin",
     "client.WindowFieldMixin",
     "client.WindowBuildBuildingMixin",
+    "client.WindowBuildDecorationMixin",
     "client.WindowExtendedBuildToolMixin"
   ]
 }

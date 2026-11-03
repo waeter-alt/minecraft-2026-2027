@@ -9,6 +9,10 @@ import com.ldtteam.blockui.views.DropDownList;
 import com.ldtteam.blockui.views.ScrollingList;
 import com.minecolonies.api.colony.buildings.views.IBuildingView;
 import com.minecolonies.core.client.gui.WindowBuildBuilding;
+import com.ldtteam.blockui.views.BOWindow;
+import com.minecolonies.api.colony.IColonyView;
+import fr.kodistan.interregne.region.CrateRequirements;
+import org.jetbrains.annotations.Nullable;
 import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.colony.BuildCosts;
 import fr.kodistan.interregne.economy.Wallet;
@@ -128,6 +132,41 @@ public final class BuildWindowPricing
         rows.add(new PriceRow(Component.literal("Trésor régional"), (int) Math.min(Integer.MAX_VALUE, treasury), true));
         rows.add(new PriceRow(free ? Component.literal("Mode créatif : gratuit") : Component.literal("Couronnes sur toi"), (int) Math.min(Integer.MAX_VALUE, carried), true));
 
+        showRows(window, rows, payment);
+    }
+
+    /**
+     * The decoration build window: its price by size instead of the builder's material list.
+     */
+    public static void applyDecoration(final BOWindow window, final long blocks, @Nullable final IColonyView colony)
+    {
+        final Player player = Minecraft.getInstance().player;
+        final boolean free = player.isCreative();
+        final long carried = Wallet.value(new PlayerMainInvWrapper(player.getInventory()));
+        final long treasury = ClientTreasury.of(colony);
+        final long owned = carried + treasury;
+        final int cost = BuildCosts.forDecoration(blocks);
+        final List<PriceRow> rows = new ArrayList<>();
+
+        final DropDownList builders = window.findPaneOfTypeByID(DROPDOWN_BUILDER_ID, DropDownList.class);
+        if (builders != null)
+        {
+            builders.hide();
+        }
+        final Button build = window.findPaneOfTypeByID(BUTTON_BUILD, Button.class);
+        if (build != null)
+        {
+            priceButton(build, "Construire", cost, free, owned);
+        }
+        rows.add(new PriceRow(Component.literal("Décoration · " + blocks + " blocs · " + BuildCosts.formatSeconds(BuildCosts.secondsForFlat())), cost, free || owned >= cost));
+        CrateRows.forCrates(CrateRequirements.forDecoration(blocks)).forEach(c -> rows.add(new PriceRow(c.label(), c.count(), c.available(), c.icon())));
+        rows.add(new PriceRow(Component.literal("Trésor régional"), (int) Math.min(Integer.MAX_VALUE, treasury), true));
+        rows.add(new PriceRow(free ? Component.literal("Mode créatif : gratuit") : Component.literal("Couronnes sur toi"), (int) Math.min(Integer.MAX_VALUE, carried), true));
+        showRows(window, rows, BuildCosts.paymentItem());
+    }
+
+    private static void showRows(final BOWindow window, final List<PriceRow> rows, final Item payment)
+    {
         final ScrollingList list = window.findPaneOfTypeByID(LIST_RESOURCES, ScrollingList.class);
         list.enable();
         list.show();

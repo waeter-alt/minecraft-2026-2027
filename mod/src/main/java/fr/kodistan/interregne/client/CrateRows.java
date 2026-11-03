@@ -1,5 +1,6 @@
 package fr.kodistan.interregne.client;
 
+import fr.kodistan.interregne.region.Crate;
 import com.minecolonies.api.colony.buildings.views.IBuildingView;
 import fr.kodistan.interregne.region.CrateRequirements;
 import fr.kodistan.interregne.region.CrateStores;
@@ -11,6 +12,7 @@ import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The regional crates the hut's next build or upgrade needs, for the build window. Only the player's own inventory is
@@ -27,6 +29,23 @@ public final class CrateRows
 
     private CrateRows()
     {
+    }
+
+    /**
+     * Rows for these crates, red when the player and the warehouse together lack them.
+     */
+    public static List<Row> forCrates(final Map<Crate, Integer> needs)
+    {
+        final List<Row> rows = new ArrayList<>();
+        final Player player = Minecraft.getInstance().player;
+        if (player == null)
+        {
+            return rows;
+        }
+        final PlayerMainInvWrapper inventory = new PlayerMainInvWrapper(player.getInventory());
+        needs.forEach((crate, count) -> rows.add(new Row(crate.stack(1), Component.literal(crate.displayName()), count,
+          player.isCreative() || CrateStores.count(inventory, crate) + ClientCrateStock.get(crate) >= count)));
+        return rows;
     }
 
     public static List<Row> forBuilding(final IBuildingView building, final boolean buildable)
