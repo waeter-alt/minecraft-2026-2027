@@ -42,6 +42,7 @@ public final class InterregneHud
     private static final int MARGIN      = 6;
     private static final int LINE        = 21;
     private static final long FLOAT_MS   = 1800;
+    private static final String MIN_WIDTH_SAMPLE = "00 000";
 
     private static long influence;
     private static long influenceDelta;
@@ -92,10 +93,13 @@ public final class InterregneHud
 
         final Font font = minecraft.font;
         final int right = graphics.guiWidth() - MARGIN;
-        drawLine(graphics, font, right, MARGIN, INFLUENCE_ICON, STAR_ICON, VELVET, VELVET_EDGE, VELVET_LIGHT,
-          Wallet.format(influence), PURPLE, influenceDelta, influenceChangedAt);
-        drawLine(graphics, font, right, MARGIN + LINE, COIN_ICON, COIN_ICON_SIZE, LEATHER, LEATHER_EDGE, LEATHER_LIGHT,
-          Wallet.format(gold), GOLD, goldDelta, goldChangedAt);
+        final String influenceText = Wallet.format(influence);
+        final String goldText = Wallet.format(gold);
+        final int textWidth = Math.max(font.width(MIN_WIDTH_SAMPLE), Math.max(font.width(influenceText), font.width(goldText)));
+        drawLine(graphics, font, right, MARGIN, textWidth, INFLUENCE_ICON, STAR_ICON, VELVET, VELVET_EDGE, VELVET_LIGHT,
+          influenceText, PURPLE, influenceDelta, influenceChangedAt);
+        drawLine(graphics, font, right, MARGIN + LINE, textWidth, COIN_ICON, COIN_ICON_SIZE, LEATHER, LEATHER_EDGE, LEATHER_LIGHT,
+          goldText, GOLD, goldDelta, goldChangedAt);
     }
 
     /**
@@ -106,6 +110,7 @@ public final class InterregneHud
       final Font font,
       final int right,
       final int y,
+      final int textWidth,
       final ResourceLocation icon,
       final int size,
       final int fill,
@@ -116,14 +121,13 @@ public final class InterregneHud
       final long change,
       final long changedAt)
     {
-        final int iconX = right - 3 - size;
-        final int textX = iconX - 4 - font.width(value);
-        final int left = textX - 5;
-        graphics.fill(left, y, right, y + PILL, edge);
-        graphics.fill(left + 1, y + 1, right - 1, y + PILL - 1, fill);
-        graphics.fill(left + 2, y + 1, right - 2, y + 2, light);
+        final int slot = right - 4 - COIN_ICON_SIZE;
+        final int textRight = slot - 4;
+        final int textX = textRight - font.width(value);
+        final int left = textRight - textWidth - 6;
+        roundedPlate(graphics, left, y, right, y + PILL, fill, edge, light);
 
-        graphics.blit(icon, iconX, y + (PILL - size) / 2, size, size, 0, 0, 16, 16, 16, 16);
+        graphics.blit(icon, slot + (COIN_ICON_SIZE - size) / 2, y + (PILL - size) / 2, size, size, 0, 0, 16, 16, 16, 16);
         final int textY = y + (PILL - font.lineHeight) / 2 + 1;
         graphics.drawString(font, value, textX, textY, color, true);
 
@@ -136,5 +140,21 @@ public final class InterregneHud
             final int rise = (int) ((1.0F - fade) * 6);
             graphics.drawString(font, text, left - 4 - font.width(text), textY - rise, ((change > 0 ? GAIN : LOSS) & 0xFFFFFF) | alpha, true);
         }
+    }
+
+    /**
+     * A plate with pixel-rounded corners (radius 2), a dark outline and a light top edge.
+     */
+    private static void roundedPlate(final GuiGraphics graphics, final int left, final int top, final int right, final int bottom, final int fill, final int edge, final int light)
+    {
+        graphics.fill(left + 2, top, right - 2, top + 1, edge);
+        graphics.fill(left + 1, top + 1, right - 1, top + 2, edge);
+        graphics.fill(left, top + 2, right, bottom - 2, edge);
+        graphics.fill(left + 1, bottom - 2, right - 1, bottom - 1, edge);
+        graphics.fill(left + 2, bottom - 1, right - 2, bottom, edge);
+
+        graphics.fill(left + 2, top + 1, right - 2, top + 2, light);
+        graphics.fill(left + 1, top + 2, right - 1, bottom - 2, fill);
+        graphics.fill(left + 2, bottom - 2, right - 2, bottom - 1, fill);
     }
 }
