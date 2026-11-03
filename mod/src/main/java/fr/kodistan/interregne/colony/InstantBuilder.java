@@ -16,6 +16,8 @@ import com.minecolonies.core.colony.workorders.WorkOrderBuilding;
 import com.minecolonies.core.colony.workorders.WorkOrderDecoration;
 import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.InterregneMod;
+import fr.kodistan.interregne.economy.RegionalTreasury;
+import fr.kodistan.interregne.economy.TreasuryPayment;
 import fr.kodistan.interregne.economy.Wallet;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -60,12 +62,19 @@ public final class InstantBuilder
 
         final ServerPlayer player = BuildContext.requester();
         final int cost = player == null || player.isCreative() ? 0 : costOf(order);
-        if (cost > 0 && !Wallet.pay(purse(player), cost, stack -> player.drop(stack, false)))
+        // Regional treasury: the colony's treasury pays first, the coins carried make up the rest
+        final TreasuryPayment payment = TreasuryPayment.pay(player, colony, cost);
+        if (payment == null)
         {
-            player.sendSystemMessage(Component.literal("Il te faut " + Wallet.couronnes(cost, null) + " pour ce chantier (tu en as "
+            player.sendSystemMessage(Component.literal("Il te faut " + Wallet.couronnes(cost, null) + " pour ce chantier (trésor régional : "
+                                                         + Wallet.format(RegionalTreasury.get(level.getServer()).balance(colony)) + ", sur toi : "
                                                          + Wallet.format(Wallet.value(purse(player))) + ").")
                                        .withStyle(ChatFormatting.RED));
             return true;
+        }
+        if (player != null && payment.fromTreasury() > 0)
+        {
+            player.sendSystemMessage(Component.literal("Payé : " + payment.describe() + ".").withStyle(ChatFormatting.GRAY));
         }
 
         final IBuilding building = order instanceof WorkOrderBuilding ? colony.getBuildingManager().getBuilding(order.getLocation()) : null;
@@ -75,7 +84,7 @@ public final class InstantBuilder
                 InterregneMod.LOGGER.warn("Instant build: no blueprint for {} at {}", order.getStructurePath(), order.getLocation());
                 if (player != null)
                 {
-                    Wallet.give(purse(player), cost, stack -> player.drop(stack, false));
+                    payment.refund(player, colony);
                     player.sendSystemMessage(Component.literal("Plan introuvable, chantier annulé et remboursé.").withStyle(ChatFormatting.RED));
                 }
                 return;

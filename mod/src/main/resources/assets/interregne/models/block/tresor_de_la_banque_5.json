@@ -1,0 +1,142 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "interregne:block/tresor_pieces",
+    "coins": "interregne:block/tresor_pieces",
+    "ingot": "interregne:block/tresor_lingots",
+    "chest": "interregne:block/tresor_coffre",
+    "chest_top": "interregne:block/tresor_coffre_dessus"
+  },
+  "elements": [
+    {
+      "from": [
+        1,
+        0,
+        2
+      ],
+      "to": [
+        15,
+        8,
+        14
+      ],
+      "faces": {
+        "north": {
+          "texture": "#chest"
+        },
+        "south": {
+          "texture": "#chest"
+        },
+        "east": {
+          "texture": "#chest"
+        },
+        "west": {
+          "texture": "#chest"
+        },
+        "up": {
+          "texture": "#chest_top"
+        },
+        "down": {
+          "texture": "#chest",
+          "cullface": "down"
+        }
+      }
+    },
+    {
+      "from": [
+        1,
+        8,
+        2
+      ],
+      "to": [
+        15,
+        11,
+        14
+      ],
+      "faces": {
+        "north": {
+          "texture": "#chest"
+        },
+        "south": {
+          "texture": "#chest"
+        },
+        "east": {
+          "texture": "#chest"
+        },
+        "west": {
+          "texture": "#chest"
+        },
+        "up": {
+          "texture": "#chest_top"
+        },
+        "down": {
+          "texture": "#chest"
+        }
+      }
+    },
+    {
+      "from": [
+        7,
+        6,
+        1
+      ],
+      "to": [
+        9,
+        9,
+        2
+      ],
+      "faces": {
+        "north": {
+          "texture": "#ingot"
+        },
+        "south": {
+          "texture": "#ingot"
+        },
+        "east": {
+          "texture": "#ingot"
+        },
+        "west": {
+          "texture": "#ingot"
+        },
+        "up": {
+          "texture": "#ingot"
+        },
+        "down": {
+          "texture": "#ingot"
+        }
+      }
+    },
+    {
+      "from": [
+        12,
+        0,
+        0
+      ],
+      "to": [
+        15,
+        1,
+        2
+      ],
+      "faces": {
+        "north": {
+          "texture": "#coins"
+        },
+        "south": {
+          "texture": "#coins"
+        },
+        "east": {
+          "texture": "#coins"
+        },
+        "west": {
+          "texture": "#coins"
+        },
+        "up": {
+          "texture": "#coins"
+        },
+        "down": {
+          "texture": "#coins",
+          "cullface": "down"
+        }
+      }
+    }
+  ]
+}

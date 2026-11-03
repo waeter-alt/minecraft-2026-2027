@@ -18,8 +18,8 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * The Imperial Bank: one safe account per player and one treasury per colony, saved with the world.
- * Deposits are free, withdrawals cost a fee.
+ * The Imperial Bank: one safe personal account per player, saved with the world, reached only at its counters in the citadel.
+ * Deposits are free, withdrawals cost a fee. Colony treasuries live in {@link RegionalTreasury}.
  * Bets, bounties and contracts will pay straight into these accounts, so winners never walk around with their gains.
  */
 public final class ImperialBank extends SavedData
@@ -34,7 +34,7 @@ public final class ImperialBank extends SavedData
     }
 
     /**
-     * The account of a colony's treasury, which the Intendance spends from.
+     * Where a colony's treasury used to be kept, before regional banks. Only read to move old balances to {@link RegionalTreasury}.
      */
     public static UUID treasuryOf(final IColony colony)
     {
@@ -82,7 +82,7 @@ public final class ImperialBank extends SavedData
     }
 
     /**
-     * Spend from an account, e.g. the Intendance paying from a colony treasury.
+     * Spend from an account.
      *
      * @return false, changing nothing, when the balance is too low.
      */

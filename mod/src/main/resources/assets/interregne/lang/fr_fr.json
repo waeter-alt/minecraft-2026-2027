@@ -5,5 +5,7 @@
   "item.interregne.lingot_imperial": "Lingot impérial",
   "item.interregne.coffret_imperial": "Coffret impérial",
   "item.interregne.tresor_du_dragon": "Trésor du dragon",
-  "block.interregne.guichet_imperial": "Guichet de la Banque impériale"
+  "block.interregne.guichet_imperial": "Guichet de la Banque impériale",
+  "block.interregne.banque_regionale": "Banque régionale",
+  "block.interregne.tresor_de_la_banque": "Trésor de la banque"
 }

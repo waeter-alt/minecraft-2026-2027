@@ -1,6 +1,5 @@
 package fr.kodistan.interregne.economy;
 
-import com.minecolonies.api.colony.IColony;
 import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.network.BankActionPayload;
 import fr.kodistan.interregne.network.OpenBankPayload;
@@ -21,7 +20,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * A counter of the Imperial Bank, placed by the Intendants in the citadel. Using it opens the player's account.
+ * A counter of the Imperial Bank, placed by the Intendants in the citadel. Using it opens the player's personal account:
+ * fortunes have to be carried here in person. Colony treasuries are kept at each colony's Banque régionale instead.
  */
 public class BankCounterBlock extends Block
 {
@@ -83,20 +83,6 @@ public class BankCounterBlock extends Block
                                                .withStyle(ChatFormatting.RED));
                 }
             }
-            case BankActionPayload.FUND_TREASURY -> {
-                final IColony colony = ImperialBank.colonyOf(player);
-                final long carried = Wallet.value(purse);
-                if (colony == null)
-                {
-                    player.sendSystemMessage(Component.literal("Tu n'appartiens à aucune colonie.").withStyle(ChatFormatting.RED));
-                }
-                else if (carried > 0 && Wallet.pay(purse, carried, stack -> player.drop(stack, false)))
-                {
-                    bank.credit(ImperialBank.treasuryOf(colony), carried);
-                    player.sendSystemMessage(Component.literal(Wallet.couronnes(carried, "versée") + " au trésor de " + colony.getName() + ".").withStyle(ChatFormatting.GOLD));
-                    player.playNotifySound(SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 0.5F, 0.8F);
-                }
-            }
             default -> {
                 return;
             }
@@ -106,9 +92,6 @@ public class BankCounterBlock extends Block
 
     private static void sendAccount(final ServerPlayer player, final BlockPos counter)
     {
-        final ImperialBank bank = ImperialBank.get(player.server);
-        final IColony colony = ImperialBank.colonyOf(player);
-        PacketDistributor.sendToPlayer(player, new OpenBankPayload(counter, bank.balance(player.getUUID()), Config.WITHDRAWAL_FEE.get(),
-          colony == null ? "" : colony.getName(), colony == null ? 0 : bank.balance(ImperialBank.treasuryOf(colony))));
+        PacketDistributor.sendToPlayer(player, new OpenBankPayload(counter, ImperialBank.get(player.server).balance(player.getUUID()), Config.WITHDRAWAL_FEE.get()));
     }
 }

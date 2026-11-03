@@ -12,9 +12,14 @@ import fr.kodistan.interregne.colony.BuildNow;
 import fr.kodistan.interregne.client.ClientPayloads;
 import fr.kodistan.interregne.economy.BankCounterBlock;
 import fr.kodistan.interregne.economy.Couronnes;
+import fr.kodistan.interregne.economy.RegionalBankBlock;
+import fr.kodistan.interregne.economy.RegionalBanks;
 import fr.kodistan.interregne.network.BankActionPayload;
 import fr.kodistan.interregne.network.OpenBankPayload;
+import fr.kodistan.interregne.network.OpenRegionalBankPayload;
 import fr.kodistan.interregne.network.PlacementModePayload;
+import fr.kodistan.interregne.network.RegionalBankActionPayload;
+import fr.kodistan.interregne.network.TreasurySyncPayload;
 import fr.kodistan.interregne.network.TerminalDepositPayload;
 import fr.kodistan.interregne.network.TerminalWithdrawPayload;
 import fr.kodistan.interregne.warehouse.Terminal;
@@ -59,6 +64,7 @@ public class InterregneMod
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::registerPayloads);
         Couronnes.register(modEventBus);
+        RegionalBanks.register(modEventBus);
     }
 
     private void registerPayloads(final RegisterPayloadHandlersEvent event)
@@ -72,6 +78,19 @@ public class InterregneMod
               if (FMLEnvironment.dist.isClient())
               {
                   ClientPayloads.openBank(payload);
+              }
+          })
+          .playToServer(RegionalBankActionPayload.TYPE, RegionalBankActionPayload.STREAM_CODEC, RegionalBankBlock::onAction)
+          .playToClient(OpenRegionalBankPayload.TYPE, OpenRegionalBankPayload.STREAM_CODEC, (payload, context) -> {
+              if (FMLEnvironment.dist.isClient())
+              {
+                  ClientPayloads.openRegionalBank(payload);
+              }
+          })
+          .playToClient(TreasurySyncPayload.TYPE, TreasurySyncPayload.STREAM_CODEC, (payload, context) -> {
+              if (FMLEnvironment.dist.isClient())
+              {
+                  ClientPayloads.syncTreasury(payload);
               }
           });
     }

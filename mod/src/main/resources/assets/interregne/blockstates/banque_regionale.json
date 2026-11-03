@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "interregne:block/banque_regionale"
+    }
+  }
+}

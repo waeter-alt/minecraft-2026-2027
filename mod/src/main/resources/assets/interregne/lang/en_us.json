@@ -5,5 +5,7 @@
   "item.interregne.lingot_imperial": "Imperial Ingot",
   "item.interregne.coffret_imperial": "Imperial Coffer",
   "item.interregne.tresor_du_dragon": "Dragon's Hoard",
-  "block.interregne.guichet_imperial": "Imperial Bank Counter"
+  "block.interregne.guichet_imperial": "Imperial Bank Counter",
+  "block.interregne.banque_regionale": "Regional Bank",
+  "block.interregne.tresor_de_la_banque": "Bank Hoard"
 }

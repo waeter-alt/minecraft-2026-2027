@@ -1,0 +1,204 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "interregne:block/tresor_pieces",
+    "ingot": "interregne:block/tresor_lingots"
+  },
+  "elements": [
+    {
+      "from": [
+        2,
+        0,
+        2
+      ],
+      "to": [
+        5,
+        3,
+        14
+      ],
+      "faces": {
+        "north": {
+          "texture": "#ingot"
+        },
+        "south": {
+          "texture": "#ingot"
+        },
+        "east": {
+          "texture": "#ingot"
+        },
+        "west": {
+          "texture": "#ingot"
+        },
+        "up": {
+          "texture": "#ingot"
+        },
+        "down": {
+          "texture": "#ingot",
+          "cullface": "down"
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        0,
+        2
+      ],
+      "to": [
+        9,
+        3,
+        14
+      ],
+      "faces": {
+        "north": {
+          "texture": "#ingot"
+        },
+        "south": {
+          "texture": "#ingot"
+        },
+        "east": {
+          "texture": "#ingot"
+        },
+        "west": {
+          "texture": "#ingot"
+        },
+        "up": {
+          "texture": "#ingot"
+        },
+        "down": {
+          "texture": "#ingot",
+          "cullface": "down"
+        }
+      }
+    },
+    {
+      "from": [
+        10,
+        0,
+        2
+      ],
+      "to": [
+        13,
+        3,
+        14
+      ],
+      "faces": {
+        "north": {
+          "texture": "#ingot"
+        },
+        "south": {
+          "texture": "#ingot"
+        },
+        "east": {
+          "texture": "#ingot"
+        },
+        "west": {
+          "texture": "#ingot"
+        },
+        "up": {
+          "texture": "#ingot"
+        },
+        "down": {
+          "texture": "#ingot",
+          "cullface": "down"
+        }
+      }
+    },
+    {
+      "from": [
+        3,
+        3,
+        3
+      ],
+      "to": [
+        13,
+        6,
+        6
+      ],
+      "faces": {
+        "north": {
+          "texture": "#ingot"
+        },
+        "south": {
+          "texture": "#ingot"
+        },
+        "east": {
+          "texture": "#ingot"
+        },
+        "west": {
+          "texture": "#ingot"
+        },
+        "up": {
+          "texture": "#ingot"
+        },
+        "down": {
+          "texture": "#ingot"
+        }
+      }
+    },
+    {
+      "from": [
+        3,
+        3,
+        8
+      ],
+      "to": [
+        13,
+        6,
+        11
+      ],
+      "faces": {
+        "north": {
+          "texture": "#ingot"
+        },
+        "south": {
+          "texture": "#ingot"
+        },
+        "east": {
+          "texture": "#ingot"
+        },
+        "west": {
+          "texture": "#ingot"
+        },
+        "up": {
+          "texture": "#ingot"
+        },
+        "down": {
+          "texture": "#ingot"
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        6,
+        3
+      ],
+      "to": [
+        9,
+        8,
+        13
+      ],
+      "faces": {
+        "north": {
+          "texture": "#ingot"
+        },
+        "south": {
+          "texture": "#ingot"
+        },
+        "east": {
+          "texture": "#ingot"
+        },
+        "west": {
+          "texture": "#ingot"
+        },
+        "up": {
+          "texture": "#ingot"
+        },
+        "down": {
+          "texture": "#ingot"
+        }
+      }
+    }
+  ]
+}
