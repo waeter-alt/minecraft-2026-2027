@@ -1,0 +1,16 @@
+{
+  "replace": false,
+  "values": [
+    "interregne:couronne",
+    "interregne:etoile",
+    "interregne:region_bois",
+    "interregne:region_brique",
+    "interregne:region_ble",
+    "interregne:region_pierre",
+    "interregne:region_minerai",
+    "interregne:dragon",
+    "interregne:chaines",
+    "interregne:engrenage",
+    "interregne:tour"
+  ]
+}
