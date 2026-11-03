@@ -29,9 +29,18 @@ public final class InterregneHud
     private static final int GAIN   = 0xFF7CFF8A;
     private static final int LOSS   = 0xFFFF6B6B;
 
-    private static final int ICON        = 10;
+    private static final int LEATHER        = 0xE05C3A21;
+    private static final int LEATHER_EDGE   = 0xFF2E1B0E;
+    private static final int LEATHER_LIGHT  = 0xFF7A5232;
+    private static final int VELVET         = 0xE02E1A52;
+    private static final int VELVET_EDGE    = 0xFF140A28;
+    private static final int VELVET_LIGHT   = 0xFF4E3282;
+
+    private static final int STAR_ICON   = 11;
+    private static final int COIN_ICON_SIZE = 14;
+    private static final int PILL        = 18;
     private static final int MARGIN      = 6;
-    private static final int LINE        = 13;
+    private static final int LINE        = 21;
     private static final long FLOAT_MS   = 1800;
 
     private static long influence;
@@ -83,12 +92,14 @@ public final class InterregneHud
 
         final Font font = minecraft.font;
         final int right = graphics.guiWidth() - MARGIN;
-        drawLine(graphics, font, right, MARGIN, INFLUENCE_ICON, Wallet.format(influence), PURPLE, influenceDelta, influenceChangedAt);
-        drawLine(graphics, font, right, MARGIN + LINE, COIN_ICON, Wallet.format(gold), GOLD, goldDelta, goldChangedAt);
+        drawLine(graphics, font, right, MARGIN, INFLUENCE_ICON, STAR_ICON, VELVET, VELVET_EDGE, VELVET_LIGHT,
+          Wallet.format(influence), PURPLE, influenceDelta, influenceChangedAt);
+        drawLine(graphics, font, right, MARGIN + LINE, COIN_ICON, COIN_ICON_SIZE, LEATHER, LEATHER_EDGE, LEATHER_LIGHT,
+          Wallet.format(gold), GOLD, goldDelta, goldChangedAt);
     }
 
     /**
-     * One right-aligned line: floating change, value, then the icon at the edge.
+     * One right-aligned plate (velvet for Influence, leather for gold): floating change, value, then the icon at the edge.
      */
     private static void drawLine(
       final GuiGraphics graphics,
@@ -96,15 +107,25 @@ public final class InterregneHud
       final int right,
       final int y,
       final ResourceLocation icon,
+      final int size,
+      final int fill,
+      final int edge,
+      final int light,
       final String value,
       final int color,
       final long change,
       final long changedAt)
     {
-        final int iconX = right - ICON;
-        graphics.blit(icon, iconX, y, ICON, ICON, 0, 0, 16, 16, 16, 16);
-        final int textX = iconX - 3 - font.width(value);
-        graphics.drawString(font, value, textX, y + 1, color, true);
+        final int iconX = right - 3 - size;
+        final int textX = iconX - 4 - font.width(value);
+        final int left = textX - 5;
+        graphics.fill(left, y, right, y + PILL, edge);
+        graphics.fill(left + 1, y + 1, right - 1, y + PILL - 1, fill);
+        graphics.fill(left + 2, y + 1, right - 2, y + 2, light);
+
+        graphics.blit(icon, iconX, y + (PILL - size) / 2, size, size, 0, 0, 16, 16, 16, 16);
+        final int textY = y + (PILL - font.lineHeight) / 2 + 1;
+        graphics.drawString(font, value, textX, textY, color, true);
 
         final long age = System.currentTimeMillis() - changedAt;
         if (change != 0 && age < FLOAT_MS)
@@ -113,7 +134,7 @@ public final class InterregneHud
             final int alpha = Math.max(8, (int) (fade * 255)) << 24;
             final String text = (change > 0 ? "+" : "−") + Wallet.format(Math.abs(change));
             final int rise = (int) ((1.0F - fade) * 6);
-            graphics.drawString(font, text, textX - 4 - font.width(text), y + 1 - rise, ((change > 0 ? GAIN : LOSS) & 0xFFFFFF) | alpha, true);
+            graphics.drawString(font, text, left - 4 - font.width(text), textY - rise, ((change > 0 ? GAIN : LOSS) & 0xFFFFFF) | alpha, true);
         }
     }
 }
