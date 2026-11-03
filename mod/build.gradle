@@ -58,6 +58,8 @@ neoForge {
             gameDirectory = project.file('run/client')
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            // Duncan's preferred test window size
+            programArguments.addAll '--width', '1553', '--height', '1011'
         }
 
         server {
