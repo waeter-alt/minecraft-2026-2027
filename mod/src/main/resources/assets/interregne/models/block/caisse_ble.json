@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "interregne:block/caisse_ble_top",
+    "bottom": "interregne:block/caisse_bottom",
+    "side": "interregne:block/caisse_ble"
+  }
+}

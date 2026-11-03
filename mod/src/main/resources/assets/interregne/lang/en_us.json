@@ -5,5 +5,12 @@
   "item.interregne.lingot_imperial": "Imperial Ingot",
   "item.interregne.coffret_imperial": "Imperial Coffer",
   "item.interregne.tresor_du_dragon": "Dragon's Hoard",
-  "block.interregne.guichet_imperial": "Imperial Bank Counter"
+  "block.interregne.guichet_imperial": "Imperial Bank Counter",
+  "block.interregne.caisse_bois": "Wood Crate",
+  "block.interregne.caisse_brique": "Brick Crate",
+  "block.interregne.caisse_ble": "Wheat Crate",
+  "block.interregne.caisse_pierre": "Stone Crate",
+  "block.interregne.caisse_minerai": "Ore Crate",
+  "block.interregne.comptoir_regional": "Regional Trading Post",
+  "block.interregne.marche_imperial": "Imperial Market"
 }

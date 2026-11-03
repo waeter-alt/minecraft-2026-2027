@@ -17,6 +17,7 @@ import com.minecolonies.core.colony.workorders.WorkOrderDecoration;
 import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.InterregneMod;
 import fr.kodistan.interregne.economy.Wallet;
+import fr.kodistan.interregne.region.CrateRequirements;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -59,6 +60,12 @@ public final class InstantBuilder
         }
 
         final ServerPlayer player = BuildContext.requester();
+        // Regional crates (from level 2): checked before any Couronne is charged
+        final CrateRequirements.Plan crates = CrateRequirements.plan(colony, order, player);
+        if (crates.refused())
+        {
+            return true;
+        }
         final int cost = player == null || player.isCreative() ? 0 : costOf(order);
         if (cost > 0 && !Wallet.pay(purse(player), cost, stack -> player.drop(stack, false)))
         {
@@ -67,6 +74,7 @@ public final class InstantBuilder
                                        .withStyle(ChatFormatting.RED));
             return true;
         }
+        crates.take();
 
         final IBuilding building = order instanceof WorkOrderBuilding ? colony.getBuildingManager().getBuilding(order.getLocation()) : null;
         order.loadBlueprint(level, blueprint -> level.getServer().execute(() -> {
@@ -76,6 +84,7 @@ public final class InstantBuilder
                 if (player != null)
                 {
                     Wallet.give(purse(player), cost, stack -> player.drop(stack, false));
+                    crates.refund();
                     player.sendSystemMessage(Component.literal("Plan introuvable, chantier annulé et remboursé.").withStyle(ChatFormatting.RED));
                 }
                 return;

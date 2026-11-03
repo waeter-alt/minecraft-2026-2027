@@ -14,9 +14,14 @@ import fr.kodistan.interregne.economy.BankCounterBlock;
 import fr.kodistan.interregne.economy.Couronnes;
 import fr.kodistan.interregne.network.BankActionPayload;
 import fr.kodistan.interregne.network.OpenBankPayload;
+import fr.kodistan.interregne.network.OpenComptoirPayload;
+import fr.kodistan.interregne.network.OpenMarketPayload;
 import fr.kodistan.interregne.network.PlacementModePayload;
+import fr.kodistan.interregne.network.RegionActionPayload;
 import fr.kodistan.interregne.network.TerminalDepositPayload;
 import fr.kodistan.interregne.network.TerminalWithdrawPayload;
+import fr.kodistan.interregne.region.Crates;
+import fr.kodistan.interregne.region.Regions;
 import fr.kodistan.interregne.warehouse.Terminal;
 import org.slf4j.Logger;
 
@@ -59,6 +64,7 @@ public class InterregneMod
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::registerPayloads);
         Couronnes.register(modEventBus);
+        Crates.register(modEventBus);
     }
 
     private void registerPayloads(final RegisterPayloadHandlersEvent event)
@@ -72,6 +78,19 @@ public class InterregneMod
               if (FMLEnvironment.dist.isClient())
               {
                   ClientPayloads.openBank(payload);
+              }
+          })
+          .playToServer(RegionActionPayload.TYPE, RegionActionPayload.STREAM_CODEC, Regions::onAction)
+          .playToClient(OpenComptoirPayload.TYPE, OpenComptoirPayload.STREAM_CODEC, (payload, context) -> {
+              if (FMLEnvironment.dist.isClient())
+              {
+                  ClientPayloads.openComptoir(payload);
+              }
+          })
+          .playToClient(OpenMarketPayload.TYPE, OpenMarketPayload.STREAM_CODEC, (payload, context) -> {
+              if (FMLEnvironment.dist.isClient())
+              {
+                  ClientPayloads.openMarket(payload);
               }
           });
     }

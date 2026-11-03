@@ -1,0 +1,26 @@
+<window xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        size="190 226"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/ldtteam/BlockUI/version/main/src/main/resources/assets/blockui/gui/block_ui.xsd">
+    <image source="minecolonies:textures/gui/builderhut/builder_paper.png" size="190 226"/>
+    <text id="title" size="160 11" pos="15 14" color="black" textalign="MIDDLE" label="Comptoir régional"/>
+    <text id="colony" size="160 11" pos="15 28" color="gray" textalign="MIDDLE" label=""/>
+
+    <itemicon id="icon" size="17 17" pos="15 42"/>
+    <text id="region" size="140 11" pos="35 45" color="black" label=""/>
+
+    <text id="level" size="160 11" pos="15 66" color="black" label=""/>
+    <text id="rate" size="160 11" pos="15 79" color="black" label=""/>
+    <text id="next" size="160 11" pos="15 92" color="gray" label=""/>
+
+    <text id="stock" size="160 11" pos="15 110" color="black" label=""/>
+    <text id="storage" size="160 22" pos="15 123" color="gray" label=""/>
+    <button id="take" size="160 17" pos="15 146" color="black"
+            source="minecolonies:textures/gui/builderhut/builder_button_medium_large.png" label="Prendre la réserve"/>
+
+    <text id="upgradeInfo" size="160 11" pos="15 170" color="black" textalign="MIDDLE" label=""/>
+    <button id="upgrade" size="160 17" pos="15 182" color="black"
+            source="minecolonies:textures/gui/builderhut/builder_button_medium_large.png" label="Améliorer"/>
+
+    <button id="close" size="86 17" pos="52 204" color="black"
+            source="minecolonies:textures/gui/builderhut/builder_button_medium.png" label="Fermer"/>
+</window>
