@@ -156,13 +156,25 @@ public final class WallPlanner
         Terrain.Probe probe = PROBES.get(key);
         if (probe == null)
         {
-            probe = Terrain.probe(minecraft.level, x, z);
+            probe = Terrain.probe(minecraft.level, x, z, OWN.contains(key) ? fr.kodistan.interregne.walls.WallBlocks::isWallBlock : null);
             if (probe.loaded())
             {
                 PROBES.put(key, probe);
             }
         }
         return probe;
+    }
+
+    /**
+     * Cells of the colony's own built wall: the terrain is read through its blocks there, as the ground it was built on.
+     */
+    private static final java.util.Set<Long> OWN = new java.util.HashSet<>();
+
+    static void own(final java.util.Collection<Long> cells)
+    {
+        OWN.clear();
+        OWN.addAll(cells);
+        PROBES.clear();
     }
 
     static void forgetTerrain()

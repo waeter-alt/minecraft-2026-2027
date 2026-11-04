@@ -118,6 +118,19 @@ public final class UiScenarios
                         }
                     }));
                     targets.add(new Target("wallbuild-done", 900, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.reopenDemo(colony.getTownHall())));
+                    // Then the hub with its two actions, an upgrade to level 2 and the planner retracing the built wall
+                    targets.add(new Target("wallbuild-hub", 40, () -> ColonyHubScreen.openDev(colony.getTownHall(), "walls", 0)));
+                    targets.add(new Target("wallbuild-upsite", 300, () -> {
+                        net.neoforged.neoforge.network.PacketDistributor.sendToServer(new fr.kodistan.interregne.network.WallUpgradePayload(colony.getID()));
+                        fr.kodistan.interregne.client.walls.WallPlannerScreen.reopenDemo(colony.getTownHall());
+                    }));
+                    targets.add(new Target("wallbuild-updone", 900, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.reopenDemo(colony.getTownHall())));
+                    targets.add(new Target("wallbuild-uphub", 40, () -> ColonyHubScreen.openDev(colony.getTownHall(), "walls", 0)));
+                }
+                case "walledit" -> {
+                    // Over a built wall: the planner retracing it unchanged, then with its first tower moved
+                    targets.add(new Target("walledit-same", 80, () -> net.minecraft.client.Minecraft.getInstance().setScreen(new fr.kodistan.interregne.client.walls.WallPlannerScreen(colony.getTownHall()))));
+                    targets.add(new Target("walledit-moved", 80, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.openEditDemo(colony.getTownHall())));
                 }
                 default -> throw new IllegalArgumentException("Unknown screen " + spec);
             }

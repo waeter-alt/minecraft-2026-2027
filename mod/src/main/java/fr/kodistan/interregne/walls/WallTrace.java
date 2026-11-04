@@ -106,6 +106,18 @@ public final class WallTrace
         version++;
     }
 
+    /**
+     * Moves one point (a tower dragged elsewhere).
+     */
+    public void move(final int index, final Point point)
+    {
+        if (index >= 0 && index < points.size() && !points.get(index).equals(point))
+        {
+            points.set(index, point);
+            version++;
+        }
+    }
+
     public void clear()
     {
         points.clear();

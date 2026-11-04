@@ -708,8 +708,9 @@ public final class ColonyHubScreen extends ParchmentScreen
               wall.building() ? "en construction" : "niveau " + wall.level() + " · " + look);
             final int towers = wall.points().size() / 2;
             final int gates = wall.gates().size() / 2;
-            return Ui.wrapped(graphics, font, Component.literal((wall.closed() ? "Enceinte fermée" : "Muraille ouverte") + ", " + towers + " tours, "
-              + gates + (gates > 1 ? " portes. " : " porte. ") + "Améliorations et retouches du tracé arrivent à la prochaine étape."), x + 2, y + 20, width - 4, Palette.MUTED, 10) + 4;
+            y = Ui.wrapped(graphics, font, Component.literal((wall.closed() ? "Enceinte fermée" : "Muraille ouverte") + ", " + towers + " tours, "
+              + gates + (gates > 1 ? " portes." : " porte.")), x + 2, y + 20, width - 4, Palette.MUTED, 10) + 6;
+            return wallActions(graphics, mouseX, mouseY, x, y, width, wall);
         }
         y += Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, "Murailles", "aucune muraille");
         y = Ui.wrapped(graphics, font, Component.literal("Tracez l'enceinte de la colonie vue du ciel : posez des points au sol, la muraille "
@@ -718,6 +719,93 @@ public final class ColonyHubScreen extends ParchmentScreen
         seatButton(graphics, mouseX, mouseY, x, y, buttonW, "Tracer la muraille", Ui.ButtonStyle.PRIMARY, true,
           () -> minecraft.setScreen(new fr.kodistan.interregne.client.walls.WallPlannerScreen(townHall)));
         return y + Ui.BUTTON_H + 6;
+    }
+
+    /**
+     * The built wall's two actions: raise it to the next level (price inside, capped by the town hall's level) and
+     * retrace it in the planner. Side by side when they fit, stacked otherwise.
+     */
+    private int wallActions(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width,
+      final fr.kodistan.interregne.network.WallSyncPayload wall)
+    {
+        final int next = wall.level() + 1;
+        final boolean max = next > fr.kodistan.interregne.walls.WallLevels.MAX;
+        if (!max)
+        {
+            final fr.kodistan.interregne.walls.WallLevels.Level look = fr.kodistan.interregne.walls.WallLevels.of(next);
+            y = Ui.wrapped(graphics, font, Component.literal("Niveau " + next + " · " + look.name() + " : " + look.height() + " blocs de haut, "
+              + look.thickness() + " d'épaisseur. Le tracé et les portes restent ; la muraille est rebâtie dans son nouvel aspect."), x + 2, y, width - 4, Palette.MUTED, 10) + 6;
+        }
+        final boolean creative = minecraft.player != null && minecraft.player.isCreative();
+        final long cost = max || creative ? 0 : wallCost(wall, next);
+        final long money = ClientTreasury.of(colony) + (minecraft.player == null ? 0 : Wallet.value(new PlayerMainInvWrapper(minecraft.player.getInventory())));
+        final String refusal = max ? "Niveau maximal" : wall.building() ? "Chantier en cours"
+                                 : townHall.getBuildingLevel() < next ? "Hôtel de ville niv. " + next + " requis" : null;
+        final boolean payable = refusal == null && money >= cost;
+
+        final int retraceW = Math.max(110, font.width("Retoucher le tracé") + 20);
+        final boolean side = width >= retraceW + 6 + 150;
+        final int upW = side ? width - retraceW - 6 : width;
+        final int h = 18;
+        final boolean overUp = Ui.inside(mouseX, mouseY, x, y, upW, h);
+        if (payable)
+        {
+            Ui.plate(graphics, x, y, x + upW, y + h, overUp ? Palette.GREEN_HOVER : Palette.GREEN, Palette.EDGE, Palette.GREEN_LIGHT);
+        }
+        else
+        {
+            Ui.plate(graphics, x, y, x + upW, y + h, Palette.PAPER_DARK, Palette.EDGE, Palette.PAPER_DARK);
+        }
+        final int textY = y + (h - 8) / 2;
+        if (refusal != null)
+        {
+            graphics.drawCenteredString(font, fit(refusal, upW - 8), x + upW / 2, textY, Palette.MUTED);
+        }
+        else
+        {
+            String verb = "Améliorer · niv. " + next;
+            final Component price = Component.literal(creative ? "gratuit" : money >= cost ? Wallet.format(cost) : Wallet.format(money) + "/" + Wallet.format(cost))
+                                      .withStyle(ChatFormatting.BOLD);
+            final int priceW = PRICE_ICON + 3 + font.width(price);
+            if (font.width(Component.literal(verb).withStyle(ChatFormatting.BOLD)) + 12 + priceW > upW - 12)
+            {
+                verb = "Améliorer";
+            }
+            final Component verbText = Component.literal(verb).withStyle(ChatFormatting.BOLD);
+            int cx = x + (upW - (font.width(verbText) + 12 + priceW)) / 2;
+            graphics.drawString(font, verbText, cx, textY, payable ? Palette.GREEN_TEXT : Palette.MUTED, false);
+            cx += font.width(verbText) + 12;
+            Ui.coinTight(graphics, cx, y + (h - PRICE_ICON) / 2, PRICE_ICON);
+            graphics.drawString(font, price, cx + PRICE_ICON + 3, textY, money >= cost ? (payable ? Palette.GREEN_TEXT : Palette.INK) : Palette.RED, false);
+        }
+        if (payable)
+        {
+            final int colonyId = colony.getID();
+            addHit(x, y, upW, h, () -> net.neoforged.neoforge.network.PacketDistributor.sendToServer(new fr.kodistan.interregne.network.WallUpgradePayload(colonyId)));
+        }
+        if (overUp)
+        {
+            hint = refusal != null && refusal.startsWith("Hôtel") ? "Une muraille ne dépasse pas le niveau de l'hôtel de ville : améliorez-le d'abord."
+                     : refusal == null && money < cost ? "Il manque " + Wallet.format(cost - money) + " Couronnes (trésor régional et bourse comptés)."
+                         : refusal == null ? "Rebâtit toute la muraille au niveau " + next + ", plus haute et plus solide. Trésor régional d'abord, puis la bourse." : null;
+        }
+
+        final int rx = side ? x + upW + 6 : x;
+        final int ry = side ? y : y + h + 4;
+        seatButton(graphics, mouseX, mouseY, rx, ry + (h - Ui.BUTTON_H) / 2, side ? retraceW : width, "Retoucher le tracé", Ui.ButtonStyle.SECONDARY, !wall.building(),
+          () -> minecraft.setScreen(new fr.kodistan.interregne.client.walls.WallPlannerScreen(townHall)));
+        return ry + h + 6;
+    }
+
+    /**
+     * The wall's full price at a level: it depends only on its geometry, so flat ground stands in for the terrain.
+     */
+    private long wallCost(final fr.kodistan.interregne.network.WallSyncPayload wall, final int wallLevel)
+    {
+        final fr.kodistan.interregne.walls.WallLevels.Level look = fr.kodistan.interregne.walls.WallLevels.of(wallLevel);
+        final fr.kodistan.interregne.walls.Terrain.Probe flat = new fr.kodistan.interregne.walls.Terrain.Probe(64, false, false, true);
+        return fr.kodistan.interregne.walls.WallLayout.of(fr.kodistan.interregne.walls.WallTrace.unflat(wall.points()), wall.closed(),
+          fr.kodistan.interregne.walls.WallTrace.unflat(wall.gates()), look, (gx, gz) -> flat, (gx, gz) -> true).cost(look);
     }
 
     /**

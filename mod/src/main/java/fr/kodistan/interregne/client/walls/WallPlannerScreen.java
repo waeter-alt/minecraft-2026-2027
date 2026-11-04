@@ -43,7 +43,21 @@ public final class WallPlannerScreen extends Screen
     private final IBuildingView townHall;
     private final IColonyView colony;
     private final WallTrace trace = new WallTrace();
-    private final WallLevels.Level level = WallLevels.of(1);
+    private WallLevels.Level level = WallLevels.of(1);
+    private int levelNumber = 1;
+    /**
+     * The colony's built wall, loaded into the planner to be retraced; null for a first wall.
+     */
+    @Nullable
+    private final fr.kodistan.interregne.network.WallSyncPayload existing;
+    private int originalCost;
+    private String originalKey = "";
+    /**
+     * The tower being dragged, -1 when none.
+     */
+    private int dragging = -1;
+    @Nullable
+    private WallTrace.Point grab;
 
     private boolean hiddenGui;
     private long lastFrame;
@@ -92,6 +106,32 @@ public final class WallPlannerScreen extends Screen
         super(Component.literal("Murailles"));
         this.townHall = townHall;
         this.colony = townHall.getColony();
+        this.existing = ClientWalls.of(colony);
+        if (existing != null)
+        {
+            for (final WallTrace.Point point : WallTrace.unflat(existing.points()))
+            {
+                trace.add(point);
+            }
+            if (existing.closed())
+            {
+                trace.close();
+            }
+            else
+            {
+                trace.finish();
+            }
+            gates.addAll(WallTrace.unflat(existing.gates()));
+            levelNumber = Math.max(1, existing.level());
+            level = WallLevels.of(levelNumber);
+            originalKey = shapeKey();
+            wasDone = true;
+        }
+    }
+
+    private String shapeKey()
+    {
+        return trace.points() + "|" + trace.closed() + "|" + gates;
     }
 
     /**
@@ -100,6 +140,8 @@ public final class WallPlannerScreen extends Screen
     public static void openDemo(final IBuildingView townHall, final boolean closed)
     {
         final WallPlannerScreen screen = new WallPlannerScreen(townHall);
+        screen.trace.clear();
+        screen.gates.clear();
         final BlockPos c = townHall.getPosition();
         final int r = 20;
         screen.trace.add(new WallTrace.Point(c.getX() - r, c.getZ() - r));
@@ -150,6 +192,21 @@ public final class WallPlannerScreen extends Screen
     }
 
     /**
+     * Dev captures only: the planner retracing the colony's built wall, its first tower pulled out by six blocks.
+     */
+    public static void openEditDemo(final IBuildingView townHall)
+    {
+        final WallPlannerScreen screen = new WallPlannerScreen(townHall);
+        if (screen.existing != null && !screen.trace.points().isEmpty())
+        {
+            final WallTrace.Point first = screen.trace.points().getFirst();
+            screen.focus = new BlockPos(first.x(), townHall.getPosition().getY(), first.z());
+            screen.trace.move(0, new WallTrace.Point(first.x() - 6, first.z() - 6));
+        }
+        net.minecraft.client.Minecraft.getInstance().setScreen(screen);
+    }
+
+    /**
      * Dev captures only: the planner again, looking at the last demo wall.
      */
     public static void reopenDemo(final IBuildingView townHall)
@@ -176,12 +233,38 @@ public final class WallPlannerScreen extends Screen
             minecraft.options.hideGui = true;
             lastFrame = Util.getMillis();
         }
+        if (existing != null)
+        {
+            // See through the built wall to the ground under it, and price the old trace once to charge only the difference
+            final List<WallTrace.Point> old = WallTrace.unflat(existing.points());
+            final java.util.Set<Long> cells = new java.util.HashSet<>();
+            final int reach = WallLayout.GATE_HALF + 2;
+            for (int i = 0; i < old.size(); i++)
+            {
+                if (i + 1 < old.size() || existing.closed())
+                {
+                    for (final WallTrace.Point cell : WallTrace.line(old.get(i), old.get((i + 1) % old.size())))
+                    {
+                        for (int dx = -reach; dx <= reach; dx++)
+                        {
+                            for (int dz = -reach; dz <= reach; dz++)
+                            {
+                                cells.add(((long) (cell.x() + dx) << 32) | ((cell.z() + dz) & 0xFFFFFFFFL));
+                            }
+                        }
+                    }
+                }
+            }
+            WallPlanner.own(cells);
+            originalCost = WallLayout.of(old, existing.closed(), WallTrace.unflat(existing.gates()), level, WallPlanner::probe, this::inColony).cost(level);
+        }
     }
 
     @Override
     public void removed()
     {
         WallPlanner.stop();
+        WallPlanner.own(List.of());
         minecraft.options.hideGui = hiddenGui;
     }
 
@@ -271,6 +354,16 @@ public final class WallPlannerScreen extends Screen
             return;
         }
         gateSpot = null;
+        grab = null;
+        if (trace.done() && !overUi)
+        {
+            final WallTrace.Point at = WallPlanner.pick(mouseX / (double) width, mouseY / (double) height);
+            if (dragging >= 0 && at != null)
+            {
+                trace.move(dragging, at);
+            }
+            grab = dragging >= 0 ? trace.points().get(dragging) : at == null ? null : towerNear(at);
+        }
         final WallTrace.Point hover = overUi || trace.done() ? null : WallPlanner.pick(mouseX / (double) width, mouseY / (double) height);
         candidate = hover == null ? null : trace.snap(hover, hasShiftDown());
         closing = false;
@@ -306,7 +399,33 @@ public final class WallPlannerScreen extends Screen
             }
             layout = points.isEmpty() ? null : WallLayout.of(points, closed, gates, level, WallPlanner::probe, this::inColony);
         }
-        WallPlanner.show(layout, candidate, closing || finishing, null);
+        WallPlanner.show(layout, candidate != null ? candidate : grab, closing || finishing || grab != null, null);
+    }
+
+    /**
+     * Index of the tower within two blocks of this cell, -1 when none.
+     */
+    private int towerIndex(final WallTrace.Point at)
+    {
+        int best = -1;
+        int bestDistance = 5;
+        for (int i = 0; i < trace.points().size(); i++)
+        {
+            final int distance = trace.points().get(i).distanceSq(at);
+            if (distance < bestDistance)
+            {
+                best = i;
+                bestDistance = distance;
+            }
+        }
+        return best;
+    }
+
+    @Nullable
+    private WallTrace.Point towerNear(final WallTrace.Point at)
+    {
+        final int index = towerIndex(at);
+        return index < 0 ? null : trace.points().get(index);
     }
 
     /**
@@ -367,6 +486,7 @@ public final class WallPlannerScreen extends Screen
           new String[] {"Clic", "poser un point"},
           new String[] {"Clic dernière tour", "finir ouverte"},
           new String[] {"Clic droit", "annuler"},
+          new String[] {"Glisser une tour", "la déplacer"},
           new String[] {"G", "portes"},
           new String[] {keys(), "se déplacer"},
           new String[] {"Molette", "zoom"},
@@ -380,9 +500,9 @@ public final class WallPlannerScreen extends Screen
         panelY1 = y + height;
         Ui.plate(graphics, x, y, x + panelW, y + height, Palette.PANEL, Palette.EDGE, Palette.PAPER_LIGHT);
         int ty = y + 8;
-        graphics.drawString(font, Ui.fitBold(font, gateMode ? "Portes de la muraille" : "Tracé de la muraille", inner), x + 8, ty, Palette.INK, false);
+        graphics.drawString(font, Ui.fitBold(font, gateMode ? "Portes de la muraille" : existing != null ? "Retouche de la muraille" : "Tracé de la muraille", inner), x + 8, ty, Palette.INK, false);
         ty += LINE;
-        graphics.drawString(font, Ui.fit(font, "Niv. 1 · " + level.name() + " · " + level.height() + " blocs de haut", inner), x + 8, ty, Palette.MUTED, false);
+        graphics.drawString(font, Ui.fit(font, levelLine(inner), inner), x + 8, ty, Palette.MUTED, false);
         ty += LINE + 4;
         final int length = layout == null ? 0 : layout.length();
         final int towers = layout == null ? 0 : layout.towers().size();
@@ -425,6 +545,22 @@ public final class WallPlannerScreen extends Screen
         }
     }
 
+    /**
+     * « Niv. 2 · Pierre brute · 5 blocs de haut », shortened to what fits.
+     */
+    private String levelLine(final int width)
+    {
+        final String head = "Niv. " + levelNumber + " · " + level.name();
+        for (final String tail : new String[] {" · " + level.height() + " blocs de haut", " · " + level.height() + " de haut", ""})
+        {
+            if (font.width(head + tail) <= width)
+            {
+                return head + tail;
+            }
+        }
+        return head;
+    }
+
     private int stat(final GuiGraphics graphics, final int x, final int y, final int width, final String label, final String value)
     {
         graphics.drawString(font, label, x, y, Palette.MUTED, false);
@@ -454,17 +590,20 @@ public final class WallPlannerScreen extends Screen
 
         // Main action: the price inside; green when it can be built, grey with the reason otherwise
         final boolean creative = minecraft.player != null && minecraft.player.isCreative();
-        final int cost = layout == null || creative ? 0 : layout.cost(level);
+        final boolean editing = existing != null;
+        final int cost = layout == null || creative ? 0 : editing ? Math.max(0, layout.cost(level) - originalCost) : layout.cost(level);
         final long money = ClientTreasury.of(colony) + (minecraft.player == null ? 0 : Wallet.value(new PlayerMainInvWrapper(minecraft.player.getInventory())));
-        final String refusal = ClientWalls.of(colony) != null ? "Muraille déjà bâtie"
+        final fr.kodistan.interregne.network.WallSyncPayload live = ClientWalls.of(colony);
+        final String refusal = live != null && live.building() ? "Chantier en cours"
                                  : trace.points().size() < 2 ? null
                                      : !trace.done() ? "Finir le tracé"
                                          : layout != null && layout.blocked() > 0 ? "Obstacles en rouge"
                                              : gates.isEmpty() ? "Placer une porte"
-                                                 : null;
+                                                 : editing && shapeKey().equals(originalKey) ? "Aucun changement"
+                                                     : null;
         final boolean affordable = money >= cost;
         final boolean ready = trace.points().size() >= 2 && trace.done() && refusal == null && affordable;
-        final String build = refusal != null ? refusal : "Bâtir";
+        final String build = refusal != null ? refusal : editing ? "Modifier" : "Bâtir";
         final String price = creative ? "gratuit" : affordable ? Integer.toString(cost) : compact(money) + "/" + compact(cost);
         final boolean showPrice = refusal == null;
         final int buildW = font.width(build) + 14 + (showPrice ? 10 + 12 + font.width(price) : 0);
@@ -534,6 +673,9 @@ public final class WallPlannerScreen extends Screen
                                  : "Finir le tracé".equals(refusal) ? "Cliquez sur le premier point pour fermer l'enceinte, ou sur la dernière tour pour la laisser ouverte."
                                      : "Obstacles en rouge".equals(refusal) ? "Le tracé traverse un bâtiment, sort de la colonie, ou une porte ne tient plus sur un pan droit : corrigez les parties rouges."
                                      : "Placer une porte".equals(refusal) ? "Une muraille a besoin d'au moins une porte, posée sur un pan droit. La première est offerte."
+                                     : "Aucun changement".equals(refusal) ? "Glissez une tour, ajoutez ou retirez une porte (G), ou effacez pour retracer : seul ce qui s'ajoute se paie."
+                                     : "Chantier en cours".equals(refusal) ? "La muraille se construit : attendez la fin du chantier pour la retoucher."
+                                         : ready && editing ? "Retouche la muraille : seul ce qui s'ajoute est payé, les pans retirés sont démontés. Chantier : " + seconds() + " s."
                                          : ready ? "Paie la muraille (trésor régional d'abord) et lance le chantier : " + seconds() + " s." : null;
             if (tip != null)
             {
@@ -620,6 +762,11 @@ public final class WallPlannerScreen extends Screen
             }
             return true;
         }
+        if (button == 0 && trace.done() && grab != null)
+        {
+            dragging = trace.points().indexOf(grab);
+            return true;
+        }
         if (button == 0 && candidate != null)
         {
             if (closing)
@@ -663,6 +810,11 @@ public final class WallPlannerScreen extends Screen
     @Override
     public boolean mouseReleased(final double mouseX, final double mouseY, final int button)
     {
+        if (button == 0 && dragging >= 0)
+        {
+            dragging = -1;
+            return true;
+        }
         if (button == 1 && rightDown)
         {
             rightDown = false;

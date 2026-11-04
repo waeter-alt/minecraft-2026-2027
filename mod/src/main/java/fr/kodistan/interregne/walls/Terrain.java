@@ -9,6 +9,9 @@ import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.neoforge.common.Tags;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.function.Predicate;
 
 /**
  * Reads the ground a wall stands on. Trees, grass and flowers are not ground: the wall clears them. Anything else
@@ -37,6 +40,14 @@ public final class Terrain
 
     public static Probe probe(final LevelReader level, final int x, final int z)
     {
+        return probe(level, x, z, null);
+    }
+
+    /**
+     * Same, seeing through the blocks ignore accepts as well (the colony's own wall, when it is being retraced).
+     */
+    public static Probe probe(final LevelReader level, final int x, final int z, @Nullable final Predicate<BlockState> ignore)
+    {
         if (!level.hasChunk(x >> 4, z >> 4))
         {
             return Probe.UNKNOWN;
@@ -48,7 +59,7 @@ public final class Terrain
         {
             pos.setY(y);
             final BlockState state = level.getBlockState(pos);
-            if (!clearable(level, pos, state))
+            if (!clearable(level, pos, state) && (ignore == null || !ignore.test(state)))
             {
                 break;
             }

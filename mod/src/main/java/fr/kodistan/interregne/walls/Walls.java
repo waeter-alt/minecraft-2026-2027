@@ -18,12 +18,18 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.block.Blocks;
+import fr.kodistan.interregne.network.WallUpgradePayload;
+import org.jetbrains.annotations.Nullable;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -68,10 +74,9 @@ public final class Walls
             return;
         }
         final String key = RegionalTreasury.keyOf(colony);
-        final WallRegistry registry = WallRegistry.get(player.server);
-        if (registry.of(colony) != null || BUILDING.contains(key))
+        if (BUILDING.contains(key))
         {
-            refuse(player, "Cette colonie a déjà sa muraille.");
+            refuse(player, "La muraille est déjà en chantier.");
             return;
         }
         final List<WallTrace.Point> points = WallTrace.unflat(payload.points());
@@ -95,21 +100,95 @@ public final class Walls
                 return;
             }
         }
+        // A new wall is paid in full; a retraced one pays only what it adds
+        final WallRegistry.Wall old = WallRegistry.get(player.server).of(colony);
+        final int wallLevel = old == null ? 1 : old.level();
+        apply(player, colony, old, points, gates, payload.closed(), wallLevel, old != null);
+    }
 
-        final int wallLevel = 1;
-        final WallLevels.Level look = WallLevels.of(wallLevel);
-        final WallLayout layout = WallLayout.of(points, payload.closed(), gates, look, (x, z) -> Terrain.probe(level, x, z),
-          (x, z) -> colony.isCoordInColony(level, new BlockPos(x, 64, z)));
-        if (layout.blocked() > 0)
+    /**
+     * Raises the colony's wall to its next level: same trace and gates, taller, thicker, in its new look.
+     */
+    public static void onUpgrade(final WallUpgradePayload payload, final IPayloadContext context)
+    {
+        if (!(context.player() instanceof ServerPlayer player))
         {
-            refuse(player, "Le tracé traverse un bâtiment, sort de la colonie ou une porte ne tient pas : retire les parties rouges.");
             return;
         }
-        final long cost = player.isCreative() ? 0 : layout.cost(look);
+        final IColony colony = IColonyManager.getInstance().getColonyByWorld(payload.colony(), player.serverLevel());
+        if (colony == null || !colony.getPermissions().isColonyMember(player))
+        {
+            return;
+        }
+        final WallRegistry.Wall old = WallRegistry.get(player.server).of(colony);
+        if (old == null || BUILDING.contains(RegionalTreasury.keyOf(colony)))
+        {
+            return;
+        }
+        final int next = old.level() + 1;
+        if (next > WallLevels.MAX)
+        {
+            refuse(player, "La muraille est déjà au niveau maximal.");
+            return;
+        }
+        final int townHall = colony.getBuildingManager().getTownHall() == null ? 0 : colony.getBuildingManager().getTownHall().getBuildingLevel();
+        if (townHall < next)
+        {
+            refuse(player, "Il faut un hôtel de ville de niveau " + next + " pour une muraille de niveau " + next + ".");
+            return;
+        }
+        apply(player, colony, old, old.points(), old.gates(), old.closed(), next, false);
+    }
+
+    /**
+     * Lays the wall out on the ground remembered under the old one (live terrain elsewhere), charges it and starts
+     * the site: the old blocks the new wall no longer covers come down first, then the new wall rises.
+     *
+     * @param difference charge only the difference with the old wall at the same level (a retrace), not the full price
+     */
+    private static void apply(final ServerPlayer player, final IColony colony, @Nullable final WallRegistry.Wall old, final List<WallTrace.Point> points,
+      final List<WallTrace.Point> gates, final boolean closed, final int wallLevel, final boolean difference)
+    {
+        final ServerLevel level = player.serverLevel();
+        final String key = RegionalTreasury.keyOf(colony);
+        final Map<Long, Terrain.Probe> remembered = old == null ? Map.of() : old.ground();
+        final Map<Long, Terrain.Probe> ground = new HashMap<>(remembered);
+        final WallLayout.Ground reader = (x, z) -> {
+            final long cell = WallRegistry.cell(x, z);
+            final Terrain.Probe known = ground.get(cell);
+            if (known != null)
+            {
+                return known;
+            }
+            final Terrain.Probe probe = Terrain.probe(level, x, z);
+            if (probe.loaded() && !probe.blocked())
+            {
+                ground.put(cell, probe);
+            }
+            return probe;
+        };
+        final WallLayout.Claim claim = (x, z) -> colony.isCoordInColony(level, new BlockPos(x, 64, z));
+        final WallLevels.Level look = WallLevels.of(wallLevel);
+        final WallLayout layout = WallLayout.of(points, closed, gates, look, reader, claim);
+        if (layout.blocked() > 0)
+        {
+            refuse(player, "La muraille touche un bâtiment, sort de la colonie ou une porte ne tient pas : retire les parties rouges.");
+            return;
+        }
+        long cost = layout.cost(look);
+        if (difference && old != null)
+        {
+            final WallLayout before = WallLayout.of(old.points(), old.closed(), old.gates(), look, reader, claim);
+            cost = Math.max(0, cost - before.cost(look));
+        }
+        if (player.isCreative())
+        {
+            cost = 0;
+        }
         final TreasuryPayment payment = TreasuryPayment.pay(player, colony, cost);
         if (payment == null)
         {
-            refuse(player, "Il te faut " + Wallet.couronnes(cost, null) + " pour cette muraille (trésor régional compris).");
+            refuse(player, "Il te faut " + Wallet.couronnes(cost, null) + " pour ce chantier (trésor régional compris).");
             return;
         }
         if (cost > 0)
@@ -117,16 +196,46 @@ public final class Walls
             player.sendSystemMessage(Component.literal("Payé : " + payment.describe() + ".").withStyle(ChatFormatting.GRAY));
         }
 
+        final List<WallBlocks.Step> steps = new ArrayList<>(WallBlocks.of(level, layout, wallLevel, reader));
+        final Set<Long> placed = new HashSet<>();
+        for (final WallBlocks.Step step : steps)
+        {
+            if (!step.state().isAir())
+            {
+                placed.add(step.pos().asLong());
+            }
+        }
+        if (old != null)
+        {
+            // What the new wall no longer covers comes down first, never below the ground it stood on
+            final List<WallBlocks.Step> removals = new ArrayList<>();
+            for (final long packed : old.placed())
+            {
+                final BlockPos pos = BlockPos.of(packed);
+                final Terrain.Probe under = ground.get(WallRegistry.cell(pos.getX(), pos.getZ()));
+                if (!placed.contains(packed) && (under == null || pos.getY() > under.ground()))
+                {
+                    removals.add(new WallBlocks.Step(pos, Blocks.AIR.defaultBlockState(), -1));
+                }
+            }
+            removals.sort(Comparator.comparingInt((WallBlocks.Step step) -> step.pos().getY()).reversed());
+            steps.addAll(0, removals);
+        }
+
         final int seconds = seconds(layout);
-        final WallRegistry.Wall wall = new WallRegistry.Wall(List.copyOf(points), List.copyOf(gates), payload.closed(), wallLevel);
+        final WallRegistry.Wall wall = new WallRegistry.Wall(List.copyOf(points), List.copyOf(gates), closed, wallLevel, ground,
+          placed.stream().mapToLong(Long::longValue).toArray());
+        final WallRegistry registry = WallRegistry.get(player.server);
         BUILDING.add(key);
         sync(player.server, key, wall, true);
-        WallSite.launch(level, WallBlocks.of(level, layout, wallLevel), seconds, wallLevel, bannerOf(colony), () -> {
+        WallSite.launch(level, steps, seconds, wallLevel, bannerOf(colony), () -> {
             BUILDING.remove(key);
             registry.put(colony, wall);
             sync(player.server, key, wall, false);
         });
-        player.sendSystemMessage(Component.literal("Chantier de la muraille lancé : " + seconds + " s.").withStyle(ChatFormatting.GOLD));
+        final String what = old == null ? "Chantier de la muraille lancé" : wallLevel > old.level() ? "Muraille en route vers le niveau " + wallLevel
+                              : "Retouche de la muraille lancée";
+        player.sendSystemMessage(Component.literal(what + " : " + seconds + " s.").withStyle(ChatFormatting.GOLD));
     }
 
     /**

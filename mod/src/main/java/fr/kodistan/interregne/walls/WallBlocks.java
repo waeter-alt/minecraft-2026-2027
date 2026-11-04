@@ -56,11 +56,42 @@ public final class WallBlocks
 
     private static final int CLEAR_ABOVE = 24;
 
+    /**
+     * Whether a block is one a wall is made of, at any level (to see through a colony's own wall when retracing it).
+     */
+    public static boolean isWallBlock(final BlockState state)
+    {
+        if (state.is(Blocks.LANTERN) || state.is(Blocks.WHITE_WALL_BANNER))
+        {
+            return true;
+        }
+        for (final Style style : STYLES)
+        {
+            for (final BlockState part : new BlockState[] {style.body(), style.cap(), style.spike(), style.tower(), style.towerTop(), style.rail(),
+              style.pile(), style.floor(), style.portcullis()})
+            {
+                if (state.is(part.getBlock()))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private WallBlocks()
     {
     }
 
     public static List<Step> of(final LevelReader level, final WallLayout layout, final int wallLevel)
+    {
+        return of(level, layout, wallLevel, (x, z) -> Terrain.probe(level, x, z));
+    }
+
+    /**
+     * Same, reading the ground through this function (the ground remembered under an existing wall).
+     */
+    public static List<Step> of(final LevelReader level, final WallLayout layout, final int wallLevel, final WallLayout.Ground ground)
     {
         final Style style = STYLES[Math.max(1, Math.min(STYLES.length, wallLevel)) - 1];
         final List<Step> steps = new ArrayList<>();
@@ -89,7 +120,7 @@ public final class WallBlocks
                 {
                     final int x = tower.x() + dx;
                     final int z = tower.z() + dz;
-                    final Terrain.Probe probe = Terrain.probe(level, x, z);
+                    final Terrain.Probe probe = ground.at(x, z);
                     final int bottom = probe.loaded() ? probe.ground() + 1 : tower.bottom();
                     clear(level, steps, x, z, bottom, tower.top() + CLEAR_ABOVE, order);
                     piles(level, steps, x, z, style, order);
@@ -111,7 +142,7 @@ public final class WallBlocks
         }
         for (final WallLayout.Gate gate : layout.gates())
         {
-            gate(level, steps, gate, style);
+            gate(level, steps, gate, style, ground);
         }
         steps.sort(Comparator.comparingInt(Step::order).thenComparingInt(step -> step.state().isAir() ? 0 : 1).thenComparingInt(step -> step.pos().getY()));
         return steps;
@@ -121,7 +152,7 @@ public final class WallBlocks
      * A gatehouse: a passage floored and cleared to the lintel, its portcullis raised under it, and a turret on each
      * side with the colony's banners on both faces and a lantern on top.
      */
-    private static void gate(final LevelReader level, final List<Step> steps, final WallLayout.Gate gate, final Style style)
+    private static void gate(final LevelReader level, final List<Step> steps, final WallLayout.Gate gate, final Style style, final WallLayout.Ground ground)
     {
         final int order = gate.index() * 2;
         final int depth = gate.depth();
@@ -132,14 +163,14 @@ public final class WallBlocks
             {
                 final int x = gate.x() + along * gate.ux() - across * gate.uz();
                 final int z = gate.z() + along * gate.uz() + across * gate.ux();
-                final Terrain.Probe probe = Terrain.probe(level, x, z);
-                final int ground = probe.loaded() ? probe.ground() : gate.floor();
+                final Terrain.Probe probe = ground.at(x, z);
+                final int below = probe.loaded() ? probe.ground() : gate.floor();
                 final boolean edge = Math.abs(across) == depth || Math.abs(along) == WallLayout.GATE_HALF;
                 if (gate.passage(along))
                 {
                     clear(level, steps, x, z, gate.floor() + 1, gate.crest() + CLEAR_ABOVE, order);
                     piles(level, steps, x, z, style, order);
-                    for (int y = ground + 1; y < gate.floor(); y++)
+                    for (int y = below + 1; y < gate.floor(); y++)
                     {
                         steps.add(new Step(new BlockPos(x, y, z), style.body(), order));
                     }
@@ -166,9 +197,9 @@ public final class WallBlocks
                     }
                     continue;
                 }
-                clear(level, steps, x, z, ground + 1, turretTop + CLEAR_ABOVE, order);
+                clear(level, steps, x, z, below + 1, turretTop + CLEAR_ABOVE, order);
                 piles(level, steps, x, z, style, order);
-                for (int y = ground + 1; y <= turretTop; y++)
+                for (int y = below + 1; y <= turretTop; y++)
                 {
                     steps.add(new Step(new BlockPos(x, y, z), y == turretTop ? style.towerTop() : style.tower(), order));
                 }
