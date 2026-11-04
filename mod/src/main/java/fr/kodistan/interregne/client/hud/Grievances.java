@@ -115,6 +115,23 @@ public final class Grievances
     }
 
     /**
+     * How many grievances this citizen has right now, for the hut window.
+     */
+    public static int count(final ICitizenDataView citizen)
+    {
+        final Minecraft minecraft = Minecraft.getInstance();
+        int count = 0;
+        for (final IInteractionResponseHandler interaction : citizen.getOrderedInteractions())
+        {
+            if (unresolved(interaction, minecraft))
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
      * A request, a sickness, a complaint: anything the citizen waits on, not small talk.
      */
     private static boolean unresolved(final IInteractionResponseHandler interaction, final Minecraft minecraft)

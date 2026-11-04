@@ -41,6 +41,9 @@
     "client.MinecraftMixin",
     "client.EntityMixin",
     "client.WindowExtendedBuildToolAccessor",
-    "client.AbstractBlueprintManipulationWindowAccessor"
+    "client.AbstractBlueprintManipulationWindowAccessor",
+    "client.AbstractWindowModuleBuildingAccessor",
+    "client.BOWindowMixin",
+    "client.BossHealthOverlayAccessor"
   ]
 }
