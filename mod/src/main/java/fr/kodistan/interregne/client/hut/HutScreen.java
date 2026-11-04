@@ -346,7 +346,7 @@ public final class HutScreen extends ParchmentScreen
         }
         else
         {
-            y = renderProduction(graphics, x, y, width);
+            y = renderProduction(graphics, mouseX, my, x, y, width, workers);
         }
         y = renderRequests(graphics, mouseX, my, x, y, width, requests);
         graphics.disableScissor();
@@ -691,7 +691,7 @@ public final class HutScreen extends ParchmentScreen
         HireScreen.open(building, this);
     }
 
-    private int renderProduction(final GuiGraphics graphics, final int x, int y, final int width)
+    private int renderProduction(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width, final List<Worker> workers)
     {
         final String id = idOf(building);
         final List<List<ItemStack>> flow = CatalogueIndex.flow(id);
@@ -721,7 +721,27 @@ public final class HutScreen extends ParchmentScreen
             graphics.drawString(font, fit("Récoltes ×" + format(Yields.outputMultiplier(level)), width), x, y, Palette.INK, false);
             y += 10;
         }
-        return Ui.wrapped(graphics, font, Component.literal("Vitesse de travail ×" + format(Yields.speedMultiplier(level))), x, y, width, Palette.INK, 10) + 2;
+        // Hungry or sick workers: the same average slowdown the server applies to the hut
+        double slowdown = 0;
+        for (final Worker worker : workers)
+        {
+            slowdown += Malus.factor(worker.citizen().getSaturation(), worker.citizen().isSick());
+        }
+        slowdown = workers.isEmpty() ? 1.0 : slowdown / workers.size();
+        final double speed = Yields.speedMultiplier(level);
+        if (slowdown <= 1.0)
+        {
+            return Ui.wrapped(graphics, font, Component.literal("Vitesse de travail ×" + format(speed)), x, y, width, Palette.INK, 10) + 2;
+        }
+        final int top = y;
+        y = Ui.wrapped(graphics, font, Component.literal("Vitesse de travail ×" + format(speed / slowdown) + " (×" + format(speed) + " " + Malus.percent(slowdown) + ")"),
+          x, y, width, Palette.RED, 10) + 2;
+        if (Ui.inside(mouseX, mouseY, x, top, width, y - top))
+        {
+            hint = "Niveau " + level + " : ×" + format(speed) + ".\nOuvriers affamés ou malades : " + Malus.times(slowdown) + " moins vite en moyenne ("
+              + Malus.percent(slowdown) + "), sur leur travail comme sur la production de la hutte.\nNourrissez-les et soignez-les pour retrouver ×" + format(speed) + ".";
+        }
+        return y;
     }
 
     private int renderRequests(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width,
