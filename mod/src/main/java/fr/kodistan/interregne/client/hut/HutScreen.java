@@ -117,6 +117,14 @@ public final class HutScreen extends ParchmentScreen
      * Open a building from another of our screens: our hut window when it has one, Escape coming back here; the
      * building's own window otherwise.
      */
+    /**
+     * Our hut window for any building, Escape coming back to the parent (the colony hub…).
+     */
+    public static void openWith(final IBuildingView building, final Screen parent)
+    {
+        Minecraft.getInstance().setScreen(new HutScreen(building, parent));
+    }
+
     public static void openFrom(final IBuildingView building, final Screen parent)
     {
         final BOWindow window = building.getWindow();
@@ -258,7 +266,7 @@ public final class HutScreen extends ParchmentScreen
         Ui.navItem(graphics, font, x, y, width, Icon.module("main"), "Vue d'ensemble", true, false);
         y += Ui.NAV_ROW + 1;
 
-        final List<Hit> tools = tools();
+        final List<Tool> tools = tools();
         final int toolsTop = y0 + h - 6 - tools.size() * (Ui.NAV_ROW + 1);
         for (final IBuildingModuleView view : pages())
         {
@@ -275,37 +283,45 @@ public final class HutScreen extends ParchmentScreen
 
         graphics.fill(x + 2, toolsTop - 3, x + width - 2, toolsTop - 2, Palette.RULE);
         y = toolsTop;
-        for (final Hit tool : tools)
+        for (final Tool tool : tools)
         {
+            Ui.navItem(graphics, font, x, y, width, tool.icon(), tool.label(), false, Ui.inside(mouseX, mouseY, x, y, width, Ui.NAV_ROW));
             hits.add(new Hit(x, y, width, Ui.NAV_ROW, tool.action()));
             y += Ui.NAV_ROW + 1;
         }
-        y = toolsTop;
-        Ui.navItem(graphics, font, x, y, width, Icon.of(Items.CHEST), "Coffre", false, Ui.inside(mouseX, mouseY, x, y, width, Ui.NAV_ROW));
-        y += Ui.NAV_ROW + 1;
-        Ui.navItem(graphics, font, x, y, width, Icon.module("inventory"), "Tout le stock", false, Ui.inside(mouseX, mouseY, x, y, width, Ui.NAV_ROW));
-        if (tools.size() > 2)
-        {
-            y += Ui.NAV_ROW + 1;
-            Ui.navItem(graphics, font, x, y, width, Icon.of(Items.BOOK), "Aide", false, Ui.inside(mouseX, mouseY, x, y, width, Ui.NAV_ROW));
-        }
+    }
+
+    private record Tool(String label, Icon icon, Runnable action)
+    {
     }
 
     /**
-     * Chest, whole stock and, when MineColonies has a help text for this building, help: their actions, in order.
+     * Chest, whole stock, help when MineColonies has a text for this building, and the colony hub when this window was
+     * not opened from it.
      */
-    private List<Hit> tools()
+    private List<Tool> tools()
     {
-        final List<Hit> tools = new ArrayList<>();
-        tools.add(new Hit(0, 0, 0, 0, () -> new OpenInventoryMessage(building).sendToServer()));
+        final List<Tool> tools = new ArrayList<>();
+        tools.add(new Tool("Coffre", Icon.of(Items.CHEST), () -> new OpenInventoryMessage(building).sendToServer()));
         // Its back button reopens the hut window, which opens this screen again
-        tools.add(new Hit(0, 0, 0, 0, () -> new WindowHutAllInventory(building, building.getWindow()).open()));
+        tools.add(new Tool("Tout le stock", Icon.module("inventory"), () -> new WindowHutAllInventory(building, building.getWindow()).open()));
         final String key = TranslationConstants.PARTIAL_INFO_TEXT + building.getBuildingType().getTranslationKey().replace("com.minecolonies.building.", "") + ".0";
         if (I18n.exists(key))
         {
-            tools.add(new Hit(0, 0, 0, 0, () -> new WindowInfo(building).open()));
+            tools.add(new Tool("Aide", Icon.of(Items.BOOK), () -> new WindowInfo(building).open()));
+        }
+        final ITownHallView townHall = building.getColony().getTownHall();
+        if (!(parent instanceof ColonyHubScreen) && townHall != null && townHall != building)
+        {
+            tools.add(new Tool("Colonie", Icon.of(townHall.getBuildingType().getBuildingBlock()), () -> ColonyHubScreen.open(townHall)));
         }
         return tools;
+    }
+
+    @Override
+    protected String crumb()
+    {
+        return parent instanceof ColonyHubScreen ? "Colonie" : null;
     }
 
     private void openModule(final IBuildingModuleView view)
@@ -363,7 +379,10 @@ public final class HutScreen extends ParchmentScreen
         }
         y += 20;
 
-        y = renderWorkers(graphics, mouseX, my, x, y, width, workers);
+        if (hasJobs())
+        {
+            y = renderWorkers(graphics, mouseX, my, x, y, width, workers);
+        }
         y = renderProduction(graphics, x, y, width);
         y = renderRequests(graphics, x, y, width, requests);
         graphics.disableScissor();
@@ -480,6 +499,14 @@ public final class HutScreen extends ParchmentScreen
             y += cardH + 2;
         }
         return y + 2;
+    }
+
+    /**
+     * Whether people work here (the town hall, a house… have no jobs).
+     */
+    private boolean hasJobs()
+    {
+        return !building.getModuleViews(WorkerBuildingModuleView.class).isEmpty();
     }
 
     private void hire()
@@ -604,7 +631,7 @@ public final class HutScreen extends ParchmentScreen
         {
             return new Banner(Ui.State.BAD, "Pas construit", "lancez la construction à droite", null, null);
         }
-        if (workers.isEmpty())
+        if (workers.isEmpty() && hasJobs())
         {
             return new Banner(Ui.State.BAD, "Bloqué", "aucun ouvrier : rien n'est produit", "Embaucher ›", this::hire);
         }
@@ -619,6 +646,10 @@ public final class HutScreen extends ParchmentScreen
         {
             final String missing = requests.get(0).getShortDisplayString().getString();
             return new Banner(Ui.State.WAIT, "En attente", "il manque " + missing, null, null);
+        }
+        if (workers.isEmpty())
+        {
+            return new Banner(Ui.State.OK, "Tout va bien", "le bâtiment est en état", null, null);
         }
         final Worker first = workers.get(0);
         return new Banner(Ui.State.OK, "Tout va bien", first.citizen().getName() + " " + CitizenBits.activity(first.citizen()), null, null);

@@ -99,6 +99,12 @@ public final class CitizenScreen extends ParchmentScreen
     }
 
     @Override
+    protected String crumb()
+    {
+        return parent instanceof ColonyHubScreen ? "Colonie" : null;
+    }
+
+    @Override
     public void tick()
     {
         final ICitizenDataView fresh = colony.getCitizen(citizen.getId());
