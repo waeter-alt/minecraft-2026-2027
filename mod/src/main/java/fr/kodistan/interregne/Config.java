@@ -418,6 +418,18 @@ public final class Config
       .comment("Raw food a restaurant whose own stock is full cooks for the warehouse every production cycle, per level")
       .defineInRange("kitchenSurplusPerLevel", 16, 0, 1024);
 
+    public static final ModConfigSpec.IntValue CRAFT_SURPLUS_PER_LEVEL = BUILDER
+      .comment("Items a crafter makes from the warehouse's surplus every production cycle, per level")
+      .defineInRange("craftSurplusPerLevel", 16, 0, 1024);
+
+    public static final ModConfigSpec.IntValue CRAFT_TARGET = BUILDER
+      .comment("A crafter stops making an item once the warehouse holds this many of it")
+      .defineInRange("craftTarget", 64, 1, 100_000);
+
+    public static final ModConfigSpec.IntValue CRAFT_RESERVE = BUILDER
+      .comment("Crafters never use an ingredient below this many in the warehouse, so the player always keeps some")
+      .defineInRange("craftReserve", 16, 0, 100_000);
+
     public static final ModConfigSpec.IntValue DECORATION_BLOCKS_PER_COURONNE = BUILDER
       .comment("A decoration costs one Couronne per this many blocks (at least decorationCost)")
       .defineInRange("decorationBlocksPerCouronne", 100, 1, 100_000);

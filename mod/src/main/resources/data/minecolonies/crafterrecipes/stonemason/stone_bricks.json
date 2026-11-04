@@ -1,0 +1,15 @@
+{
+  "type": "recipe",
+  "crafter": "stonemason_crafting",
+  "inputs": [
+    {
+      "count": 4,
+      "id": "minecraft:stone"
+    }
+  ],
+  "intermediate": "minecraft:air",
+  "result": {
+    "count": 4,
+    "id": "minecraft:stone_bricks"
+  }
+}

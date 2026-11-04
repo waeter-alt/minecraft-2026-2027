@@ -18,7 +18,8 @@ import java.util.ArrayList;
 /**
  * The guiding rule of production huts: once built and staffed, a hut yields something within minutes, with no setup.
  * Breeders, the fisher and the farm produce by level whatever happens to their animals, water or fields; the restaurant
- * cooks without fuel; saplings around a forester grow faster. Real animals, water and fields remain as scenery.
+ * cooks without fuel; saplings around a forester grow faster; the plantation and the apiary yield plants and honey;
+ * crafters work the warehouse's surplus. Real animals, water, fields, plantations and hives remain as scenery.
  */
 @EventBusSubscriber(modid = InterregneMod.MODID)
 public final class HutProduction
@@ -113,9 +114,16 @@ public final class HutProduction
                 Huts.give(building, new ItemStack(Items.SALMON, salmon));
             }
             case Huts.FARMER -> Farms.produce(colony, building);
+            case Huts.PLANTATION -> Plantations.produce(colony, building);
+            case Huts.BEEKEEPER -> {
+                produce(building, Items.HONEYCOMB, amount, Items.HONEY_BOTTLE, 0.3, null, 0, random);
+                Apiary.placeHives(level, building);
+            }
             default -> {
             }
         }
+        // Crafters (the plantation's paper too) turn the warehouse's surplus into what it lacks
+        Workshops.craftSurplus(colony, building);
     }
 
     /**
@@ -162,6 +170,14 @@ public final class HutProduction
         else if (id.equals(Huts.LUMBERJACK))
         {
             Forest.plant(level, building);
+        }
+        else if (id.equals(Huts.BEEKEEPER))
+        {
+            Apiary.placeHives(level, building);
+        }
+        else if (id.equals(Huts.PLANTATION))
+        {
+            Plantations.growFields(level, colony);
         }
     }
 }
