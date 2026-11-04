@@ -172,8 +172,23 @@ public final class CatalogueIndex
      */
     public static CompletableFuture<List<Entry>> of(final String pack, final HolderLookup.Provider provider)
     {
-        return CACHE.computeIfAbsent(pack, name -> CompletableFuture.supplyAsync(() -> build(name, provider)));
+        return CACHE.computeIfAbsent(pack, name -> CompletableFuture.supplyAsync(() -> {
+            // Structurize may still be reading the packs when the catalogue first opens: a style read then would miss blueprints
+            StructurePacks.waitUntilFinishedLoading();
+            final List<Entry> entries = build(name, provider);
+            InterregneMod.LOGGER.info("L'Interregne: catalogue of {} read, {} entries", name, entries.size());
+            return entries;
+        }, READER));
     }
+
+    /**
+     * One style read at a time: Structurize's pack reading is not made for several threads at once.
+     */
+    private static final java.util.concurrent.Executor READER = java.util.concurrent.Executors.newSingleThreadExecutor(runnable -> {
+        final Thread thread = new Thread(runnable, "Interregne catalogue reader");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     /**
      * Read every style one after the other in the background, so switching style in the catalogue is instant.
@@ -189,6 +204,7 @@ public final class CatalogueIndex
         final HolderLookup.Provider provider = minecraft.level.registryAccess();
         final Thread thread = new Thread(() -> {
             StructurePacks.waitUntilFinishedLoading();
+            // Queued behind the selected style on the single reader, never alongside it
             final List<StructurePackMeta> packs = new ArrayList<>(StructurePacks.getPackMetas());
             final StructurePackMeta selected = StructurePacks.getSelectedPack();
             packs.sort(Comparator.comparing((StructurePackMeta p) -> p != selected).thenComparing(StructurePackMeta::getName));
@@ -311,6 +327,7 @@ public final class CatalogueIndex
         catch (final RuntimeException e)
         {
             // An unreadable folder only hides its own blueprints
+            InterregneMod.LOGGER.warn("L'Interregne: catalogue could not read {}/{}", pack, path, e);
         }
         for (final StructurePacks.Category category : StructurePacks.getCategories(pack, path))
         {

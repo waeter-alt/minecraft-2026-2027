@@ -145,7 +145,7 @@ public final class InstantBuilder
                 if (player != null)
                 {
                     player.sendSystemMessage(Component.literal("Démolition lancée : ")
-                                               .append(order.getDisplayName())
+                                               .append(DecoNames.of(order))
                                                .append(" (durée " + BuildCosts.formatSeconds(DemolitionSite.durationSeconds()) + ")")
                                                .withStyle(ChatFormatting.GOLD));
                 }
@@ -156,7 +156,7 @@ public final class InstantBuilder
             if (player != null)
             {
                 player.sendSystemMessage(Component.literal("Chantier lancé : ")
-                                           .append(order.getDisplayName())
+                                           .append(DecoNames.of(order))
                                            .append(" (durée " + BuildCosts.formatSeconds(ConstructionSite.durationSeconds(order)) + ")")
                                            .withStyle(ChatFormatting.GOLD));
             }
@@ -207,7 +207,7 @@ public final class InstantBuilder
         level.playSound(null, pos, SoundEvents.PLAYER_LEVELUP, SoundSource.BLOCKS, 1.0F, 1.0F);
         level.sendParticles(ParticleTypes.HAPPY_VILLAGER, pos.getX() + 0.5, pos.getY() + 1.5, pos.getZ() + 0.5, 40, 2.0, 1.5, 2.0, 0.1);
         colony.getMessagePlayerEntities().forEach(p -> p.sendSystemMessage(
-          Component.literal("Chantier terminé : ").append(order.getDisplayName()).withStyle(ChatFormatting.GREEN)));
+          Component.literal("Chantier terminé : ").append(DecoNames.of(order)).withStyle(ChatFormatting.GREEN)));
     }
 
     /**
@@ -272,7 +272,7 @@ public final class InstantBuilder
             if (player != null)
             {
                 player.sendSystemMessage(Component.literal("Chantier lancé : ")
-                                           .append(order.getDisplayName())
+                                           .append(DecoNames.of(order))
                                            .append(" (durée " + BuildCosts.formatSeconds(ConstructionSite.durationSeconds(order)) + ")")
                                            .withStyle(ChatFormatting.GOLD));
             }

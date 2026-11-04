@@ -122,8 +122,8 @@ public final class ConstructionSite implements Site
 
         final boolean leveled = order instanceof WorkOrderBuilding && order.getWorkOrderType() != WorkOrderType.REPAIR;
         this.title = leveled
-                       ? Component.literal("⚒ ").append(order.getDisplayName()).append(" · niveau " + order.getTargetLevel())
-                       : Component.literal("⚒ ").append(order.getDisplayName());
+                       ? Component.literal("⚒ ").append(DecoNames.of(order)).append(" · niveau " + order.getTargetLevel())
+                       : Component.literal("⚒ ").append(DecoNames.of(order));
         final BossEvent.BossBarColor color = leveled
                                                ? LEVEL_COLORS[Mth.clamp(order.getTargetLevel(), 1, LEVEL_COLORS.length) - 1]
                                                : BossEvent.BossBarColor.WHITE;

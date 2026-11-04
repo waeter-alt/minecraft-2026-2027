@@ -80,7 +80,7 @@ public final class DemolitionSite implements Site
         this.area = order instanceof AbstractWorkOrder abstractOrder && abstractOrder.getBoundingBox() != null
                       ? abstractOrder.getBoundingBox()
                       : new AABB(order.getLocation()).inflate(Math.max(blueprint.getSizeX(), blueprint.getSizeZ()) / 2.0);
-        this.title = Component.literal("⛏ Démolition : ").append(order.getDisplayName());
+        this.title = Component.literal("⛏ Démolition : ").append(DecoNames.of(order));
         this.bossBar = new ServerBossEvent(title, BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.PROGRESS);
     }
 
@@ -227,7 +227,7 @@ public final class DemolitionSite implements Site
         level.playSound(null, center.x, area.minY, center.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 0.6F, 0.8F);
         InstantBuilder.completeDemolition(colony, order, building);
         colony.getMessagePlayerEntities().forEach(p -> p.sendSystemMessage(
-          Component.literal("Démolition terminée : ").append(order.getDisplayName()).withStyle(ChatFormatting.GRAY)));
+          Component.literal("Démolition terminée : ").append(DecoNames.of(order)).withStyle(ChatFormatting.GRAY)));
     }
 
     private void updateBossBar(final boolean refreshViewers)

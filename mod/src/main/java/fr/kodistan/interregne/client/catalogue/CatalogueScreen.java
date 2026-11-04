@@ -56,6 +56,7 @@ public final class CatalogueScreen extends ParchmentScreen
     private final BlockPos anchor;
     private CompletableFuture<List<CatalogueIndex.Entry>> loading;
     private boolean loaded;
+    private int ticks;
     private List<CatalogueIndex.Entry> entries = List.of();
     private CatalogueIndex.Need need = lastNeed;
     @Nullable
@@ -105,6 +106,11 @@ public final class CatalogueScreen extends ParchmentScreen
     @Override
     public void tick()
     {
+        // The colony's research reaches the client after a while: check the locks again every second
+        if (++ticks % 20 == 0)
+        {
+            requirements.clear();
+        }
         if (!loaded && loading != null && loading.isDone())
         {
             loaded = true;

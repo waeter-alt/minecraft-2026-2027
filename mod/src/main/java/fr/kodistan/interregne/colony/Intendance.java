@@ -56,6 +56,11 @@ public final class Intendance
      */
     public static final TagKey<Item> EXCLUDED = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "intendance_excluded"));
 
+    /**
+     * Basic items from other mods the Intendance buys all the same, such as MineColonies' large bottle for the Vacher.
+     */
+    public static final TagKey<Item> INCLUDED = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "intendance_included"));
+
     private static final int UPDATE_INTERVAL = 20;
 
     /**
@@ -181,6 +186,10 @@ public final class Intendance
 
     private static boolean isBuyable(final ItemStack stack)
     {
+        if (stack.is(INCLUDED))
+        {
+            return true;
+        }
         return BuiltInRegistries.ITEM.getKey(stack.getItem()).getNamespace().equals("minecraft")
                  && stack.getRarity() == Rarity.COMMON
                  && !stack.is(EXCLUDED);
