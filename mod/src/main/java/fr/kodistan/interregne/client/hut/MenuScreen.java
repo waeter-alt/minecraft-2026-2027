@@ -106,16 +106,16 @@ public final class MenuScreen extends ModuleScreen
         final boolean fine = menu.stream().anyMatch(s -> s.getItem() instanceof IMinecoloniesFoodItem food && food.getTier() >= 2);
         if (menu.isEmpty())
         {
-            Ui.banner(graphics, font, x, y, width, Ui.State.BAD, "Menu vide", "personne ne peut manger ici : ajoute des plats ci-dessous");
+            y += Ui.banner(graphics, font, x, y, width, Ui.State.BAD, "Menu vide", "personne ne peut manger ici : ajoute des plats ci-dessous");
         }
         else if (!fine)
         {
-            Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, menu.size() + (menu.size() > 1 ? " plats" : " plat"),
+            y += Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, menu.size() + (menu.size() > 1 ? " plats" : " plat"),
               "sans plat de niveau 2 ou plus, les citoyens mangent moins bien");
         }
         else
         {
-            Ui.banner(graphics, font, x, y, width, Ui.State.OK, menu.size() + (menu.size() > 1 ? " plats" : " plat"),
+            y += Ui.banner(graphics, font, x, y, width, Ui.State.OK, menu.size() + (menu.size() > 1 ? " plats" : " plat"),
               module.hasReachedLimit() ? "le menu est complet" : "on peut encore en ajouter");
         }
         y += 18;
@@ -169,7 +169,7 @@ public final class MenuScreen extends ModuleScreen
     }
 
     @Override
-    protected int renderBody(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width)
+    protected int renderBody(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         final String query = query();
         final List<ItemStorage> shown = dishes.stream()

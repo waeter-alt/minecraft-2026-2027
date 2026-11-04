@@ -59,14 +59,14 @@ public final class RecipesScreen extends ModuleScreen
     }
 
     @Override
-    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width)
+    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         final int count = module.getRecipes().size();
         final int max = module.getMaxRecipes();
         final boolean canLearn = module.isRecipeAlterationAllowed();
         final String learn = "+ Apprendre une recette";
         final int learnW = canLearn ? buttonWidth(learn) + 4 : 0;
-        Ui.banner(graphics, font, x, y, width - learnW, count == 0 ? Ui.State.WAIT : Ui.State.OK,
+        y += Ui.banner(graphics, font, x, y, width - learnW, count == 0 ? Ui.State.WAIT : Ui.State.OK,
           count + (canLearn ? " / " + max : "") + (count > 1 ? " recettes" : " recette"), "essayées de haut en bas");
         if (canLearn)
         {

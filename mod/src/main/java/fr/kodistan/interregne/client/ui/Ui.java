@@ -301,15 +301,45 @@ public final class Ui
     /**
      * A one-line state banner: coloured dot, the state in bold, then what it means.
      */
-    public static void banner(final GuiGraphics graphics, final Font font, final int x, final int y, final int width, final State state, final String title,
+    public static int banner(final GuiGraphics graphics, final Font font, final int x, final int y, final int width, final State state, final String title,
       final String text)
     {
-        plate(graphics, x, y, x + width, y + 14, state.soft, state.strong, state.soft);
-        graphics.fill(x + 5, y + 5, x + 9, y + 9, state.strong);
+        return banner(graphics, font, x, y, width, state, title, text, 0);
+    }
+
+    /**
+     * A state banner: « ■ Title · what it means ». When both do not fit on one line, the explanation goes on a second
+     * line (and more if needed) instead of being cut; {@code reserve} keeps that many pixels free at the right (for a
+     * button drawn there). Returns the extra height it took (0 on one line, 10 per added line), for the caller to add.
+     */
+    public static int banner(final GuiGraphics graphics, final Font font, final int x, final int y, final int width, final State state, final String title,
+      final String text, final int reserve)
+    {
         final Component bold = Component.literal(title).withStyle(ChatFormatting.BOLD);
-        graphics.drawString(font, bold, x + 13, y + 3, Palette.INK, false);
-        final int after = x + 13 + font.width(bold);
-        graphics.drawString(font, fit(font, " · " + text, x + width - 4 - after), after, y + 3, Palette.INK, false);
+        final int right = x + width - 4 - reserve;
+        final boolean oneLine = text.isEmpty() || x + 13 + font.width(bold) + font.width(" · " + text) <= right;
+        final List<FormattedCharSequence> lines = oneLine ? List.of() : font.split(Component.literal(text), x + width - 4 - (x + 13));
+        final int height = oneLine ? 14 : 14 + 10 * lines.size();
+        plate(graphics, x, y, x + width, y + height, state.soft, state.strong, state.soft);
+        graphics.fill(x + 5, y + 5, x + 9, y + 9, state.strong);
+        if (oneLine)
+        {
+            graphics.drawString(font, bold, x + 13, y + 3, Palette.INK, false);
+            if (!text.isEmpty())
+            {
+                graphics.drawString(font, " · " + text, x + 13 + font.width(bold), y + 3, Palette.INK, false);
+            }
+            return 0;
+        }
+        graphics.drawString(font, Component.literal(fitBold(font, title, right - x - 13)).withStyle(ChatFormatting.BOLD), x + 13, y + 3, Palette.INK, false);
+        // The explanation runs under the button too: it sits on the first line only
+        int ty = y + 13;
+        for (final FormattedCharSequence line : lines)
+        {
+            graphics.drawString(font, line, x + 13, ty, Palette.INK, false);
+            ty += 10;
+        }
+        return height - 14;
     }
 
     /**

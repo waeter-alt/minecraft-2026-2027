@@ -54,10 +54,10 @@ public final class MercenaryScreen extends ModuleScreen
     }
 
     @Override
-    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width)
+    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         final long wait = wait(building.getColony());
-        Ui.banner(graphics, font, x, y, width, wait == 0 ? Ui.State.OK : Ui.State.WAIT, wait == 0 ? "Disponibles" : "Au repos",
+        y += Ui.banner(graphics, font, x, y, width, wait == 0 ? Ui.State.OK : Ui.State.WAIT, wait == 0 ? "Disponibles" : "Au repos",
           wait == 0 ? "ils arrivent dès qu'on les appelle" : "de nouveau disponibles dans " + (wait / 1200 + 1) + " min");
         return y + 19;
     }

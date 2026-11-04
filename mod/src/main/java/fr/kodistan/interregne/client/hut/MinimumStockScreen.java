@@ -68,7 +68,7 @@ public final class MinimumStockScreen extends ModuleScreen
         final int count = module.getStock().size();
         final String add = "+ Ajouter un objet";
         final int addW = buttonWidth(add);
-        Ui.banner(graphics, font, x, y, width - addW - 4, count == 0 ? Ui.State.WAIT : Ui.State.OK,
+        y += Ui.banner(graphics, font, x, y, width - addW - 4, count == 0 ? Ui.State.WAIT : Ui.State.OK,
           count == 0 ? "Rien à garder" : count + (count > 1 ? " objets suivis" : " objet suivi"), "ce qui manque est commandé à l'entrepôt");
         final boolean full = module.hasReachedLimit();
         button(graphics, mouseX, mouseY, x + width - addW, y, add, Ui.ButtonStyle.PRIMARY, !full, full ? "Limite atteinte : améliore le bâtiment pour suivre plus d'objets." : null,

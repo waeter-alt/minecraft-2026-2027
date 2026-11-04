@@ -8,7 +8,7 @@ import net.minecraft.client.gui.GuiGraphics;
  */
 public final class ScrollGrid
 {
-    private final int columns;
+    private int columns;
     private final int gap;
 
     private int left;
@@ -34,6 +34,19 @@ public final class ScrollGrid
         this.width = width;
         this.bottom = bottom;
         this.cardHeight = cardHeight;
+    }
+
+    /**
+     * Fewer columns when the grid is narrow, so each card keeps room for its text.
+     */
+    public void setColumns(final int columns)
+    {
+        if (columns != this.columns)
+        {
+            // Keep the first visible card in view
+            scroll = scroll * this.columns / columns;
+            this.columns = columns;
+        }
     }
 
     public int cardWidth()

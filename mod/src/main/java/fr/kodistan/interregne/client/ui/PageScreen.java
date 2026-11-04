@@ -89,9 +89,7 @@ public abstract class PageScreen extends ParchmentScreen
     protected EditBox addField(final int x, final int y, final int width, final String placeholder)
     {
         final String typed = search == null ? "" : search.getValue();
-        search = new EditBox(font, x, y, width, 12, Component.literal(placeholder));
-        search.setBordered(true);
-        search.setHint(Component.literal(placeholder));
+        search = new ParchmentField(font, x, y, width, 12, Component.literal(placeholder));
         search.setValue(typed);
         search.setResponder(text -> scroll = 0);
         addWidget(search);

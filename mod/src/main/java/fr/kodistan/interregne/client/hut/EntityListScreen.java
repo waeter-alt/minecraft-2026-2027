@@ -109,9 +109,14 @@ public final class EntityListScreen extends ModuleScreen
             return y;
         }
         final long count = all.stream().filter(id -> on(module, id)).count();
-        Ui.banner(graphics, font, x, y, width, count == 0 ? Ui.State.WAIT : Ui.State.OK, count + " sur " + all.size() + (count > 1 ? " cochés" : " coché"),
+        y += Ui.banner(graphics, font, x, y, width, count == 0 ? Ui.State.WAIT : Ui.State.OK, count + " sur " + all.size() + (count > 1 ? " cochés" : " coché"),
           count == 0 ? "les gardes ne visent aucun monstre" : "les gardes s'en prennent aux monstres cochés");
         y += 18;
+        // The search box follows the row, which moves down when the banner takes two lines
+        if (search != null)
+        {
+            search.setY(y);
+        }
         final List<ResourceLocation> visible = visible();
         int bx = x;
         bx += button(graphics, mouseX, mouseY, bx, y, "Tout cocher", Ui.ButtonStyle.SECONDARY, !visible.isEmpty(), null,
@@ -121,7 +126,7 @@ public final class EntityListScreen extends ModuleScreen
     }
 
     @Override
-    protected int renderBody(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width)
+    protected int renderBody(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         final IEntityListModuleView module = module();
         if (module == null)

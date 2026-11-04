@@ -69,17 +69,17 @@ public final class TasksScreen extends ModuleScreen
     }
 
     @Override
-    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width)
+    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         final List<IRequest<?>> tasks = tasks();
         final long running = tasks.stream().filter(t -> t.getState() == RequestState.IN_PROGRESS).count();
         if (tasks.isEmpty())
         {
-            Ui.banner(graphics, font, x, y, width, Ui.State.OK, "Rien en attente", "aucune tâche pour ce bâtiment");
+            y += Ui.banner(graphics, font, x, y, width, Ui.State.OK, "Rien en attente", "aucune tâche pour ce bâtiment");
         }
         else
         {
-            Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, tasks.size() + (tasks.size() > 1 ? " tâches" : " tâche"),
+            y += Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, tasks.size() + (tasks.size() > 1 ? " tâches" : " tâche"),
               running > 0 ? running + " en cours, la première en haut" : "la première en haut");
         }
         return y + 19;

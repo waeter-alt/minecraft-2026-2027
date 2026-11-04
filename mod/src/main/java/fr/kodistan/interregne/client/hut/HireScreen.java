@@ -177,7 +177,7 @@ public final class HireScreen extends ParchmentScreen
         final List<IAssignmentModuleView> jobs = jobs();
         if (jobs.isEmpty())
         {
-            Ui.banner(graphics, font, x, top, width, Ui.State.BAD, "Aucun poste", "ce bâtiment n'embauche personne");
+            top += Ui.banner(graphics, font, x, top, width, Ui.State.BAD, "Aucun poste", "ce bâtiment n'embauche personne");
             return;
         }
         selected = Math.min(selected, jobs.size() - 1);
@@ -211,15 +211,15 @@ public final class HireScreen extends ParchmentScreen
         final String places = taken + " / " + max + (max > 1 ? " postes" : " poste") + " de " + jobName(module).toLowerCase(Locale.FRENCH);
         if (taken >= max)
         {
-            Ui.banner(graphics, font, x, top, width, Ui.State.OK, places, "complet");
+            top += Ui.banner(graphics, font, x, top, width, Ui.State.OK, places, "complet");
         }
         else if (taken == 0)
         {
-            Ui.banner(graphics, font, x, top, width, Ui.State.BAD, places, "personne ne travaille ici : embauche un candidat");
+            top += Ui.banner(graphics, font, x, top, width, Ui.State.BAD, places, "personne ne travaille ici : embauche un candidat");
         }
         else
         {
-            Ui.banner(graphics, font, x, top, width, Ui.State.WAIT, places, "il reste de la place");
+            top += Ui.banner(graphics, font, x, top, width, Ui.State.WAIT, places, "il reste de la place");
         }
         top += 19;
 
@@ -320,7 +320,7 @@ public final class HireScreen extends ParchmentScreen
     }
 
     private int worker(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width,
-      final IAssignmentModuleView module, final ICitizenDataView citizen, final int top, final int bottom)
+      final IAssignmentModuleView module, final ICitizenDataView citizen, int top, final int bottom)
     {
         Ui.card(graphics, x, y, width, ROW_H - 2, false, false, false);
         CitizenBits.face(graphics, citizen, x + 4, y + 4, 16);
@@ -389,7 +389,7 @@ public final class HireScreen extends ParchmentScreen
     }
 
     private int candidate(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width,
-      final IAssignmentModuleView module, final ICitizenDataView citizen, final boolean full, final int top, final int bottom)
+      final IAssignmentModuleView module, final ICitizenDataView citizen, final boolean full, int top, final int bottom)
     {
         final boolean canTake = module.canAssign(citizen) || (showEmployed && !citizen.isChild());
         Ui.card(graphics, x, y, width, ROW_H - 2, false, false, false);
@@ -512,7 +512,7 @@ public final class HireScreen extends ParchmentScreen
         module.setHiringMode(HiringMode.values()[index % HiringMode.values().length]);
     }
 
-    private void addHit(final int x, final int y, final int width, final int height, final int top, final int bottom, final Runnable action)
+    private void addHit(final int x, final int y, final int width, final int height, int top, final int bottom, final Runnable action)
     {
         final int hitTop = Math.max(y, top);
         final int hitBottom = Math.min(y + height, bottom);

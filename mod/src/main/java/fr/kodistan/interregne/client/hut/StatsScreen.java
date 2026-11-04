@@ -142,7 +142,7 @@ public final class StatsScreen extends ModuleScreen
     /**
      * The colony's headcount against its beds, as a banner.
      */
-    private int population(final GuiGraphics graphics, final int x, final int y, final int width)
+    private int population(final GuiGraphics graphics, final int x, int y, final int width)
     {
         final IColonyView colony = building.getColony();
         final int citizens = colony.getCitizens().size();
@@ -161,7 +161,7 @@ public final class StatsScreen extends ModuleScreen
             }
         }
         final boolean full = citizens >= limit;
-        Ui.banner(graphics, font, x, y, width, full ? Ui.State.WAIT : Ui.State.OK, citizens + " / " + limit + " citoyens",
+        y += Ui.banner(graphics, font, x, y, width, full ? Ui.State.WAIT : Ui.State.OK, citizens + " / " + limit + " citoyens",
           (full ? "plus de lit libre · " : "") + idle + " sans emploi · " + children + (children > 1 ? " enfants" : " enfant"));
         return y + 21;
     }

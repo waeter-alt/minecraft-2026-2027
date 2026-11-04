@@ -84,7 +84,7 @@ public final class FieldsScreen extends ModuleScreen
         {
             detail = plantation.getCurrentPlants() + " plantes sur " + plantation.getMaxConcurrentPlants() + " possibles";
         }
-        Ui.banner(graphics, font, x, y, width, owned == 0 ? Ui.State.BAD : Ui.State.OK, owned + " / " + max + (max > 1 ? " parcelles" : " parcelle"), detail);
+        y += Ui.banner(graphics, font, x, y, width, owned == 0 ? Ui.State.BAD : Ui.State.OK, owned + " / " + max + (max > 1 ? " parcelles" : " parcelle"), detail);
         y += 19;
         final boolean manual = module.assignFieldManually();
         final int segW = segmented(graphics, mouseX, mouseY, x, y, List.of("Automatique", "Manuelle"), manual ? 1 : 0, index -> module.setAssignFieldManually(index == 1));

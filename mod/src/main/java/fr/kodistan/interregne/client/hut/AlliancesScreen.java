@@ -38,11 +38,11 @@ public final class AlliancesScreen extends ModuleScreen
     }
 
     @Override
-    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width)
+    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         final int allies = building.getColony().getAllies().size();
         final int feuds = building.getColony().getFeuds().size();
-        Ui.banner(graphics, font, x, y, width, feuds > 0 ? Ui.State.WAIT : Ui.State.OK, allies + (allies > 1 ? " alliés" : " allié"),
+        y += Ui.banner(graphics, font, x, y, width, feuds > 0 ? Ui.State.WAIT : Ui.State.OK, allies + (allies > 1 ? " alliés" : " allié"),
           feuds == 0 ? "aucun ennemi" : feuds + (feuds > 1 ? " ennemis" : " ennemi"));
         return y + 19;
     }
@@ -97,7 +97,7 @@ public final class AlliancesScreen extends ModuleScreen
         return y;
     }
 
-    private int row(final GuiGraphics graphics, final int x, final int y, final int width, final CompactColonyReference colony, final int mark)
+    private int row(final GuiGraphics graphics, final int x, int y, final int width, final CompactColonyReference colony, final int mark)
     {
         Ui.card(graphics, x, y, width, 20, false, false, false);
         graphics.fill(x + 1, y + 1, x + 4, y + 19, mark);

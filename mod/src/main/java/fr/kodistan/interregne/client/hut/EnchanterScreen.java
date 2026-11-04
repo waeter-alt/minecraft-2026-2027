@@ -65,10 +65,10 @@ public final class EnchanterScreen extends ModuleScreen
     }
 
     @Override
-    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width)
+    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         final int chosen = module.getBuildingsToGatherFrom().size();
-        Ui.banner(graphics, font, x, y, width, chosen == 0 ? Ui.State.BAD : Ui.State.OK, chosen + (chosen > 1 ? " bâtiments choisis" : " bâtiment choisi"),
+        y += Ui.banner(graphics, font, x, y, width, chosen == 0 ? Ui.State.BAD : Ui.State.OK, chosen + (chosen > 1 ? " bâtiments choisis" : " bâtiment choisi"),
           chosen == 0 ? "l'enchanteur n'a nulle part où puiser" : "l'enchanteur y puise l'expérience des ouvriers");
         return y + 19;
     }

@@ -157,15 +157,15 @@ public final class HousingScreen extends ParchmentScreen
         final boolean manual = manual();
         if (building.getHiringMode() == HiringMode.LOCKED)
         {
-            Ui.banner(graphics, font, x, top, width, Ui.State.WAIT, places, "maison verrouillée : personne n'emménage");
+            top += Ui.banner(graphics, font, x, top, width, Ui.State.WAIT, places, "maison verrouillée : personne n'emménage");
         }
         else if (residents.size() >= max)
         {
-            Ui.banner(graphics, font, x, top, width, Ui.State.OK, places, "maison pleine");
+            top += Ui.banner(graphics, font, x, top, width, Ui.State.OK, places, "maison pleine");
         }
         else
         {
-            Ui.banner(graphics, font, x, top, width, Ui.State.WAIT, places, manual ? "choisis qui emménage ci-dessous" : "la colonie la remplira d'elle-même");
+            top += Ui.banner(graphics, font, x, top, width, Ui.State.WAIT, places, manual ? "choisis qui emménage ci-dessous" : "la colonie la remplira d'elle-même");
         }
         top += 19;
 
@@ -240,7 +240,7 @@ public final class HousingScreen extends ParchmentScreen
     }
 
     private int resident(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width,
-      final ICitizenDataView citizen, final boolean manual, final int top, final int bottom)
+      final ICitizenDataView citizen, final boolean manual, int top, final int bottom)
     {
         Ui.card(graphics, x, y, width, ROW_H - 2, false, false, false);
         CitizenBits.face(graphics, citizen, x + 4, y + 4, 16);
@@ -281,7 +281,7 @@ public final class HousingScreen extends ParchmentScreen
     }
 
     private int candidate(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width,
-      final ICitizenDataView citizen, final boolean manual, final boolean full, final int top, final int bottom)
+      final ICitizenDataView citizen, final boolean manual, final boolean full, int top, final int bottom)
     {
         Ui.card(graphics, x, y, width, ROW_H - 2, false, false, false);
         CitizenBits.face(graphics, citizen, x + 4, y + 4, 16);
@@ -363,7 +363,7 @@ public final class HousingScreen extends ParchmentScreen
         building.setHiringMode(HiringMode.values()[(building.getHiringMode().ordinal() + 1) % HiringMode.values().length]);
     }
 
-    private void addHit(final int x, final int y, final int width, final int height, final int top, final int bottom, final Runnable action)
+    private void addHit(final int x, final int y, final int width, final int height, int top, final int bottom, final Runnable action)
     {
         final int hitTop = Math.max(y, top);
         final int hitBottom = Math.min(y + height, bottom);

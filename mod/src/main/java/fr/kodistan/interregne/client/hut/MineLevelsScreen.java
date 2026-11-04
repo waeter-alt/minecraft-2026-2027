@@ -47,16 +47,16 @@ public final class MineLevelsScreen extends ModuleScreen
     }
 
     @Override
-    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width)
+    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         final int levels = module.levelsInfo == null ? 0 : module.levelsInfo.size();
         if (levels == 0)
         {
-            Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, "Pas encore de niveau", "le mineur creuse d'abord le puits");
+            y += Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, "Pas encore de niveau", "le mineur creuse d'abord le puits");
         }
         else
         {
-            Ui.banner(graphics, font, x, y, width, Ui.State.OK, levels + (levels > 1 ? " niveaux" : " niveau"), "le mineur travaille au niveau " + (module.current + 1));
+            y += Ui.banner(graphics, font, x, y, width, Ui.State.OK, levels + (levels > 1 ? " niveaux" : " niveau"), "le mineur travaille au niveau " + (module.current + 1));
         }
         return y + 19;
     }

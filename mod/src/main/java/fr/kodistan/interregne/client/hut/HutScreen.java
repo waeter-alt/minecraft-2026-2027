@@ -179,8 +179,7 @@ public final class HutScreen extends ParchmentScreen
         if (isWarehouse(building))
         {
             final String typed = stockSearch == null ? "" : stockSearch.getValue();
-            stockSearch = new EditBox(font, 0, 0, 110, 12, Component.literal("Rechercher…"));
-            stockSearch.setHint(Component.literal("Rechercher…"));
+            stockSearch = new fr.kodistan.interregne.client.ui.ParchmentField(font, 0, 0, 110, 12, Component.literal("Rechercher…"));
             stockSearch.setValue(typed);
             stockSearch.setResponder(text -> scroll = 0);
             addWidget(stockSearch);
@@ -255,7 +254,7 @@ public final class HutScreen extends ParchmentScreen
     /**
      * A heading on a band of this level's colour, across the side panel; returns the y below it.
      */
-    private int levelHeading(final GuiGraphics graphics, final int x, final int y, final int width, final String text, final int level)
+    private int levelHeading(final GuiGraphics graphics, final int x, int y, final int width, final String text, final int level)
     {
         Ui.plate(graphics, x - 3, y - 2, x + width + 3, y + 12, Palette.levelFill(level), Palette.levelEdge(level), Palette.levelFill(level));
         final Component bold = Component.literal(Ui.fitBold(font, text, width - 2)).withStyle(ChatFormatting.BOLD);
@@ -324,14 +323,15 @@ public final class HutScreen extends ParchmentScreen
         final List<IRequest<?>> requests = requests(workers);
 
         final Banner banner = banner(workers, requests);
-        Ui.banner(graphics, font, x, y, width, banner.state(), banner.title(), banner.text());
+        final int aw = banner.action() == null ? 0 : font.width(banner.action()) + 6;
+        final int bannerY = y;
+        y += Ui.banner(graphics, font, x, y, width, banner.state(), banner.title(), banner.text(), aw == 0 ? 0 : aw + 4);
         if (banner.action() != null)
         {
-            final int aw = font.width(banner.action()) + 6;
             final int ax = x + width - aw - 2;
-            final boolean over = Ui.inside(mouseX, my, ax, y + 1, aw, 12);
-            Ui.solidButton(graphics, font, ax, y + 1, aw, 12, banner.action(), banner.state(), over);
-            addHit(ax, y + 1, aw, 12, banner.onAction());
+            final boolean over = Ui.inside(mouseX, my, ax, bannerY + 1, aw, 12);
+            Ui.solidButton(graphics, font, ax, bannerY + 1, aw, 12, banner.action(), banner.state(), over);
+            addHit(ax, bannerY + 1, aw, 12, banner.onAction());
         }
         y += 20;
 
@@ -460,7 +460,7 @@ public final class HutScreen extends ParchmentScreen
         }
     }
 
-    private void stockButton(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final String label, final Runnable action)
+    private void stockButton(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final String label, final Runnable action)
     {
         final int bw = font.width(label) + 10;
         Ui.button(graphics, font, x, y, bw, 14, label, Ui.ButtonStyle.SECONDARY, true, Ui.inside(mouseX, mouseY, x, y, bw, 14));
@@ -476,7 +476,7 @@ public final class HutScreen extends ParchmentScreen
     /**
      * A click target inside the scrolling middle column: only its visible part counts.
      */
-    private void addHit(final int x, final int y, final int width, final int height, @Nullable final Runnable action)
+    private void addHit(final int x, int y, final int width, final int height, @Nullable final Runnable action)
     {
         if (action == null)
         {
@@ -925,7 +925,7 @@ public final class HutScreen extends ParchmentScreen
         });
     }
 
-    private void sideButton(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width, final String label,
+    private void sideButton(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width, final String label,
       final Ui.ButtonStyle style, final boolean enabled, final Runnable action)
     {
         Ui.button(graphics, font, x, y, width, Ui.BUTTON_H, fit(label, width - 6), style, enabled, Ui.inside(mouseX, mouseY, x, y, width, Ui.BUTTON_H));

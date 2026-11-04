@@ -76,7 +76,7 @@ public final class ComptoirScreen extends CounterScreen
         final Crate crate = Crate.byId(state.region());
         if (crate == null)
         {
-            Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, "En attente", "la région n'est pas encore attribuée");
+            y += Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, "En attente", "la région n'est pas encore attribuée");
             return y + 21;
         }
         final String region = crate.regionName().isEmpty() ? "" : crate.regionName().toUpperCase();

@@ -138,11 +138,11 @@ public final class ClipboardScreen extends ParchmentScreen
         final int carrying = (int) entries.stream().filter(e -> CitizenBits.carried(e.request()) > 0).count();
         if (entries.isEmpty())
         {
-            Ui.banner(graphics, font, x, top, width, Ui.State.OK, "Rien à apporter", "la colonie ne t'attend pour rien");
+            top += Ui.banner(graphics, font, x, top, width, Ui.State.OK, "Rien à apporter", "la colonie ne t'attend pour rien");
         }
         else
         {
-            Ui.banner(graphics, font, x, top, width, Ui.State.WAIT, entries.size() + (entries.size() > 1 ? " demandes" : " demande") + " pour toi",
+            top += Ui.banner(graphics, font, x, top, width, Ui.State.WAIT, entries.size() + (entries.size() > 1 ? " demandes" : " demande") + " pour toi",
               carrying > 0 ? "tu as déjà de quoi en régler " + carrying : "les plus proches en premier");
         }
         top += 19;
@@ -197,7 +197,7 @@ public final class ClipboardScreen extends ParchmentScreen
     }
 
     private int row(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width, final Entry entry,
-      final int top, final int bottom)
+      int top, final int bottom)
     {
         final IRequest<?> request = entry.request();
         final boolean over = Ui.inside(mouseX, mouseY, x, y, width, ROW_H - 2);

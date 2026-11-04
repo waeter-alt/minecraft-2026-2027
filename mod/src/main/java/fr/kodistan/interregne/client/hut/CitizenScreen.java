@@ -176,7 +176,7 @@ public final class CitizenScreen extends ParchmentScreen
     /**
      * A click target in the scrolling content: only its visible part counts.
      */
-    private void addHit(final int x, final int y, final int width, final int height, final Runnable action)
+    private void addHit(final int x, int y, final int width, final int height, final Runnable action)
     {
         final int top = Math.max(y, y0 + HEADER + 4);
         final int bottom = Math.min(y + height, y0 + h - 5);
@@ -300,7 +300,7 @@ public final class CitizenScreen extends ParchmentScreen
         return renderSkills(graphics, x, y, width, work);
     }
 
-    private int line(final GuiGraphics graphics, final int x, final int y, final int width, final String text,
+    private int line(final GuiGraphics graphics, final int x, int y, final int width, final String text,
       final int color)
     {
         graphics.drawString(font, fit(text, width), x, y, color, false);
@@ -310,7 +310,7 @@ public final class CitizenScreen extends ParchmentScreen
     /**
      * « prefix » then an underlined link that opens something.
      */
-    private int link(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width, final String prefix,
+    private int link(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width, final String prefix,
       final String target, final Runnable action)
     {
         graphics.drawString(font, prefix, x, y, Palette.INK, false);
@@ -325,7 +325,7 @@ public final class CitizenScreen extends ParchmentScreen
     /**
      * Ten icons for a value out of max (hearts, drumsticks), as the game shows them.
      */
-    private int bar(final GuiGraphics graphics, final int x, final int y, final String label, final double value, final double max,
+    private int bar(final GuiGraphics graphics, final int x, int y, final String label, final double value, final double max,
       final ResourceLocation full, final ResourceLocation half, final ResourceLocation empty)
     {
         graphics.drawString(font, label, x, y + 1, Palette.INK, false);
@@ -411,7 +411,7 @@ public final class CitizenScreen extends ParchmentScreen
         final double happiness = citizen.getHappiness();
         final Ui.State mood = happiness < 4 ? Ui.State.BAD : happiness < 7 ? Ui.State.WAIT : Ui.State.OK;
         final String title = happiness < 4 ? "Malheureux" : happiness < 7 ? "Mitigé" : "Heureux";
-        Ui.banner(graphics, font, x, y, width, mood, title, format(happiness) + " / 10");
+        y += Ui.banner(graphics, font, x, y, width, mood, title, format(happiness) + " / 10");
         y += 20;
 
         final List<Factor> bad = new ArrayList<>();
@@ -460,7 +460,7 @@ public final class CitizenScreen extends ParchmentScreen
     /**
      * A card: coloured edge, the factor's name and how much it weighs, why, and what to do about it.
      */
-    private int factorCard(final GuiGraphics graphics, final int x, final int y, final int width, final Factor factor, final boolean good)
+    private int factorCard(final GuiGraphics graphics, final int x, int y, final int width, final Factor factor, final boolean good)
     {
         final HappinessFactors.Reading reading = factor.reading();
         final int textX = x + 20;

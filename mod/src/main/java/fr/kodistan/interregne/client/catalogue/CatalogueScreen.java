@@ -47,6 +47,7 @@ public final class CatalogueScreen extends ParchmentScreen
     private static final int LEFT_W = 104;
     private static final int RIGHT_W = 138;
     private static final int CARD_H = 32;
+    private static final int CARD_MIN_W = 100;
     private static final int GAP = 4;
     private static final int ROW = 17;
 
@@ -279,6 +280,8 @@ public final class CatalogueScreen extends ParchmentScreen
 
     private ScrollGrid grid()
     {
+        // Two columns only when each card still has room for a building's name
+        grid.setColumns(centerWidth() >= 2 * CARD_MIN_W + GAP ? 2 : 1);
         grid.layout(centerLeft(), cardsTop(), centerWidth(), y0 + h - 6, CARD_H);
         return grid;
     }

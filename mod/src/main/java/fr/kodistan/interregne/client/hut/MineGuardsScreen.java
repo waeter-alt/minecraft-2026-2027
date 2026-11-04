@@ -78,10 +78,10 @@ public final class MineGuardsScreen extends ModuleScreen
     }
 
     @Override
-    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width)
+    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         final long assigned = guards().stream().filter(g -> here(g.post())).count();
-        Ui.banner(graphics, font, x, y, width, assigned == 0 ? Ui.State.WAIT : Ui.State.OK, assigned + " / " + maxGuards() + (maxGuards() > 1 ? " gardes" : " garde"),
+        y += Ui.banner(graphics, font, x, y, width, assigned == 0 ? Ui.State.WAIT : Ui.State.OK, assigned + " / " + maxGuards() + (maxGuards() > 1 ? " gardes" : " garde"),
           assigned == 0 ? "personne ne protège la mine" : "ils patrouillent dans la mine");
         return y + 19;
     }

@@ -75,14 +75,14 @@ public final class ExpeditionScreen extends ModuleScreen
     }
 
     @Override
-    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width)
+    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         final ExpeditionLog log = module.getLog();
         final ExpeditionLog.Status status = log.getStatus();
         final Ui.State state = status == ExpeditionLog.Status.KILLED ? Ui.State.BAD : status == ExpeditionLog.Status.COMPLETED || status == ExpeditionLog.Status.NONE ? Ui.State.OK
                                                                                                                                : Ui.State.WAIT;
         final String who = log.getName() == null || log.getName().isEmpty() ? "Expédition" : log.getName();
-        Ui.banner(graphics, font, x, y, width, state, who, status(status).toLowerCase(java.util.Locale.FRENCH));
+        y += Ui.banner(graphics, font, x, y, width, state, who, status(status).toLowerCase(java.util.Locale.FRENCH));
         return y + 19;
     }
 

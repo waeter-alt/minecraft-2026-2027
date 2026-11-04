@@ -143,9 +143,14 @@ public final class ItemListScreen extends ModuleScreen
             }
         }
         final String title = count + " sur " + all.size() + (count > 1 ? " cochés" : " coché");
-        Ui.banner(graphics, font, x, y, width, count == 0 ? Ui.State.WAIT : Ui.State.OK, title,
+        y += Ui.banner(graphics, font, x, y, width, count == 0 ? Ui.State.WAIT : Ui.State.OK, title,
           count == 0 ? "rien n'est autorisé pour l'instant" : "seuls les objets cochés sont pris en compte");
         y += 18;
+        // The search box follows the row, which moves down when the banner takes two lines
+        if (search != null)
+        {
+            search.setY(y);
+        }
 
         segmented(graphics, mouseX, mouseY, x, y, List.of("Tous", "Cochés", "Décochés"), shown, index -> {
             shown = index;
@@ -196,7 +201,7 @@ public final class ItemListScreen extends ModuleScreen
         return y + ((visible.size() + 1) / 2) * (CARD_H + 2);
     }
 
-    private void card(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width, final IItemListModuleView module,
+    private void card(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width, final IItemListModuleView module,
       final ItemStorage item)
     {
         final boolean on = on(module, item);

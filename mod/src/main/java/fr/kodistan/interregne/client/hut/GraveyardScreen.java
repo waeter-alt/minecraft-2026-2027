@@ -51,10 +51,10 @@ public final class GraveyardScreen extends ModuleScreen
     }
 
     @Override
-    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width)
+    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         final int graves = module.getGraves().size();
-        Ui.banner(graphics, font, x, y, width, graves == 0 ? Ui.State.OK : Ui.State.WAIT, graves == 0 ? "Aucune tombe" : graves + (graves > 1 ? " tombes" : " tombe"),
+        y += Ui.banner(graphics, font, x, y, width, graves == 0 ? Ui.State.OK : Ui.State.WAIT, graves == 0 ? "Aucune tombe" : graves + (graves > 1 ? " tombes" : " tombe"),
           graves == 0 ? "personne n'attend le fossoyeur" : "le fossoyeur va s'en occuper");
         return y + 19;
     }

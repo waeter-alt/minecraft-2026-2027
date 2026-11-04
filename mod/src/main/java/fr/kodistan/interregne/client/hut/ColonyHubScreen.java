@@ -397,7 +397,7 @@ public final class ColonyHubScreen extends ParchmentScreen
         int y = top - scroll;
         if (notice != null && Util.getMillis() < noticeUntil)
         {
-            Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, "Pas encore", notice);
+            y += Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, "Pas encore", notice);
             y += 20;
         }
         y = switch (page)
@@ -432,7 +432,7 @@ public final class ColonyHubScreen extends ParchmentScreen
         }
     }
 
-    private void addHit(final int x, final int y, final int width, final int height, final Runnable action)
+    private void addHit(final int x, int y, final int width, final int height, final Runnable action)
     {
         final int top = Math.max(y, y0 + HDR + 7);
         final int bottom = Math.min(y + height, y0 + h - 5);
@@ -663,9 +663,9 @@ public final class ColonyHubScreen extends ParchmentScreen
     /**
      * A page still to come: what it will hold, in a sentence.
      */
-    private int renderSoon(final GuiGraphics graphics, final int x, final int y, final int width, final String title, final String text)
+    private int renderSoon(final GuiGraphics graphics, final int x, int y, final int width, final String title, final String text)
     {
-        Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, title, "en préparation");
+        y += Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, title, "en préparation");
         return Ui.wrapped(graphics, font, Component.literal(text), x + 2, y + 20, width - 4, Palette.MUTED, 10) + 4;
     }
 
@@ -712,17 +712,17 @@ public final class ColonyHubScreen extends ParchmentScreen
 
         if (blocked > 0)
         {
-            Ui.banner(graphics, font, x, y, width, Ui.State.BAD, "À régler", blocked + (blocked == 1 ? " bâtiment bloqué" : " bâtiments bloqués"));
+            y += Ui.banner(graphics, font, x, y, width, Ui.State.BAD, "À régler", blocked + (blocked == 1 ? " bâtiment bloqué" : " bâtiments bloqués"));
             addHit(x, y, width, 14, () -> show(Page.BUILDINGS));
         }
         else if (troubled > 0)
         {
-            Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, "À surveiller", troubled + (troubled == 1 ? " citoyen a" : " citoyens ont") + " des doléances");
+            y += Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, "À surveiller", troubled + (troubled == 1 ? " citoyen a" : " citoyens ont") + " des doléances");
             addHit(x, y, width, 14, () -> show(Page.CITIZENS));
         }
         else
         {
-            Ui.banner(graphics, font, x, y, width, Ui.State.OK, "Tout va bien", "aucun bâtiment bloqué, aucune doléance");
+            y += Ui.banner(graphics, font, x, y, width, Ui.State.OK, "Tout va bien", "aucun bâtiment bloqué, aucune doléance");
         }
         y += 20;
         y = renderSeat(graphics, mouseX, mouseY, x, y, width) + 2;
@@ -761,7 +761,7 @@ public final class ColonyHubScreen extends ParchmentScreen
      * The town hall's next level, as a hut shows it but laid out across the page: what it unlocks, what it costs and
      * the buttons; or its site while one is running.
      */
-    private int renderSeat(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width)
+    private int renderSeat(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         final int level = townHall.getBuildingLevel();
         final boolean site = townHall.isBuilding() || townHall.isRepairing() || townHall.isDeconstructing();
@@ -891,7 +891,7 @@ public final class ColonyHubScreen extends ParchmentScreen
         return y + height + 6;
     }
 
-    private void seatButton(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width, final String label,
+    private void seatButton(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width, final String label,
       final Ui.ButtonStyle style, final boolean enabled, final Runnable action)
     {
         Ui.button(graphics, font, x, y, width, Ui.BUTTON_H, fit(label, width - 6), style, enabled, Ui.inside(mouseX, mouseY, x, y, width, Ui.BUTTON_H));
@@ -910,7 +910,7 @@ public final class ColonyHubScreen extends ParchmentScreen
     {
     }
 
-    private int tileRow(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int tileW, final int columns,
+    private int tileRow(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int tileW, final int columns,
       final List<Tile> tiles)
     {
         for (int i = 0; i < tiles.size(); i++)
@@ -1004,7 +1004,7 @@ public final class ColonyHubScreen extends ParchmentScreen
     /**
      * One square per level in its colour, filled up to the building's level.
      */
-    private void levelSquares(final GuiGraphics graphics, int x, final int y, final int level, final int max)
+    private void levelSquares(final GuiGraphics graphics, int x, int y, final int level, final int max)
     {
         for (int l = 1; l <= max; l++)
         {
@@ -1175,7 +1175,7 @@ public final class ColonyHubScreen extends ParchmentScreen
      * figure, star and figure). Green when it can be paid, red when it cannot (the hover says what is missing), grey
      * when there is nothing to settle. The list button sits beside it when wide, under it when narrow.
      */
-    private int desk(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width, final Icon icon, final String title,
+    private int desk(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width, final Icon icon, final String title,
       final String text, final long gold, final long influence, final boolean hasList, final int list, final int action)
     {
         final int pad = 6;
@@ -1255,7 +1255,7 @@ public final class ColonyHubScreen extends ParchmentScreen
      * figure that falls short turns red, written « what you have / what it costs », so the eye goes straight to what
      * is missing; a figure that is covered stays plain. When narrow, « have / » goes first, then the words shorten.
      */
-    private void priceButton(final GuiGraphics graphics, final int x, final int y, final int width, final int height, final long gold, final long money,
+    private void priceButton(final GuiGraphics graphics, final int x, int y, final int width, final int height, final long gold, final long money,
       final long influence, final long ownInfluence, final boolean hover)
     {
         final boolean goldOk = money >= gold;
@@ -1339,7 +1339,7 @@ public final class ColonyHubScreen extends ParchmentScreen
     /**
      * A row's price at its right edge: the coin and the figure.
      */
-    private int rowPrice(final GuiGraphics graphics, final int right, final int y, final int cost)
+    private int rowPrice(final GuiGraphics graphics, final int right, int y, final int cost)
     {
         final String value = Wallet.format(cost);
         final int w = 12 + font.width(value);
