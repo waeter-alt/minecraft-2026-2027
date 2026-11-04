@@ -1,5 +1,6 @@
 package fr.kodistan.interregne.client.catalogue;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.ldtteam.structurize.blueprints.v1.Blueprint;
@@ -112,16 +113,20 @@ public final class CatalogueIndex
     }
 
     private static final Map<String, Need> NEEDS = new HashMap<>();
+    private static final Map<String, Integer> RANKS = new HashMap<>();
 
     static
     {
-        put(Need.FOOD, "chickenherder", "cowboy", "shepherd", "swineherder", "rabbithutch", "fisherman", "farmer", "cook", "baker", "beekeeper", "kitchen");
+        // In the order a new player needs them: what to build first comes first
+        put(Need.FOOD, "chickenherder", "cook", "farmer", "fisherman", "cowboy", "shepherd", "swineherder", "rabbithutch", "baker", "beekeeper", "kitchen");
         put(Need.PLANTATION, "plantation");
-        put(Need.WOOD_STONE, "lumberjack", "miner", "simplequarry", "mediumquarry", "largequarry", "sifter", "crusher");
-        put(Need.HOUSING, "townhall", "residence", "tavern", "hospital", "graveyard");
+        put(Need.WOOD_STONE, "lumberjack", "miner", "simplequarry", "mediumquarry", "largequarry", "crusher", "sifter", "netherworker");
+        put(Need.HOUSING, "townhall", "residence", "hospital", "tavern", "graveyard");
         put(Need.LOGISTICS, "warehouse", "postbox", "stash");
-        put(Need.DEFENSE, "archery", "barracks", "barrackstower", "combatacademy", "guardtower");
-        put(Need.KNOWLEDGE, "library", "school", "university", "enchanter", "mysticalsite");
+        put(Need.DEFENSE, "guardtower", "barracks", "barrackstower", "archery", "combatacademy");
+        put(Need.KNOWLEDGE, "university", "library", "school", "enchanter", "mysticalsite");
+        put(Need.CRAFT, "sawmill", "stonemason", "blacksmith", "smeltery", "stonesmeltery", "glassblower", "fletcher", "composter", "florist", "dyer",
+          "concretemixer", "mechanic", "alchemist");
     }
 
     /**
@@ -142,8 +147,17 @@ public final class CatalogueIndex
     {
         for (final String id : ids)
         {
+            RANKS.put(id, RANKS.size());
             NEEDS.put(id, need);
         }
+    }
+
+    /**
+     * Where a card sits in its category: buildings in a new player's order, then decorations in their folder order.
+     */
+    public static int rank(final Entry entry)
+    {
+        return entry.hut() != null ? RANKS.getOrDefault(entry.buildingId(), RANKS.size()) : Integer.MAX_VALUE;
     }
 
     /**
@@ -350,6 +364,36 @@ public final class CatalogueIndex
         return entry != null && entry.has("desc") ? entry.get("desc").getAsString() : null;
     }
 
+    /**
+     * What a building turns into what, as stages of items (building_info.json "flow"); empty when it transforms nothing.
+     */
+    public static List<List<ItemStack>> flow(final String buildingId)
+    {
+        final JsonObject entry = info().get(buildingId);
+        if (entry == null || !entry.has("flow"))
+        {
+            return List.of();
+        }
+        final List<List<ItemStack>> stages = new ArrayList<>();
+        for (final JsonElement stage : entry.getAsJsonArray("flow"))
+        {
+            final List<ItemStack> items = new ArrayList<>();
+            for (final JsonElement id : stage.getAsJsonArray())
+            {
+                final Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(id.getAsString()));
+                if (item != Items.AIR)
+                {
+                    items.add(new ItemStack(item));
+                }
+            }
+            if (!items.isEmpty())
+            {
+                stages.add(items);
+            }
+        }
+        return stages;
+    }
+
     private static synchronized Map<String, JsonObject> info()
     {
         if (info == null)
@@ -450,35 +494,14 @@ public final class CatalogueIndex
             case "swineherder" -> rate(Items.PORKCHOP, perMinute);
             case "rabbithutch" -> rate(Items.RABBIT, perMinute);
             case "fisherman" -> rate(Items.COD, perMinute);
-            case "farmer" -> Component.literal("La culture choisie : " + perMinute + " par minute au niveau 1, plus à chaque niveau.");
-            case "cook" -> Component.literal("Cuit sans combustible et remplit l'entrepôt de plats.");
-            case "lumberjack" -> Component.literal("Plante des arbres autour de lui, qui poussent vite.");
-            case "plantation" -> Component.literal("Récolte les champs de plantation posés à côté : bambou, canne à sucre, cactus…");
+            case "farmer" -> Component.literal(perMinute + " par minute au niveau 1, plus à chaque niveau.");
             default -> null;
         };
     }
 
     private static Component rate(final Item item, final int perMinute)
     {
-        return Component.literal(new ItemStack(item).getHoverName().getString() + " : " + perMinute + " par minute au niveau 1, plus à chaque niveau.");
+        return Component.literal(perMinute + " par minute au niveau 1, plus à chaque niveau.");
     }
 
-    @Nullable
-    public static ItemStack productIcon(final String buildingId)
-    {
-        return switch (buildingId)
-        {
-            case "chickenherder" -> new ItemStack(Items.CHICKEN);
-            case "cowboy" -> new ItemStack(Items.BEEF);
-            case "shepherd" -> new ItemStack(Items.MUTTON);
-            case "swineherder" -> new ItemStack(Items.PORKCHOP);
-            case "rabbithutch" -> new ItemStack(Items.RABBIT);
-            case "fisherman" -> new ItemStack(Items.COD);
-            case "farmer" -> new ItemStack(Items.WHEAT);
-            case "cook" -> new ItemStack(Items.COOKED_CHICKEN);
-            case "lumberjack" -> new ItemStack(Items.OAK_SAPLING);
-            case "plantation" -> new ItemStack(Items.SUGAR_CANE);
-            default -> null;
-        };
-    }
 }

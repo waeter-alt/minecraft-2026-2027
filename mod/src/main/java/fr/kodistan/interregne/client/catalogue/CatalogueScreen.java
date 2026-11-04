@@ -25,6 +25,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
@@ -63,6 +64,7 @@ public final class CatalogueScreen extends ParchmentScreen
     private final ScrollGrid grid = new ScrollGrid(2, GAP);
     private final Map<CatalogueIndex.Entry, List<MutableComponent>> requirements = new HashMap<>();
     private final List<int[]> variantSquares = new ArrayList<>();
+    private final List<Ui.Slot> flowSlots = new ArrayList<>();
 
     private CatalogueScreen(final WindowExtendedBuildTool buildTool, final BlockPos anchor)
     {
@@ -118,7 +120,8 @@ public final class CatalogueScreen extends ParchmentScreen
 
     private List<CatalogueIndex.Entry> visible()
     {
-        return entries.stream().filter(e -> e.need() == need).toList();
+        return entries.stream().filter(e -> e.need() == need)
+          .sorted(Comparator.comparing(this::locked).thenComparingInt(CatalogueIndex::rank)).toList();
     }
 
     private void select(final CatalogueIndex.Entry entry)
@@ -136,14 +139,35 @@ public final class CatalogueScreen extends ParchmentScreen
         return requirements.computeIfAbsent(entry, e -> {
             try
             {
-                return e.hut().areRequirementsMet(minecraft.level, anchor, minecraft.player) ? List.of()
-                  : e.hut().getRequirements(minecraft.level, anchor, minecraft.player);
+                return e.hut().areRequirementsMet(minecraft.level, anchor, minecraft.player) ? List.<MutableComponent>of()
+                  : readable(e.hut().getRequirements(minecraft.level, anchor, minecraft.player));
             }
             catch (final RuntimeException ex)
             {
                 return List.of();
             }
         });
+    }
+
+    /**
+     * MineColonies' research lines ("Le/La X nécessite une recherche" / "à l'Université pour construire") as one plain sentence.
+     */
+    private static List<MutableComponent> readable(final List<MutableComponent> requirements)
+    {
+        final List<MutableComponent> lines = new ArrayList<>();
+        for (final MutableComponent requirement : requirements)
+        {
+            final String key = requirement.getContents() instanceof TranslatableContents t ? t.getKey() : "";
+            if (key.equals("com.minecolonies.coremod.research.item1"))
+            {
+                lines.add(Component.literal("Se débloque par une recherche à l'Université."));
+            }
+            else if (!key.equals("com.minecolonies.coremod.research.item2"))
+            {
+                lines.add(requirement);
+            }
+        }
+        return lines;
     }
 
     private boolean locked(final CatalogueIndex.Entry entry)
@@ -299,6 +323,7 @@ public final class CatalogueScreen extends ParchmentScreen
     {
         final int left = detailPanel(graphics, RIGHT_W);
         variantSquares.clear();
+        flowSlots.clear();
         if (selected == null)
         {
             return;
@@ -311,6 +336,7 @@ public final class CatalogueScreen extends ParchmentScreen
             graphics.drawString(font, line, x, y, Palette.INK, false);
             y += 10;
         }
+        y += 2;
         if (selected.hut() != null && selected.about() != null)
         {
             y = Ui.wrapped(graphics, font, Component.literal(selected.about()), x, y, width, Palette.MUTED, 9);
@@ -322,44 +348,34 @@ public final class CatalogueScreen extends ParchmentScreen
               .filter(line -> !line.getString().strip().equalsIgnoreCase(selected.name().strip())).toList();
             if (!desc.isEmpty())
             {
-                for (final FormattedCharSequence line : font.split(desc.get(0), width))
-                {
-                    graphics.drawString(font, line, x, y, Palette.MUTED, false);
-                    y += 9;
-                }
+                y = Ui.wrapped(graphics, font, desc.get(0), x, y, width, Palette.MUTED, 9);
             }
         }
         else
         {
             final String about = (selected.about() == null ? "" : selected.about() + " ") + selected.blocks() + " blocs.";
-            for (final FormattedCharSequence line : font.split(Component.literal(about), width))
-            {
-                graphics.drawString(font, line, x, y, Palette.MUTED, false);
-                y += 9;
-            }
+            y = Ui.wrapped(graphics, font, Component.literal(about), x, y, width, Palette.MUTED, 9);
         }
-        y += 4;
 
-        final Component production = selected.hut() == null ? null : CatalogueIndex.production(selected.buildingId());
-        if (production != null)
+        // What goes in and what comes out, drawn: icons and arrows, read at a glance
+        final List<List<ItemStack>> flow = selected.hut() == null ? List.of() : CatalogueIndex.flow(selected.buildingId());
+        final Component rate = selected.hut() == null ? null : CatalogueIndex.production(selected.buildingId());
+        if (!flow.isEmpty() || rate != null)
         {
-            graphics.drawString(font, "PRODUIT", x, y, Palette.MUTED, false);
-            y += 10;
-            final ItemStack product = CatalogueIndex.productIcon(selected.buildingId());
-            if (product != null)
+            y = Ui.separator(graphics, x, y, width);
+            if (!flow.isEmpty())
             {
-                graphics.renderItem(product, x - 1, y - 2);
+                y = Ui.flow(graphics, font, x, y, width, flow, flowSlots);
             }
-            for (final FormattedCharSequence line : font.split(production, width - 18))
+            if (rate != null)
             {
-                graphics.drawString(font, line, x + 17, y, Palette.INK, false);
-                y += 9;
+                y = Ui.wrapped(graphics, font, rate, x, y + 2, width, Palette.INK, 9);
             }
-            y += 5;
         }
 
-        graphics.drawString(font, "PRIX", x, y, Palette.MUTED, false);
-        y += 10;
+        y = Ui.separator(graphics, x, y, width);
+        Ui.label(graphics, font, "PRIX", x, y);
+        y += 11;
         final boolean free = minecraft.player != null && minecraft.player.isCreative();
         final int cost = cost(selected);
         y = Ui.priceLine(graphics, font, x, y, free ? "Gratuit (créatif)" : cost + " Couronnes", free || owned() >= cost);
@@ -369,12 +385,13 @@ public final class CatalogueScreen extends ParchmentScreen
         }
         final int seconds = selected.hut() != null ? BuildCosts.secondsForLevel(1) : BuildCosts.secondsForFlat();
         graphics.drawString(font, "⌛ " + BuildCosts.formatSeconds(seconds), x, y + 1, Palette.INK, false);
-        y += 15;
+        y += 11;
 
         if (selected.variants().size() > 1)
         {
-            graphics.drawString(font, "VARIANTES", x, y, Palette.MUTED, false);
-            y += 10;
+            y = Ui.separator(graphics, x, y, width);
+            Ui.label(graphics, font, "VARIANTES", x, y);
+            y += 11;
             for (int i = 0; i < selected.variants().size() && i < 8; i++)
             {
                 final int vx = x + i * 15;
@@ -388,6 +405,10 @@ public final class CatalogueScreen extends ParchmentScreen
 
         final List<MutableComponent> missing = requirementsOf(selected);
         final int buttonY = actionY();
+        if (!missing.isEmpty())
+        {
+            y += 4;
+        }
         for (final MutableComponent requirement : missing)
         {
             for (final FormattedCharSequence line : font.split(requirement, width))
@@ -403,6 +424,14 @@ public final class CatalogueScreen extends ParchmentScreen
         final boolean canPlace = missing.isEmpty();
         final boolean hover = canPlace && inside(mouseX, mouseY, x, buttonY, width, 18);
         Ui.button(graphics, font, x, buttonY, width, Ui.BUTTON_H, canPlace ? "Placer" : "Verrouillé", Ui.ButtonStyle.PRIMARY, canPlace, hover);
+
+        for (final Ui.Slot slot : flowSlots)
+        {
+            if (inside(mouseX, mouseY, slot.x(), slot.y(), slot.size(), slot.size()))
+            {
+                graphics.renderTooltip(font, slot.stack(), mouseX, mouseY);
+            }
+        }
     }
 
     @Override

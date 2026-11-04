@@ -6,6 +6,7 @@ import com.ldtteam.structurize.storage.StructurePacks;
 import com.minecolonies.api.IMinecoloniesAPI;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.buildings.IBuilding;
+import com.minecolonies.api.colony.buildings.workerbuildings.ITownHall;
 import com.minecolonies.api.colony.workorders.IServerWorkOrder;
 import com.minecolonies.api.colony.workorders.WorkOrderType;
 import com.minecolonies.api.eventbus.events.colony.buildings.BuildingConstructionModEvent;
@@ -67,6 +68,20 @@ public final class InstantBuilder
         }
 
         final ServerPlayer player = BuildContext.requester();
+        if (order instanceof WorkOrderBuilding && order.getWorkOrderType() != WorkOrderType.REPAIR && order.getWorkOrderType() != WorkOrderType.REMOVE)
+        {
+            final IBuilding building = colony.getBuildingManager().getBuilding(order.getLocation());
+            final ITownHall townHall = colony.getBuildingManager().getTownHall();
+            final String refusal = TownHallCap.refusal(building instanceof ITownHall, order.getTargetLevel(), townHall == null ? 0 : townHall.getBuildingLevel());
+            if (refusal != null)
+            {
+                if (player != null)
+                {
+                    player.sendSystemMessage(Component.literal(refusal).withStyle(ChatFormatting.RED));
+                }
+                return true;
+            }
+        }
         if (player != null && FarmChoice.ask(player, colony, order))
         {
             // Resumed by proceed() once the player has picked the farm's crop

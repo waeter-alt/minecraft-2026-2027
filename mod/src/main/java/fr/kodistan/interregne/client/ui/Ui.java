@@ -9,6 +9,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.world.item.ItemStack;
+
+import java.util.List;
 
 /**
  * The shared drawing pieces of Interrègne screens: plates, navigation rows, cards, buttons, state banners and chips,
@@ -48,6 +51,13 @@ public final class Ui
             this.soft = soft;
             this.text = text;
         }
+    }
+
+    /**
+     * An item drawn somewhere, for its tooltip on hover.
+     */
+    public record Slot(int x, int y, int size, ItemStack stack)
+    {
     }
 
     private Ui()
@@ -92,6 +102,52 @@ public final class Ui
             y += lineHeight;
         }
         return y;
+    }
+
+    /**
+     * A full-width rule between two sections, with air above and below; returns the y below it.
+     */
+    public static int separator(final GuiGraphics graphics, final int x, final int y, final int width)
+    {
+        graphics.fill(x, y + 5, x + width, y + 6, Palette.RULE);
+        return y + 11;
+    }
+
+    /**
+     * Stages of items joined by arrows (« pavé → gravier → sable »), each stage on a small plate. Items shrink when the
+     * stages do not fit at full size. Returns the y below it; the drawn items are added to slots.
+     */
+    public static int flow(final GuiGraphics graphics, final Font font, final int x, final int y, final int width, final List<List<ItemStack>> stages,
+      final List<Slot> slots)
+    {
+        final int arrow = font.width("→") + 6;
+        int count = 0;
+        for (final List<ItemStack> stage : stages)
+        {
+            count += stage.size();
+        }
+        final int fixed = (stages.size() - 1) * arrow + stages.size() * 4;
+        final int size = count * 17 + fixed <= width ? 16 : Math.max(8, (width - fixed) / Math.max(1, count) - 1);
+        int cx = x;
+        for (int s = 0; s < stages.size(); s++)
+        {
+            final List<ItemStack> stage = stages.get(s);
+            final int plateW = stage.size() * (size + 1) + 3;
+            plate(graphics, cx, y, cx + plateW, y + size + 4, Palette.PAPER_LIGHT, Palette.RULE, Palette.PAPER_LIGHT);
+            for (int i = 0; i < stage.size(); i++)
+            {
+                final int ix = cx + 2 + i * (size + 1);
+                Icon.of(stage.get(i)).draw(graphics, ix, y + 2, size);
+                slots.add(new Slot(ix, y + 2, size, stage.get(i)));
+            }
+            cx += plateW;
+            if (s < stages.size() - 1)
+            {
+                graphics.drawString(font, "→", cx + 3, y + (size + 4 - 8) / 2, Palette.LEATHER, false);
+                cx += arrow;
+            }
+        }
+        return y + size + 4;
     }
 
     /**

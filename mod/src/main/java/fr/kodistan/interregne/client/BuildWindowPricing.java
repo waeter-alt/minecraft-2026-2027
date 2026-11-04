@@ -11,6 +11,8 @@ import com.minecolonies.api.colony.buildings.views.IBuildingView;
 import com.minecolonies.core.client.gui.WindowBuildBuilding;
 import com.ldtteam.blockui.views.BOWindow;
 import com.minecolonies.api.colony.IColonyView;
+import com.minecolonies.api.colony.buildings.workerbuildings.ITownHallView;
+import fr.kodistan.interregne.colony.TownHallCap;
 import fr.kodistan.interregne.region.CrateRequirements;
 import org.jetbrains.annotations.Nullable;
 import fr.kodistan.interregne.Config;
@@ -107,6 +109,15 @@ public final class BuildWindowPricing
             final Component label = Component.literal(text + " · " + BuildCosts.formatSeconds(seconds));
             priceButton(build, action, cost, free, owned);
             rows.add(new PriceRow(label, cost, free || owned >= cost));
+            final ITownHallView townHall = building.getColony().getTownHall();
+            final String refusal = repair ? null
+              : TownHallCap.refusal(building instanceof ITownHallView, level + 1, townHall == null ? 0 : townHall.getBuildingLevel());
+            if (refusal != null)
+            {
+                build.setText(Component.literal("Hôtel de ville niv. " + (level + 1) + " requis"));
+                build.setEnabled(false);
+                rows.add(0, new PriceRow(Component.literal(refusal), INFO, false));
+            }
         }
 
         // Regional crates the next level needs (red: not enough on the player)
