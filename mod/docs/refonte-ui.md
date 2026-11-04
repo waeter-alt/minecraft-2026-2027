@@ -102,7 +102,20 @@ Les modules génériques d'abord, car ils couvrent la plupart des huttes :
 - `TasksScreen` : la file du bâtiment (livraisons…), avec le trajet, la priorité et l'état. Un clic ouvre la demande.
 Pas faits : les ordres de travail (seulement pour le constructeur, retiré), la grille d'artisanat elle-même (`DOCraftingWindow`).
 
-Puis les cas particuliers : layoutbuilderres, layoutenchanter, layoutexpeditionlog, layoutfarmfields, layoutplantationfields, layoutgraveyard, layoutguardlist, layoutminermodule, layouttool, layoutuniversity, layoutwarehouseoptions.
+**Cas particuliers faits le 2026-11-04** :
+- parler à un citoyen ouvre sa fiche, et le dialogue à 4 réponses est supprimé (les visiteurs de la taverne le gardent pour le recrutement) ;
+- maisons (`HousingScreen` et les habitants dans `HutScreen`), menu du restaurant (`MenuScreen`), champs et parcelles (`FieldsScreen`), outil (`ToolScreen`), niveaux et gardes de la mine (`MineLevelsScreen`, `MineGuardsScreen`) et cimetière (`GraveyardScreen`) ;
+- `EnchanterScreen` : les lieux de travail où puiser l'expérience, une carte verte par lieu choisi ;
+- `WarehouseOptionsScreen` : « Ranger », et « Agrandir » contre un bloc d'émeraude ;
+- `ExpeditionScreen` : l'état, la vie, la faim, l'équipement, les combats et le butin ;
+- l'affectation du mineur et du coursier passe par `HireScreen` ;
+- la boîte aux lettres devient un bon de commande (`ItemPickerScreen`, bouton « Commander ») ;
+- « Tout le stock » (`StockScreen`) : tout ce qui est rangé dans les étagères, triable, et un clic entoure les étagères qui contiennent l'objet ;
+- « Aide » (`HelpScreen`) : toutes les pages à la suite.
+
+Restent dans l'ancien style : les réglages de type bloc, recette et tâche de garde ; la caserne (espions, bannière de ralliement) ; la grille d'artisanat (`DOCraftingWindow`) ; la recherche ; les sous-pages de l'hôtel de ville (permissions, alliances, mercenaires) ; le journal des quêtes ; le placement du camp de départ (`WindowSupplies`).
+
+Liste d'origine des cas particuliers : layoutbuilderres, layoutenchanter, layoutexpeditionlog, layoutfarmfields, layoutplantationfields, layoutgraveyard, layoutguardlist, layoutminermodule, layouttool, layoutuniversity, layoutwarehouseoptions.
 
 Déjà modifiés par nos mixins (à intégrer, pas à casser) :
 - WindowBuildBuildingMixin (prix) ;
