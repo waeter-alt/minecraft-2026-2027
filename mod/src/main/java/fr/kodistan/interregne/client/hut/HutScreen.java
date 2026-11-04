@@ -13,8 +13,10 @@ import com.minecolonies.core.client.gui.WindowHutAllInventory;
 import com.minecolonies.core.client.gui.WindowHutNameEntry;
 import com.ldtteam.blockui.views.BOWindow;
 import com.minecolonies.core.client.gui.WindowInfo;
+import com.minecolonies.core.client.gui.huts.WindowHutLiving;
 import com.minecolonies.core.client.gui.huts.WindowHutWorkerModulePlaceholder;
-import com.minecolonies.core.client.gui.WindowInteraction;
+import com.minecolonies.core.colony.buildings.views.LivingBuildingView;
+import com.minecolonies.core.network.messages.server.colony.building.RecallCitizenHutMessage;
 import com.minecolonies.core.colony.buildings.moduleviews.WorkerBuildingModuleView;
 import com.minecolonies.core.network.messages.server.colony.OpenInventoryMessage;
 import com.minecolonies.core.network.messages.server.colony.building.worker.RecallCitizenMessage;
@@ -119,7 +121,7 @@ public final class HutScreen extends ParchmentScreen
     public static void openFrom(final IBuildingView building, final Screen parent)
     {
         final BOWindow window = building.getWindow();
-        if (window != null && window.getClass() == WindowHutWorkerModulePlaceholder.class && enabled())
+        if (window != null && (window.getClass() == WindowHutWorkerModulePlaceholder.class || window.getClass() == WindowHutLiving.class) && enabled())
         {
             Minecraft.getInstance().setScreen(new HutScreen(building, parent));
         }
@@ -374,7 +376,14 @@ public final class HutScreen extends ParchmentScreen
         {
             y = renderWorkers(graphics, mouseX, my, x, y, width, workers);
         }
-        y = renderProduction(graphics, x, y, width);
+        if (building instanceof LivingBuildingView home)
+        {
+            y = renderResidents(graphics, mouseX, my, x, y, width, home);
+        }
+        else
+        {
+            y = renderProduction(graphics, x, y, width);
+        }
         y = renderRequests(graphics, mouseX, my, x, y, width, requests);
         graphics.disableScissor();
 
@@ -445,51 +454,116 @@ public final class HutScreen extends ParchmentScreen
         for (final Worker worker : workers)
         {
             final ICitizenDataView citizen = worker.citizen();
-            final Component name = Component.literal(citizen.getName()).withStyle(ChatFormatting.BOLD);
-            final List<CitizenBits.Chip> chips = CitizenBits.chips(citizen);
-            int chipsW = 0;
-            for (final CitizenBits.Chip chip : chips)
-            {
-                chipsW += font.width(chip.text()) + 11;
-            }
-            // Chips beside the name when they fit, on their own line below otherwise
-            final boolean inline = font.width(name) + chipsW + 30 <= width;
-            final int cardH = inline || chips.isEmpty() ? WORKER_H - 2 : WORKER_H + 11;
-            final boolean overCard = Ui.inside(mouseX, mouseY, x, y, width, cardH);
-            Ui.card(graphics, x, y, width, cardH, false, overCard, false);
-            CitizenBits.face(graphics, citizen, x + 4, y + 3, 16);
-            graphics.drawString(font, name, x + 24, y + 3, Palette.INK, false);
             // Sickness already has its chip: the line does not repeat it
             final String job = CitizenBits.jobName(worker.jobKey(), citizen.isFemale());
-            final String line = citizen.isSick() ? job : job + " · " + CitizenBits.activity(citizen);
-            graphics.drawString(font, fit(line, width - 28), x + 24, y + 12, Palette.MUTED, false);
-
-            int chipX = inline ? x + width - 4 - chipsW + 3 : x + 24;
-            final int chipY = inline ? y + 2 : y + 22;
-            for (final CitizenBits.Chip chip : chips)
-            {
-                final int chipW = font.width(chip.text()) + 8;
-                final boolean over = chip.action() != null && Ui.inside(mouseX, mouseY, chipX, chipY, chipW, 11);
-                Ui.chip(graphics, font, chipX, chipY, chip.text(), chip.soft(), chip.ink(), chip.action() != null, over);
-                if (chip.action() != null)
-                {
-                    addHit(chipX, chipY, chipW, 11, chip.action());
-                    if (over)
-                    {
-                        hint = "Cliquez pour régler le problème de " + citizen.getName();
-                    }
-                }
-                chipX += chipW + 3;
-            }
-            // After the chips, so a click on a chip settles the problem instead
-            addHit(x, y, width, cardH, () -> CitizenScreen.open(citizen, this));
-            if (overCard && hint == null)
-            {
-                hint = "Voir la fiche de " + citizen.getName();
-            }
-            y += cardH + 2;
+            y = citizenCard(graphics, mouseX, mouseY, x, y, width, citizen, citizen.isSick() ? job : job + " · " + CitizenBits.activity(citizen));
         }
         return y + 2;
+    }
+
+    /**
+     * A citizen as a card: face, name, a line under it, their problems as chips (a click settles one), the rest of the
+     * card opening their sheet; returns the y below it.
+     */
+    private int citizenCard(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width, final ICitizenDataView citizen,
+      final String line)
+    {
+        final Component name = Component.literal(citizen.getName()).withStyle(ChatFormatting.BOLD);
+        final List<CitizenBits.Chip> chips = CitizenBits.chips(citizen);
+        int chipsW = 0;
+        for (final CitizenBits.Chip chip : chips)
+        {
+            chipsW += font.width(chip.text()) + 11;
+        }
+        // Chips beside the name when they fit, on their own line below otherwise
+        final boolean inline = font.width(name) + chipsW + 30 <= width;
+        final int cardH = inline || chips.isEmpty() ? WORKER_H - 2 : WORKER_H + 11;
+        final boolean overCard = Ui.inside(mouseX, mouseY, x, y, width, cardH);
+        Ui.card(graphics, x, y, width, cardH, false, overCard, false);
+        CitizenBits.face(graphics, citizen, x + 4, y + 3, 16);
+        graphics.drawString(font, name, x + 24, y + 3, Palette.INK, false);
+        graphics.drawString(font, fit(line, width - 28), x + 24, y + 12, Palette.MUTED, false);
+
+        int chipX = inline ? x + width - 4 - chipsW + 3 : x + 24;
+        final int chipY = inline ? y + 2 : y + 22;
+        for (final CitizenBits.Chip chip : chips)
+        {
+            final int chipW = font.width(chip.text()) + 8;
+            final boolean over = chip.action() != null && Ui.inside(mouseX, mouseY, chipX, chipY, chipW, 11);
+            Ui.chip(graphics, font, chipX, chipY, chip.text(), chip.soft(), chip.ink(), chip.action() != null, over);
+            if (chip.action() != null)
+            {
+                addHit(chipX, chipY, chipW, 11, chip.action());
+                if (over)
+                {
+                    hint = "Cliquez pour régler le problème de " + citizen.getName();
+                }
+            }
+            chipX += chipW + 3;
+        }
+        // After the chips, so a click on a chip settles the problem instead
+        addHit(x, y, width, cardH, () -> CitizenScreen.open(citizen, this));
+        if (overCard && hint == null)
+        {
+            hint = "Voir la fiche de " + citizen.getName();
+        }
+        return y + cardH + 2;
+    }
+
+    private int renderResidents(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width, final LivingBuildingView home)
+    {
+        Ui.label(graphics, font, "HABITANTS", x, y);
+        graphics.drawString(font, home.getResidents().size() + " / " + home.getMax(), x + font.width("HABITANTS") + 6, y, Palette.INK, false);
+        final int recallW = font.width("Rappeler") + 10;
+        final int manageW = font.width("Gérer") + 10;
+        final int recallX = x + width - recallW;
+        final int manageX = recallX - manageW - 3;
+        final boolean built = home.getBuildingLevel() > 0;
+        final boolean overManage = Ui.inside(mouseX, mouseY, manageX, y - 2, manageW, SMALL_H);
+        Ui.button(graphics, font, manageX, y - 2, manageW, SMALL_H, "Gérer", Ui.ButtonStyle.SECONDARY, built, overManage);
+        if (built)
+        {
+            addHit(manageX, y - 2, manageW, SMALL_H, this::house);
+        }
+        else if (overManage)
+        {
+            hint = "Construisez la maison pour y loger quelqu'un.";
+        }
+        final boolean canRecall = !home.getResidents().isEmpty();
+        final boolean overRecall = Ui.inside(mouseX, mouseY, recallX, y - 2, recallW, SMALL_H);
+        Ui.button(graphics, font, recallX, y - 2, recallW, SMALL_H, "Rappeler", Ui.ButtonStyle.SECONDARY, canRecall, overRecall);
+        if (canRecall)
+        {
+            addHit(recallX, y - 2, recallW, SMALL_H, () -> new RecallCitizenHutMessage(home).sendToServer());
+            if (overRecall)
+            {
+                hint = "Fait revenir les habitants à la maison.";
+            }
+        }
+        y += 14;
+        if (home.getResidents().isEmpty())
+        {
+            graphics.drawString(font, built ? "Personne n'habite ici." : "Construisez la maison pour y loger quelqu'un.", x + 2, y, Palette.MUTED, false);
+            return y + 14;
+        }
+        for (final int id : home.getResidents())
+        {
+            final ICitizenDataView citizen = home.getColony().getCitizen(id);
+            if (citizen != null)
+            {
+                final String job = citizen.getJob() == null || citizen.getJob().isEmpty() ? "Sans emploi" : CitizenBits.jobName(citizen.getJob(), citizen.isFemale());
+                y = citizenCard(graphics, mouseX, mouseY, x, y, width, citizen, citizen.isSick() ? job : job + " · " + CitizenBits.activity(citizen));
+            }
+        }
+        return y + 2;
+    }
+
+    private void house()
+    {
+        if (building instanceof LivingBuildingView home)
+        {
+            HousingScreen.open(home, this);
+        }
     }
 
     /**
@@ -627,6 +701,15 @@ public final class HutScreen extends ParchmentScreen
         if (building.getBuildingLevel() == 0)
         {
             return new Banner(Ui.State.BAD, "Pas construit", "lancez la construction à droite", null, null);
+        }
+        if (building instanceof LivingBuildingView home)
+        {
+            final int residents = home.getResidents().size();
+            if (residents == 0)
+            {
+                return new Banner(Ui.State.WAIT, "Vide", "personne n'habite ici", "Loger ›", this::house);
+            }
+            return new Banner(Ui.State.OK, residents >= home.getMax() ? "Pleine" : "Habitée", residents + " sur " + home.getMax() + (home.getMax() > 1 ? " lits occupés" : " lit occupé"), null, null);
         }
         if (workers.isEmpty() && hasJobs())
         {

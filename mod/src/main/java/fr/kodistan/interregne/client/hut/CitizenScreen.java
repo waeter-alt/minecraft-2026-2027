@@ -6,7 +6,6 @@ import com.minecolonies.api.colony.buildings.views.IBuildingView;
 import com.minecolonies.api.colony.requestsystem.request.IRequest;
 import com.minecolonies.api.entity.citizen.Skill;
 import com.minecolonies.api.entity.citizen.happiness.IHappinessModifier;
-import com.minecolonies.core.client.gui.WindowInteraction;
 import com.minecolonies.core.colony.buildings.moduleviews.WorkerBuildingModuleView;
 import com.minecolonies.core.network.messages.server.colony.OpenInventoryMessage;
 import fr.kodistan.interregne.client.catalogue.CatalogueIndex;
@@ -210,8 +209,7 @@ public final class CitizenScreen extends ParchmentScreen
             y += Ui.NAV_ROW + 1;
         }
 
-        final boolean talk = citizen.hasVisibleInteractions();
-        y = y0 + h - 6 - (talk ? 2 : 1) * (Ui.NAV_ROW + 1);
+        y = y0 + h - 6 - (Ui.NAV_ROW + 1);
         graphics.fill(x + 2, y - 3, x + width - 2, y - 2, Palette.RULE);
         Ui.navItem(graphics, font, x, y, width, Icon.module("inventory"), "Inventaire", false, Ui.inside(mouseX, mouseY, x, y, width, Ui.NAV_ROW));
         hits.add(new Hit(x, y, width, Ui.NAV_ROW, () ->
@@ -219,12 +217,6 @@ public final class CitizenScreen extends ParchmentScreen
             final net.minecraft.world.entity.LivingEntity entity = CitizenBits.entity(citizen);
             new OpenInventoryMessage(colony, citizen.getName(), entity != null ? entity.getId() : citizen.getEntityId()).sendToServer();
         }));
-        if (talk)
-        {
-            y += Ui.NAV_ROW + 1;
-            Ui.navItem(graphics, font, x, y, width, Icon.of(Items.WRITABLE_BOOK), "Lui parler", false, Ui.inside(mouseX, mouseY, x, y, width, Ui.NAV_ROW));
-            hits.add(new Hit(x, y, width, Ui.NAV_ROW, () -> new WindowInteraction(citizen).open()));
-        }
     }
 
     // --- Sheet ---

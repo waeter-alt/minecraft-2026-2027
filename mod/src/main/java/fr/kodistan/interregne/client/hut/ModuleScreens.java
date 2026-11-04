@@ -8,6 +8,12 @@ import com.minecolonies.api.colony.buildings.modules.IMinimumStockModuleView;
 import com.minecolonies.api.colony.buildings.views.IBuildingView;
 import com.minecolonies.core.colony.buildings.moduleviews.BuildingStatisticsModuleView;
 import com.minecolonies.core.colony.buildings.moduleviews.CraftingModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.FieldsModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.GraveyardManagementModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.MinerGuardAssignModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.MinerLevelManagementModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.RestaurantMenuModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.ToolModuleView;
 import com.minecolonies.core.colony.buildings.moduleviews.RequestTaskModuleView;
 import fr.kodistan.interregne.client.ui.ParchmentScreen;
 import net.minecraft.client.Minecraft;
@@ -70,6 +76,30 @@ public final class ModuleScreens
         else if (view instanceof RequestTaskModuleView)
         {
             TasksScreen.open(building, parent);
+        }
+        else if (view instanceof RestaurantMenuModuleView menu)
+        {
+            MenuScreen.open(building, menu, parent);
+        }
+        else if (view instanceof ToolModuleView tool)
+        {
+            ToolScreen.open(building, tool, parent);
+        }
+        else if (view instanceof FieldsModuleView fields)
+        {
+            FieldsScreen.open(building, fields, parent);
+        }
+        else if (view instanceof MinerLevelManagementModuleView levels)
+        {
+            MineLevelsScreen.open(building, levels, parent);
+        }
+        else if (view instanceof MinerGuardAssignModuleView)
+        {
+            MineGuardsScreen.open(building, parent);
+        }
+        else if (view instanceof GraveyardManagementModuleView graveyard)
+        {
+            GraveyardScreen.open(building, graveyard, parent);
         }
         else if (view.getClass() == CraftingModuleView.class)
         {

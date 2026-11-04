@@ -4,6 +4,8 @@ import com.ldtteam.blockui.views.BOWindow;
 import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.IColonyView;
 import com.minecolonies.core.client.gui.WindowClipBoard;
+import com.minecolonies.core.client.gui.WindowInteraction;
+import com.minecolonies.api.colony.IVisitorViewData;
 import com.minecolonies.core.client.gui.modules.SettingsModuleWindow;
 import fr.kodistan.interregne.client.hut.SettingsScreen;
 import fr.kodistan.interregne.client.ui.ParchmentScreen;
@@ -18,6 +20,7 @@ import com.minecolonies.core.client.gui.WindowRequestDetail;
 import fr.kodistan.interregne.client.hut.ClipboardScreen;
 import fr.kodistan.interregne.client.hut.RequestScreen;
 import net.minecraft.client.Minecraft;
+import com.minecolonies.core.client.gui.huts.WindowHutLiving;
 import com.minecolonies.core.client.gui.huts.WindowHutWorkerModulePlaceholder;
 import com.minecolonies.core.client.gui.townhall.WindowMainPage;
 import fr.kodistan.interregne.client.hut.ColonyHubScreen;
@@ -45,7 +48,7 @@ public abstract class BOWindowMixin
         {
             ci.cancel();
         }
-        else if ((type == WindowHutWorkerModulePlaceholder.class || type == WindowHutMinPlaceholder.class) && HutScreen.enabled())
+        else if ((type == WindowHutWorkerModulePlaceholder.class || type == WindowHutMinPlaceholder.class || type == WindowHutLiving.class) && HutScreen.enabled())
         {
             ci.cancel();
             HutScreen.open(((AbstractWindowModuleBuildingAccessor) this).interregne$building());
@@ -88,6 +91,14 @@ public abstract class BOWindowMixin
             // From one of our screens (the hut window), Escape goes back to it
             final Screen current = Minecraft.getInstance().screen;
             SettingsScreen.open(settings.interregne$building(), settings.interregne$module(), current instanceof ParchmentScreen ? current : null);
+        }
+        else if (type == WindowInteraction.class && HutScreen.enabled()
+                   && !(((WindowInteractionAccessor) this).interregne$citizen() instanceof IVisitorViewData))
+        {
+            // The dialogue (four answers, half of them doing nothing) is gone: talking to a citizen opens their sheet.
+            // Tavern visitors keep it, since recruiting them happens there.
+            ci.cancel();
+            CitizenScreen.open(((WindowInteractionAccessor) this).interregne$citizen(), null);
         }
         else if (type == WindowClipBoard.class && HutScreen.enabled())
         {

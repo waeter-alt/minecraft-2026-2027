@@ -53,6 +53,7 @@
     "client.WindowHireWorkerAccessor",
     "client.WindowAssignCitizenAccessor",
     "client.SettingsModuleWindowAccessor",
-    "client.ModuleViewWindowMixin"
+    "client.ModuleViewWindowMixin",
+    "client.WindowInteractionAccessor"
   ]
 }

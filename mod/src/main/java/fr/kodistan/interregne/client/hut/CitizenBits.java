@@ -11,7 +11,6 @@ import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
 import com.minecolonies.api.entity.citizen.VisibleCitizenStatus;
 import fr.kodistan.interregne.InterregneMod;
 import com.minecolonies.api.util.InventoryUtils;
-import com.minecolonies.core.client.gui.WindowInteraction;
 import com.minecolonies.core.network.messages.server.colony.UpdateRequestStateMessage;
 import com.minecolonies.core.network.messages.server.colony.citizen.TransferItemsToCitizenRequestMessage;
 import fr.kodistan.interregne.client.hud.Grievances;
@@ -223,12 +222,13 @@ public final class CitizenBits
 
     /**
      * The citizen's problems and mood as chips, each kind in its own colour. Sickness and grievances open the citizen's
-     * dialogue, where they are settled.
+     * sheet, which explains them (none on the sheet itself).
      */
     public static List<Chip> chips(final ICitizenDataView citizen)
     {
         final List<Chip> chips = new ArrayList<>();
-        final Runnable settle = () -> new WindowInteraction(citizen).open();
+        final net.minecraft.client.gui.screens.Screen current = net.minecraft.client.Minecraft.getInstance().screen;
+        final Runnable settle = current instanceof CitizenScreen ? null : () -> CitizenScreen.open(citizen, current);
         if (citizen.isSick())
         {
             chips.add(new Chip("Malade", Palette.SICK_SOFT, Palette.SICK_TEXT, settle));
