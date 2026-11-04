@@ -391,10 +391,10 @@ public final class CatalogueScreen extends ParchmentScreen
         y += 11;
         final boolean free = minecraft.player != null && minecraft.player.isCreative();
         final int cost = cost(selected);
-        y = Ui.priceLine(graphics, font, x, y, free ? "Gratuit (créatif)" : cost + " Couronnes", free || owned() >= cost);
+        y = Ui.priceLine(graphics, font, x, y, width, free ? "Gratuit (créatif)" : cost + " Couronnes", free || owned() >= cost);
         for (final CrateRows.Row row : CrateRows.forCrates(crates(selected)))
         {
-            y = Ui.crateLine(graphics, font, x, y, row);
+            y = Ui.crateLine(graphics, font, x, y, width, row);
         }
         final int seconds = selected.hut() != null ? BuildCosts.secondsForLevel(1) : BuildCosts.secondsForFlat();
         graphics.drawString(font, "⌛ " + BuildCosts.formatSeconds(seconds), x, y + 1, Palette.INK, false);

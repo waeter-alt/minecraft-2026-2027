@@ -92,8 +92,7 @@ public final class ExpeditionScreen extends ModuleScreen
         final ExpeditionLog log = module.getLog();
         if (log.getStatus() == ExpeditionLog.Status.NONE)
         {
-            graphics.drawString(font, "Le journal se remplit au prochain départ.", x + 2, y + 2, Palette.MUTED, false);
-            return y + 14;
+            return Ui.wrapped(graphics, font, Component.literal("Le journal se remplit au prochain départ."), x + 2, y + 2, width - (2), Palette.MUTED, 10) + 4;
         }
         // Health and food
         final int health = (int) log.getStat(ExpeditionLog.StatType.HEALTH);

@@ -125,8 +125,7 @@ public final class PermissionsScreen extends ModuleScreen
         y += 18;
         if (tab == 3)
         {
-            graphics.drawString(font, "Les tentatives des joueurs sans le droit, les plus récentes d'abord.", x + 2, y + 3, Palette.MUTED, false);
-            return y + 18;
+            return Ui.wrapped(graphics, font, Component.literal("Les tentatives des joueurs sans le droit, les plus récentes d'abord."), x + 2, y + 3, width - (2), Palette.MUTED, 10) + 8;
         }
         final String action = switch (tab)
         {
@@ -367,8 +366,7 @@ public final class PermissionsScreen extends ModuleScreen
         final List<BlockPos> positions = colony().getFreePositions();
         if (blocks.isEmpty() && positions.isEmpty())
         {
-            graphics.drawString(font, "Aucun bloc libre : seuls les joueurs autorisés touchent aux blocs de la colonie.", x + 2, y + 2, Palette.MUTED, false);
-            return y + 14;
+            return Ui.wrapped(graphics, font, Component.literal("Aucun bloc libre : seuls les joueurs autorisés touchent aux blocs de la colonie."), x + 2, y + 2, width - (2), Palette.MUTED, 10) + 4;
         }
         for (final Block block : List.copyOf(blocks))
         {
@@ -411,8 +409,7 @@ public final class PermissionsScreen extends ModuleScreen
         final List<PermissionEvent> events = new ArrayList<>(((BuildingTownHall.View) building).getPermissionEvents());
         if (events.isEmpty())
         {
-            graphics.drawString(font, "Personne n'a rien tenté.", x + 2, y + 2, Palette.MUTED, false);
-            return y + 14;
+            return Ui.wrapped(graphics, font, Component.literal("Personne n'a rien tenté."), x + 2, y + 2, width - (2), Palette.MUTED, 10) + 4;
         }
         for (int i = events.size() - 1; i >= 0; i--)
         {

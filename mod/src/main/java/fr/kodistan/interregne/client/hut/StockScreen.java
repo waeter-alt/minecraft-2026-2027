@@ -119,8 +119,7 @@ public final class StockScreen extends ModuleScreen
             sort = index;
             resetScroll();
         });
-        graphics.drawString(font, "clic : montrer où c'est rangé", x + width - font.width("clic : montrer où c'est rangé") - 2, y + 3, Palette.MUTED, false);
-        return y + 20;
+        return Ui.wrapped(graphics, font, Component.literal("clic : montrer où c'est rangé"), x + width - font.width("clic : montrer où c'est rangé") - 2, y + 3, width - (width - font.width("clic : montrer où c'est rangé") - 2), Palette.MUTED, 10) + 10;
     }
 
     @Override

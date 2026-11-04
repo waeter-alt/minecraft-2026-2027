@@ -25,6 +25,11 @@ public final class Ui
      * Height of a left navigation row and of a main button.
      */
     public static final int NAV_ROW = 17;
+    /**
+     * The left column, with its labels or as a rail of icons.
+     */
+    public static final int NAV_FULL = 112;
+    public static final int NAV_RAIL = 26;
     public static final int BUTTON_H = 18;
 
     public enum ButtonStyle
@@ -153,6 +158,19 @@ public final class Ui
     /**
      * A left navigation row: icon and word, leather when it is the current one.
      */
+    /**
+     * The left column's width for a window this wide: labels when the page keeps enough room, icons only otherwise.
+     */
+    public static int navWidth(final int windowWidth)
+    {
+        return windowWidth >= 470 ? NAV_FULL : NAV_RAIL;
+    }
+
+    public static boolean rail(final int navWidth)
+    {
+        return navWidth < NAV_FULL;
+    }
+
     public static void navItem(final GuiGraphics graphics, final Font font, final int x, final int y, final int width, final Icon icon, final String label,
       final boolean on, final boolean hover)
     {
@@ -163,6 +181,16 @@ public final class Ui
         else if (hover)
         {
             graphics.fill(x, y, x + width, y + NAV_ROW, Palette.PAPER_DARK);
+        }
+        if (width < 40)
+        {
+            // A rail: the icon alone, its name on hover
+            icon.draw(graphics, x + (width - 16) / 2, y, 16);
+            if (hover)
+            {
+                graphics.renderTooltip(font, Component.literal(label), x + width + 2, y + 13);
+            }
+            return;
         }
         icon.draw(graphics, x + 1, y, 16);
         graphics.drawString(font, label, x + 20, y + 5, on ? Palette.GOLD_TEXT : Palette.INK, false);
@@ -327,20 +355,26 @@ public final class Ui
     /**
      * « 🪙 240 Couronnes », red when the player cannot pay. Returns the y of the next line.
      */
-    public static int priceLine(final GuiGraphics graphics, final Font font, final int x, final int y, final String text, final boolean affordable)
+    public static int priceLine(final GuiGraphics graphics, final Font font, final int x, final int y, final int width, final String text, final boolean affordable)
     {
         coin(graphics, x, y, 9);
-        graphics.drawString(font, text, x + 12, y + 1, affordable ? Palette.INK : Palette.RED, false);
+        graphics.drawString(font, fit(font, text, width - 12), x + 12, y + 1, affordable ? Palette.INK : Palette.RED, false);
         return y + 11;
     }
 
     /**
      * One regional crate line (« 2 × Caisse de pierre »), red when missing. Returns the y of the next line.
      */
-    public static int crateLine(final GuiGraphics graphics, final Font font, final int x, final int y, final CrateRows.Row row)
+    public static int crateLine(final GuiGraphics graphics, final Font font, final int x, final int y, final int width, final CrateRows.Row row)
     {
         Icon.of(row.icon()).draw(graphics, x, y - 1, 10);
-        graphics.drawString(font, row.count() + " × " + row.label().getString(), x + 12, y + 1, row.available() ? Palette.INK : Palette.RED, false);
+        // Narrow: the icon already says it is a crate, the name keeps only what is inside
+        String text = row.count() + " × " + row.label().getString();
+        if (font.width(text) > width - 12)
+        {
+            text = row.count() + " × " + row.label().getString().replaceFirst("^Caisse (de |d'|d’)", "");
+        }
+        graphics.drawString(font, fit(font, text, width - 12), x + 12, y + 1, row.available() ? Palette.INK : Palette.RED, false);
         return y + 11;
     }
 }

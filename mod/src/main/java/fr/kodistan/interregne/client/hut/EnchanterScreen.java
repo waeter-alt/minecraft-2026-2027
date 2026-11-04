@@ -8,6 +8,7 @@ import com.minecolonies.core.colony.buildings.views.AbstractBuildingView;
 import fr.kodistan.interregne.client.ui.Icon;
 import fr.kodistan.interregne.client.ui.Palette;
 import fr.kodistan.interregne.client.ui.Ui;
+import net.minecraft.network.chat.Component;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -78,8 +79,7 @@ public final class EnchanterScreen extends ModuleScreen
         final List<IBuildingView> workplaces = workplaces();
         if (workplaces.isEmpty())
         {
-            graphics.drawString(font, "Aucun lieu de travail dans la colonie.", x + 2, y + 2, Palette.MUTED, false);
-            return y + 14;
+            return Ui.wrapped(graphics, font, Component.literal("Aucun lieu de travail dans la colonie."), x + 2, y + 2, width - (2), Palette.MUTED, 10) + 4;
         }
         final int columnW = (width - 3) / 2;
         for (int i = 0; i < workplaces.size(); i++)

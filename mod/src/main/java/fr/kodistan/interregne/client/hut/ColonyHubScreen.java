@@ -46,7 +46,6 @@ import java.util.Map;
  */
 public final class ColonyHubScreen extends ParchmentScreen
 {
-    private static final int NAV_W = 112;
 
     /**
      * The seat's header: a leather band holding the colony's banner, its name and the town hall's level.
@@ -343,8 +342,8 @@ public final class ColonyHubScreen extends ParchmentScreen
     {
         renderNav(graphics, mouseX, mouseY);
 
-        final int x = x0 + NAV_W + 7;
-        final int width = w - NAV_W - 16;
+        final int x = x0 + navW() + 7;
+        final int width = w - navW() - 16;
         final int top = y0 + HDR + 7;
         final int bottom = y0 + h - 5;
         scroll = Math.max(0, Math.min(scroll, contentHeight - (bottom - top)));
@@ -445,9 +444,9 @@ public final class ColonyHubScreen extends ParchmentScreen
         return h;
     }
 
-    static int navWidth()
+    int navW()
     {
-        return NAV_W;
+        return Ui.navWidth(w);
     }
 
     static int headerHeight()
@@ -519,8 +518,8 @@ public final class ColonyHubScreen extends ParchmentScreen
     private void renderNav(final GuiGraphics graphics, final int mouseX, final int mouseY)
     {
         final int x = x0 + 5;
-        final int width = NAV_W - 8;
-        graphics.fill(x0 + NAV_W, y0 + HDR + 5, x0 + NAV_W + 1, y0 + h - 4, Palette.RULE);
+        final int width = navW() - 8;
+        graphics.fill(x0 + navW(), y0 + HDR + 5, x0 + navW() + 1, y0 + h - 4, Palette.RULE);
         int y = y0 + HDR + 7;
         for (final Page p : Page.values())
         {
@@ -547,7 +546,10 @@ public final class ColonyHubScreen extends ParchmentScreen
             if (tool.locked())
             {
                 final String lock = "niv. " + ColonyMaps.UNLOCK_LEVEL;
-                graphics.drawString(font, lock, x + width - 3 - font.width(lock), y + 5, Palette.MUTED, false);
+                if (!Ui.rail(navW()))
+                {
+                    graphics.drawString(font, lock, x + width - 3 - font.width(lock), y + 5, Palette.MUTED, false);
+                }
                 if (over)
                 {
                     hint = "La carte se débloque au niveau " + ColonyMaps.UNLOCK_LEVEL + " de l'hôtel de ville";
@@ -612,23 +614,25 @@ public final class ColonyHubScreen extends ParchmentScreen
             Ui.banner(graphics, font, x, y, width, Ui.State.OK, "Tout va bien", "aucun bâtiment bloqué, aucune doléance");
         }
         y += 20;
+        y = renderSeat(graphics, mouseX, mouseY, x, y, width) + 2;
 
         // Tiles: the colony's vital signs, each opening the page that explains it
-        final int tileW = (width - 3 * 4) / 4;
+        // Four tiles across, two when the page is narrow
+        final int columns = width >= 360 ? 4 : 2;
+        final int tileW = (width - (columns - 1) * 4) / columns;
         final double happiness = colony.getOverallHappiness();
-        y = tileRow(graphics, mouseX, mouseY, x, y, tileW, List.of(
+        y = tileRow(graphics, mouseX, mouseY, x, y, tileW, columns, List.of(
           new Tile("Citoyens", citizens.size() + " / " + colony.getCitizenCountLimit(), Icon.module("workers"), Ui.State.OK, () -> show(Page.CITIZENS)),
           new Tile("Bonheur", format(happiness) + " / 10", Icon.module("happiness"), happiness < 4 ? Ui.State.BAD : happiness < 7 ? Ui.State.WAIT : Ui.State.OK,
             () -> show(Page.CITIZENS)),
           new Tile("Doléances", Integer.toString(grievances), Icon.of(Items.WRITABLE_BOOK), grievances > 0 ? Ui.State.WAIT : Ui.State.OK, () -> show(Page.CITIZENS)),
           new Tile("Demandes", Integer.toString(requests), Icon.module("requests"), requests > 0 ? Ui.State.WAIT : Ui.State.OK, () -> show(Page.REQUESTS))));
-        y = tileRow(graphics, mouseX, mouseY, x, y + 4, tileW, List.of(
+        y = tileRow(graphics, mouseX, mouseY, x, y + 4, tileW, columns, List.of(
           new Tile("Bâtiments", Integer.toString(buildings.size()), Icon.of(Items.BRICKS), blocked > 0 ? Ui.State.BAD : Ui.State.OK, () -> show(Page.BUILDINGS)),
           new Tile("Chantiers", Integer.toString(sites), Icon.of(Items.IRON_PICKAXE), Ui.State.OK, () -> show(Page.BUILDINGS)),
           mercenaries()));
 
-        y = Ui.separator(graphics, x, y, width);
-        return renderSeat(graphics, mouseX, mouseY, x, y, width);
+        return y;
     }
 
     /**
@@ -655,7 +659,28 @@ public final class ColonyHubScreen extends ParchmentScreen
         final UpgradeOffer offer = site || max ? null : UpgradeOffer.of(townHall);
         final int band = 18;
         final int pad = 8;
-        final int height = offer == null ? 84 : Math.max(84, band + pad + 13 + 11 * (1 + offer.crates().size()) + pad);
+        // Three columns side by side when there is room, one under the other otherwise
+        final boolean wide = width >= 380;
+        final int gap = 12;
+        final int buttonW = wide ? 112 : (width - 2 * pad - 4) / 2;
+        final int textW = wide ? (width - 2 * pad - 2 * gap - buttonW) / 3 : width - 2 * pad;
+        final String unlock = offer == null ? "" : "+ Bâtiments jusqu'au niveau " + offer.target();
+        final boolean map = offer != null && offer.target() == ColonyMaps.UNLOCK_LEVEL;
+        final int unlockH = offer == null ? 0 : (font.split(Component.literal(unlock), textW).size() + (map ? 1 : 0)) * 10;
+        final int priceH = offer == null ? 0 : 11 * (1 + offer.crates().size());
+        final int height;
+        if (site || offer == null)
+        {
+            height = 84;
+        }
+        else if (wide)
+        {
+            height = Math.max(84, band + pad + 13 + Math.max(unlockH, priceH) + pad);
+        }
+        else
+        {
+            height = band + pad + 13 + unlockH + 6 + 13 + priceH + 6 + Ui.BUTTON_H + pad;
+        }
 
         graphics.fill(x, y, x + width, y + height, Palette.levelSoft(tint));
         graphics.renderOutline(x, y, width, height, Palette.levelEdge(tint));
@@ -665,25 +690,17 @@ public final class ColonyHubScreen extends ParchmentScreen
                                  : townHall.isRepairing() ? "Réparation en cours"
                                      : townHall.isBuilding() ? "Amélioration en cours"
                                          : max ? "Niveau maximum" : "Passer au niveau " + (level + 1);
-        graphics.drawString(font, Component.literal(heading).withStyle(ChatFormatting.BOLD), x + 25, y + 5, Palette.levelText(tint), false);
-        final String open = "Voir l'hôtel de ville ›";
+        final String open = width >= 300 ? "Voir l'hôtel de ville ›" : "Voir ›";
         final int openX = x + width - font.width(open) - 8;
+        graphics.drawString(font, Component.literal(fit(heading, openX - x - 33)).withStyle(ChatFormatting.BOLD), x + 25, y + 5, Palette.levelText(tint), false);
         final boolean overOpen = Ui.inside(mouseX, mouseY, openX - 2, y, font.width(open) + 4, band);
         graphics.drawString(font, Component.literal(open).withStyle(overOpen ? ChatFormatting.UNDERLINE : ChatFormatting.RESET), openX, y + 5,
           Palette.levelText(tint), false);
         addHit(openX - 2, y, font.width(open) + 4, band, () -> HutScreen.openWith(townHall, this));
 
-        // Three columns with room between them: what it opens, what it costs, the buttons
         final int bodyY = y + band + pad;
-        final int gap = 12;
-        final int buttonW = 112;
-        // The price column gets the room: crate names are long
-        final int textW = (width - 2 * pad - 2 * gap - buttonW) / 3;
         final int c1 = x + pad;
-        final int c2 = c1 + textW + gap;
-        final int c3 = x + width - pad - buttonW;
         final int buttonY = y + height - pad - Ui.BUTTON_H;
-        final int secondaryY = buttonY - Ui.BUTTON_H - 5;
         final int ruleColor = Palette.levelEdge(tint) & 0x00FFFFFF | 0x50000000;
 
         if (site)
@@ -707,7 +724,7 @@ public final class ColonyHubScreen extends ParchmentScreen
                 }
                 final int seconds = townHall.isBuilding() ? BuildCosts.secondsForLevel(level + 1) : BuildCosts.secondsForFlat();
                 final int left = Math.max(1, Math.round((1 - progress) * seconds));
-                graphics.drawString(font, Math.round(progress * 100) + " % · encore " + BuildCosts.formatSeconds(left) + " environ", c1, bodyY + 30,
+                graphics.drawString(font, fit(Math.round(progress * 100) + " % · encore " + BuildCosts.formatSeconds(left) + " environ", barW), c1, bodyY + 30,
                   Palette.INK, false);
             }
             return y + height + 6;
@@ -715,31 +732,45 @@ public final class ColonyHubScreen extends ParchmentScreen
 
         if (offer == null)
         {
+            final int bw = wide ? buttonW : width - 2 * pad;
+            final int bx = x + width - pad - bw;
             Ui.wrapped(graphics, font, Component.literal("L'hôtel de ville est au plus haut. Tous les bâtiments peuvent monter jusqu'au niveau " + level + "."),
-              c1, bodyY, c3 - c1 - gap, Palette.MUTED, 10);
-            seatButton(graphics, mouseX, mouseY, c3, buttonY, buttonW, "Réparer, démolir…", Ui.ButtonStyle.SECONDARY, true, this::openBuildWindow);
+              c1, bodyY, wide ? bx - c1 - gap : width - 2 * pad, Palette.MUTED, 10);
+            seatButton(graphics, mouseX, mouseY, bx, buttonY, bw, "Réparer, démolir…", Ui.ButtonStyle.SECONDARY, true, this::openBuildWindow);
             return y + height + 6;
         }
 
-        // What the next level opens: every building may rise as high as the town hall
-        final int target = offer.target();
+        // What the next level opens, what it costs, then the buttons
+        final int c2 = wide ? c1 + textW + gap : c1;
+        final int priceW = wide ? x + width - pad - buttonW - gap - c2 : width - 2 * pad;
         Ui.label(graphics, font, "DÉBLOQUE", c1, bodyY);
-        int ly = Ui.wrapped(graphics, font, Component.literal("+ Bâtiments jusqu'au niveau " + target), c1, bodyY + 13, textW, Palette.GREEN, 10);
-        if (target == ColonyMaps.UNLOCK_LEVEL)
+        int ly = Ui.wrapped(graphics, font, Component.literal(unlock), c1, bodyY + 13, textW, Palette.GREEN, 10);
+        if (map)
         {
-            Ui.wrapped(graphics, font, Component.literal("+ Carte de la colonie"), c1, ly + 3, textW, Palette.GREEN, 10);
+            ly = Ui.wrapped(graphics, font, Component.literal("+ Carte de la colonie"), c1, ly, textW, Palette.GREEN, 10);
         }
-        graphics.fill(c2 - gap / 2, bodyY, c2 - gap / 2 + 1, y + height - pad, ruleColor);
-
-        Ui.label(graphics, font, "PRIX", c2, bodyY);
-        int py = Ui.priceLine(graphics, font, c2, bodyY + 13, offer.price(), offer.affordable());
+        final int priceY = wide ? bodyY : ly + 6;
+        if (wide)
+        {
+            graphics.fill(c2 - gap / 2, bodyY, c2 - gap / 2 + 1, y + height - pad, ruleColor);
+        }
+        Ui.label(graphics, font, "PRIX", c2, priceY);
+        int py = Ui.priceLine(graphics, font, c2, priceY + 13, priceW, offer.price(), offer.affordable());
         for (final CrateRows.Row row : offer.crates())
         {
-            py = Ui.crateLine(graphics, font, c2, py, row);
+            py = Ui.crateLine(graphics, font, c2, py, priceW, row);
         }
-        graphics.fill(c3 - gap / 2, bodyY, c3 - gap / 2 + 1, y + height - pad, ruleColor);
 
-        seatButton(graphics, mouseX, mouseY, c3, secondaryY, buttonW, "Réparer, démolir…", Ui.ButtonStyle.SECONDARY, true, this::openBuildWindow);
+        final int c3 = x + width - pad - buttonW;
+        if (wide)
+        {
+            graphics.fill(c3 - gap / 2, bodyY, c3 - gap / 2 + 1, y + height - pad, ruleColor);
+            seatButton(graphics, mouseX, mouseY, c3, buttonY - Ui.BUTTON_H - 5, buttonW, "Réparer, démolir…", Ui.ButtonStyle.SECONDARY, true, this::openBuildWindow);
+        }
+        else
+        {
+            seatButton(graphics, mouseX, mouseY, c1, buttonY, buttonW, "Réparer, démolir…", Ui.ButtonStyle.SECONDARY, true, this::openBuildWindow);
+        }
         // Green when it can be done now, grey with the reason otherwise
         seatButton(graphics, mouseX, mouseY, c3, buttonY, buttonW, offer.action(), Ui.ButtonStyle.PRIMARY, offer.canBuy(), () ->
         {
@@ -768,26 +799,28 @@ public final class ColonyHubScreen extends ParchmentScreen
     {
     }
 
-    private int tileRow(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int tileW, final List<Tile> tiles)
+    private int tileRow(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int tileW, final int columns,
+      final List<Tile> tiles)
     {
         for (int i = 0; i < tiles.size(); i++)
         {
             final Tile tile = tiles.get(i);
-            final int tx = x + i * (tileW + 4);
-            final boolean over = Ui.inside(mouseX, mouseY, tx, y, tileW, 30);
-            Ui.card(graphics, tx, y, tileW, 30, false, over, false);
-            graphics.fill(tx + 1, y + 1, tx + 3, y + 29, switch (tile.state())
+            final int tx = x + (i % columns) * (tileW + 4);
+            final int ty = y + (i / columns) * 34;
+            final boolean over = Ui.inside(mouseX, mouseY, tx, ty, tileW, 30);
+            Ui.card(graphics, tx, ty, tileW, 30, false, over, false);
+            graphics.fill(tx + 1, ty + 1, tx + 3, ty + 29, switch (tile.state())
             {
                 case OK -> Palette.GREEN;
                 case WAIT -> Palette.AMBER;
                 case BAD -> Palette.RED;
             });
-            tile.icon().draw(graphics, tx + 6, y + 4, 12);
-            graphics.drawString(font, fit(tile.label(), tileW - 24), tx + 21, y + 5, Palette.MUTED, false);
-            graphics.drawString(font, Component.literal(tile.value()).withStyle(ChatFormatting.BOLD), tx + 7, y + 18, Palette.INK, false);
-            addHit(tx, y, tileW, 30, tile.action());
+            tile.icon().draw(graphics, tx + 6, ty + 4, 12);
+            graphics.drawString(font, fit(tile.label(), tileW - 24), tx + 21, ty + 5, Palette.MUTED, false);
+            graphics.drawString(font, Component.literal(fit(tile.value(), tileW - 10)).withStyle(ChatFormatting.BOLD), tx + 7, ty + 18, Palette.INK, false);
+            addHit(tx, ty, tileW, 30, tile.action());
         }
-        return y + 30;
+        return y + ((tiles.size() + columns - 1) / columns) * 34 - 4;
     }
 
     // --- Buildings ---
@@ -954,8 +987,7 @@ public final class ColonyHubScreen extends ParchmentScreen
         final List<OpenRequest> requests = requests();
         if (requests.isEmpty())
         {
-            graphics.drawString(font, "Personne n'attend rien : la colonie ne manque de rien.", x, y, Palette.MUTED, false);
-            return y + 12;
+            return Ui.wrapped(graphics, font, Component.literal("Personne n'attend rien : la colonie ne manque de rien."), x, y, width, Palette.MUTED, 10) + 2;
         }
         Ui.label(graphics, font, requests.size() + " DEMANDES OUVERTES", x, y);
         y += 12;

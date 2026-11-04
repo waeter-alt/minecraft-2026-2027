@@ -256,7 +256,7 @@ public final class HireScreen extends ParchmentScreen
         y += 11;
         if (taken == 0)
         {
-            graphics.drawString(font, "Personne pour l'instant.", x + 2, y, Palette.MUTED, false);
+            graphics.drawString(font, fit("Personne pour l'instant.", width - (2)), x + 2, y, Palette.MUTED, false);
             y += 13;
         }
         for (final int id : module.getAssignedCitizens())

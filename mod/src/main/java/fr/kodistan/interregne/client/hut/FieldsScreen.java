@@ -98,8 +98,7 @@ public final class FieldsScreen extends ModuleScreen
         final List<IBuildingExtension> fields = module.getFields();
         if (fields.isEmpty())
         {
-            graphics.drawString(font, "Aucune parcelle trouvée : pose-en une près du bâtiment.", x + 2, y + 2, Palette.MUTED, false);
-            return y + 14;
+            return Ui.wrapped(graphics, font, Component.literal("Aucune parcelle trouvée : pose-en une près du bâtiment."), x + 2, y + 2, width - (2), Palette.MUTED, 10) + 4;
         }
         final boolean manual = module.assignFieldManually();
         for (final IBuildingExtension field : fields)

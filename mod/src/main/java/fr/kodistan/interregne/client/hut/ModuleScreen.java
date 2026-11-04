@@ -150,13 +150,13 @@ public abstract class ModuleScreen extends PageScreen
     @Override
     protected int left()
     {
-        return framed() ? x0 + HutNav.NAV_W + 8 : hub != null ? x0 + ColonyHubScreen.navWidth() + 7 : super.left();
+        return framed() ? x0 + HutNav.navWidth(w) + 8 : hub != null ? x0 + hub.navW() + 7 : super.left();
     }
 
     @Override
     protected int innerWidth()
     {
-        return framed() ? w - HutNav.NAV_W - 22 : hub != null ? w - ColonyHubScreen.navWidth() - 16 : super.innerWidth();
+        return framed() ? w - HutNav.navWidth(w) - 22 : hub != null ? w - hub.navW() - 16 : super.innerWidth();
     }
 
     @Override
@@ -166,7 +166,7 @@ public abstract class ModuleScreen extends PageScreen
         {
             HutNav.header(graphics, font, x0 + 8 + font.width(shownTitle()) + (crumb() == null ? 0 : font.width(crumb() + " › ")), y0, building, headerText(), mouseX, mouseY,
               this::addHit);
-            HutNav.nav(graphics, font, x0, y0, h, building, hut, navCurrent, mouseX, mouseY, this::addHit);
+            HutNav.nav(graphics, font, x0, y0, w, h, building, hut, navCurrent, mouseX, mouseY, this::addHit);
         }
     }
 }

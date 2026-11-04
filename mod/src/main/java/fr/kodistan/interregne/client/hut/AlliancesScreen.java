@@ -55,7 +55,7 @@ public final class AlliancesScreen extends ModuleScreen
         y += 11;
         if (allies.isEmpty())
         {
-            graphics.drawString(font, "Aucun. Une colonie devient alliée quand ses joueurs ont un rang ici.", x + 2, y, Palette.MUTED, false);
+            graphics.drawString(font, fit("Aucun. Une colonie devient alliée quand ses joueurs ont un rang ici.", width - (2)), x + 2, y, Palette.MUTED, false);
             y += 14;
         }
         final int minLevel = MineColonies.getConfig().getServer().minThLevelToTeleport.get();

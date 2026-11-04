@@ -31,7 +31,10 @@ import java.util.Locale;
  */
 public final class HutNav
 {
-    public static final int NAV_W = 112;
+    public static int navWidth(final int windowWidth)
+    {
+        return Ui.navWidth(windowWidth);
+    }
     /**
      * The overview's key; a page's key is {@link #key(IBuildingModuleView)}, a tool's its label.
      */
@@ -134,14 +137,19 @@ public final class HutNav
     /**
      * The left column, the current entry lit; a click on another one opens it in place of the right part.
      */
-    public static void nav(final GuiGraphics graphics, final Font font, final int x0, final int y0, final int h, final IBuildingView building, final HutScreen hut,
-      final String current, final int mouseX, final int mouseY, final Hits hits)
+    public static void nav(final GuiGraphics graphics, final Font font, final int x0, final int y0, final int w, final int h, final IBuildingView building,
+      final HutScreen hut, final String current, final int mouseX, final int mouseY, final Hits hits)
     {
+        final int navW = navWidth(w);
         final int x = x0 + 5;
-        final int width = NAV_W - 8;
-        graphics.fill(x0 + NAV_W, y0 + 22, x0 + NAV_W + 1, y0 + h - 4, Palette.RULE);
-        Ui.label(graphics, font, "BÂTIMENT", x + 2, y0 + 25);
-        int y = y0 + 36;
+        final int width = navW - 8;
+        graphics.fill(x0 + navW, y0 + 22, x0 + navW + 1, y0 + h - 4, Palette.RULE);
+        int y = y0 + 26;
+        if (!Ui.rail(navW))
+        {
+            Ui.label(graphics, font, "BÂTIMENT", x + 2, y0 + 25);
+            y = y0 + 36;
+        }
         item(graphics, font, x, y, width, Icon.module("main"), "Vue d'ensemble", OVERVIEW.equals(current), mouseX, mouseY, hits,
           () -> Minecraft.getInstance().setScreen(hut));
         y += Ui.NAV_ROW + 1;
@@ -154,7 +162,8 @@ public final class HutNav
             {
                 break;
             }
-            final String label = Ui.fit(font, Component.translatable(view.getDesc().toLowerCase(Locale.US)).getString(), width - 22);
+            final String full = Component.translatable(view.getDesc().toLowerCase(Locale.US)).getString();
+            final String label = Ui.rail(navW) ? full : Ui.fit(font, full, width - 22);
             item(graphics, font, x, y, width, Icon.texture(view.getIconResourceLocation(), 20), label, key(view).equals(current), mouseX, mouseY, hits, () -> {
                 Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.BOOK_PAGE_TURN, 1.0F));
                 view.getWindow().open();

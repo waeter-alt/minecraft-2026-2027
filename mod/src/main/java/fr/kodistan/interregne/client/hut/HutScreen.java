@@ -60,8 +60,18 @@ import java.util.Map;
  */
 public final class HutScreen extends ParchmentScreen
 {
-    private static final int NAV_W = HutNav.NAV_W;
-    private static final int SIDE_W = 150;
+    private int navW()
+    {
+        return HutNav.navWidth(w);
+    }
+
+    /**
+     * The right column (level, upgrade): a little narrower when the window is.
+     */
+    private int sideW()
+    {
+        return w >= 470 ? 150 : 134;
+    }
     private static final int WORKER_H = 24;
     private static final int REQUEST_H = 18;
     private static final int SMALL_H = 12;
@@ -257,7 +267,7 @@ public final class HutScreen extends ParchmentScreen
 
     private void renderNav(final GuiGraphics graphics, final int mouseX, final int mouseY)
     {
-        HutNav.nav(graphics, font, x0, y0, h, building, this, HutNav.OVERVIEW, mouseX, mouseY, (x, y, w, h, a) -> hits.add(new Hit(x, y, w, h, a)));
+        HutNav.nav(graphics, font, x0, y0, w, h, building, this, HutNav.OVERVIEW, mouseX, mouseY, (x, y, w, h, a) -> hits.add(new Hit(x, y, w, h, a)));
     }
 
     boolean fromHub()
@@ -275,12 +285,12 @@ public final class HutScreen extends ParchmentScreen
 
     private int mainLeft()
     {
-        return x0 + NAV_W + 7;
+        return x0 + navW() + 7;
     }
 
     private int mainWidth()
     {
-        return w - NAV_W - SIDE_W - 14;
+        return w - navW() - sideW() - 14;
     }
 
     private int mainTop()
@@ -479,12 +489,17 @@ public final class HutScreen extends ParchmentScreen
         {
             max += module.getMaxInhabitants();
         }
-        graphics.drawString(font, workers.size() + " / " + max, x + font.width("OUVRIERS") + 6, y, Palette.INK, false);
+        final String filled = workers.size() + " / " + max;
+        graphics.drawString(font, filled, x + font.width("OUVRIERS") + 6, y, Palette.INK, false);
 
         final int recallW = font.width("Rappeler") + 10;
         final int manageW = font.width("Gérer") + 10;
         final int recallX = x + width - recallW;
         final int manageX = recallX - manageW - 3;
+        if (x + font.width("OUVRIERS") + 6 + font.width(filled) + 6 > manageX)
+        {
+            y += 12;
+        }
         final boolean canHire = building.allowsAssignment();
         Ui.button(graphics, font, manageX, y - 2, manageW, SMALL_H, "Gérer", Ui.ButtonStyle.SECONDARY, canHire,
           Ui.inside(mouseX, mouseY, manageX, y - 2, manageW, SMALL_H));
@@ -523,27 +538,49 @@ public final class HutScreen extends ParchmentScreen
     private int citizenCard(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width, final ICitizenDataView citizen,
       final String line)
     {
-        final Component name = Component.literal(citizen.getName()).withStyle(ChatFormatting.BOLD);
+        final Component fullName = Component.literal(citizen.getName()).withStyle(ChatFormatting.BOLD);
         final List<CitizenBits.Chip> chips = CitizenBits.chips(citizen);
         int chipsW = 0;
         for (final CitizenBits.Chip chip : chips)
         {
             chipsW += font.width(chip.text()) + 11;
         }
-        // Chips beside the name when they fit, on their own line below otherwise
-        final boolean inline = font.width(name) + chipsW + 30 <= width;
-        final int cardH = inline || chips.isEmpty() ? WORKER_H - 2 : WORKER_H + 11;
+        // Chips beside the name when they fit, otherwise under the line, wrapping as often as needed
+        final boolean inline = font.width(fullName) + chipsW + 30 <= width;
+        int chipLines = 0;
+        if (!inline && !chips.isEmpty())
+        {
+            chipLines = 1;
+            int cx = x + 24;
+            for (final CitizenBits.Chip chip : chips)
+            {
+                final int chipW = font.width(chip.text()) + 8;
+                if (cx + chipW > x + width - 4 && cx > x + 24)
+                {
+                    chipLines++;
+                    cx = x + 24;
+                }
+                cx += chipW + 3;
+            }
+        }
+        final int cardH = WORKER_H - 2 + chipLines * 13;
         final boolean overCard = Ui.inside(mouseX, mouseY, x, y, width, cardH);
         Ui.card(graphics, x, y, width, cardH, false, overCard, false);
         CitizenBits.face(graphics, citizen, x + 4, y + 3, 16);
-        graphics.drawString(font, name, x + 24, y + 3, Palette.INK, false);
+        final String nameText = fit(citizen.getName(), inline ? width - 28 - chipsW : width - 32);
+        graphics.drawString(font, Component.literal(nameText).withStyle(ChatFormatting.BOLD), x + 24, y + 3, Palette.INK, false);
         graphics.drawString(font, fit(line, width - 28), x + 24, y + 12, Palette.MUTED, false);
 
         int chipX = inline ? x + width - 4 - chipsW + 3 : x + 24;
-        final int chipY = inline ? y + 2 : y + 22;
+        int chipY = inline ? y + 2 : y + 22;
         for (final CitizenBits.Chip chip : chips)
         {
             final int chipW = font.width(chip.text()) + 8;
+            if (!inline && chipX + chipW > x + width - 4 && chipX > x + 24)
+            {
+                chipX = x + 24;
+                chipY += 13;
+            }
             final boolean over = chip.action() != null && Ui.inside(mouseX, mouseY, chipX, chipY, chipW, 11);
             Ui.chip(graphics, font, chipX, chipY, chip.text(), chip.soft(), chip.ink(), chip.action() != null, over);
             if (chip.action() != null)
@@ -568,11 +605,16 @@ public final class HutScreen extends ParchmentScreen
     private int renderResidents(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width, final LivingBuildingView home)
     {
         Ui.label(graphics, font, "HABITANTS", x, y);
-        graphics.drawString(font, home.getResidents().size() + " / " + home.getMax(), x + font.width("HABITANTS") + 6, y, Palette.INK, false);
+        final String filled = home.getResidents().size() + " / " + home.getMax();
+        graphics.drawString(font, filled, x + font.width("HABITANTS") + 6, y, Palette.INK, false);
         final int recallW = font.width("Rappeler") + 10;
         final int manageW = font.width("Gérer") + 10;
         final int recallX = x + width - recallW;
         final int manageX = recallX - manageW - 3;
+        if (x + font.width("HABITANTS") + 6 + font.width(filled) + 6 > manageX)
+        {
+            y += 12;
+        }
         final boolean built = home.getBuildingLevel() > 0;
         final boolean overManage = Ui.inside(mouseX, mouseY, manageX, y - 2, manageW, SMALL_H);
         Ui.button(graphics, font, manageX, y - 2, manageW, SMALL_H, "Gérer", Ui.ButtonStyle.SECONDARY, built, overManage);
@@ -644,7 +686,7 @@ public final class HutScreen extends ParchmentScreen
         Ui.label(graphics, font, "PRODUCTION", x, y);
         if (level > 0)
         {
-            graphics.drawString(font, "au niveau " + level, x + font.width("PRODUCTION") + 6, y, Palette.MUTED, false);
+            graphics.drawString(font, fit("au niveau " + level, width - (font.width("PRODUCTION") + 6)), x + font.width("PRODUCTION") + 6, y, Palette.MUTED, false);
         }
         y += 12;
         if (!flow.isEmpty())
@@ -657,16 +699,14 @@ public final class HutScreen extends ParchmentScreen
         }
         if (level == 0)
         {
-            graphics.drawString(font, "Rien tant que le bâtiment n'est pas construit.", x, y, Palette.MUTED, false);
-            return y + 12;
+            return Ui.wrapped(graphics, font, Component.literal("Rien tant que le bâtiment n'est pas construit."), x, y, width, Palette.MUTED, 10) + 2;
         }
         if (Yields.isRawProducer(building.getBuildingType()))
         {
-            graphics.drawString(font, "Récoltes ×" + format(Yields.outputMultiplier(level)), x, y, Palette.INK, false);
+            graphics.drawString(font, fit("Récoltes ×" + format(Yields.outputMultiplier(level)), width), x, y, Palette.INK, false);
             y += 10;
         }
-        graphics.drawString(font, "Vitesse de travail ×" + format(Yields.speedMultiplier(level)), x, y, Palette.INK, false);
-        return y + 12;
+        return Ui.wrapped(graphics, font, Component.literal("Vitesse de travail ×" + format(Yields.speedMultiplier(level))), x, y, width, Palette.INK, 10) + 2;
     }
 
     private int renderRequests(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width,
@@ -679,8 +719,7 @@ public final class HutScreen extends ParchmentScreen
         y += 12;
         if (requests.isEmpty())
         {
-            graphics.drawString(font, "Ce bâtiment ne manque de rien.", x + 2, y, Palette.MUTED, false);
-            return y + 12;
+            return Ui.wrapped(graphics, font, Component.literal("Ce bâtiment ne manque de rien."), x + 2, y, width - (2), Palette.MUTED, 10) + 2;
         }
         for (final IRequest<?> request : requests)
         {
@@ -794,9 +833,9 @@ public final class HutScreen extends ParchmentScreen
 
     private void renderSide(final GuiGraphics graphics, final int mouseX, final int mouseY)
     {
-        final int left = detailPanel(graphics, SIDE_W);
+        final int left = detailPanel(graphics, sideW());
         final int x = left + 6;
-        final int width = SIDE_W - 14;
+        final int width = sideW() - 14;
         int y = y0 + 26;
         final int level = building.getBuildingLevel();
         // The whole panel is tinted with the level it is about: the next one, or the current one when there is none
@@ -842,10 +881,10 @@ public final class HutScreen extends ParchmentScreen
             y += 11;
             if (Yields.isRawProducer(building.getBuildingType()))
             {
-                graphics.drawString(font, "+ Récoltes ×" + format(Yields.outputMultiplier(target)), x, y, Palette.GREEN, false);
+                graphics.drawString(font, fit("+ Récoltes ×" + format(Yields.outputMultiplier(target)), width), x, y, Palette.GREEN, false);
                 y += 10;
             }
-            graphics.drawString(font, "+ Vitesse ×" + format(Yields.speedMultiplier(target)), x, y, Palette.GREEN, false);
+            graphics.drawString(font, fit("+ Vitesse ×" + format(Yields.speedMultiplier(target)), width), x, y, Palette.GREEN, false);
             y += 12;
         }
         else
@@ -859,10 +898,10 @@ public final class HutScreen extends ParchmentScreen
 
         Ui.label(graphics, font, "PRIX", x, y);
         y += 11;
-        y = Ui.priceLine(graphics, font, x, y, offer.price(), offer.affordable());
+        y = Ui.priceLine(graphics, font, x, y, width, offer.price(), offer.affordable());
         for (final CrateRows.Row row : offer.crates())
         {
-            y = Ui.crateLine(graphics, font, x, y, row);
+            y = Ui.crateLine(graphics, font, x, y, width, row);
         }
 
         sideButton(graphics, mouseX, mouseY, x, secondaryY, width, secondary, Ui.ButtonStyle.SECONDARY, true, this::openBuildWindow);

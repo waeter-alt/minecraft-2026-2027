@@ -12,8 +12,8 @@ import org.jetbrains.annotations.Nullable;
  */
 public abstract class ParchmentScreen extends Screen
 {
-    public static final int MAX_W = 480;
-    public static final int MAX_H = 260;
+    public static final int MAX_W = 560;
+    public static final int MAX_H = 300;
 
     /**
      * The header's height: content starts below this line.

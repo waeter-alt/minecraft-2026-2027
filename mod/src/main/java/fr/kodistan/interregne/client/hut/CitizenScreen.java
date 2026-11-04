@@ -38,7 +38,10 @@ import java.util.Map;
  */
 public final class CitizenScreen extends ParchmentScreen
 {
-    private static final int NAV_W = 112;
+    private int navW()
+    {
+        return Ui.navWidth(w);
+    }
 
     private static final ResourceLocation HEART_FULL = ResourceLocation.withDefaultNamespace("hud/heart/full");
     private static final ResourceLocation HEART_HALF = ResourceLocation.withDefaultNamespace("hud/heart/half");
@@ -162,12 +165,12 @@ public final class CitizenScreen extends ParchmentScreen
 
     private int contentLeft()
     {
-        return x0 + NAV_W + 7;
+        return x0 + navW() + 7;
     }
 
     private int contentWidth()
     {
-        return w - NAV_W - 16;
+        return w - navW() - 16;
     }
 
     /**
@@ -188,10 +191,14 @@ public final class CitizenScreen extends ParchmentScreen
     private void renderNav(final GuiGraphics graphics, final int mouseX, final int mouseY)
     {
         final int x = x0 + 5;
-        final int width = NAV_W - 8;
-        verticalRule(graphics, x0 + NAV_W);
-        Ui.label(graphics, font, "CITOYEN", x + 2, y0 + 25);
-        int y = y0 + 36;
+        final int width = navW() - 8;
+        verticalRule(graphics, x0 + navW());
+        int y = y0 + 26;
+        if (!Ui.rail(navW()))
+        {
+            Ui.label(graphics, font, "CITOYEN", x + 2, y0 + 25);
+            y = y0 + 36;
+        }
         for (final Page p : Page.values())
         {
             String label = p.label;
@@ -357,7 +364,7 @@ public final class CitizenScreen extends ParchmentScreen
         Ui.label(graphics, font, "COMPÉTENCES", x, y);
         if (primary != null)
         {
-            graphics.drawString(font, "★ utiles à son métier", x + font.width("COMPÉTENCES") + 8, y, Palette.SELECTED, false);
+            graphics.drawString(font, fit("★ utiles à son métier", width - (font.width("COMPÉTENCES") + 8)), x + font.width("COMPÉTENCES") + 8, y, Palette.SELECTED, false);
         }
         y += 12;
         final List<Skill> skills = new ArrayList<>(List.of(Skill.values()));
@@ -426,8 +433,7 @@ public final class CitizenScreen extends ParchmentScreen
 
         if (bad.isEmpty() && good.isEmpty())
         {
-            graphics.drawString(font, "Rien ne pèse sur son humeur en ce moment.", x, y, Palette.MUTED, false);
-            return y + 12;
+            return Ui.wrapped(graphics, font, Component.literal("Rien ne pèse sur son humeur en ce moment."), x, y, width, Palette.MUTED, 10) + 2;
         }
         if (!bad.isEmpty())
         {

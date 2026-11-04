@@ -91,12 +91,11 @@ public final class GraveyardScreen extends ModuleScreen
         y += 12;
         if (resting.isEmpty())
         {
-            graphics.drawString(font, "Personne pour l'instant.", x + 2, y, Palette.MUTED, false);
-            return y + 13;
+            return Ui.wrapped(graphics, font, Component.literal("Personne pour l'instant."), x + 2, y, width - (2), Palette.MUTED, 10) + 3;
         }
         for (final String citizen : resting)
         {
-            graphics.drawString(font, "✝ " + citizen, x + 4, y, Palette.INK, false);
+            graphics.drawString(font, fit("✝ " + citizen, width - (4)), x + 4, y, Palette.INK, false);
             y += 11;
         }
         return y;

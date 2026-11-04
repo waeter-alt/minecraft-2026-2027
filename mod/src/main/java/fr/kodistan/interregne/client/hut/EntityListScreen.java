@@ -131,8 +131,7 @@ public final class EntityListScreen extends ModuleScreen
         final List<ResourceLocation> visible = visible();
         if (visible.isEmpty())
         {
-            graphics.drawString(font, "Aucun monstre ne correspond à « " + query() + " ».", x + 2, y + 2, Palette.MUTED, false);
-            return y + 14;
+            return Ui.wrapped(graphics, font, Component.literal("Aucun monstre ne correspond à « " + query() + " »."), x + 2, y + 2, width - (2), Palette.MUTED, 10) + 4;
         }
         final int columnW = (width - 3) / 2;
         for (int i = 0; i < visible.size(); i++)

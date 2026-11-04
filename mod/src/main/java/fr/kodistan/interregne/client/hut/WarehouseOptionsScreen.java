@@ -66,7 +66,7 @@ public final class WarehouseOptionsScreen extends ModuleScreen
         Ui.card(graphics, x, y, width, 34, false, false, false);
         Icon.of(Items.CHEST).draw(graphics, x + 5, y + 9, 16);
         graphics.drawString(font, Component.literal("Ranger l'entrepôt").withStyle(ChatFormatting.BOLD), x + 26, y + 6, Palette.INK, false);
-        graphics.drawString(font, "regroupe les objets semblables dans les mêmes coffres", x + 26, y + 18, Palette.MUTED, false);
+        graphics.drawString(font, fit("regroupe les objets semblables dans les mêmes coffres", width - (26)), x + 26, y + 18, Palette.MUTED, false);
         final boolean canSort = building.getBuildingLevel() >= SORT_LEVEL;
         final String sort = sorted ? "Rangé ✔" : "Ranger";
         button(graphics, mouseX, mouseY, x + width - 6 - buttonWidth(sort), y + 10, sort, Ui.ButtonStyle.PRIMARY, canSort && !sorted,

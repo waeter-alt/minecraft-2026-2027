@@ -98,7 +98,7 @@ public final class RegionalBankScreen extends CounterScreen
         final int next = state.level() + 1;
         Ui.plate(graphics, x, y, x + width, y + 30, Palette.levelSoft(next), Palette.levelEdge(next), Palette.levelSoft(next));
         graphics.drawString(font, Component.literal("Niveau " + next).withStyle(ChatFormatting.BOLD), x + 6, y + 5, Palette.INK, false);
-        graphics.drawString(font, "contient jusqu'à " + couronnes(state.nextCapacity()), x + 6, y + 17, Palette.MUTED, false);
+        graphics.drawString(font, fit("contient jusqu'à " + couronnes(state.nextCapacity()), width - (6)), x + 6, y + 17, Palette.MUTED, false);
         final String label = "Améliorer · " + Wallet.format(state.upgradeCost());
         final int bw = buttonWidth(label);
         final boolean over = Ui.inside(mouseX, mouseY, x + width - 6 - bw, y + 8, bw, 14);

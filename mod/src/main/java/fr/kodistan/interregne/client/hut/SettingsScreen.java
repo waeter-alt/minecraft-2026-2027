@@ -136,7 +136,7 @@ public final class SettingsScreen extends ModuleScreen
         final List<ISettingKey<? extends ISetting>> keys = module.getSettingsToShow();
         if (keys.isEmpty())
         {
-            graphics.drawString(font, "Ce bâtiment n'a rien à régler.", x + 2, y, Palette.MUTED, false);
+            graphics.drawString(font, fit("Ce bâtiment n'a rien à régler.", width - (2)), x + 2, y, Palette.MUTED, false);
             y += 13;
         }
         for (final ISettingKey<? extends ISetting> key : keys)

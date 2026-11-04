@@ -83,8 +83,7 @@ public final class MinimumStockScreen extends ModuleScreen
         final List<Tuple<ItemStorage, Integer>> stock = module.getStock();
         if (stock.isEmpty())
         {
-            graphics.drawString(font, "Ajoute un objet pour que le bâtiment en ait toujours sous la main.", x + 2, y + 2, Palette.MUTED, false);
-            return y + 14;
+            return Ui.wrapped(graphics, font, Component.literal("Ajoute un objet pour que le bâtiment en ait toujours sous la main."), x + 2, y + 2, width - (2), Palette.MUTED, 10) + 4;
         }
         for (int i = 0; i < stock.size(); i++)
         {

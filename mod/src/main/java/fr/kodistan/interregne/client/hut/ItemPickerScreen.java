@@ -109,7 +109,7 @@ public final class ItemPickerScreen extends ModuleScreen
         Ui.card(graphics, x, y, width, 22, chosen != null, false, false);
         if (chosen == null)
         {
-            graphics.drawString(font, "Choisis un objet ci-dessous.", x + 6, y + 7, Palette.MUTED, false);
+            graphics.drawString(font, fit("Choisis un objet ci-dessous.", width - (6)), x + 6, y + 7, Palette.MUTED, false);
         }
         else
         {
@@ -179,8 +179,7 @@ public final class ItemPickerScreen extends ModuleScreen
         }
         if (visible.isEmpty())
         {
-            graphics.drawString(font, "Aucun objet ne correspond à « " + query() + " ».", x + 2, y + 2, Palette.MUTED, false);
-            return y + 14;
+            return Ui.wrapped(graphics, font, Component.literal("Aucun objet ne correspond à « " + query() + " »."), x + 2, y + 2, width - (2), Palette.MUTED, 10) + 4;
         }
         return y + rows * CELL;
     }

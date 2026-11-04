@@ -10,6 +10,7 @@ import com.minecolonies.core.network.messages.server.colony.building.AlterRestau
 import fr.kodistan.interregne.client.ui.Icon;
 import fr.kodistan.interregne.client.ui.Palette;
 import fr.kodistan.interregne.client.ui.Ui;
+import net.minecraft.network.chat.Component;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -151,7 +152,7 @@ public final class MenuScreen extends ModuleScreen
         y = cy + 22;
 
         Ui.label(graphics, font, "PLATS POSSIBLES", x, y + 3);
-        graphics.drawString(font, "Niv. = maison qu'il contente", x + font.width("PLATS POSSIBLES") + 8, y + 3, Palette.MUTED, false);
+        graphics.drawString(font, fit("Niv. = maison qu'il contente", width - (font.width("PLATS POSSIBLES") + 8)), x + font.width("PLATS POSSIBLES") + 8, y + 3, Palette.MUTED, false);
         search.setY(y);
         search.visible = true;
         return y + 17;
@@ -166,8 +167,7 @@ public final class MenuScreen extends ModuleScreen
           .toList();
         if (shown.isEmpty())
         {
-            graphics.drawString(font, "Aucun plat ne correspond à « " + query + " ».", x + 2, y + 2, Palette.MUTED, false);
-            return y + 14;
+            return Ui.wrapped(graphics, font, Component.literal("Aucun plat ne correspond à « " + query + " »."), x + 2, y + 2, width - (2), Palette.MUTED, 10) + 4;
         }
         final boolean full = module.hasReachedLimit();
         final int columnW = (width - 3) / 2;

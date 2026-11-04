@@ -40,8 +40,6 @@
     "client.WindowBuildBuildingMixin",
     "client.WindowBuildDecorationMixin",
     "client.WindowExtendedBuildToolMixin",
-    "client.MinecraftMixin",
-    "client.EntityMixin",
     "client.WindowExtendedBuildToolAccessor",
     "client.AbstractBlueprintManipulationWindowAccessor",
     "client.AbstractWindowModuleBuildingAccessor",

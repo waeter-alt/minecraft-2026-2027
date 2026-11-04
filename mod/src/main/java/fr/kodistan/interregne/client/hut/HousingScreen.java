@@ -194,7 +194,7 @@ public final class HousingScreen extends ParchmentScreen
         y += 11;
         if (residents.isEmpty())
         {
-            graphics.drawString(font, "Personne pour l'instant.", x + 2, y, Palette.MUTED, false);
+            graphics.drawString(font, fit("Personne pour l'instant.", width - (2)), x + 2, y, Palette.MUTED, false);
             y += 13;
         }
         for (final ICitizenDataView citizen : residents)
@@ -209,7 +209,7 @@ public final class HousingScreen extends ParchmentScreen
         y += 11;
         if (candidates.isEmpty())
         {
-            graphics.drawString(font, "Tout le monde est déjà logé.", x + 2, y, Palette.MUTED, false);
+            graphics.drawString(font, fit("Tout le monde est déjà logé.", width - (2)), x + 2, y, Palette.MUTED, false);
             y += 13;
         }
         for (final ICitizenDataView citizen : candidates)
