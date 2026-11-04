@@ -20,7 +20,10 @@ import fr.kodistan.interregne.client.ui.Icon;
 import fr.kodistan.interregne.client.ui.Palette;
 import fr.kodistan.interregne.client.ui.ParchmentScreen;
 import fr.kodistan.interregne.client.ui.Ui;
+import fr.kodistan.interregne.client.CrateRows;
+import fr.kodistan.interregne.colony.BuildCosts;
 import fr.kodistan.interregne.colony.ColonyMaps;
+import com.minecolonies.core.client.gui.WindowBuildBuilding;
 import net.minecraft.Util;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.ChatFormatting;
@@ -178,23 +181,82 @@ public final class ColonyHubScreen extends ParchmentScreen
         }
         graphics.drawString(font, "Hôtel de ville · siège de la colonie", x0 + 44, y0 + 22, 0xFFC9A877, false);
 
-        // The town hall's level, a medallion in its colour; a click opens the town hall to upgrade it
+        // The town hall's level, plainly, in its colour
         final int level = townHall.getBuildingLevel();
         final String label = "Niveau " + level;
-        final int medalW = font.width(label) + 14;
-        final int medalX = x0 + w - 22 - medalW;
-        final int medalY = y0 + 11;
-        final boolean overMedal = Ui.inside(mouseX, mouseY, medalX, medalY, medalW, 16);
-        graphics.fill(medalX - 1, medalY - 1, medalX + medalW + 1, medalY + 17, overMedal ? Palette.WHITE : Palette.SELECTED);
-        Ui.plate(graphics, medalX, medalY, medalX + medalW, medalY + 16, Palette.levelFill(level), Palette.levelEdge(level), Palette.levelFill(level));
-        graphics.drawString(font, Component.literal(label).withStyle(ChatFormatting.BOLD), medalX + 7, medalY + 4, Palette.levelText(level), false);
-        hits.add(new Hit(medalX, medalY, medalW, 16, () -> HutScreen.openWith(townHall, this)));
-        if (overMedal)
-        {
-            hint = "Ouvrir l'hôtel de ville pour l'améliorer";
-        }
+        final int plateW = font.width(label) + 12;
+        final int plateX = x0 + w - 24 - plateW;
+        Ui.plate(graphics, plateX, y0 + 13, plateX + plateW, y0 + 27, Palette.levelFill(level), Palette.levelEdge(level), Palette.levelFill(level));
+        graphics.drawString(font, label, plateX + 6, y0 + 16, Palette.levelText(level), false);
 
         graphics.drawString(font, "✕", x0 + w - 13, y0 + 6, overClose(mouseX, mouseY) ? Palette.RED_SOFT : Palette.GOLD_TEXT, false);
+        levelAura(graphics);
+    }
+
+    /**
+     * A thin ring of the town hall's level colour around the window, with two sparks chasing each other round it.
+     */
+    private void levelAura(final GuiGraphics graphics)
+    {
+        final int color = Palette.levelFill(townHall.getBuildingLevel()) & 0xFFFFFF;
+        final int left = x0 - 4;
+        final int top = y0 - 4;
+        final int across = w + 6;
+        final int down = h + 6;
+        final int perimeter = 2 * (across + down);
+        graphics.fill(left, top, left + across + 2, top + 2, 0x60000000 | color);
+        graphics.fill(left, top + down, left + across + 2, top + down + 2, 0x60000000 | color);
+        graphics.fill(left, top + 2, left + 2, top + down, 0x60000000 | color);
+        graphics.fill(left + across, top + 2, left + across + 2, top + down, 0x60000000 | color);
+
+        final double head = (Util.getMillis() % 5000L) / 5000.0 * perimeter;
+        final int trail = perimeter / 6;
+        for (int spark = 0; spark < 2; spark++)
+        {
+            final double start = head + spark * perimeter / 2.0;
+            for (int d = trail - 1; d >= 0; d--)
+            {
+                final float strength = 1 - (float) d / trail;
+                final int s = Math.floorMod((int) start - d, perimeter);
+                final int px;
+                final int py;
+                if (s < across)
+                {
+                    px = left + s;
+                    py = top;
+                }
+                else if (s < across + down)
+                {
+                    px = left + across;
+                    py = top + s - across;
+                }
+                else if (s < 2 * across + down)
+                {
+                    px = left + across - (s - across - down);
+                    py = top + down;
+                }
+                else
+                {
+                    px = left;
+                    py = top + down - (s - 2 * across - down);
+                }
+                final int alpha = (int) (255 * strength * strength);
+                final int tone = mix(color, 0xFFFFFF, strength * 0.55F);
+                if (d < trail / 4)
+                {
+                    graphics.fill(px - 1, py - 1, px + 3, py + 3, (alpha / 3) << 24 | tone);
+                }
+                graphics.fill(px, py, px + 2, py + 2, alpha << 24 | tone);
+            }
+        }
+    }
+
+    private static int mix(final int from, final int to, final float amount)
+    {
+        final int r = (int) (((from >> 16) & 0xFF) + (((to >> 16) & 0xFF) - ((from >> 16) & 0xFF)) * amount);
+        final int g = (int) (((from >> 8) & 0xFF) + (((to >> 8) & 0xFF) - ((from >> 8) & 0xFF)) * amount);
+        final int b = (int) ((from & 0xFF) + ((to & 0xFF) - (from & 0xFF)) * amount);
+        return r << 16 | g << 8 | b;
     }
 
     @Override
@@ -408,17 +470,122 @@ public final class ColonyHubScreen extends ParchmentScreen
           new Tile("Chantiers", Integer.toString(sites), Icon.of(Items.IRON_PICKAXE), Ui.State.OK, () -> show(Page.BUILDINGS))));
 
         y = Ui.separator(graphics, x, y, width);
+        return renderSeat(graphics, mouseX, mouseY, x, y, width);
+    }
+
+    /**
+     * The town hall's next level, as a hut shows it but laid out across the page: what it unlocks, what it costs and
+     * the buttons; or its site while one is running.
+     */
+    private int renderSeat(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width)
+    {
         final int level = townHall.getBuildingLevel();
-        final boolean over = Ui.inside(mouseX, mouseY, x, y, width, 24);
-        Ui.card(graphics, x, y, width, 24, false, over, false);
-        Icon.of(townHall.getBuildingType().getBuildingBlock()).draw(graphics, x + 4, y + 4, 16);
-        graphics.drawString(font, Component.literal("Hôtel de ville").withStyle(ChatFormatting.BOLD), x + 24, y + 4, Palette.INK, false);
-        graphics.drawString(font, level < ColonyMaps.UNLOCK_LEVEL ? "Le niveau 2 débloque la carte de la colonie" : "Améliorer, réparer, voir le stock",
-          x + 24, y + 13, Palette.MUTED, false);
-        final int badgeW = Ui.levelBadge(graphics, font, x + width - 70, y + 6, "Niveau " + level, level);
-        graphics.drawString(font, "›", x + width - 70 + badgeW + 6, y + 8, Palette.MUTED, false);
-        addHit(x, y, width, 24, () -> HutScreen.openWith(townHall, this));
-        return y + 28;
+        final boolean site = townHall.isBuilding() || townHall.isRepairing() || townHall.isDeconstructing();
+        final boolean max = level >= townHall.getBuildingMaxLevel();
+        final int tint = townHall.isBuilding() || !site && !max ? level + 1 : level;
+        final UpgradeOffer offer = site || max ? null : UpgradeOffer.of(townHall);
+        final int height = offer == null ? 70 : Math.max(88, 19 + 11 + 11 * (2 + offer.crates().size()) + 6);
+
+        graphics.fill(x, y, x + width, y + height, Palette.levelSoft(tint));
+        graphics.renderOutline(x, y, width, height, Palette.levelEdge(tint));
+        Ui.plate(graphics, x, y, x + width, y + 14, Palette.levelFill(tint), Palette.levelEdge(tint), Palette.levelFill(tint));
+        Icon.of(townHall.getBuildingType().getBuildingBlock()).draw(graphics, x + 3, y + 1, 12);
+        final String heading = townHall.isDeconstructing() ? "Démolition en cours"
+                                 : townHall.isRepairing() ? "Réparation en cours"
+                                     : townHall.isBuilding() ? "Amélioration en cours"
+                                         : max ? "Niveau maximum" : "Passer au niveau " + (level + 1);
+        graphics.drawString(font, Component.literal(heading).withStyle(ChatFormatting.BOLD), x + 19, y + 3, Palette.levelText(tint), false);
+        final String open = "Voir l'hôtel de ville ›";
+        final int openX = x + width - font.width(open) - 5;
+        final boolean overOpen = Ui.inside(mouseX, mouseY, openX - 2, y, font.width(open) + 4, 14);
+        graphics.drawString(font, Component.literal(open).withStyle(overOpen ? ChatFormatting.UNDERLINE : ChatFormatting.RESET), openX, y + 3,
+          Palette.levelText(tint), false);
+        addHit(openX - 2, y, font.width(open) + 4, 14, () -> HutScreen.openWith(townHall, this));
+
+        final int bodyY = y + 19;
+        final int colW = (width - 20) / 3;
+        final int c1 = x + 6;
+        final int c2 = c1 + colW + 4;
+        final int c3 = x + width - 6 - colW;
+        final int buttonY = y + height - 6 - Ui.BUTTON_H;
+        final int secondaryY = buttonY - Ui.BUTTON_H - 3;
+
+        if (site)
+        {
+            Ui.label(graphics, font, "AVANCEMENT", c1, bodyY);
+            final Float progress = UpgradeOffer.siteProgress(townHall, "Hôtel de ville");
+            final int barW = c3 - c1 - 8;
+            if (progress == null)
+            {
+                Ui.wrapped(graphics, font, Component.literal("Le chantier avance. Approchez-vous pour suivre sa barre."), c1, bodyY + 11, barW, Palette.MUTED, 9);
+            }
+            else
+            {
+                if (townHall.isDeconstructing())
+                {
+                    Ui.progressBar(graphics, c1, bodyY + 12, barW, 6, progress, Ui.State.BAD);
+                }
+                else
+                {
+                    Ui.progressBar(graphics, c1, bodyY + 12, barW, 6, progress, Palette.levelFill(tint), Palette.levelEdge(tint));
+                }
+                final int seconds = townHall.isBuilding() ? BuildCosts.secondsForLevel(level + 1) : BuildCosts.secondsForFlat();
+                final int left = Math.max(1, Math.round((1 - progress) * seconds));
+                graphics.drawString(font, Math.round(progress * 100) + " % · encore " + BuildCosts.formatSeconds(left) + " environ", c1, bodyY + 22,
+                  Palette.INK, false);
+            }
+            return y + height + 4;
+        }
+
+        if (offer == null)
+        {
+            Ui.wrapped(graphics, font, Component.literal("L'hôtel de ville est au plus haut. Tous les bâtiments peuvent monter jusqu'au niveau " + level + "."),
+              c1, bodyY, c3 - c1 - 8, Palette.MUTED, 9);
+            seatButton(graphics, mouseX, mouseY, c3, buttonY, colW, "Réparer, démolir…", Ui.ButtonStyle.SECONDARY, true, this::openBuildWindow);
+            return y + height + 4;
+        }
+
+        // What the next level opens: every building may rise as high as the town hall
+        final int target = offer.target();
+        Ui.label(graphics, font, "DÉBLOQUE", c1, bodyY);
+        int ly = Ui.wrapped(graphics, font, Component.literal("+ Bâtiments jusqu'au niveau " + target), c1, bodyY + 11, colW, Palette.GREEN, 9);
+        if (target == ColonyMaps.UNLOCK_LEVEL)
+        {
+            Ui.wrapped(graphics, font, Component.literal("+ Carte de la colonie"), c1, ly + 1, colW, Palette.GREEN, 9);
+        }
+
+        Ui.label(graphics, font, "PRIX", c2, bodyY);
+        int py = Ui.priceLine(graphics, font, c2, bodyY + 11, offer.price(), offer.affordable());
+        for (final CrateRows.Row row : offer.crates())
+        {
+            py = Ui.crateLine(graphics, font, c2, py, row);
+        }
+        Icon.of(Items.CLOCK).draw(graphics, c2, py - 1, 10);
+        graphics.drawString(font, BuildCosts.formatSeconds(offer.seconds()) + " de chantier", c2 + 12, py + 1, Palette.INK, false);
+
+        seatButton(graphics, mouseX, mouseY, c3, secondaryY, colW, "Réparer, démolir…", Ui.ButtonStyle.SECONDARY, true, this::openBuildWindow);
+        // Green when it can be done now, grey with the reason otherwise
+        seatButton(graphics, mouseX, mouseY, c3, buttonY, colW, offer.action(), Ui.ButtonStyle.PRIMARY, offer.canBuy(), () ->
+        {
+            offer.buy(townHall);
+            onClose();
+        });
+        return y + height + 4;
+    }
+
+    private void seatButton(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width, final String label,
+      final Ui.ButtonStyle style, final boolean enabled, final Runnable action)
+    {
+        Ui.button(graphics, font, x, y, width, Ui.BUTTON_H, fit(label, width - 6), style, enabled, Ui.inside(mouseX, mouseY, x, y, width, Ui.BUTTON_H));
+        if (enabled)
+        {
+            addHit(x, y, width, Ui.BUTTON_H, action);
+        }
+    }
+
+    private void openBuildWindow()
+    {
+        new WindowBuildBuilding(colony, townHall).open();
     }
 
     private record Tile(String label, String value, Icon icon, Ui.State state, Runnable action)

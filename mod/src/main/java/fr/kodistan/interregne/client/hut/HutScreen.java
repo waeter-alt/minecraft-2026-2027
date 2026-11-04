@@ -18,10 +18,8 @@ import com.minecolonies.core.client.gui.huts.WindowHutWorkerModulePlaceholder;
 import com.minecolonies.core.client.gui.WindowInteraction;
 import com.minecolonies.core.colony.buildings.moduleviews.WorkerBuildingModuleView;
 import com.minecolonies.core.network.messages.server.colony.OpenInventoryMessage;
-import com.minecolonies.core.network.messages.server.colony.building.BuildRequestMessage;
 import com.minecolonies.core.network.messages.server.colony.building.worker.RecallCitizenMessage;
 import fr.kodistan.interregne.client.BuildWindowPricing;
-import fr.kodistan.interregne.client.ClientTreasury;
 import fr.kodistan.interregne.client.CrateRows;
 import fr.kodistan.interregne.client.catalogue.CatalogueIndex;
 import fr.kodistan.interregne.client.hud.Grievances;
@@ -30,18 +28,13 @@ import fr.kodistan.interregne.client.ui.Palette;
 import fr.kodistan.interregne.client.ui.ParchmentScreen;
 import fr.kodistan.interregne.client.ui.Ui;
 import fr.kodistan.interregne.colony.BuildCosts;
-import fr.kodistan.interregne.colony.TownHallCap;
 import fr.kodistan.interregne.colony.Yields;
-import fr.kodistan.interregne.economy.Wallet;
-import fr.kodistan.interregne.mixin.client.BossHealthOverlayAccessor;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.components.LerpingBossEvent;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
@@ -49,7 +42,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -696,11 +688,10 @@ public final class HutScreen extends ParchmentScreen
         final String heading = level == 0 ? "Construire le bâtiment" : "Passer au niveau " + target;
         y = levelHeading(graphics, x, y, width, heading, target);
 
-        final ITownHallView townHall = building.getColony().getTownHall();
-        final String refusal = TownHallCap.refusal(building instanceof ITownHallView, target, townHall == null ? 0 : townHall.getBuildingLevel());
-        if (refusal != null)
+        final UpgradeOffer offer = UpgradeOffer.of(building);
+        if (offer.refusal() != null)
         {
-            y = Ui.wrapped(graphics, font, Component.literal(refusal), x, y, width, Palette.RED, 9) + 3;
+            y = Ui.wrapped(graphics, font, Component.literal(offer.refusal()), x, y, width, Palette.RED, 9) + 3;
         }
         else if (level > 0)
         {
@@ -723,31 +714,21 @@ public final class HutScreen extends ParchmentScreen
             }
         }
 
-        final boolean free = minecraft.player.isCreative();
-        final long owned = Wallet.value(new PlayerMainInvWrapper(minecraft.player.getInventory())) + ClientTreasury.of(building.getColony());
-        final int cost = BuildCosts.forLevel(target);
-        final boolean affordable = free || owned >= cost;
         Ui.label(graphics, font, "PRIX", x, y);
         y += 11;
-        y = Ui.priceLine(graphics, font, x, y, free ? "Gratuit (créatif)" : cost + " Couronnes", affordable);
-        boolean crates = true;
-        for (final CrateRows.Row row : CrateRows.forBuilding(building, true))
+        y = Ui.priceLine(graphics, font, x, y, offer.price(), offer.affordable());
+        for (final CrateRows.Row row : offer.crates())
         {
             y = Ui.crateLine(graphics, font, x, y, row);
-            crates &= row.available();
         }
         Icon.of(Items.CLOCK).draw(graphics, x, y - 1, 10);
-        graphics.drawString(font, BuildCosts.formatSeconds(BuildCosts.secondsForLevel(target)) + " de chantier", x + 12, y + 1, Palette.INK, false);
+        graphics.drawString(font, BuildCosts.formatSeconds(offer.seconds()) + " de chantier", x + 12, y + 1, Palette.INK, false);
 
         sideButton(graphics, mouseX, mouseY, x, secondaryY, width, secondary, Ui.ButtonStyle.SECONDARY, true, this::openBuildWindow);
         // Green when it can be done now, grey with the reason otherwise
-        final String action = refusal != null ? "Hôtel de ville niv. " + target + " requis"
-                                : !affordable ? "Pas assez de Couronnes"
-                                    : !crates ? "Il manque des caisses"
-                                        : level == 0 ? "Construire" : "Améliorer";
-        sideButton(graphics, mouseX, mouseY, x, buttonY, width, action, Ui.ButtonStyle.PRIMARY, refusal == null && affordable && crates, () ->
+        sideButton(graphics, mouseX, mouseY, x, buttonY, width, offer.action(), Ui.ButtonStyle.PRIMARY, offer.canBuy(), () ->
         {
-            new BuildRequestMessage(building, BuildRequestMessage.Mode.BUILD, BlockPos.ZERO).sendToServer();
+            offer.buy(building);
             onClose();
         });
     }
@@ -803,7 +784,7 @@ public final class HutScreen extends ParchmentScreen
         y += 4;
         Ui.label(graphics, font, "AVANCEMENT", x, y);
         y += 11;
-        final Float progress = siteProgress();
+        final Float progress = UpgradeOffer.siteProgress(building, title.getString());
         if (progress == null)
         {
             Ui.wrapped(graphics, font, Component.literal("Le chantier avance. Approchez-vous pour suivre sa barre."), x, y, width, Palette.MUTED, 9);
@@ -820,34 +801,6 @@ public final class HutScreen extends ParchmentScreen
         y += 10;
         final int left = Math.max(1, Math.round((1 - progress) * seconds));
         graphics.drawString(font, Math.round(progress * 100) + " % · encore " + BuildCosts.formatSeconds(left) + " environ", x, y, Palette.INK, false);
-    }
-
-    /**
-     * How far this building's site is, read from the boss bar our sites show to nearby players; null when none is
-     * on screen. A bar naming the building wins; otherwise the only site bar, if there is just one.
-     */
-    @Nullable
-    private Float siteProgress()
-    {
-        final Map<?, LerpingBossEvent> events = ((BossHealthOverlayAccessor) minecraft.gui.getBossOverlay()).interregne$events();
-        final String name = Component.translatable(building.getBuildingDisplayName()).getString();
-        LerpingBossEvent only = null;
-        int sites = 0;
-        for (final LerpingBossEvent event : events.values())
-        {
-            final String text = event.getName().getString();
-            if (!text.startsWith("⚒"))
-            {
-                continue;
-            }
-            if (text.contains(name) || text.contains(title.getString()))
-            {
-                return event.getProgress();
-            }
-            only = event;
-            sites++;
-        }
-        return sites == 1 ? only.getProgress() : null;
     }
 
     private static String format(final double value)
