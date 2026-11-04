@@ -61,6 +61,7 @@ public final class ColonyHubScreen extends ParchmentScreen
      * The rune band around the window, in the town hall's level colour.
      */
     private static final int AURA = 11;
+    private static final int CORNER = 16;
     private static final String RUNES = "abcdefghijklmnopqrstuvwxyz";
     private static final ResourceLocation RUNE_FONT = ResourceLocation.withDefaultNamespace("alt");
 
@@ -215,70 +216,117 @@ public final class ColonyHubScreen extends ParchmentScreen
     }
 
     /**
-     * A band of the town hall's level colour around the window, carrying enchanting-table runes that drift slowly round
-     * it while a soft glow passes over them: the seat's level, unmistakable from a glance.
+     * A band of the town hall's level colour around the window, rounded at its corners and shaded like a tube, carrying
+     * enchanting-table runes that drift slowly round it while a soft glow passes over them: the seat's level,
+     * unmistakable from a glance.
      */
     private void levelAura(final GuiGraphics graphics)
     {
         final int level = townHall.getBuildingLevel();
-        final int fill = Palette.levelFill(level);
-        final int edge = Palette.levelEdge(level);
+        final int fill = Palette.levelFill(level) & 0xFFFFFF;
+        final int dark = Palette.levelEdge(level) & 0xFFFFFF;
+        final int light = mix(fill, 0xFFFFFF, 0.4F);
         final int ink = Palette.levelText(level) & 0xFFFFFF;
         final int left = x0 - AURA;
         final int top = y0 - AURA;
         final int right = x0 + w + AURA;
         final int bottom = y0 + h + AURA;
-        graphics.fill(left, top, right, top + AURA, fill);
-        graphics.fill(left, bottom - AURA, right, bottom, fill);
-        graphics.fill(left, top + AURA, left + AURA, bottom - AURA, fill);
-        graphics.fill(right - AURA, top + AURA, right, bottom - AURA, fill);
-        graphics.renderOutline(left, top, right - left, bottom - top, edge);
-        graphics.renderOutline(x0 - 1, y0 - 1, w + 2, h + 2, edge);
 
-        // The runes ride the band's middle line, about six pixels a second: a lap takes minutes
-        final int half = AURA / 2;
-        final int across = right - left - AURA;
-        final int down = bottom - top - AURA;
-        final int perimeter = 2 * (across + down);
-        final int count = perimeter / 9;
-        final double step = (double) perimeter / count;
+        // Straight runs: one line per depth, so the shading runs across the band
+        for (int t = 0; t < AURA; t++)
+        {
+            final int color = 0xFF000000 | shade(dark, fill, light, (t + 0.5) / AURA);
+            graphics.fill(left + CORNER, top + t, right - CORNER, top + t + 1, color);
+            graphics.fill(left + CORNER, bottom - t - 1, right - CORNER, bottom - t, color);
+            graphics.fill(left + t, top + CORNER, left + t + 1, bottom - CORNER, color);
+            graphics.fill(right - t - 1, top + CORNER, right - t, bottom - CORNER, color);
+        }
+        // Rounded corners, pixel by pixel, the outer rim softened
+        for (int dx = 0; dx < CORNER; dx++)
+        {
+            for (int dy = 0; dy < CORNER; dy++)
+            {
+                final double distance = Math.hypot(CORNER - dx - 0.5, CORNER - dy - 0.5);
+                final double depth = CORNER - distance;
+                if (depth <= -0.5 || depth >= AURA)
+                {
+                    continue;
+                }
+                final double coverage = Math.min(1, depth + 0.5);
+                final int color = ((int) (255 * coverage) << 24) | shade(dark, fill, light, Math.max(0, depth) / AURA);
+                graphics.fill(left + dx, top + dy, left + dx + 1, top + dy + 1, color);
+                graphics.fill(right - dx - 1, top + dy, right - dx, top + dy + 1, color);
+                graphics.fill(left + dx, bottom - dy - 1, left + dx + 1, bottom - dy, color);
+                graphics.fill(right - dx - 1, bottom - dy - 1, right - dx, bottom - dy, color);
+            }
+        }
+
+        // The runes ride the band's middle line, two or three pixels a second, placed to the sub-pixel so they glide
+        final double radius = CORNER - AURA / 2.0;
+        final double arc = Math.PI / 2 * radius;
+        final double across = right - left - 2.0 * CORNER;
+        final double down = bottom - top - 2.0 * CORNER;
+        final double perimeter = 2 * (across + down) + 4 * arc;
+        final int count = (int) (perimeter / 9);
+        final double step = perimeter / count;
         final long now = Util.getMillis();
-        final double drift = now / 170.0;
-        final double glow = now / 1600.0;
-        graphics.enableScissor(left, top, right, bottom);
+        final double drift = now / 420.0;
+        final double glow = now / 2600.0;
         for (int i = 0; i < count; i++)
         {
             final double along = (i * step + drift) % perimeter;
-            final int s = (int) along;
-            final int cx;
-            final int cy;
-            if (s < across)
-            {
-                cx = left + half + s;
-                cy = top + half;
-            }
-            else if (s < across + down)
-            {
-                cx = right - half;
-                cy = top + half + s - across;
-            }
-            else if (s < 2 * across + down)
-            {
-                cx = right - half - (s - across - down);
-                cy = bottom - half;
-            }
-            else
-            {
-                cx = left + half;
-                cy = bottom - half - (s - 2 * across - down);
-            }
-            final String rune = String.valueOf(RUNES.charAt(i % RUNES.length()));
-            final Component glyph = Component.literal(rune).withStyle(style -> style.withFont(RUNE_FONT));
-            final double wave = 0.5 + 0.5 * Math.sin(glow - along / 60.0);
-            final int alpha = (int) (110 + 145 * wave);
-            graphics.drawString(font, glyph, cx - font.width(glyph) / 2, cy - 4, alpha << 24 | ink, false);
+            final double[] point = runePoint(along, left, top, right, bottom, across, down, arc, radius);
+            final Component glyph = Component.literal(String.valueOf(RUNES.charAt(i % RUNES.length()))).withStyle(style -> style.withFont(RUNE_FONT));
+            final double wave = 0.5 + 0.5 * Math.sin(glow - along / 70.0);
+            final int alpha = (int) (120 + 135 * wave);
+            graphics.pose().pushPose();
+            graphics.pose().translate(point[0] - font.width(glyph) / 2.0, point[1] - 4, 0);
+            graphics.drawString(font, glyph, 0, 0, alpha << 24 | ink, false);
+            graphics.pose().popPose();
         }
-        graphics.disableScissor();
+    }
+
+    /**
+     * The band's colour at this depth, from 0 at its outer rim to 1 at the window: dark at both rims, light in the
+     * middle, like a rounded tube.
+     */
+    private static int shade(final int dark, final int fill, final int light, final double depth)
+    {
+        final double bulge = Math.sin(Math.PI * Math.max(0, Math.min(1, depth)));
+        return bulge < 0.5 ? mix(dark, fill, (float) (bulge * 2)) : mix(fill, light, (float) ((bulge - 0.5) * 2));
+    }
+
+    /**
+     * A point on the band's middle line, this far along it clockwise from the top left corner's end.
+     */
+    private static double[] runePoint(double along, final int left, final int top, final int right, final int bottom, final double across,
+      final double down, final double arc, final double radius)
+    {
+        final double inset = CORNER - radius;
+        final double[] centres = {right - CORNER, top + CORNER, right - CORNER, bottom - CORNER, left + CORNER, bottom - CORNER, left + CORNER, top + CORNER};
+        final double[] straights = {across, down, across, down};
+        for (int side = 0; side < 4; side++)
+        {
+            if (along < straights[side])
+            {
+                return switch (side)
+                {
+                    case 0 -> new double[] {left + CORNER + along, top + inset};
+                    case 1 -> new double[] {right - inset, top + CORNER + along};
+                    case 2 -> new double[] {right - CORNER - along, bottom - inset};
+                    default -> new double[] {left + inset, bottom - CORNER - along};
+                };
+            }
+            along -= straights[side];
+            if (along < arc)
+            {
+                // Quarter turn round this corner's centre, starting where the straight run ended
+                final double angle = -Math.PI / 2 + side * Math.PI / 2 + along / radius;
+                return new double[] {centres[side * 2] + radius * Math.cos(angle), centres[side * 2 + 1] + radius * Math.sin(angle)};
+            }
+            along -= arc;
+        }
+        return new double[] {left + CORNER, top + inset};
     }
 
     private static int mix(final int from, final int to, final float amount)
