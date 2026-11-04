@@ -14,40 +14,16 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class Hunger
 {
-    /**
-     * Saturation under which a citizen looks for food (MineColonies' restaurant limit).
-     */
-    private static final double HUNGRY = 2.5;
-
     private Hunger()
     {
     }
 
     /**
-     * How much slower a citizen works because of hunger: 1 when fed.
+     * How much slower a citizen works because of hunger and sickness ({@link Malus}): 1 when fed and healthy.
      */
     public static double slowdown(@Nullable final ICitizenData citizen)
     {
-        if (citizen == null)
-        {
-            return 1.0;
-        }
-        try
-        {
-            if (citizen.getSaturation() <= 0)
-            {
-                return Config.STARVING_SLOWDOWN.get();
-            }
-            if (citizen.getSaturation() <= HUNGRY)
-            {
-                return Config.HUNGRY_SLOWDOWN.get();
-            }
-        }
-        catch (final IllegalStateException e)
-        {
-            // Server config not loaded yet
-        }
-        return 1.0;
+        return citizen == null ? 1.0 : Malus.factor(citizen.getSaturation(), citizen.getCitizenDiseaseHandler().isSick());
     }
 
     /**

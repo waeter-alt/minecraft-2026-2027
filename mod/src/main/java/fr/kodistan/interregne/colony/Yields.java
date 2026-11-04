@@ -111,6 +111,14 @@ public final class Yields
             happiness += citizen.getCitizenHappinessHandler().getHappiness(building.getColony(), citizen);
         }
         happiness /= workers.size();
+        return happinessShare(happiness);
+    }
+
+    /**
+     * Share of the output bonus a worker this happy earns: full at the configured happiness, down to 30%.
+     */
+    public static double happinessShare(final double happiness)
+    {
         final double full = Config.HAPPINESS_FOR_FULL_BONUS.get();
         return full <= 0 ? 1.0 : Mth.clamp(happiness / full, MIN_HAPPINESS_SHARE, 1.0);
     }

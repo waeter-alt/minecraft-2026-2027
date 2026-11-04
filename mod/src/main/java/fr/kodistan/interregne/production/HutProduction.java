@@ -1,5 +1,8 @@
 package fr.kodistan.interregne.production;
 
+import fr.kodistan.interregne.colony.Malus;
+import fr.kodistan.interregne.colony.Hunger;
+import com.minecolonies.api.colony.ICitizenData;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.buildings.IBuilding;
 import fr.kodistan.interregne.Config;
@@ -68,8 +71,16 @@ public final class HutProduction
         }
     }
 
-    private static void tick(final IColony colony, final ServerLevel level, final IBuilding building, final boolean kitchen, final boolean forest, final boolean cycle)
+    private static void tick(final IColony colony, final ServerLevel level, final IBuilding building, boolean kitchen, boolean forest, boolean cycle)
     {
+        // Hungry or sick workers slow their hut's own production too: each round happens one time in « slowdown »
+        final double slowdown = slowdown(building);
+        if (slowdown > 1.0 && level.random.nextDouble() * slowdown >= 1.0)
+        {
+            kitchen = false;
+            forest = false;
+            cycle = false;
+        }
         final String id = Huts.id(building);
         if (id.equals(Huts.COOK))
         {
@@ -125,6 +136,21 @@ public final class HutProduction
         }
         // Crafters (the plantation's paper too) turn the warehouse's surplus into what it lacks
         Workshops.craftSurplus(colony, building);
+    }
+
+    /**
+     * The average slowdown of the hut's workers ({@link Malus}): 1 when they are all fed and healthy.
+     */
+    public static double slowdown(final IBuilding building)
+    {
+        double total = 0;
+        int workers = 0;
+        for (final ICitizenData worker : building.getAllAssignedCitizen())
+        {
+            total += Hunger.slowdown(worker);
+            workers++;
+        }
+        return workers == 0 ? 1.0 : total / workers;
     }
 
     /**

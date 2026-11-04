@@ -159,7 +159,7 @@ public final class CitizenScreen extends ParchmentScreen
         }
         if (hint != null)
         {
-            graphics.renderTooltip(font, font.split(Component.literal(hint), 200), mouseX, mouseY);
+            graphics.renderTooltip(font, font.split(Component.literal(hint), 220), mouseX, mouseY);
         }
     }
 
@@ -270,14 +270,14 @@ public final class CitizenScreen extends ParchmentScreen
         {
             final int chipW = font.width(chip.text()) + 8;
             final boolean over = chip.action() != null && Ui.inside(mouseX, mouseY, chipX, y, chipW, 11);
+            if (Ui.inside(mouseX, mouseY, chipX, y, chipW, 11) && chip.hover() != null)
+            {
+                hint = chip.hover();
+            }
             Ui.chip(graphics, font, chipX, y, chip.text(), chip.soft(), chip.ink(), chip.action() != null, over);
             if (chip.action() != null)
             {
                 addHit(chipX, y, chipW, 11, chip.action());
-                if (over)
-                {
-                    hint = "Cliquez pour régler son problème";
-                }
             }
             chipX += chipW + 3;
         }

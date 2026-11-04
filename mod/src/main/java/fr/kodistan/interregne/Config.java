@@ -72,12 +72,16 @@ public final class Config
       .define("autoTools", true);
 
     public static final ModConfigSpec.DoubleValue HUNGRY_SLOWDOWN = BUILDER
-      .comment("Hungry citizens work this many times slower (they keep working when there is nowhere to eat)")
-      .defineInRange("hungrySlowdown", 1.5, 1.0, 10.0);
+      .comment("Hungry citizens (saturation under 6, the limit the Intendance feeds at) work and produce this many times slower")
+      .defineInRange("hungrySlowdown", 2.0, 1.0, 10.0);
 
     public static final ModConfigSpec.DoubleValue STARVING_SLOWDOWN = BUILDER
-      .comment("Starving citizens (saturation 0) work this many times slower")
-      .defineInRange("starvingSlowdown", 2.0, 1.0, 10.0);
+      .comment("Starving citizens (saturation 0) work and produce this many times slower, instead of the hungry slowdown")
+      .defineInRange("starvingSlowdown", 4.0, 1.0, 10.0);
+
+    public static final ModConfigSpec.DoubleValue SICK_SLOWDOWN = BUILDER
+      .comment("Sick citizens keep working, this many times slower, until the Intendance cures them; multiplies with hunger")
+      .defineInRange("sickSlowdown", 3.0, 1.0, 10.0);
 
     public static final ModConfigSpec.IntValue IMMIGRATION_SECONDS = BUILDER
       .comment("An adult settler moves into a colony with a free bed every this many seconds (0 disables; children are still born as usual)")

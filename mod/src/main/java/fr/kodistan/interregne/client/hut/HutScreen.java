@@ -1,5 +1,6 @@
 package fr.kodistan.interregne.client.hut;
 
+import fr.kodistan.interregne.colony.Malus;
 import com.minecolonies.api.colony.ICitizenDataView;
 import com.minecolonies.api.colony.IColonyView;
 import com.minecolonies.api.colony.buildings.modules.IBuildingModuleView;
@@ -222,7 +223,7 @@ public final class HutScreen extends ParchmentScreen
         }
         if (hint != null)
         {
-            graphics.renderTooltip(font, Component.literal(hint), mouseX, mouseY);
+            graphics.renderTooltip(font, font.split(Component.literal(hint), 220), mouseX, mouseY);
         }
     }
 
@@ -592,6 +593,10 @@ public final class HutScreen extends ParchmentScreen
                 chipY += 13;
             }
             final boolean over = chip.action() != null && Ui.inside(mouseX, mouseY, chipX, chipY, chipW, 11);
+            if (Ui.inside(mouseX, mouseY, chipX, chipY, chipW, 11) && chip.hover() != null)
+            {
+                hint = chip.hover();
+            }
             Ui.chip(graphics, font, chipX, chipY, chip.text(), chip.soft(), chip.ink(), chip.action() != null, over);
             if (chip.action() != null)
             {
@@ -819,12 +824,25 @@ public final class HutScreen extends ParchmentScreen
         {
             return new Banner(Ui.State.BAD, "Bloqué", "aucun ouvrier : rien n'est produit", "Embaucher ›", this::hire);
         }
+        // The slowest worker: sick or hungry, they still work, slowed down
+        Worker slowest = null;
+        double worst = 1.0;
         for (final Worker worker : workers)
         {
-            if (worker.citizen().isSick())
+            final double factor = Malus.factor(worker.citizen().getSaturation(), worker.citizen().isSick());
+            if (factor > worst)
             {
-                return new Banner(Ui.State.BAD, "Bloqué", worker.citizen().getName() + " est malade", null, null);
+                worst = factor;
+                slowest = worker;
             }
+        }
+        if (slowest != null)
+        {
+            final ICitizenDataView citizen = slowest.citizen();
+            final String why = citizen.isSick() ? (Malus.hungry(citizen.getSaturation()) ? "malade et affamé" : "malade")
+              : Malus.starving(citizen.getSaturation()) ? "mourant de faim" : "affamé";
+            return new Banner(Ui.State.BAD, "Ralenti", citizen.getName() + " est " + why + " : " + Malus.times(worst) + " moins vite ("
+              + Malus.percent(worst) + "). L'Intendance de l'hôtel de ville " + (citizen.isSick() ? "le soigne" : "le nourrit") + " contre de l'or.", null, null);
         }
         if (!requests.isEmpty())
         {

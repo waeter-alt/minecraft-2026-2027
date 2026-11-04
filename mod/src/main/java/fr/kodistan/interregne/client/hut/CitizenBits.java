@@ -1,5 +1,6 @@
 package fr.kodistan.interregne.client.hut;
 
+import fr.kodistan.interregne.colony.Malus;
 import com.minecolonies.api.colony.ICitizenDataView;
 import com.minecolonies.api.colony.IColonyView;
 import com.minecolonies.api.colony.requestsystem.request.IRequest;
@@ -47,10 +48,20 @@ import java.util.function.Predicate;
 public final class CitizenBits
 {
     /**
-     * A chip: its text, colours, and what a click does (null: not clickable).
+     * A chip: its text, colours, what a click does (null: not clickable) and what hovering explains (null: nothing).
      */
-    public record Chip(String text, int soft, int ink, @Nullable Runnable action)
+    public record Chip(String text, int soft, int ink, @Nullable Runnable action, @Nullable String tooltip)
     {
+        /** What to show when the mouse is over the chip: its explanation, then what a click does. */
+        @Nullable
+        public String hover()
+        {
+            if (tooltip == null)
+            {
+                return action == null ? null : "Cliquez pour régler son problème.";
+            }
+            return action == null ? tooltip : tooltip + "\n\nCliquez pour ouvrir sa fiche.";
+        }
     }
 
     @Nullable
@@ -245,26 +256,66 @@ public final class CitizenBits
         final List<Chip> chips = new ArrayList<>();
         final net.minecraft.client.gui.screens.Screen current = net.minecraft.client.Minecraft.getInstance().screen;
         final Runnable settle = current instanceof CitizenScreen ? null : () -> CitizenScreen.open(citizen, current);
-        if (citizen.isSick())
+        final double saturation = citizen.getSaturation();
+        final List<Malus.Kind> kinds = Malus.kinds(saturation, citizen.isSick());
+        final double total = Malus.factor(saturation, citizen.isSick());
+        for (final Malus.Kind kind : kinds)
         {
-            chips.add(new Chip("Malade", Palette.SICK_SOFT, Palette.SICK_TEXT, settle));
+            final String combined = kinds.size() > 1
+              ? "\nAvec ses autres malus : " + Malus.times(total) + " moins vite au total (" + Malus.percent(total) + ")." : "";
+            chips.add(switch (kind)
+            {
+                case SICK -> new Chip("Malade", Palette.SICK_SOFT, Palette.SICK_TEXT, settle,
+                  slower("Malade", Malus.of(kind)) + combined
+                    + "\nContagieux : il peut contaminer ceux qu'il croise."
+                    + "\nSeule l'Intendance de l'hôtel de ville le soigne, contre de l'or.");
+                case HUNGRY -> new Chip("Affamé", Palette.AMBER_SOFT, Palette.AMBER_TEXT, settle,
+                  slower("Affamé", Malus.of(kind)) + combined
+                    + "\nIl mange au restaurant s'il y trouve des plats ; sinon l'Intendance le nourrit contre de l'or.");
+                case STARVING -> new Chip("Famine", Palette.RED_SOFT, Palette.RED, settle,
+                  slower("Mourant de faim", Malus.of(kind)) + combined
+                    + "\nNourrissez-le vite : restaurant approvisionné, ou l'Intendance contre de l'or.");
+            });
         }
-        // Sickness is itself a grievance: count only the others
-        final int others = Grievances.count(citizen) - (citizen.isSick() ? 1 : 0);
+        // Sickness and hunger are themselves grievances: count only the others
+        final int others = Grievances.count(citizen) - (citizen.isSick() ? 1 : 0) - (Malus.hungry(saturation) ? 1 : 0);
         if (others > 0)
         {
-            chips.add(new Chip(others == 1 ? "1 doléance" : others + " doléances", Palette.AMBER_SOFT, Palette.AMBER_TEXT, settle));
+            chips.add(new Chip(others == 1 ? "1 doléance" : others + " doléances", Palette.AMBER_SOFT, Palette.AMBER_TEXT, settle,
+              (others == 1 ? "Une doléance pèse" : others + " doléances pèsent") + " sur son bonheur, donc sur le bonus de production de son bâtiment."));
         }
         final double happiness = citizen.getHappiness();
         if (happiness < 4)
         {
-            chips.add(new Chip("Malheureux", Palette.RED_SOFT, Palette.RED, null));
+            final long share = Math.max(1, Math.round(happinessShare(happiness) * 100));
+            chips.add(new Chip("Malheureux", Palette.RED_SOFT, Palette.RED, null,
+              "Malheureux (bonheur " + Math.round(happiness * 10) / 10.0 + "/10) : son bâtiment ne touche que " + share
+                + " % de son bonus de production de niveau.\nSa fiche détaille ce qui le rend malheureux."));
         }
         else if (happiness >= 7)
         {
-            chips.add(new Chip("Content", Palette.GREEN_SOFT, Palette.GREEN, null));
+            chips.add(new Chip("Content", Palette.GREEN_SOFT, Palette.GREEN, null, "Content : son bâtiment touche tout son bonus de production de niveau."));
         }
         return chips;
+    }
+
+    /** "Malade : travaille et produit 3× moins vite (−67 %)." */
+    private static String slower(final String what, final double factor)
+    {
+        return what + " : travaille et produit " + Malus.times(factor) + " moins vite (" + Malus.percent(factor) + ").";
+    }
+
+    /** The bonus share, or full when the server settings have not reached this client yet. */
+    private static double happinessShare(final double happiness)
+    {
+        try
+        {
+            return fr.kodistan.interregne.colony.Yields.happinessShare(happiness);
+        }
+        catch (final IllegalStateException e)
+        {
+            return 1.0;
+        }
     }
 
     /**

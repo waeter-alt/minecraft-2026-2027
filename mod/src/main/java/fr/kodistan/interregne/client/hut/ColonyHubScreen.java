@@ -428,7 +428,7 @@ public final class ColonyHubScreen extends ParchmentScreen
         }
         if (hint != null)
         {
-            graphics.renderTooltip(font, font.split(Component.literal(hint), 200), mouseX, mouseY);
+            graphics.renderTooltip(font, font.split(Component.literal(hint), 220), mouseX, mouseY);
         }
     }
 
@@ -1054,6 +1054,10 @@ public final class ColonyHubScreen extends ParchmentScreen
                 final int chipW = font.width(chip.text()) + 8;
                 chipX -= chipW;
                 final boolean overChip = chip.action() != null && Ui.inside(mouseX, mouseY, chipX, y + 6, chipW, 11);
+                if (Ui.inside(mouseX, mouseY, chipX, y + 6, chipW, 11) && chip.hover() != null)
+                {
+                    hint = chip.hover();
+                }
                 Ui.chip(graphics, font, chipX, y + 6, chip.text(), chip.soft(), chip.ink(), chip.action() != null, overChip);
                 if (chip.action() != null)
                 {
