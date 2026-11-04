@@ -24,6 +24,7 @@ public final class WallTrace
 
     private final List<Point> points = new ArrayList<>();
     private boolean closed;
+    private boolean finished;
     private int version;
 
     public List<Point> points()
@@ -51,7 +52,7 @@ public final class WallTrace
 
     public void add(final Point point)
     {
-        if (closed || (!points.isEmpty() && points.getLast().equals(point)))
+        if (done() || (!points.isEmpty() && points.getLast().equals(point)))
         {
             return;
         }
@@ -69,13 +70,34 @@ public final class WallTrace
     }
 
     /**
-     * Undoes the last action: reopens a closed trace, otherwise removes the last point.
+     * Ends an open trace on its last point: no more points follow the mouse.
+     */
+    public void finish()
+    {
+        if (points.size() >= 2 && !closed)
+        {
+            finished = true;
+            version++;
+        }
+    }
+
+    /**
+     * No more points can be added: closed into a loop, or ended open on its last tower.
+     */
+    public boolean done()
+    {
+        return closed || finished;
+    }
+
+    /**
+     * Undoes the last action: reopens a closed or ended trace, otherwise removes the last point.
      */
     public void undo()
     {
-        if (closed)
+        if (closed || finished)
         {
             closed = false;
+            finished = false;
         }
         else if (!points.isEmpty())
         {
@@ -87,6 +109,7 @@ public final class WallTrace
     public void clear()
     {
         points.clear();
+        finished = false;
         closed = false;
         version++;
     }

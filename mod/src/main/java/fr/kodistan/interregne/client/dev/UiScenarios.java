@@ -109,6 +109,16 @@ public final class UiScenarios
                     targets.add(new Target("walls-closed", 80, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.openDemo(colony.getTownHall(), true)));
                     targets.add(new Target("walls-open", 80, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.openDemo(colony.getTownHall(), false)));
                 }
+                case "wallbuild" -> {
+                    // Builds a real wall in the test world: one capture mid-site, one once it stands
+                    targets.add(new Target("wallbuild-site", 300, () -> {
+                        if (!fr.kodistan.interregne.client.walls.WallPlannerScreen.buildDemo(colony.getTownHall()))
+                        {
+                            fr.kodistan.interregne.InterregneMod.LOGGER.warn("UiShot: no free square for a demo wall");
+                        }
+                    }));
+                    targets.add(new Target("wallbuild-done", 900, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.reopenDemo(colony.getTownHall())));
+                }
                 default -> throw new IllegalArgumentException("Unknown screen " + spec);
             }
         }

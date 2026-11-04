@@ -98,6 +98,14 @@ public class InterregneMod
               }
           })
           .playToServer(FarmCropPayload.TYPE, FarmCropPayload.STREAM_CODEC, FarmChoice::onChoice)
+          .playToServer(fr.kodistan.interregne.network.WallBuildPayload.TYPE, fr.kodistan.interregne.network.WallBuildPayload.STREAM_CODEC,
+            fr.kodistan.interregne.walls.Walls::onBuild)
+          .playToClient(fr.kodistan.interregne.network.WallSyncPayload.TYPE, fr.kodistan.interregne.network.WallSyncPayload.STREAM_CODEC, (payload, context) -> {
+              if (FMLEnvironment.dist.isClient())
+              {
+                  ClientPayloads.syncWall(payload);
+              }
+          })
           .playToClient(OpenFarmCropPayload.TYPE, OpenFarmCropPayload.STREAM_CODEC, (payload, context) -> {
               if (FMLEnvironment.dist.isClient())
               {

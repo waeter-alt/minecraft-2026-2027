@@ -28,14 +28,14 @@ public final class WallLayout
     /**
      * One column of wall, from bottom to top inclusive.
      */
-    public record Column(int x, int z, int bottom, int top, Status status)
+    public record Column(int x, int z, int bottom, int top, Status status, int index)
     {
     }
 
     /**
      * A square tower; x and z are its north-west corner.
      */
-    public record Tower(int x, int z, int size, int bottom, int top, Status status)
+    public record Tower(int x, int z, int size, int bottom, int top, Status status, int index)
     {
     }
 
@@ -158,7 +158,8 @@ public final class WallLayout
                 low = roof;
                 high = roof;
             }
-            towers.add(new Tower(point.x() - half, point.z() - half, level.towerSize(), low + 1, high + level.height() + level.towerExtra(), status));
+            towers.add(new Tower(point.x() - half, point.z() - half, level.towerSize(), low + 1, high + level.height() + level.towerExtra(), status,
+              Math.max(0, center.indexOf(point))));
         }
 
         // The crest follows the ground along the centerline, averaged over a few blocks
@@ -230,12 +231,12 @@ public final class WallLayout
                     if (status != Status.OK)
                     {
                         // Where it cannot stand, show the slice of wall that would cut through, at the crest
-                        columns.put(key, new Column(x, z, crest - level.height() + 1, crest, status));
+                        columns.put(key, new Column(x, z, crest - level.height() + 1, crest, status, i));
                         continue;
                     }
                     // Same height everywhere, give or take the smoothing
                     final int top = Math.max(probe.ground() + level.height() - 1, Math.min(probe.ground() + level.height() + 1, crest));
-                    columns.put(key, new Column(x, z, probe.ground() + 1, top, status));
+                    columns.put(key, new Column(x, z, probe.ground() + 1, top, status, i));
                 }
             }
         }

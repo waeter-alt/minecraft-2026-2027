@@ -700,6 +700,16 @@ public final class ColonyHubScreen extends ParchmentScreen
      */
     private int renderWalls(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
+        final fr.kodistan.interregne.network.WallSyncPayload wall = fr.kodistan.interregne.client.walls.ClientWalls.of(colony);
+        if (wall != null)
+        {
+            final String look = fr.kodistan.interregne.walls.WallLevels.of(wall.level()).name();
+            y += Ui.banner(graphics, font, x, y, width, wall.building() ? Ui.State.WAIT : Ui.State.OK, "Muraille",
+              wall.building() ? "en construction" : "niveau " + wall.level() + " · " + look);
+            final int towers = wall.xs().size();
+            return Ui.wrapped(graphics, font, Component.literal((wall.closed() ? "Enceinte fermée" : "Muraille ouverte") + ", " + towers + " tours. "
+              + "Portes, améliorations et retouches du tracé arrivent aux prochaines étapes."), x + 2, y + 20, width - 4, Palette.MUTED, 10) + 4;
+        }
         y += Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, "Murailles", "aucune muraille");
         y = Ui.wrapped(graphics, font, Component.literal("Tracez l'enceinte de la colonie vue du ciel : posez des points au sol, la muraille "
           + "suit le relief entre eux. Elle peut rester ouverte, et une tour se dresse sur chaque point."), x + 2, y + 20, width - 4, Palette.MUTED, 10) + 6;

@@ -29,6 +29,11 @@ public final class ClientPayloads
         CropChoiceScreen.openForFarm(payload);
     }
 
+    public static void syncWall(final fr.kodistan.interregne.network.WallSyncPayload payload)
+    {
+        fr.kodistan.interregne.client.walls.ClientWalls.put(payload);
+    }
+
     public static void syncWallet(final WalletSyncPayload payload)
     {
         InterregneHud.setWallet(payload.bank(), payload.regional());

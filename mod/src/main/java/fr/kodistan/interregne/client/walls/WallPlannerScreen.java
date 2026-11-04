@@ -3,7 +3,12 @@ package fr.kodistan.interregne.client.walls;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.minecolonies.api.colony.IColonyView;
 import com.minecolonies.api.colony.buildings.views.IBuildingView;
+import fr.kodistan.interregne.client.ClientTreasury;
 import fr.kodistan.interregne.client.hut.ColonyHubScreen;
+import fr.kodistan.interregne.economy.Wallet;
+import fr.kodistan.interregne.network.WallBuildPayload;
+import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
+import net.neoforged.neoforge.network.PacketDistributor;
 import fr.kodistan.interregne.client.ui.Palette;
 import fr.kodistan.interregne.client.ui.Ui;
 import fr.kodistan.interregne.walls.WallLayout;
@@ -46,6 +51,7 @@ public final class WallPlannerScreen extends Screen
     @Nullable
     private WallTrace.Point candidate;
     private boolean closing;
+    private boolean finishing;
     @Nullable
     private WallLayout layout;
     private String layoutKey = "";
@@ -94,12 +100,61 @@ public final class WallPlannerScreen extends Screen
         net.minecraft.client.Minecraft.getInstance().setScreen(screen);
     }
 
+    /**
+     * Dev captures only: finds a free square of ground near the town hall, has the server build a closed wall on it,
+     * and opens the planner looking at it. False when no free square was found.
+     */
+    public static boolean buildDemo(final IBuildingView townHall)
+    {
+        final WallPlannerScreen screen = new WallPlannerScreen(townHall);
+        final BlockPos c = townHall.getPosition();
+        final int side = 14;
+        for (int ring = 1; ring <= 6; ring++)
+        {
+            for (int k = 0; k < 8; k++)
+            {
+                final double angle = k * Math.PI / 4;
+                final int x = c.getX() + (int) Math.round(Math.cos(angle) * ring * 14);
+                final int z = c.getZ() + (int) Math.round(Math.sin(angle) * ring * 14);
+                final List<WallTrace.Point> square = List.of(new WallTrace.Point(x, z), new WallTrace.Point(x + side, z),
+                  new WallTrace.Point(x + side, z + side), new WallTrace.Point(x, z + side));
+                final WallLayout test = WallLayout.of(square, true, screen.level, WallPlanner::probe, screen::inColony);
+                if (test.blocked() == 0)
+                {
+                    final List<Integer> xs = square.stream().map(WallTrace.Point::x).toList();
+                    final List<Integer> zs = square.stream().map(WallTrace.Point::z).toList();
+                    PacketDistributor.sendToServer(new WallBuildPayload(screen.colony.getID(), xs, zs, true));
+                    screen.focus = new BlockPos(x + side / 2, c.getY(), z + side / 2);
+                    demoFocus = screen.focus;
+                    net.minecraft.client.Minecraft.getInstance().setScreen(screen);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Dev captures only: the planner again, looking at the last demo wall.
+     */
+    public static void reopenDemo(final IBuildingView townHall)
+    {
+        final WallPlannerScreen screen = new WallPlannerScreen(townHall);
+        screen.focus = demoFocus;
+        net.minecraft.client.Minecraft.getInstance().setScreen(screen);
+    }
+
+    @Nullable
+    private static BlockPos demoFocus;
+    @Nullable
+    private BlockPos focus;
+
     @Override
     protected void init()
     {
         if (!WallPlanner.active())
         {
-            final BlockPos at = townHall.getPosition();
+            final BlockPos at = focus != null ? focus : townHall.getPosition();
             final float yaw = minecraft.player == null ? 0 : minecraft.player.getYRot();
             WallPlanner.start(at.getX(), at.getY(), at.getZ(), yaw);
             hiddenGui = minecraft.options.hideGui;
@@ -181,10 +236,17 @@ public final class WallPlannerScreen extends Screen
     private void aim(final int mouseX, final int mouseY)
     {
         final boolean overUi = overUi(mouseX, mouseY);
-        final WallTrace.Point hover = overUi || trace.closed() ? null : WallPlanner.pick(mouseX / (double) width, mouseY / (double) height);
+        final WallTrace.Point hover = overUi || trace.done() ? null : WallPlanner.pick(mouseX / (double) width, mouseY / (double) height);
         candidate = hover == null ? null : trace.snap(hover, hasShiftDown());
         closing = false;
-        if (candidate != null && trace.points().size() >= 3)
+        finishing = false;
+        if (hover != null && trace.points().size() >= 2 && hover.distanceSq(trace.points().getLast()) <= 2)
+        {
+            // Over the last tower: a click ends the wall there, open
+            candidate = trace.points().getLast();
+            finishing = true;
+        }
+        else if (candidate != null && trace.points().size() >= 3)
         {
             final WallTrace.Point first = trace.points().getFirst();
             if (candidate.distanceSq(first) <= 4 || hover.distanceSq(first) <= 4)
@@ -193,7 +255,7 @@ public final class WallPlannerScreen extends Screen
                 closing = true;
             }
         }
-        final String key = trace.version() + "|" + candidate + "|" + closing;
+        final String key = trace.version() + "|" + candidate + "|" + closing + "|" + finishing;
         if (!key.equals(layoutKey))
         {
             layoutKey = key;
@@ -203,18 +265,19 @@ public final class WallPlannerScreen extends Screen
             {
                 closed = true;
             }
-            else if (candidate != null)
+            else if (candidate != null && !finishing)
             {
                 points.add(candidate);
             }
             layout = points.isEmpty() ? null : WallLayout.of(points, closed, level, WallPlanner::probe, this::inColony);
         }
-        WallPlanner.show(layout, candidate, closing);
+        WallPlanner.show(layout, candidate, closing || finishing);
     }
 
     private boolean inColony(final int x, final int z)
     {
-        return minecraft.level != null && colony.isCoordInColony(minecraft.level, new BlockPos(x, 64, z));
+        final net.minecraft.client.multiplayer.ClientLevel world = net.minecraft.client.Minecraft.getInstance().level;
+        return world != null && colony.isCoordInColony(world, new BlockPos(x, 64, z));
     }
 
     // --- Panel ---
@@ -227,6 +290,7 @@ public final class WallPlannerScreen extends Screen
         final int inner = panelW - 16;
         final List<String[]> help = List.of(
           new String[] {"Clic", "poser un point"},
+          new String[] {"Clic dernière tour", "finir ouverte"},
           new String[] {"Clic droit", "annuler"},
           new String[] {keys(), "se déplacer"},
           new String[] {"Molette", "zoom"},
@@ -310,21 +374,41 @@ public final class WallPlannerScreen extends Screen
         final int y = height - PAD - buttonH;
         int right = width - PAD;
 
-        // Main action: the price inside, grey until construction arrives
-        final int cost = layout == null ? 0 : layout.cost(level);
-        final String price = Integer.toString(cost);
-        final String build = "Bâtir";
-        final int buildW = font.width(build) + 10 + 12 + font.width(price) + 14;
+        // Main action: the price inside; green when it can be built, grey with the reason otherwise
+        final boolean creative = minecraft.player != null && minecraft.player.isCreative();
+        final int cost = layout == null || creative ? 0 : layout.cost(level);
+        final long money = ClientTreasury.of(colony) + (minecraft.player == null ? 0 : Wallet.value(new PlayerMainInvWrapper(minecraft.player.getInventory())));
+        final String refusal = ClientWalls.of(colony) != null ? "Muraille déjà bâtie"
+                                 : trace.points().size() < 2 ? null
+                                     : !trace.done() ? "Finir le tracé"
+                                         : layout != null && layout.blocked() > 0 ? "Obstacles en rouge"
+                                             : null;
+        final boolean affordable = money >= cost;
+        final boolean ready = trace.points().size() >= 2 && trace.done() && refusal == null && affordable;
+        final String build = refusal != null ? refusal : "Bâtir";
+        final String price = creative ? "gratuit" : affordable ? Integer.toString(cost) : compact(money) + "/" + compact(cost);
+        final boolean showPrice = refusal == null;
+        final int buildW = font.width(build) + 14 + (showPrice ? 10 + 12 + font.width(price) : 0);
         final int bx = right - buildW;
         final boolean overBuild = Ui.inside(mouseX, mouseY, bx, y, buildW, buttonH);
-        Ui.plate(graphics, bx, y, bx + buildW, y + buttonH, Palette.PAPER_DARK, Palette.EDGE, Palette.PAPER_DARK);
+        if (ready)
+        {
+            Ui.plate(graphics, bx, y, bx + buildW, y + buttonH, overBuild ? Palette.GREEN_HOVER : Palette.GREEN, Palette.EDGE, Palette.GREEN_LIGHT);
+        }
+        else
+        {
+            Ui.plate(graphics, bx, y, bx + buildW, y + buttonH, Palette.PAPER_DARK, Palette.EDGE, Palette.PAPER_DARK);
+        }
         int cx = bx + 7;
         final int ty = y + (buttonH - 8) / 2;
-        graphics.drawString(font, build, cx, ty, Palette.MUTED, false);
-        cx += font.width(build) + 10;
-        Ui.coin(graphics, cx, ty - 1, 10);
-        graphics.drawString(font, price, cx + 12, ty, Palette.MUTED, false);
-        buttons.add(new Button(bx, y, buildW, buttonH, () -> { }));
+        graphics.drawString(font, build, cx, ty, ready ? Palette.GREEN_TEXT : Palette.MUTED, false);
+        if (showPrice)
+        {
+            cx += font.width(build) + 10;
+            Ui.coin(graphics, cx, ty - 1, 10);
+            graphics.drawString(font, price, cx + 12, ty, ready ? Palette.GREEN_TEXT : affordable ? Palette.MUTED : Palette.RED, false);
+        }
+        buttons.add(new Button(bx, y, buildW, buttonH, ready ? this::build : () -> { }));
         right = bx - 6;
 
         final String quit = "Quitter";
@@ -345,9 +429,41 @@ public final class WallPlannerScreen extends Screen
 
         if (overBuild)
         {
-            graphics.renderTooltip(font, font.split(Component.literal("La construction des murailles arrive à la prochaine étape. Pour l'instant, le tracé sert à essayer."), 200),
-              mouseX, mouseY);
+            final String tip = refusal == null && !affordable ? "Il manque " + (cost - money) + " Couronnes (trésor régional et bourse comptés)."
+                                 : "Finir le tracé".equals(refusal) ? "Cliquez sur le premier point pour fermer l'enceinte, ou sur la dernière tour pour la laisser ouverte."
+                                     : "Obstacles en rouge".equals(refusal) ? "Le tracé traverse un bâtiment ou sort de la colonie : déplacez les points des tronçons rouges."
+                                         : ready ? "Paie la muraille (trésor régional d'abord) et lance le chantier : " + seconds() + " s." : null;
+            if (tip != null)
+            {
+                graphics.renderTooltip(font, font.split(Component.literal(tip), 200), mouseX, mouseY);
+            }
         }
+    }
+
+    private static String compact(final long amount)
+    {
+        return amount >= 10_000 ? amount / 1000 + "k" : Long.toString(amount);
+    }
+
+    private int seconds()
+    {
+        return layout == null ? 0 : fr.kodistan.interregne.walls.Walls.seconds(layout);
+    }
+
+    /**
+     * Sends the trace to the server, which checks it again, charges it and starts the site.
+     */
+    private void build()
+    {
+        final List<Integer> xs = new ArrayList<>();
+        final List<Integer> zs = new ArrayList<>();
+        for (final WallTrace.Point point : trace.points())
+        {
+            xs.add(point.x());
+            zs.add(point.z());
+        }
+        PacketDistributor.sendToServer(new WallBuildPayload(colony.getID(), xs, zs, trace.closed()));
+        minecraft.setScreen(null);
     }
 
     private boolean overUi(final double mouseX, final double mouseY)
@@ -388,6 +504,10 @@ public final class WallPlannerScreen extends Screen
             if (closing)
             {
                 trace.close();
+            }
+            else if (finishing)
+            {
+                trace.finish();
             }
             else
             {
