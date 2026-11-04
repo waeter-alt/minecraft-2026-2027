@@ -11,6 +11,7 @@
     "AbstractEntityAICraftingMixin",
     "AbstractEntityAIInteractMixin",
     "AbstractWorkOrderMixin",
+    "BuildingTownHallMixin",
     "BuildRequestMessageMixin",
     "CitizenAIMixin",
     "DecorationBuildRequestMessageMixin",

@@ -53,6 +53,15 @@ public abstract class ParchmentScreen extends Screen
     public void render(final GuiGraphics graphics, final int mouseX, final int mouseY, final float partialTick)
     {
         super.render(graphics, mouseX, mouseY, partialTick);
+        renderFrame(graphics, mouseX, mouseY);
+        renderContent(graphics, mouseX, mouseY);
+    }
+
+    /**
+     * The sheet, its header and ✕: parchment unless a window has a frame of its own (the colony hub).
+     */
+    protected void renderFrame(final GuiGraphics graphics, final int mouseX, final int mouseY)
+    {
         Ui.plate(graphics, x0, y0, x0 + w, y0 + h, Palette.PAPER, Palette.EDGE, Palette.PAPER_LIGHT);
         final Integer band = headerFill();
         final int ink = band == null ? Palette.INK : headerText();
@@ -71,7 +80,6 @@ public abstract class ParchmentScreen extends Screen
         graphics.drawString(font, title, titleX, y0 + 7, ink, false);
         graphics.drawString(font, "✕", x0 + w - 13, y0 + 6, overClose(mouseX, mouseY) ? Palette.RED : muted, false);
         graphics.fill(x0 + 4, y0 + 19, x0 + w - 4, y0 + 20, Palette.RULE);
-        renderContent(graphics, mouseX, mouseY);
     }
 
     /**
@@ -133,7 +141,7 @@ public abstract class ParchmentScreen extends Screen
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
-    private boolean overClose(final double mouseX, final double mouseY)
+    protected boolean overClose(final double mouseX, final double mouseY)
     {
         return Ui.inside(mouseX, mouseY, x0 + w - 16, y0 + 4, 12, 12);
     }
