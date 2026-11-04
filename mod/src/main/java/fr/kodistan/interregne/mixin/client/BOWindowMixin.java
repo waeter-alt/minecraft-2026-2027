@@ -6,6 +6,8 @@ import com.minecolonies.api.colony.IColonyView;
 import com.minecolonies.core.client.gui.WindowClipBoard;
 import com.minecolonies.core.client.gui.WindowInteraction;
 import com.minecolonies.core.client.gui.WindowPostBox;
+import com.minecolonies.core.client.gui.WindowSupplies;
+import fr.kodistan.interregne.client.hut.SuppliesScreen;
 import com.minecolonies.core.network.messages.server.colony.building.postbox.PostBoxRequestMessage;
 import fr.kodistan.interregne.client.hut.ItemPickerScreen;
 import com.minecolonies.api.colony.IVisitorViewData;
@@ -107,6 +109,12 @@ public abstract class BOWindowMixin
         {
             ci.cancel();
             ClipboardScreen.open(((WindowClipBoardAccessor) this).interregne$colony());
+        }
+        else if (type == WindowSupplies.class && HutScreen.enabled())
+        {
+            // Placing the starting camp or ship: our side panel drives the unseen original
+            ci.cancel();
+            SuppliesScreen.open((WindowSupplies) (Object) this);
         }
         else if (type == WindowPostBox.class && HutScreen.enabled())
         {

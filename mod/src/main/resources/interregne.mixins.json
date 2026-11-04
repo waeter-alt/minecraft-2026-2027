@@ -51,6 +51,7 @@
     "client.WindowRequestDetailAccessor",
     "client.WindowClipBoardAccessor",
     "client.WindowPostBoxAccessor",
+    "client.WindowSuppliesInvoker",
     "client.WindowHireWorkerAccessor",
     "client.WindowAssignCitizenAccessor",
     "client.SettingsModuleWindowAccessor",
