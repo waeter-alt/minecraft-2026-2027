@@ -60,7 +60,7 @@ public final class ColonyHubScreen extends ParchmentScreen
      */
     private static final int HDR = 38;
     private static final int SEPARATOR = 6;
-    private static final int PRICE_RED_LIGHT = 0xFFC24A4A;
+    private static final int PRICE_ICON = 12;
 
     /**
      * The rune band around the window, in the town hall's level colour.
@@ -1144,9 +1144,16 @@ public final class ColonyHubScreen extends ParchmentScreen
         final long money = ClientTreasury.of(colony) + purse;
         final long ownInfluence = InterregneHud.influence();
         final boolean priced = gold > 0;
-        final String missing = !priced ? null
-                                 : ownInfluence < influence ? "Il te manque " + (influence - ownInfluence) + " Influence"
-                                     : money < gold ? "Il te manque " + Wallet.format(gold - money) + " Couronnes" : null;
+        final List<String> lacks = new ArrayList<>();
+        if (priced && money < gold)
+        {
+            lacks.add(Wallet.format(gold - money) + " Couronnes (trésor de la colonie et ta bourse réunis)");
+        }
+        if (priced && ownInfluence < influence)
+        {
+            lacks.add((influence - ownInfluence) + " Influence");
+        }
+        final String missing = lacks.isEmpty() ? null : "Il te manque " + String.join(" et ", lacks);
 
         final int listW = font.width("Masquer la liste") + 16;
         final int settleW = wide ? inner - listW - 6 : inner;
@@ -1157,7 +1164,7 @@ public final class ColonyHubScreen extends ParchmentScreen
         }
         else
         {
-            priceButton(graphics, x + pad, ty, settleW, 22, gold, influence, missing == null, over);
+            priceButton(graphics, x + pad, ty, settleW, 22, gold, money, influence, ownInfluence, over);
             if (missing == null)
             {
                 addHit(x + pad, ty, settleW, 22, () -> ClientIntendance.settle(colony.getID(), action));
@@ -1183,47 +1190,89 @@ public final class ColonyHubScreen extends ParchmentScreen
     }
 
     /**
-     * The settle button with its price inside: « Tout régler », the coin and the gold, the star and the Influence.
-     * Green when it can be paid, red when it cannot. When narrow, the words go first, then the action shortens; the
-     * price always stays.
+     * The settle button with its price inside, the way games show a cost: icons and figures, no unit names.
+     * Payable: green, white figures. Not payable: the button turns grey like any unavailable action, and only the
+     * figure that falls short turns red, written « what you have / what it costs », so the eye goes straight to what
+     * is missing; a figure that is covered stays plain. When narrow, « have / » goes first, then the words shorten.
      */
-    private void priceButton(final GuiGraphics graphics, final int x, final int y, final int width, final int height, final long gold, final long influence,
-      final boolean payable, final boolean hover)
+    private void priceButton(final GuiGraphics graphics, final int x, final int y, final int width, final int height, final long gold, final long money,
+      final long influence, final long ownInfluence, final boolean hover)
     {
-        final int fill = payable ? (hover ? Palette.GREEN_HOVER : Palette.GREEN) : Palette.RED;
-        final int light = payable ? Palette.GREEN_LIGHT : PRICE_RED_LIGHT;
-        final int textColor = payable ? Palette.GREEN_TEXT : 0xFFFFE8E0;
-        Ui.plate(graphics, x, y, x + width, y + height, fill, Palette.EDGE, light);
+        final boolean goldOk = money >= gold;
+        final boolean influenceOk = ownInfluence >= influence;
+        final boolean payable = goldOk && influenceOk;
+        if (payable)
+        {
+            Ui.plate(graphics, x, y, x + width, y + height, hover ? Palette.GREEN_HOVER : Palette.GREEN, Palette.EDGE, Palette.GREEN_LIGHT);
+        }
+        else
+        {
+            Ui.plate(graphics, x, y, x + width, y + height, Palette.PAPER_DARK, Palette.EDGE, Palette.PAPER_DARK);
+        }
+        final int plain = payable ? Palette.GREEN_TEXT : Palette.INK;
+        final int verbColor = payable ? Palette.GREEN_TEXT : Palette.MUTED;
 
-        final Component goldValue = Component.literal(Wallet.format(gold)).withStyle(ChatFormatting.BOLD);
-        final Component influenceValue = Component.literal(Long.toString(influence)).withStyle(ChatFormatting.BOLD);
-        final int icon = 12;
-        final int priceW = icon + 2 + font.width(goldValue) + 8 + icon + 2 + font.width(influenceValue);
+        boolean showHave = !payable;
         String verb = "Tout régler";
-        if (font.width(verb) + 12 + priceW > width - 10)
+        List<Component> parts = priceParts(gold, money, goldOk, influence, ownInfluence, influenceOk, showHave);
+        while (font.width(verb) + (verb.isEmpty() ? 0 : 12) + priceWidth(parts) > width - 10)
         {
-            verb = "Régler";
+            if (showHave)
+            {
+                showHave = false;
+            }
+            else if (verb.equals("Tout régler"))
+            {
+                verb = "Régler";
+            }
+            else if (!verb.isEmpty())
+            {
+                verb = "";
+            }
+            else
+            {
+                break;
+            }
+            parts = priceParts(gold, money, goldOk, influence, ownInfluence, influenceOk, showHave);
         }
-        if (font.width(verb) + 12 + priceW > width - 10)
-        {
-            verb = "";
-        }
+
         final Component verbText = Component.literal(verb).withStyle(ChatFormatting.BOLD);
-        final int total = (verb.isEmpty() ? 0 : font.width(verbText) + 12) + priceW;
+        final int total = (verb.isEmpty() ? 0 : font.width(verbText) + 12) + priceWidth(parts);
         int cx = x + (width - total) / 2;
         final int textY = y + (height - 8) / 2;
+        final int iconY = y + (height - PRICE_ICON) / 2;
         if (!verb.isEmpty())
         {
-            graphics.drawString(font, verbText, cx, textY, textColor, false);
+            graphics.drawString(font, verbText, cx, textY, verbColor, false);
             cx += font.width(verbText) + 12;
         }
-        Ui.coin(graphics, cx, y + (height - icon) / 2, icon);
-        cx += icon + 2;
-        graphics.drawString(font, goldValue, cx, textY, textColor, false);
-        cx += font.width(goldValue) + 8;
-        Ui.influence(graphics, cx, y + (height - icon) / 2, icon);
-        cx += icon + 2;
-        graphics.drawString(font, influenceValue, cx, textY, textColor, false);
+        Ui.coin(graphics, cx, iconY, PRICE_ICON);
+        cx += PRICE_ICON + 2;
+        graphics.drawString(font, parts.get(0), cx, textY, goldOk ? plain : Palette.RED, false);
+        cx += font.width(parts.get(0)) + 10;
+        Ui.influence(graphics, cx, iconY, PRICE_ICON);
+        cx += PRICE_ICON + 2;
+        graphics.drawString(font, parts.get(1), cx, textY, influenceOk ? plain : Palette.RED, false);
+    }
+
+    /**
+     * Each figure of the price: just the cost when covered, « have / cost » when short (if asked).
+     */
+    private static List<Component> priceParts(final long gold, final long money, final boolean goldOk, final long influence, final long ownInfluence,
+      final boolean influenceOk, final boolean showHave)
+    {
+        return List.of(figure(gold, money, goldOk, showHave), figure(influence, ownInfluence, influenceOk, showHave));
+    }
+
+    private static Component figure(final long cost, final long have, final boolean ok, final boolean showHave)
+    {
+        final String text = !ok && showHave ? Wallet.format(have) + "/" + Wallet.format(cost) : Wallet.format(cost);
+        return Component.literal(text).withStyle(ChatFormatting.BOLD);
+    }
+
+    private int priceWidth(final List<Component> parts)
+    {
+        return PRICE_ICON + 2 + font.width(parts.get(0)) + 10 + PRICE_ICON + 2 + font.width(parts.get(1));
     }
 
     /**
