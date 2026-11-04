@@ -12,6 +12,7 @@ import com.minecolonies.core.colony.buildings.modules.BuildingModules;
 import com.minecolonies.core.colony.buildings.workerbuildings.BuildingTownHall;
 import fr.kodistan.interregne.client.catalogue.CatalogueIndex;
 import fr.kodistan.interregne.client.ClientIntendance;
+import net.minecraft.ChatFormatting;
 import fr.kodistan.interregne.client.ClientTreasury;
 import fr.kodistan.interregne.client.hud.Grievances;
 import fr.kodistan.interregne.client.hud.InterregneHud;
@@ -30,7 +31,6 @@ import fr.kodistan.interregne.colony.ColonyMaps;
 import com.minecolonies.core.client.gui.WindowBuildBuilding;
 import net.minecraft.Util;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -60,6 +60,7 @@ public final class ColonyHubScreen extends ParchmentScreen
      */
     private static final int HDR = 38;
     private static final int SEPARATOR = 6;
+    private static final int PRICE_MUTED = 0xFFC9A877;
 
     /**
      * The rune band around the window, in the town hall's level colour.
@@ -677,7 +678,9 @@ public final class ColonyHubScreen extends ParchmentScreen
                 troubled++;
             }
         }
-        final int requests = requests().size();
+        // What the Intendance would settle, as its page lists it
+        final IntendanceQuotePayload intendance = ClientIntendance.of(colony.getID());
+        final int requests = intendance == null ? -1 : intendance.care().size() + intendance.supplies().size();
 
         if (blocked > 0)
         {
@@ -705,8 +708,8 @@ public final class ColonyHubScreen extends ParchmentScreen
           new Tile("Citoyens", citizens.size() + " / " + colony.getCitizenCountLimit(), Icon.module("workers"), Ui.State.OK, () -> show(Page.CITIZENS)),
           new Tile("Bonheur", format(happiness) + " / 10", Icon.module("happiness"), happiness < 4 ? Ui.State.BAD : happiness < 7 ? Ui.State.WAIT : Ui.State.OK,
             () -> show(Page.CITIZENS)),
-          new Tile("Doléances", Integer.toString(grievances), Icon.of(Items.WRITABLE_BOOK), grievances > 0 ? Ui.State.WAIT : Ui.State.OK, () -> show(Page.INTENDANCE)),
-          new Tile("Demandes", Integer.toString(requests), Icon.module("requests"), requests > 0 ? Ui.State.WAIT : Ui.State.OK, () -> show(Page.INTENDANCE))));
+          new Tile("Doléances", Integer.toString(grievances), Icon.of(Items.WRITABLE_BOOK), grievances > 0 ? Ui.State.WAIT : Ui.State.OK, () -> show(Page.CITIZENS)),
+          new Tile("Intendance", requests < 0 ? "…" : Integer.toString(requests), Icon.of(Items.GOLD_INGOT), requests > 0 ? Ui.State.WAIT : Ui.State.OK, () -> show(Page.INTENDANCE))));
         y = tileRow(graphics, mouseX, mouseY, x, y + 4, tileW, columns, List.of(
           new Tile("Bâtiments", Integer.toString(buildings.size()), Icon.of(Items.BRICKS), blocked > 0 ? Ui.State.BAD : Ui.State.OK, () -> show(Page.BUILDINGS)),
           new Tile("Chantiers", Integer.toString(sites), Icon.of(Items.IRON_PICKAXE), Ui.State.OK, () -> show(Page.BUILDINGS)),
@@ -1063,71 +1066,58 @@ public final class ColonyHubScreen extends ParchmentScreen
     }
 
     /**
-     * Everything the colony asks for in one place: its citizens' grievances, then its workers' requests. Settling them
-     * with Couronnes comes later.
+     * The Intendance: two cards, what it would do for the citizens and what it would deliver to the workers, each
+     * showing its price first and settled in one click. Rows come from the server and are exactly what it would settle:
+     * what the colony already handles never shows here.
      */
     private int renderIntendance(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         final IntendanceQuotePayload quote = ClientIntendance.of(colony.getID());
-        y = Ui.wrapped(graphics, font, Component.literal("Ce que ta colonie réclame, réglable d'un coup en or et en Influence. Construire le bon bâtiment revient toujours moins cher."),
+        y = Ui.wrapped(graphics, font, Component.literal("Construire le bon bâtiment revient toujours moins cher que de payer l'Intendance."),
           x, y, width, Palette.MUTED, 10) + 6;
 
-        // Grievances: what gold can tend (the sick, the hungry); the rest needs a building
-        int grievances = 0;
-        for (final ICitizenDataView citizen : colony.getCitizens().values())
+        final List<IntendanceQuotePayload.Care> care = quote == null ? List.of() : quote.care();
+        final long sick = care.stream().filter(IntendanceQuotePayload.Care::sick).count();
+        final long hungry = care.size() - sick;
+        final List<String> careParts = new ArrayList<>();
+        if (sick > 0)
         {
-            grievances += Grievances.count(citizen);
+            careParts.add(sick + (sick == 1 ? " malade à soigner" : " malades à soigner"));
         }
-        final List<String> care = new ArrayList<>();
-        if (quote != null && quote.sick() > 0)
+        if (hungry > 0)
         {
-            care.add(quote.sick() + (quote.sick() == 1 ? " malade" : " malades"));
+            careParts.add(hungry + (hungry == 1 ? " affamé à nourrir" : " affamés à nourrir"));
         }
-        if (quote != null && quote.hungry() > 0)
-        {
-            care.add(quote.hungry() + (quote.hungry() == 1 ? " affamé" : " affamés"));
-        }
-        String griefText = grievances == 0 ? "Aucun citoyen ne se plaint." : grievances + (grievances == 1 ? " doléance" : " doléances") + " en tout.";
-        if (!care.isEmpty())
-        {
-            griefText += " L'Intendance soigne et nourrit : " + String.join(", ", care) + ".";
-        }
-        else if (grievances > 0 && quote != null)
-        {
-            griefText += " Aucune ne se règle en or : il faut construire (logement, travail…).";
-        }
-        y = desk(graphics, mouseX, mouseY, x, y, width, Icon.of(Items.WRITABLE_BOOK), "DOLÉANCES", griefText, quote == null ? -1 : quote.careGold(),
-          quote == null ? 0 : quote.careInfluence(), grievances > 0, 1, IntendanceActionPayload.SETTLE_GRIEVANCES);
+        final String careText = quote == null ? "…" : care.isEmpty() ? "Aucun malade ni affamé." : String.join(", ", careParts) + ".";
+        y = desk(graphics, mouseX, mouseY, x, y, width, Icon.of(Items.WRITABLE_BOOK), "DOLÉANCES", careText, quote == null ? -1 : quote.careGold(),
+          quote == null ? 0 : quote.careInfluence(), !care.isEmpty(), 1, IntendanceActionPayload.SETTLE_GRIEVANCES);
         if (intendanceList == 1)
         {
-            y = renderGrievances(graphics, mouseX, mouseY, x, y, width) + 4;
+            y = renderCareRows(graphics, mouseX, mouseY, x, y, width, care) + 4;
         }
         y += 6;
 
-        // Supplies: what the workers wait on that nobody in the colony can provide
-        final int open = requests().size();
-        String supplyText = open == 0 ? "Les travailleurs ne manquent de rien." : open + (open == 1 ? " demande ouverte." : " demandes ouvertes.");
-        if (quote != null && quote.supplies() > 0)
+        final List<IntendanceQuotePayload.Supply> supplies = quote == null ? List.of() : quote.supplies();
+        final long rare = supplies.stream().filter(IntendanceQuotePayload.Supply::rare).count();
+        String supplyText = quote == null ? "…" : supplies.isEmpty() ? "Aucune fourniture ne manque." : supplies.size() + (supplies.size() == 1 ? " fourniture manque." : " fournitures manquent.");
+        if (rare > 0)
         {
-            supplyText += " L'Intendance peut en livrer " + quote.supplies() + ".";
-        }
-        if (quote != null && quote.strategic() > 0)
-        {
-            supplyText += " " + quote.strategic() + (quote.strategic() == 1 ? " objet rare" : " objets rares") + " à fournir toi-même.";
+            supplyText += rare == supplies.size() ? (rare == 1 ? " Objet rare : à fournir toi-même." : " Objets rares : à fournir toi-même.")
+                            : " Dont " + rare + (rare == 1 ? " rare" : " rares") + ", à fournir toi-même.";
         }
         y = desk(graphics, mouseX, mouseY, x, y, width, Icon.module("requests"), "FOURNITURES DES TRAVAILLEURS", supplyText, quote == null ? -1 : quote.supplyGold(),
-          quote == null ? 0 : quote.supplyInfluence(), open > 0, 2, IntendanceActionPayload.SETTLE_SUPPLIES);
+          quote == null ? 0 : quote.supplyInfluence(), !supplies.isEmpty(), 2, IntendanceActionPayload.SETTLE_SUPPLIES);
         if (intendanceList == 2)
         {
-            y = renderRequests(graphics, mouseX, mouseY, x, y, width) + 4;
+            y = renderSupplyRows(graphics, mouseX, mouseY, x, y, width, supplies) + 4;
         }
         return y;
     }
 
     /**
-     * One card of the Intendance: its title, a sentence on what is pending, the button unfolding the detailed list, and
-     * the big green button settling everything at once, its price in Couronnes and Influence. Side by side when wide,
-     * stacked with the settling first when narrow. gold is -1 while the price is still on its way.
+     * One card of the Intendance: title, one sentence, then the price on its own leather plate (gold in bold, Influence
+     * in purple) and the big green button. The price wraps onto two lines when narrow; the buttons stack with the
+     * settling first. gold is -1 while the price is on its way, 0 when there is nothing to settle.
      */
     private int desk(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width, final Icon icon, final String title,
       final String text, final long gold, final long influence, final boolean hasList, final int list, final int action)
@@ -1136,8 +1126,27 @@ public final class ColonyHubScreen extends ParchmentScreen
         final int inner = width - 2 * pad;
         final boolean wide = width >= 300;
         final List<FormattedCharSequence> lines = font.split(Component.literal(text), inner);
+
+        // The price, the first thing to read: one line when both figures fit, two otherwise
+        final String goldText = Wallet.format(gold) + " Couronnes";
+        final String influenceText = influence + " Influence";
+        final int goldW = 18 + font.width(goldText);
+        final int influenceW = 18 + font.width(influenceText);
+        final boolean priced = gold > 0;
+        final boolean oneLine = 8 + font.width("PRIX") + 10 + goldW + 14 + influenceW + 8 <= inner;
+        final int priceH = !priced ? 0 : oneLine ? 24 : 40;
+
+        // Green when it can be paid now, grey with the reason otherwise
+        final long purse = minecraft.player == null ? 0 : Wallet.value(new PlayerMainInvWrapper(minecraft.player.getInventory()));
+        final long money = ClientTreasury.of(colony) + purse;
+        final long ownInfluence = InterregneHud.influence();
+        final String missing = !priced ? null
+                                 : ownInfluence < influence ? "Il te manque " + (influence - ownInfluence) + " Influence"
+                                     : money < gold ? "Il te manque " + Wallet.format(gold - money) + " Couronnes" : null;
+        final int missingH = missing == null ? 0 : 12;
         final int buttonsH = wide ? 20 : 20 + 4 + 18;
-        final int height = 24 + lines.size() * 10 + 6 + buttonsH + pad;
+        final int height = 24 + lines.size() * 10 + 4 + priceH + (priced ? 4 : 0) + missingH + buttonsH + pad;
+
         Ui.card(graphics, x, y, width, height, false, false, false);
         icon.draw(graphics, x + pad, y + 5, 16);
         Ui.label(graphics, font, fit(title, inner - 22), x + pad + 22, y + 9);
@@ -1147,42 +1156,47 @@ public final class ColonyHubScreen extends ParchmentScreen
             graphics.drawString(font, line, x + pad, ty, Palette.INK, false);
             ty += 10;
         }
+        ty += 4;
 
-        // Green when it can be paid now, grey with the reason otherwise
-        final long purse = minecraft.player == null ? 0 : Wallet.value(new PlayerMainInvWrapper(minecraft.player.getInventory()));
-        final long money = ClientTreasury.of(colony) + purse;
-        final String why = gold < 0 ? "Calcul du prix…"
-                             : gold == 0 ? "Rien que l'Intendance puisse régler"
-                                 : InterregneHud.influence() < influence ? "Il te faut " + influence + " Influence"
-                                     : money < gold ? "Pas assez d'or" : null;
+        if (priced)
+        {
+            Ui.plate(graphics, x + pad, ty, x + pad + inner, ty + priceH, Palette.LEATHER, Palette.EDGE, Palette.LEATHER_LIGHT);
+            final int labelW = font.width("PRIX");
+            graphics.drawString(font, "PRIX", x + pad + 8, ty + (oneLine ? 8 : 6), PRICE_MUTED, false);
+            final int fx = x + pad + 8 + labelW + 10;
+            final int goldY = ty + 4;
+            Ui.coin(graphics, fx, goldY, 16);
+            graphics.drawString(font, Component.literal(goldText).withStyle(ChatFormatting.BOLD), fx + 18, goldY + 4, Palette.GOLD_TEXT, true);
+            final int ix = oneLine ? fx + goldW + 14 : fx;
+            final int iy = oneLine ? goldY : goldY + 17;
+            Ui.influence(graphics, ix, iy, 16);
+            graphics.drawString(font, Component.literal(influenceText).withStyle(ChatFormatting.BOLD), ix + 18, iy + 4, Palette.INFLUENCE, true);
+            ty += priceH + 4;
+            if (missing != null)
+            {
+                graphics.drawString(font, fit(missing, inner), x + pad, ty, Palette.RED, false);
+                ty += 12;
+            }
+        }
+
         final int listW = font.width("Masquer la liste") + 16;
-        final int by = ty + 6;
-        final int settleX = x + pad;
         final int settleW = wide ? inner - listW - 6 : inner;
-        String label = why == null ? "Tout régler (" + gold + " Couronnes · " + influence + " Influence)" : gold > 0 ? "Tout régler" : why;
-        if (font.width(label) > settleW - 8)
+        final String label = gold < 0 ? "Calcul du prix…" : !priced ? "Rien à régler" : "Tout régler";
+        final boolean can = priced && missing == null;
+        final boolean overSettle = Ui.inside(mouseX, mouseY, x + pad, ty, settleW, 20);
+        Ui.button(graphics, font, x + pad, ty, settleW, 20, fit(label, settleW - 8), Ui.ButtonStyle.PRIMARY, can, overSettle);
+        if (can)
         {
-            label = why == null ? "Tout régler (" + gold + " · " + influence + " Inf.)" : fit(label, settleW - 8);
-        }
-        if (font.width(label) > settleW - 8)
-        {
-            label = "Tout régler";
-        }
-        final boolean overSettle = Ui.inside(mouseX, mouseY, settleX, by, settleW, 20);
-        Ui.button(graphics, font, settleX, by, settleW, 20, label, Ui.ButtonStyle.PRIMARY, why == null, overSettle);
-        if (why == null)
-        {
-            addHit(settleX, by, settleW, 20, () -> ClientIntendance.settle(colony.getID(), action));
-        }
-        if (overSettle)
-        {
-            hint = why != null ? (gold > 0 ? why + " (prix : " + gold + " Couronnes et " + influence + " Influence)" : why)
-                     : "Payé avec le trésor de la colonie, complété par les couronnes sur toi. Coûte aussi " + influence + " de ton Influence.";
+            addHit(x + pad, ty, settleW, 20, () -> ClientIntendance.settle(colony.getID(), action));
+            if (overSettle)
+            {
+                hint = "Payé avec le trésor de la colonie, complété par les couronnes sur toi ; l'Influence est la tienne.";
+            }
         }
 
         final String listLabel = intendanceList == list ? "Masquer la liste" : "Voir la liste";
         final int listX = wide ? x + width - pad - listW : x + pad;
-        final int listY = wide ? by : by + 24;
+        final int listY = wide ? ty : ty + 24;
         final int listH = wide ? 20 : 18;
         final int listWidth = wide ? listW : inner;
         final boolean overList = Ui.inside(mouseX, mouseY, listX, listY, listWidth, listH);
@@ -1194,82 +1208,63 @@ public final class ColonyHubScreen extends ParchmentScreen
         return y + height + 4;
     }
 
-    private int renderGrievances(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
+    /**
+     * A row's price at its right edge: the coin and the figure.
+     */
+    private int rowPrice(final GuiGraphics graphics, final int right, final int y, final int cost)
     {
-        final List<ICitizenDataView> unhappy = new ArrayList<>();
-        int total = 0;
-        for (final ICitizenDataView citizen : colony.getCitizens().values())
+        final String value = Wallet.format(cost);
+        final int w = 12 + font.width(value);
+        Ui.coin(graphics, right - w, y + 6, 10);
+        graphics.drawString(font, Component.literal(value).withStyle(ChatFormatting.BOLD), right - font.width(value) - 1, y + 7, Palette.INK, false);
+        return w;
+    }
+
+    private int renderCareRows(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width,
+      final List<IntendanceQuotePayload.Care> care)
+    {
+        for (final IntendanceQuotePayload.Care row : care)
         {
-            final int count = Grievances.count(citizen);
-            if (count > 0)
-            {
-                unhappy.add(citizen);
-                total += count;
-            }
-        }
-        if (unhappy.isEmpty())
-        {
-            Ui.label(graphics, font, "DOLÉANCES", x, y);
-            return Ui.wrapped(graphics, font, Component.literal("Aucun citoyen ne se plaint."), x, y + 12, width, Palette.MUTED, 10) + 2;
-        }
-        Ui.label(graphics, font, fit(total + (total == 1 ? " DOLÉANCE" : " DOLÉANCES") + " · " + unhappy.size() + " CITOYEN" + (unhappy.size() == 1 ? "" : "S"), width), x, y);
-        y += 12;
-        for (final ICitizenDataView citizen : unhappy)
-        {
-            final List<Component> texts = Grievances.texts(citizen);
-            final boolean over = Ui.inside(mouseX, mouseY, x, y, width, 22);
+            final ICitizenDataView citizen = colony.getCitizen(row.citizen());
+            final boolean over = citizen != null && Ui.inside(mouseX, mouseY, x, y, width, 22);
             Ui.card(graphics, x, y, width, 22, false, over, false);
-            Icon.of(citizen.isSick() ? new ItemStack(Items.POTION) : new ItemStack(Items.WRITABLE_BOOK)).draw(graphics, x + 3, y + 3, 16);
-            // The chip says how many, when there is room for it beside the text
-            final String chip = texts.size() == 1 ? "1 doléance" : texts.size() + " doléances";
-            final int chipW = font.width(chip) + 8;
-            final boolean room = width - chipW - 40 >= 70;
-            final int textW = room ? width - chipW - 40 : width - 34;
-            if (room)
+            Icon.of(row.sick() ? new ItemStack(Items.POTION) : new ItemStack(Items.BREAD)).draw(graphics, x + 3, y + 3, 16);
+            final int priceW = rowPrice(graphics, x + width - 6, y, row.cost());
+            final int textW = width - 23 - priceW - 12;
+            graphics.drawString(font, fit(row.name(), textW), x + 23, y + 3, Palette.INK, false);
+            graphics.drawString(font, fit(row.sick() ? "malade : l'Intendance le soigne" : "affamé : l'Intendance le nourrit", textW), x + 23, y + 12, Palette.MUTED, false);
+            if (citizen != null)
             {
-                Ui.chip(graphics, font, x + width - chipW - 12, y + 6, chip, citizen.isSick() ? Ui.State.BAD : Ui.State.WAIT);
+                addHit(x, y, width, 22, () -> CitizenScreen.open(citizen, this));
             }
-            graphics.drawString(font, fit(citizen.getName(), textW), x + 23, y + 3, Palette.INK, false);
-            final String first = texts.isEmpty() ? "" : texts.get(0).getString();
-            graphics.drawString(font, fit(first, textW), x + 23, y + 12, Palette.MUTED, false);
-            graphics.drawString(font, "›", x + width - 9, y + 7, Palette.MUTED, false);
-            addHit(x, y, width, 22, () -> CitizenScreen.open(citizen, this));
             y += 24;
         }
         return y;
     }
 
-    private int renderRequests(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
+    private int renderSupplyRows(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width,
+      final List<IntendanceQuotePayload.Supply> supplies)
     {
-        final List<OpenRequest> requests = requests();
-        if (requests.isEmpty())
+        for (final IntendanceQuotePayload.Supply row : supplies)
         {
-            Ui.label(graphics, font, "DEMANDES DES TRAVAILLEURS", x, y);
-            return Ui.wrapped(graphics, font, Component.literal("Personne n'attend rien : la colonie ne manque de rien."), x, y + 12, width, Palette.MUTED, 10) + 2;
-        }
-        Ui.label(graphics, font, fit(requests.size() + (requests.size() == 1 ? " DEMANDE" : " DEMANDES") + " DES TRAVAILLEURS", width), x, y);
-        y += 12;
-        for (final OpenRequest open : requests)
-        {
-            final IRequest<?> request = open.request();
-            final boolean over = Ui.inside(mouseX, mouseY, x, y, width, 22);
-            Ui.card(graphics, x, y, width, 22, false, over, false);
-            final List<ItemStack> stacks = request.getDisplayStacks();
-            final ItemStack stack = stacks.isEmpty() ? new ItemStack(Items.PAPER) : stacks.get(0);
-            Icon.of(stack).draw(graphics, x + 3, y + 3, 16);
-            slots.add(new Ui.Slot(x + 3, y + 3, 16, stack));
-            final String state = CitizenBits.requestStateText(request);
-            final int chipW = font.width(state) + 8;
-            final boolean room = width - chipW - 40 >= 70;
-            final int textW = room ? width - chipW - 40 : width - 34;
-            if (room)
+            Ui.card(graphics, x, y, width, 22, false, false, false);
+            Icon.of(row.stack()).draw(graphics, x + 3, y + 3, 16);
+            slots.add(new Ui.Slot(x + 3, y + 3, 16, row.stack()));
+            final int rightW;
+            if (row.rare())
             {
-                Ui.chip(graphics, font, x + width - chipW - 12, y + 6, state, CitizenBits.requestState(request));
+                // Never sold: the player brings it
+                final String chip = "À fournir";
+                rightW = font.width(chip) + 8;
+                Ui.chip(graphics, font, x + width - 6 - rightW, y + 6, chip, Ui.State.BAD);
             }
-            graphics.drawString(font, fit(request.getShortDisplayString().getString(), textW), x + 23, y + 3, Palette.INK, false);
-            graphics.drawString(font, fit("pour " + nameOf(open.building()), textW), x + 23, y + 12, Palette.MUTED, false);
-            graphics.drawString(font, "›", x + width - 9, y + 7, Palette.MUTED, false);
-            addHit(x, y, width, 22, () -> RequestScreen.open(request, colony, null, this));
+            else
+            {
+                rightW = rowPrice(graphics, x + width - 6, y, row.cost());
+            }
+            final int textW = width - 23 - rightW - 12;
+            graphics.drawString(font, fit(row.stack().getCount() + " × " + row.stack().getHoverName().getString(), textW), x + 23, y + 3, Palette.INK, false);
+            graphics.drawString(font, fit("pour " + row.forWhom().getString(), textW), x + 23, y + 12, Palette.MUTED, false);
             y += 24;
         }
         return y;

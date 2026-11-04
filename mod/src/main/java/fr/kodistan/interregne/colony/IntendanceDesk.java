@@ -3,6 +3,8 @@ package fr.kodistan.interregne.colony;
 import com.minecolonies.api.colony.ICitizenData;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
+import com.minecolonies.api.colony.requestsystem.manager.IRequestManager;
+import com.minecolonies.api.colony.requestsystem.request.IRequest;
 import com.minecolonies.api.util.constant.CitizenConstants;
 import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.economy.TreasuryPayment;
@@ -59,11 +61,29 @@ public final class IntendanceDesk
     {
         final List<ICitizenData> sick = sick(colony);
         final List<ICitizenData> hungry = hungry(colony);
-        final long care = careCost(sick, hungry);
+        final List<IntendanceQuotePayload.Care> care = new ArrayList<>();
+        sick.forEach(citizen -> care.add(new IntendanceQuotePayload.Care(citizen.getId(), citizen.getName(), true, Config.INTENDANCE_CURE_COST.get())));
+        hungry.forEach(citizen -> care.add(new IntendanceQuotePayload.Care(citizen.getId(), citizen.getName(), false, Config.INTENDANCE_MEAL_COST.get())));
+        final long careGold = careCost(sick, hungry);
+
         final Intendance.Supplies supplies = Intendance.supplies(colony);
-        final long supply = supplyCost(supplies);
-        return new IntendanceQuotePayload(colony.getID(), sick.size(), hungry.size(), care, influenceFor(care), supplies.buyable().size(), supplies.strategic(),
-          supply, influenceFor(supply));
+        final IRequestManager manager = colony.getRequestManager();
+        final List<IntendanceQuotePayload.Supply> rows = new ArrayList<>();
+        supplies.buyable().forEach(purchase -> rows.add(new IntendanceQuotePayload.Supply(purchase.stack(), whoAsks(manager, purchase), (int) rowCost(purchase))));
+        supplies.rare().forEach(purchase -> rows.add(new IntendanceQuotePayload.Supply(purchase.stack(), whoAsks(manager, purchase), -1)));
+        final long supplyGold = supplyCost(supplies);
+        return new IntendanceQuotePayload(colony.getID(), care, careGold, influenceFor(careGold), rows, supplyGold, influenceFor(supplyGold));
+    }
+
+    private static Component whoAsks(final IRequestManager manager, final Intendance.Purchase purchase)
+    {
+        final IRequest<?> request = manager.getRequestForToken(purchase.token());
+        return request == null ? Component.literal("?") : request.getRequester().getRequesterDisplayName(manager, request);
+    }
+
+    private static long rowCost(final Intendance.Purchase purchase)
+    {
+        return (long) Math.ceil(purchase.cost() * Config.INTENDANCE_MARKUP.get());
     }
 
     public static long influenceFor(final long gold)
@@ -77,9 +97,12 @@ public final class IntendanceDesk
         return (long) sick.size() * Config.INTENDANCE_CURE_COST.get() + (long) hungry.size() * Config.INTENDANCE_MEAL_COST.get();
     }
 
+    /**
+     * The sum of the rows the page shows, so the total always matches them.
+     */
     private static long supplyCost(final Intendance.Supplies supplies)
     {
-        return (long) Math.ceil(supplies.cost() * Config.INTENDANCE_MARKUP.get());
+        return supplies.buyable().stream().mapToLong(IntendanceDesk::rowCost).sum();
     }
 
     private static void settleGrievances(final ServerPlayer player, final IColony colony)

@@ -352,6 +352,16 @@ public final class Ui
         graphics.blit(COIN, x, y, size, size, 0, 0, 16, 16, 16, 16);
     }
 
+    public static final ResourceLocation INFLUENCE = ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "textures/gui/hud_influence.png");
+
+    /**
+     * The purple star of Influence, as on the HUD.
+     */
+    public static void influence(final GuiGraphics graphics, final int x, final int y, final int size)
+    {
+        graphics.blit(INFLUENCE, x, y, size, size, 0, 0, 16, 16, 16, 16);
+    }
+
     /**
      * « 🪙 240 Couronnes », red when the player cannot pay. Returns the y of the next line.
      */

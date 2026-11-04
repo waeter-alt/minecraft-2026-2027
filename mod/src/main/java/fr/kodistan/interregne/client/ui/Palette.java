@@ -15,6 +15,7 @@ public final class Palette
     public static final int LEATHER       = 0xFF5C3A21;
     public static final int LEATHER_LIGHT = 0xFF7A5232;
     public static final int GOLD_TEXT     = 0xFFFFE3A3;
+    public static final int INFLUENCE     = 0xFFC9A0FF;
     public static final int INK           = 0xFF4A2A10;
     public static final int MUTED         = 0xFF7A5232;
     public static final int SELECTED      = 0xFFC08A1E;

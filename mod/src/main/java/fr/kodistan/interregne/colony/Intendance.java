@@ -91,7 +91,7 @@ public final class Intendance
      * What the colony's workers wait on that nobody in it can supply: what the Intendance can buy, and how many
      * strategic items it never provides.
      */
-    public record Supplies(List<Purchase> buyable, int strategic)
+    public record Supplies(List<Purchase> buyable, List<Purchase> rare)
     {
         public int cost()
         {
@@ -103,7 +103,7 @@ public final class Intendance
     {
         final IRequestManager manager = colony.getRequestManager();
         final List<Purchase> buyable = new ArrayList<>();
-        int strategic = 0;
+        final List<Purchase> rare = new ArrayList<>();
         for (final IToken<?> token : manager.getPlayerResolver().getAllAssignedRequests())
         {
             final IRequest<?> request = manager.getRequestForToken(token);
@@ -123,10 +123,10 @@ public final class Intendance
             }
             else
             {
-                strategic++;
+                rare.add(new Purchase(token, building, wanted, -1, 0));
             }
         }
-        return new Supplies(buyable, strategic);
+        return new Supplies(buyable, rare);
     }
 
     /**
