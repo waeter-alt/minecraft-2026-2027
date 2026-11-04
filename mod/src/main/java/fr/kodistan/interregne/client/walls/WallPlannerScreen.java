@@ -52,6 +52,20 @@ public final class WallPlannerScreen extends Screen
     private WallTrace.Point candidate;
     private boolean closing;
     private boolean finishing;
+
+    /**
+     * The gates placed so far, by their centre cell on the trace, in the order they were placed (the first is free).
+     */
+    private final List<WallTrace.Point> gates = new ArrayList<>();
+    private boolean gateMode;
+    private boolean wasDone;
+    @Nullable
+    private WallTrace.Point gateSpot;
+    @Nullable
+    private WallTrace.Point gateHover;
+    @Nullable
+    private WallLayout committed;
+    private String committedKey = "";
     @Nullable
     private WallLayout layout;
     private String layoutKey = "";
@@ -96,6 +110,8 @@ public final class WallPlannerScreen extends Screen
         if (closed)
         {
             screen.trace.close();
+            screen.gates.add(new WallTrace.Point(c.getX(), c.getZ() - r));
+            screen.gates.add(new WallTrace.Point(c.getX(), c.getZ() + r));
         }
         net.minecraft.client.Minecraft.getInstance().setScreen(screen);
     }
@@ -118,12 +134,11 @@ public final class WallPlannerScreen extends Screen
                 final int z = c.getZ() + (int) Math.round(Math.sin(angle) * ring * 14);
                 final List<WallTrace.Point> square = List.of(new WallTrace.Point(x, z), new WallTrace.Point(x + side, z),
                   new WallTrace.Point(x + side, z + side), new WallTrace.Point(x, z + side));
-                final WallLayout test = WallLayout.of(square, true, screen.level, WallPlanner::probe, screen::inColony);
+                final WallLayout test = WallLayout.of(square, true, List.of(), screen.level, WallPlanner::probe, screen::inColony);
                 if (test.blocked() == 0)
                 {
-                    final List<Integer> xs = square.stream().map(WallTrace.Point::x).toList();
-                    final List<Integer> zs = square.stream().map(WallTrace.Point::z).toList();
-                    PacketDistributor.sendToServer(new WallBuildPayload(screen.colony.getID(), xs, zs, true));
+                    PacketDistributor.sendToServer(new WallBuildPayload(screen.colony.getID(), WallTrace.flat(square),
+                      WallTrace.flat(List.of(new WallTrace.Point(x + side / 2, z))), true));
                     screen.focus = new BlockPos(x + side / 2, c.getY(), z + side / 2);
                     demoFocus = screen.focus;
                     net.minecraft.client.Minecraft.getInstance().setScreen(screen);
@@ -202,9 +217,13 @@ public final class WallPlannerScreen extends Screen
         buttons.clear();
         renderPanel(graphics);
         renderActions(graphics, mouseX, mouseY);
-        if (trace.isEmpty())
+        final String hint = trace.isEmpty() ? "Cliquez au sol pour poser le premier point de la muraille"
+                              : gateMode && gates.isEmpty() ? "Cliquez sur un pan droit de la muraille pour poser sa porte (offerte)"
+                                  : gateMode && gateSpot == null && gateHover != null && gates.size() < WallLevels.MAX_GATES
+                                      ? "Une porte se pose sur un pan droit, nord-sud ou est-ouest, loin des tours"
+                                      : null;
+        if (hint != null)
         {
-            final String hint = "Cliquez au sol pour poser le premier point de la muraille";
             final int hw = font.width(hint) + 16;
             final int hx = (width - hw) / 2;
             Ui.plate(graphics, hx, 10, hx + hw, 28, Palette.PAPER_LIGHT, Palette.EDGE, Palette.PAPER_LIGHT);
@@ -236,6 +255,22 @@ public final class WallPlannerScreen extends Screen
     private void aim(final int mouseX, final int mouseY)
     {
         final boolean overUi = overUi(mouseX, mouseY);
+        // Finishing the trace goes straight to placing gates, while it has none
+        if (trace.done() && !wasDone && gates.isEmpty())
+        {
+            gateMode = true;
+        }
+        wasDone = trace.done();
+        if (!trace.done())
+        {
+            gateMode = false;
+        }
+        if (gateMode)
+        {
+            aimGate(overUi ? null : WallPlanner.pick(mouseX / (double) width, mouseY / (double) height));
+            return;
+        }
+        gateSpot = null;
         final WallTrace.Point hover = overUi || trace.done() ? null : WallPlanner.pick(mouseX / (double) width, mouseY / (double) height);
         candidate = hover == null ? null : trace.snap(hover, hasShiftDown());
         closing = false;
@@ -255,7 +290,7 @@ public final class WallPlannerScreen extends Screen
                 closing = true;
             }
         }
-        final String key = trace.version() + "|" + candidate + "|" + closing + "|" + finishing;
+        final String key = trace.version() + "|" + candidate + "|" + closing + "|" + finishing + "|" + gates;
         if (!key.equals(layoutKey))
         {
             layoutKey = key;
@@ -269,9 +304,43 @@ public final class WallPlannerScreen extends Screen
             {
                 points.add(candidate);
             }
-            layout = points.isEmpty() ? null : WallLayout.of(points, closed, level, WallPlanner::probe, this::inColony);
+            layout = points.isEmpty() ? null : WallLayout.of(points, closed, gates, level, WallPlanner::probe, this::inColony);
         }
-        WallPlanner.show(layout, candidate, closing || finishing);
+        WallPlanner.show(layout, candidate, closing || finishing, null);
+    }
+
+    /**
+     * In gate mode: the gate would go on the straight stretch nearest the mouse; the layout shows it as a preview.
+     */
+    private void aimGate(@Nullable final WallTrace.Point hover)
+    {
+        candidate = null;
+        closing = false;
+        finishing = false;
+        gateHover = hover;
+        final String committedKey = trace.version() + "|" + gates;
+        if (committed == null || !committedKey.equals(this.committedKey))
+        {
+            this.committedKey = committedKey;
+            committed = WallLayout.of(trace.points(), trace.closed(), gates, level, WallPlanner::probe, this::inColony);
+        }
+        gateSpot = hover == null || gates.size() >= WallLevels.MAX_GATES || committed.gateAt(hover) != null ? null : committed.gateSpot(hover, gates);
+        final String key = trace.version() + "|gate|" + gateSpot + "|" + gates;
+        if (!key.equals(layoutKey))
+        {
+            layoutKey = key;
+            if (gateSpot == null)
+            {
+                layout = committed;
+            }
+            else
+            {
+                final List<WallTrace.Point> preview = new ArrayList<>(gates);
+                preview.add(gateSpot);
+                layout = WallLayout.of(trace.points(), trace.closed(), preview, level, WallPlanner::probe, this::inColony);
+            }
+        }
+        WallPlanner.show(layout, null, false, gateSpot);
     }
 
     private boolean inColony(final int x, final int z)
@@ -288,10 +357,17 @@ public final class WallPlannerScreen extends Screen
         final int x = PAD;
         final int y = PAD;
         final int inner = panelW - 16;
-        final List<String[]> help = List.of(
+        final List<String[]> help = gateMode ? List.of(
+          new String[] {"Clic sur un pan", "poser une porte"},
+          new String[] {"Clic droit porte", "la retirer"},
+          new String[] {"G", "tracé"},
+          new String[] {keys(), "se déplacer"},
+          new String[] {"Molette", "zoom"},
+          new String[] {"Clic droit glissé", "pivoter"}) : List.of(
           new String[] {"Clic", "poser un point"},
           new String[] {"Clic dernière tour", "finir ouverte"},
           new String[] {"Clic droit", "annuler"},
+          new String[] {"G", "portes"},
           new String[] {keys(), "se déplacer"},
           new String[] {"Molette", "zoom"},
           new String[] {"Clic droit glissé", "pivoter"},
@@ -304,7 +380,7 @@ public final class WallPlannerScreen extends Screen
         panelY1 = y + height;
         Ui.plate(graphics, x, y, x + panelW, y + height, Palette.PANEL, Palette.EDGE, Palette.PAPER_LIGHT);
         int ty = y + 8;
-        graphics.drawString(font, Ui.fitBold(font, "Tracé de la muraille", inner), x + 8, ty, Palette.INK, false);
+        graphics.drawString(font, Ui.fitBold(font, gateMode ? "Portes de la muraille" : "Tracé de la muraille", inner), x + 8, ty, Palette.INK, false);
         ty += LINE;
         graphics.drawString(font, Ui.fit(font, "Niv. 1 · " + level.name() + " · " + level.height() + " blocs de haut", inner), x + 8, ty, Palette.MUTED, false);
         ty += LINE + 4;
@@ -312,7 +388,9 @@ public final class WallPlannerScreen extends Screen
         final int towers = layout == null ? 0 : layout.towers().size();
         ty = stat(graphics, x + 8, ty, inner, "Longueur", length + (length > 1 ? " blocs" : " bloc"));
         ty = stat(graphics, x + 8, ty, inner, "Tours", Integer.toString(towers));
-        ty = stat(graphics, x + 8, ty, inner, "Portes", "0 / 5 · bientôt");
+        final int next = gates.size();
+        ty = stat(graphics, x + 8, ty, inner, "Portes", gates.size() + " / " + WallLevels.MAX_GATES + (next >= WallLevels.MAX_GATES ? ""
+          : " · suiv. " + (level.gatePrice(next) == 0 ? "offerte" : Integer.toString(level.gatePrice(next)))));
         if (blocked > 0)
         {
             graphics.drawString(font, Ui.fit(font, blocked + " blocs gênés", inner), x + 8, ty, Palette.RED, false);
@@ -382,7 +460,8 @@ public final class WallPlannerScreen extends Screen
                                  : trace.points().size() < 2 ? null
                                      : !trace.done() ? "Finir le tracé"
                                          : layout != null && layout.blocked() > 0 ? "Obstacles en rouge"
-                                             : null;
+                                             : gates.isEmpty() ? "Placer une porte"
+                                                 : null;
         final boolean affordable = money >= cost;
         final boolean ready = trace.points().size() >= 2 && trace.done() && refusal == null && affordable;
         final String build = refusal != null ? refusal : "Bâtir";
@@ -418,25 +497,61 @@ public final class WallPlannerScreen extends Screen
         buttons.add(new Button(qx, y, quitW, buttonH, this::onClose));
         right = qx - 6;
 
+        if (trace.done())
+        {
+            final String label = gateMode ? "Portes ✔" : "Portes";
+            final int gateW = font.width(label) + 16;
+            final int gx = right - gateW;
+            final boolean over = Ui.inside(mouseX, mouseY, gx, y, gateW, buttonH);
+            if (gateMode)
+            {
+                Ui.plate(graphics, gx, y, gx + gateW, y + buttonH, Palette.LEATHER, Palette.EDGE, Palette.LEATHER_LIGHT);
+                graphics.drawCenteredString(font, label, gx + gateW / 2, y + (buttonH - 8) / 2, Palette.GOLD_TEXT);
+            }
+            else
+            {
+                Ui.button(graphics, font, gx, y, gateW, buttonH, label, Ui.ButtonStyle.SECONDARY, true, over);
+            }
+            buttons.add(new Button(gx, y, gateW, buttonH, () -> gateMode = !gateMode));
+            right = gx - 6;
+        }
+
         if (!trace.isEmpty())
         {
             final String clear = "Effacer";
             final int clearW = font.width(clear) + 16;
             final int ex = right - clearW;
             Ui.button(graphics, font, ex, y, clearW, buttonH, clear, Ui.ButtonStyle.DANGER, true, Ui.inside(mouseX, mouseY, ex, y, clearW, buttonH));
-            buttons.add(new Button(ex, y, clearW, buttonH, trace::clear));
+            buttons.add(new Button(ex, y, clearW, buttonH, () -> {
+                trace.clear();
+                gates.clear();
+            }));
         }
 
         if (overBuild)
         {
             final String tip = refusal == null && !affordable ? "Il manque " + (cost - money) + " Couronnes (trésor régional et bourse comptés)."
                                  : "Finir le tracé".equals(refusal) ? "Cliquez sur le premier point pour fermer l'enceinte, ou sur la dernière tour pour la laisser ouverte."
-                                     : "Obstacles en rouge".equals(refusal) ? "Le tracé traverse un bâtiment ou sort de la colonie : déplacez les points des tronçons rouges."
+                                     : "Obstacles en rouge".equals(refusal) ? "Le tracé traverse un bâtiment, sort de la colonie, ou une porte ne tient plus sur un pan droit : corrigez les parties rouges."
+                                     : "Placer une porte".equals(refusal) ? "Une muraille a besoin d'au moins une porte, posée sur un pan droit. La première est offerte."
                                          : ready ? "Paie la muraille (trésor régional d'abord) et lance le chantier : " + seconds() + " s." : null;
             if (tip != null)
             {
                 graphics.renderTooltip(font, font.split(Component.literal(tip), 200), mouseX, mouseY);
             }
+        }
+    }
+
+    private void removeGateUnderMouse()
+    {
+        if (gateHover == null || layout == null)
+        {
+            return;
+        }
+        final WallLayout.Gate gate = layout.gateAt(gateHover);
+        if (gate != null)
+        {
+            gates.remove(new WallTrace.Point(gate.x(), gate.z()));
         }
     }
 
@@ -455,14 +570,7 @@ public final class WallPlannerScreen extends Screen
      */
     private void build()
     {
-        final List<Integer> xs = new ArrayList<>();
-        final List<Integer> zs = new ArrayList<>();
-        for (final WallTrace.Point point : trace.points())
-        {
-            xs.add(point.x());
-            zs.add(point.z());
-        }
-        PacketDistributor.sendToServer(new WallBuildPayload(colony.getID(), xs, zs, trace.closed()));
+        PacketDistributor.sendToServer(new WallBuildPayload(colony.getID(), WallTrace.flat(trace.points()), WallTrace.flat(gates), trace.closed()));
         minecraft.setScreen(null);
     }
 
@@ -497,6 +605,19 @@ public final class WallPlannerScreen extends Screen
         }
         if (overUi(mouseX, mouseY))
         {
+            return true;
+        }
+        if (gateMode)
+        {
+            if (button == 0 && gateSpot != null)
+            {
+                gates.add(gateSpot);
+            }
+            else if (button == 1)
+            {
+                rightDown = true;
+                rightTravel = 0;
+            }
             return true;
         }
         if (button == 0 && candidate != null)
@@ -547,7 +668,14 @@ public final class WallPlannerScreen extends Screen
             rightDown = false;
             if (rightTravel <= DRAG_SLOP)
             {
-                trace.undo();
+                if (gateMode)
+                {
+                    removeGateUnderMouse();
+                }
+                else
+                {
+                    trace.undo();
+                }
             }
             return true;
         }
@@ -566,7 +694,19 @@ public final class WallPlannerScreen extends Screen
     {
         if (keyCode == GLFW.GLFW_KEY_BACKSPACE || (keyCode == GLFW.GLFW_KEY_Z && hasControlDown()) || (keyCode == GLFW.GLFW_KEY_W && hasControlDown()))
         {
-            trace.undo();
+            if (gateMode && !gates.isEmpty())
+            {
+                gates.removeLast();
+            }
+            else
+            {
+                trace.undo();
+            }
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_G && trace.done())
+        {
+            gateMode = !gateMode;
             return true;
         }
         if (keyCode == GLFW.GLFW_KEY_H)

@@ -20,6 +20,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FallingBlock;
+import net.minecraft.world.level.block.entity.BannerBlockEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
@@ -53,6 +55,11 @@ public final class WallSite implements Site
     private final ServerBossEvent bossBar;
     private final AABB area;
     private final Runnable onDone;
+    /**
+     * The colony's banner, copied onto every banner block of the wall.
+     */
+    @Nullable
+    private final ItemStack banner;
     private final RandomSource random;
     private final List<Flight> flights = new ArrayList<>();
 
@@ -62,9 +69,11 @@ public final class WallSite implements Site
     @Nullable
     private WallBlocks.Step last;
 
-    private WallSite(final ServerLevel level, final List<WallBlocks.Step> steps, final int seconds, final int wallLevel, final Runnable onDone)
+    private WallSite(final ServerLevel level, final List<WallBlocks.Step> steps, final int seconds, final int wallLevel, @Nullable final ItemStack banner,
+      final Runnable onDone)
     {
         this.level = level;
+        this.banner = banner;
         this.steps = steps;
         this.durationTicks = Math.max(20, seconds * 20);
         this.wallLevel = wallLevel;
@@ -85,9 +94,10 @@ public final class WallSite implements Site
     /**
      * Starts the site; onDone runs once every block is in place.
      */
-    public static void launch(final ServerLevel level, final List<WallBlocks.Step> steps, final int seconds, final int wallLevel, final Runnable onDone)
+    public static void launch(final ServerLevel level, final List<WallBlocks.Step> steps, final int seconds, final int wallLevel,
+      @Nullable final ItemStack banner, final Runnable onDone)
     {
-        ConstructionManager.start(new WallSite(level, steps, seconds, wallLevel, onDone));
+        ConstructionManager.start(new WallSite(level, steps, seconds, wallLevel, banner, onDone));
     }
 
     @Override
@@ -157,6 +167,12 @@ public final class WallSite implements Site
         }
         final BlockState state = Block.updateFromNeighbourShapes(step.state(), level, pos);
         level.setBlock(pos, state, Block.UPDATE_ALL);
+        if (banner != null && level.getBlockEntity(pos) instanceof BannerBlockEntity entity)
+        {
+            entity.applyComponentsFromItemStack(banner);
+            entity.setChanged();
+            level.sendBlockUpdated(pos, state, state, Block.UPDATE_ALL);
+        }
         last = step;
         solid++;
         liftPlayersAt(pos);

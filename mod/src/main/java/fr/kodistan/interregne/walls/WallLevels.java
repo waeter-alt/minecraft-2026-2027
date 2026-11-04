@@ -15,17 +15,30 @@ public final class WallLevels
      * @param towerExtra how much higher than the wall the towers rise
      * @param perColumn  Couronnes per block of wall length
      * @param perTower   Couronnes per tower
+     * @param perGate    Couronnes of the second gate; each further one doubles, the first is free
      */
-    public record Level(String name, int height, int thickness, int towerSize, int towerExtra, int perColumn, int perTower)
+    public record Level(String name, int height, int thickness, int towerSize, int towerExtra, int perColumn, int perTower, int perGate)
     {
+        /**
+         * Price of the gate at this rank (0 for the first, which is free).
+         */
+        public int gatePrice(final int rank)
+        {
+            return rank <= 0 ? 0 : perGate << (rank - 1);
+        }
     }
 
+    /**
+     * Gates per wall: at least one, at most this many.
+     */
+    public static final int MAX_GATES = 5;
+
     private static final Level[] LEVELS = {
-      new Level("Palissade", 4, 1, 3, 2, 2, 20),
-      new Level("Pierre brute", 5, 1, 3, 2, 4, 40),
-      new Level("Briques de pierre", 7, 2, 5, 3, 7, 80),
-      new Level("Ardoise des abîmes", 9, 3, 5, 3, 11, 140),
-      new Level("Pierre noire et or", 11, 3, 7, 4, 16, 220),
+      new Level("Palissade", 4, 1, 3, 2, 2, 20, 60),
+      new Level("Pierre brute", 5, 1, 3, 2, 4, 40, 120),
+      new Level("Briques de pierre", 7, 2, 5, 3, 7, 80, 200),
+      new Level("Ardoise des abîmes", 9, 3, 5, 3, 11, 140, 320),
+      new Level("Pierre noire et or", 11, 3, 7, 4, 16, 220, 500),
     };
 
     public static final int MAX = LEVELS.length;

@@ -1,9 +1,11 @@
 package fr.kodistan.interregne.walls;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LanternBlock;
+import net.minecraft.world.level.block.WallBannerBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
@@ -28,23 +30,28 @@ public final class WallBlocks
     /**
      * The blocks of one level's look.
      */
-    private record Style(BlockState body, BlockState cap, BlockState spike, BlockState tower, BlockState towerTop, BlockState rail, BlockState pile)
+    private record Style(BlockState body, BlockState cap, BlockState spike, BlockState tower, BlockState towerTop, BlockState rail, BlockState pile,
+                         BlockState floor, BlockState portcullis)
     {
     }
 
     private static final Style[] STYLES = {
       new Style(Blocks.SPRUCE_LOG.defaultBlockState(), Blocks.SPRUCE_LOG.defaultBlockState(), Blocks.SPRUCE_FENCE.defaultBlockState(),
-        Blocks.SPRUCE_LOG.defaultBlockState(), Blocks.SPRUCE_PLANKS.defaultBlockState(), Blocks.SPRUCE_FENCE.defaultBlockState(), Blocks.SPRUCE_LOG.defaultBlockState()),
+        Blocks.SPRUCE_LOG.defaultBlockState(), Blocks.SPRUCE_PLANKS.defaultBlockState(), Blocks.SPRUCE_FENCE.defaultBlockState(), Blocks.SPRUCE_LOG.defaultBlockState(),
+        Blocks.SPRUCE_PLANKS.defaultBlockState(), Blocks.SPRUCE_FENCE.defaultBlockState()),
       new Style(Blocks.COBBLESTONE.defaultBlockState(), Blocks.MOSSY_COBBLESTONE.defaultBlockState(), Blocks.COBBLESTONE_WALL.defaultBlockState(),
-        Blocks.COBBLESTONE.defaultBlockState(), Blocks.STONE.defaultBlockState(), Blocks.COBBLESTONE_WALL.defaultBlockState(), Blocks.COBBLESTONE.defaultBlockState()),
+        Blocks.COBBLESTONE.defaultBlockState(), Blocks.STONE.defaultBlockState(), Blocks.COBBLESTONE_WALL.defaultBlockState(), Blocks.COBBLESTONE.defaultBlockState(),
+        Blocks.GRAVEL.defaultBlockState(), Blocks.IRON_BARS.defaultBlockState()),
       new Style(Blocks.STONE_BRICKS.defaultBlockState(), Blocks.CHISELED_STONE_BRICKS.defaultBlockState(), Blocks.STONE_BRICK_WALL.defaultBlockState(),
-        Blocks.STONE_BRICKS.defaultBlockState(), Blocks.SMOOTH_STONE.defaultBlockState(), Blocks.STONE_BRICK_WALL.defaultBlockState(), Blocks.STONE_BRICKS.defaultBlockState()),
+        Blocks.STONE_BRICKS.defaultBlockState(), Blocks.SMOOTH_STONE.defaultBlockState(), Blocks.STONE_BRICK_WALL.defaultBlockState(), Blocks.STONE_BRICKS.defaultBlockState(),
+        Blocks.POLISHED_ANDESITE.defaultBlockState(), Blocks.IRON_BARS.defaultBlockState()),
       new Style(Blocks.DEEPSLATE_BRICKS.defaultBlockState(), Blocks.POLISHED_DEEPSLATE.defaultBlockState(), Blocks.DEEPSLATE_BRICK_WALL.defaultBlockState(),
         Blocks.DEEPSLATE_TILES.defaultBlockState(), Blocks.POLISHED_DEEPSLATE.defaultBlockState(), Blocks.DEEPSLATE_BRICK_WALL.defaultBlockState(),
-        Blocks.COBBLED_DEEPSLATE.defaultBlockState()),
+        Blocks.COBBLED_DEEPSLATE.defaultBlockState(), Blocks.POLISHED_DEEPSLATE.defaultBlockState(), Blocks.IRON_BARS.defaultBlockState()),
       new Style(Blocks.POLISHED_BLACKSTONE_BRICKS.defaultBlockState(), Blocks.GILDED_BLACKSTONE.defaultBlockState(),
         Blocks.POLISHED_BLACKSTONE_BRICK_WALL.defaultBlockState(), Blocks.POLISHED_BLACKSTONE.defaultBlockState(), Blocks.GOLD_BLOCK.defaultBlockState(),
-        Blocks.POLISHED_BLACKSTONE_BRICK_WALL.defaultBlockState(), Blocks.BLACKSTONE.defaultBlockState()),
+        Blocks.POLISHED_BLACKSTONE_BRICK_WALL.defaultBlockState(), Blocks.BLACKSTONE.defaultBlockState(),
+        Blocks.POLISHED_BLACKSTONE.defaultBlockState(), Blocks.CHAIN.defaultBlockState()),
     };
 
     private static final int CLEAR_ABOVE = 24;
@@ -102,8 +109,90 @@ public final class WallBlocks
             steps.add(new Step(new BlockPos(tower.x() + mid, tower.top() + 1, tower.z() + mid),
               Blocks.LANTERN.defaultBlockState().setValue(LanternBlock.HANGING, false), order));
         }
+        for (final WallLayout.Gate gate : layout.gates())
+        {
+            gate(level, steps, gate, style);
+        }
         steps.sort(Comparator.comparingInt(Step::order).thenComparingInt(step -> step.state().isAir() ? 0 : 1).thenComparingInt(step -> step.pos().getY()));
         return steps;
+    }
+
+    /**
+     * A gatehouse: a passage floored and cleared to the lintel, its portcullis raised under it, and a turret on each
+     * side with the colony's banners on both faces and a lantern on top.
+     */
+    private static void gate(final LevelReader level, final List<Step> steps, final WallLayout.Gate gate, final Style style)
+    {
+        final int order = gate.index() * 2;
+        final int depth = gate.depth();
+        final int turretTop = gate.crest() + 2;
+        for (int along = -WallLayout.GATE_HALF; along <= WallLayout.GATE_HALF; along++)
+        {
+            for (int across = -depth; across <= depth; across++)
+            {
+                final int x = gate.x() + along * gate.ux() - across * gate.uz();
+                final int z = gate.z() + along * gate.uz() + across * gate.ux();
+                final Terrain.Probe probe = Terrain.probe(level, x, z);
+                final int ground = probe.loaded() ? probe.ground() : gate.floor();
+                final boolean edge = Math.abs(across) == depth || Math.abs(along) == WallLayout.GATE_HALF;
+                if (gate.passage(along))
+                {
+                    clear(level, steps, x, z, gate.floor() + 1, gate.crest() + CLEAR_ABOVE, order);
+                    piles(level, steps, x, z, style, order);
+                    for (int y = ground + 1; y < gate.floor(); y++)
+                    {
+                        steps.add(new Step(new BlockPos(x, y, z), style.body(), order));
+                    }
+                    steps.add(new Step(new BlockPos(x, gate.floor(), z), style.floor(), order));
+                    // Natural ground above the floor (a slope) is dug out to make the way through
+                    for (int y = gate.floor() + 1; y < gate.crest(); y++)
+                    {
+                        final BlockPos pos = new BlockPos(x, y, z);
+                        if (!level.getBlockState(pos).isAir() && !Terrain.clearable(level, pos, level.getBlockState(pos)))
+                        {
+                            steps.add(new Step(pos, Blocks.AIR.defaultBlockState(), order));
+                        }
+                    }
+                    if (across == 0 && gate.crest() - gate.floor() >= 4)
+                    {
+                        // The portcullis, raised: only its teeth show under the lintel
+                        steps.add(new Step(new BlockPos(x, gate.crest() - 1, z), style.portcullis(), order));
+                    }
+                    steps.add(new Step(new BlockPos(x, gate.crest(), z), style.cap(), order));
+                    steps.add(new Step(new BlockPos(x, gate.crest() + 1, z), style.body(), order));
+                    if (Math.abs(across) == depth && ((along + across) & 1) == 0)
+                    {
+                        steps.add(new Step(new BlockPos(x, gate.crest() + 2, z), style.spike(), order));
+                    }
+                    continue;
+                }
+                clear(level, steps, x, z, ground + 1, turretTop + CLEAR_ABOVE, order);
+                piles(level, steps, x, z, style, order);
+                for (int y = ground + 1; y <= turretTop; y++)
+                {
+                    steps.add(new Step(new BlockPos(x, y, z), y == turretTop ? style.towerTop() : style.tower(), order));
+                }
+                if (edge)
+                {
+                    steps.add(new Step(new BlockPos(x, turretTop + 1, z), style.rail(), order));
+                }
+                else if (across == 0 && Math.abs(along) == WallLayout.PASSAGE_HALF + 1)
+                {
+                    steps.add(new Step(new BlockPos(x, turretTop + 1, z), Blocks.LANTERN.defaultBlockState().setValue(LanternBlock.HANGING, false), order));
+                }
+                if (Math.abs(across) == depth && Math.abs(along) == WallLayout.PASSAGE_HALF + 1)
+                {
+                    // The colony's banner hangs on the turret, facing out of the gatehouse (outside and inside the walls)
+                    final int sign = Integer.signum(across);
+                    final Direction facing = Direction.fromDelta(-gate.uz() * sign, 0, gate.ux() * sign);
+                    if (facing != null)
+                    {
+                        steps.add(new Step(new BlockPos(x, gate.crest(), z).relative(facing),
+                          Blocks.WHITE_WALL_BANNER.defaultBlockState().setValue(WallBannerBlock.FACING, facing), order + 1));
+                    }
+                }
+            }
+        }
     }
 
     /**

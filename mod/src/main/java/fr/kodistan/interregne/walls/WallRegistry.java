@@ -25,7 +25,7 @@ public final class WallRegistry extends SavedData
     /**
      * A colony's wall.
      */
-    public record Wall(List<WallTrace.Point> points, boolean closed, int level)
+    public record Wall(List<WallTrace.Point> points, List<WallTrace.Point> gates, boolean closed, int level)
     {
     }
 
@@ -67,7 +67,14 @@ public final class WallRegistry extends SavedData
             {
                 points.add(new WallTrace.Point(xs[i], zs[i]));
             }
-            registry.walls.put(key, new Wall(points, entry.getBoolean("closed"), Math.max(1, entry.getInt("level"))));
+            final List<WallTrace.Point> gates = new ArrayList<>();
+            final int[] gxs = entry.getIntArray("gx");
+            final int[] gzs = entry.getIntArray("gz");
+            for (int i = 0; i < Math.min(gxs.length, gzs.length); i++)
+            {
+                gates.add(new WallTrace.Point(gxs[i], gzs[i]));
+            }
+            registry.walls.put(key, new Wall(points, gates, entry.getBoolean("closed"), Math.max(1, entry.getInt("level"))));
         }
         return registry;
     }
@@ -82,6 +89,9 @@ public final class WallRegistry extends SavedData
             final List<WallTrace.Point> points = entry.getValue().points();
             wall.putIntArray("x", points.stream().mapToInt(WallTrace.Point::x).toArray());
             wall.putIntArray("z", points.stream().mapToInt(WallTrace.Point::z).toArray());
+            final List<WallTrace.Point> gates = entry.getValue().gates();
+            wall.putIntArray("gx", gates.stream().mapToInt(WallTrace.Point::x).toArray());
+            wall.putIntArray("gz", gates.stream().mapToInt(WallTrace.Point::z).toArray());
             wall.putBoolean("closed", entry.getValue().closed());
             wall.putInt("level", entry.getValue().level());
             all.put(entry.getKey(), wall);

@@ -172,4 +172,28 @@ public final class WallTrace
         }
         return cells;
     }
+
+    /**
+     * Points as flat x, z pairs, for the network.
+     */
+    public static List<Integer> flat(final List<Point> points)
+    {
+        final List<Integer> flat = new ArrayList<>(points.size() * 2);
+        for (final Point point : points)
+        {
+            flat.add(point.x);
+            flat.add(point.z);
+        }
+        return flat;
+    }
+
+    public static List<Point> unflat(final List<Integer> flat)
+    {
+        final List<Point> points = new ArrayList<>(flat.size() / 2);
+        for (int i = 0; i + 1 < flat.size(); i += 2)
+        {
+            points.add(new Point(flat.get(i), flat.get(i + 1)));
+        }
+        return points;
+    }
 }

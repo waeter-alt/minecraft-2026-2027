@@ -706,13 +706,14 @@ public final class ColonyHubScreen extends ParchmentScreen
             final String look = fr.kodistan.interregne.walls.WallLevels.of(wall.level()).name();
             y += Ui.banner(graphics, font, x, y, width, wall.building() ? Ui.State.WAIT : Ui.State.OK, "Muraille",
               wall.building() ? "en construction" : "niveau " + wall.level() + " · " + look);
-            final int towers = wall.xs().size();
-            return Ui.wrapped(graphics, font, Component.literal((wall.closed() ? "Enceinte fermée" : "Muraille ouverte") + ", " + towers + " tours. "
-              + "Portes, améliorations et retouches du tracé arrivent aux prochaines étapes."), x + 2, y + 20, width - 4, Palette.MUTED, 10) + 4;
+            final int towers = wall.points().size() / 2;
+            final int gates = wall.gates().size() / 2;
+            return Ui.wrapped(graphics, font, Component.literal((wall.closed() ? "Enceinte fermée" : "Muraille ouverte") + ", " + towers + " tours, "
+              + gates + (gates > 1 ? " portes. " : " porte. ") + "Améliorations et retouches du tracé arrivent à la prochaine étape."), x + 2, y + 20, width - 4, Palette.MUTED, 10) + 4;
         }
         y += Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, "Murailles", "aucune muraille");
         y = Ui.wrapped(graphics, font, Component.literal("Tracez l'enceinte de la colonie vue du ciel : posez des points au sol, la muraille "
-          + "suit le relief entre eux. Elle peut rester ouverte, et une tour se dresse sur chaque point."), x + 2, y + 20, width - 4, Palette.MUTED, 10) + 6;
+          + "suit le relief entre eux. Elle peut rester ouverte, une tour se dresse sur chaque point, et il lui faut au moins une porte (la première est offerte)."), x + 2, y + 20, width - 4, Palette.MUTED, 10) + 6;
         final int buttonW = Math.min(width, Math.max(140, font.width("Tracer la muraille") + 24));
         seatButton(graphics, mouseX, mouseY, x, y, buttonW, "Tracer la muraille", Ui.ButtonStyle.PRIMARY, true,
           () -> minecraft.setScreen(new fr.kodistan.interregne.client.walls.WallPlannerScreen(townHall)));

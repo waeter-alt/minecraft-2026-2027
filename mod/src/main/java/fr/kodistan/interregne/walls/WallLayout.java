@@ -1,14 +1,18 @@
 package fr.kodistan.interregne.walls;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
- * A traced wall laid on the terrain: the columns of wall between the points and a square tower on each point. The
- * wall keeps the same height above the ground everywhere; its crest is smoothed so it rises and falls with the
- * relief instead of stepping every block. Shared by the planner's ghost and, later, the construction.
+ * A traced wall laid on the terrain: the columns of wall between the points, a square tower on each point and the
+ * gatehouses. The wall keeps the same height above the ground everywhere; its crest is smoothed so it rises and falls
+ * with the relief instead of stepping every block. Shared by the planner's ghost and the construction.
  */
 public final class WallLayout
 {
@@ -16,7 +20,7 @@ public final class WallLayout
     {
         OK,
         /**
-         * A hut or a player's block is in the way.
+         * A hut or a player's block is in the way, or a gate does not fit there.
          */
         BLOCKED,
         /**
@@ -40,6 +44,19 @@ public final class WallLayout
     }
 
     /**
+     * A gatehouse across the wall, centred on (x, z): it runs GATE_HALF blocks each way along (ux, uz) and depth blocks
+     * each way across. The passage is the middle PASSAGE_HALF each way; turrets stand on either side. floor is the y of
+     * the passage's floor, crest the y of the lintel.
+     */
+    public record Gate(int x, int z, int ux, int uz, int depth, int floor, int crest, Status status, int index)
+    {
+        public boolean passage(final int along)
+        {
+            return Math.abs(along) <= PASSAGE_HALF;
+        }
+    }
+
+    /**
      * Terrain for one column.
      */
     @FunctionalInterface
@@ -58,16 +75,30 @@ public final class WallLayout
     }
 
     private static final int SMOOTH = 2;
+    /**
+     * A gatehouse is 7 blocks along the wall: a 3-wide passage between two 2-wide turrets.
+     */
+    public static final int GATE_HALF = 3;
+    public static final int PASSAGE_HALF = 1;
 
     private final List<Column> columns;
     private final List<Tower> towers;
+    private final List<Gate> gates;
     private final int length;
+    private final List<WallTrace.Point> center;
+    private final boolean closed;
+    private final Set<Long> towerCells;
 
-    private WallLayout(final List<Column> columns, final List<Tower> towers, final int length)
+    private WallLayout(final List<Column> columns, final List<Tower> towers, final List<Gate> gates, final int length,
+      final List<WallTrace.Point> center, final boolean closed, final Set<Long> towerCells)
     {
         this.columns = columns;
         this.towers = towers;
+        this.gates = gates;
         this.length = length;
+        this.center = center;
+        this.closed = closed;
+        this.towerCells = towerCells;
     }
 
     public List<Column> columns()
@@ -80,8 +111,13 @@ public final class WallLayout
         return towers;
     }
 
+    public List<Gate> gates()
+    {
+        return gates;
+    }
+
     /**
-     * Blocks of wall along the trace, towers excluded.
+     * Blocks of wall along the trace, towers and gates excluded.
      */
     public int length()
     {
@@ -105,26 +141,92 @@ public final class WallLayout
                 count++;
             }
         }
+        for (final Gate gate : gates)
+        {
+            if (gate.status != Status.OK)
+            {
+                count++;
+            }
+        }
         return count;
     }
 
     public int cost(final WallLevels.Level level)
     {
-        return length * level.perColumn() + towers.size() * level.perTower();
+        int cost = length * level.perColumn() + towers.size() * level.perTower();
+        for (int i = 0; i < gates.size(); i++)
+        {
+            cost += level.gatePrice(i);
+        }
+        return cost;
     }
 
     /**
-     * Lays out the points (closed or not) at this level.
+     * Where a gate would go for the mouse over hover: the nearest cell of the trace, within a few blocks, where a
+     * gatehouse fits (a straight stretch, clear of the towers and of the other gates). Null when none.
      */
-    public static WallLayout of(final List<WallTrace.Point> points, final boolean closed, final WallLevels.Level level, final Ground ground,
-      final Claim claim)
+    @Nullable
+    public WallTrace.Point gateSpot(final WallTrace.Point hover, final List<WallTrace.Point> others)
+    {
+        WallTrace.Point best = null;
+        int bestDistance = 10;
+        for (int i = 0; i < center.size(); i++)
+        {
+            final WallTrace.Point cell = center.get(i);
+            final int distance = cell.distanceSq(hover);
+            if (distance < bestDistance && direction(center, i, closed, towerCells) != null && clearOf(cell, others))
+            {
+                best = cell;
+                bestDistance = distance;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * The gate whose footprint holds this cell, if any.
+     */
+    @Nullable
+    public Gate gateAt(final WallTrace.Point cell)
+    {
+        for (final Gate gate : gates)
+        {
+            final int dx = cell.x() - gate.x();
+            final int dz = cell.z() - gate.z();
+            final int along = dx * gate.ux() + dz * gate.uz();
+            final int across = -dx * gate.uz() + dz * gate.ux();
+            if (Math.abs(along) <= GATE_HALF && Math.abs(across) <= gate.depth() + 1)
+            {
+                return gate;
+            }
+        }
+        return null;
+    }
+
+    private static boolean clearOf(final WallTrace.Point cell, final List<WallTrace.Point> others)
+    {
+        for (final WallTrace.Point other : others)
+        {
+            if (Math.max(Math.abs(other.x() - cell.x()), Math.abs(other.z() - cell.z())) <= GATE_HALF * 2)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Lays out the points (closed or not) and their gates at this level.
+     */
+    public static WallLayout of(final List<WallTrace.Point> points, final boolean closed, final List<WallTrace.Point> gatePoints,
+      final WallLevels.Level level, final Ground ground, final Claim claim)
     {
         final List<WallTrace.Point> center = centerline(points, closed);
         final int half = level.towerSize() / 2;
 
         // Towers first: their footprint is taken out of the wall
         final List<Tower> towers = new ArrayList<>();
-        final Map<Long, Boolean> towerCells = new LinkedHashMap<>();
+        final Set<Long> towerCells = new HashSet<>();
         for (final WallTrace.Point point : points)
         {
             int low = Integer.MAX_VALUE;
@@ -137,7 +239,7 @@ public final class WallLayout
                 {
                     final int x = point.x() + dx;
                     final int z = point.z() + dz;
-                    towerCells.put(key(x, z), true);
+                    towerCells.add(key(x, z));
                     final Terrain.Probe probe = ground.at(x, z);
                     final Status cell = statusOf(probe, claim, x, z);
                     if (cell == Status.OK)
@@ -162,7 +264,7 @@ public final class WallLayout
               Math.max(0, center.indexOf(point))));
         }
 
-        // The crest follows the ground along the centerline, averaged over a few blocks
+        // The crest follows the ground along the centerline, averaged over a few blocks.
         // A roof is not ground: blocked cells take the height of the nearest free ground before them (after them at the start)
         final int[] groundY = new int[center.size()];
         final boolean[] free = new boolean[center.size()];
@@ -193,9 +295,7 @@ public final class WallLayout
         {
             groundY[i] = groundY[firstFree];
         }
-        final Map<Long, Column> columns = new LinkedHashMap<>();
-        int length = 0;
-        final int before = (level.thickness() - 1) / 2;
+        final int[] crest = new int[center.size()];
         for (int i = 0; i < center.size(); i++)
         {
             int sum = 0;
@@ -209,9 +309,58 @@ public final class WallLayout
                     count++;
                 }
             }
-            final int crest = Math.round(sum / (float) count) + level.height();
+            crest[i] = Math.round(sum / (float) count) + level.height();
+        }
+
+        // Gates next: their footprint is taken out of the wall too
+        final int depth = level.thickness() / 2 + 1;
+        final List<Gate> gates = new ArrayList<>();
+        final Set<Long> gateCells = new HashSet<>();
+        final Set<Integer> gateIndexes = new HashSet<>();
+        for (final WallTrace.Point point : gatePoints)
+        {
+            final int index = center.indexOf(point);
+            final int[] u = index < 0 ? null : direction(center, index, closed, towerCells);
+            if (u == null)
+            {
+                // No longer on a straight stretch of the trace: shown red where it was
+                gates.add(new Gate(point.x(), point.z(), 1, 0, depth, ground.at(point.x(), point.z()).ground(),
+                  ground.at(point.x(), point.z()).ground() + level.height(), Status.BLOCKED, Math.max(0, index)));
+                continue;
+            }
+            int floor = Integer.MAX_VALUE;
+            Status status = Status.OK;
+            for (int along = -GATE_HALF; along <= GATE_HALF; along++)
+            {
+                final int k = closed ? Math.floorMod(index + along, center.size()) : index + along;
+                gateIndexes.add(k);
+                for (int across = -depth; across <= depth; across++)
+                {
+                    final int x = point.x() + along * u[0] - across * u[1];
+                    final int z = point.z() + along * u[1] + across * u[0];
+                    gateCells.add(key(x, z));
+                    final Terrain.Probe probe = ground.at(x, z);
+                    status = worse(status, statusOf(probe, claim, x, z));
+                    if (Math.abs(along) <= PASSAGE_HALF && probe.loaded() && !probe.blocked())
+                    {
+                        floor = Math.min(floor, probe.ground());
+                    }
+                }
+            }
+            if (floor == Integer.MAX_VALUE)
+            {
+                floor = groundY[index];
+            }
+            gates.add(new Gate(point.x(), point.z(), u[0], u[1], depth, floor, Math.max(floor + level.height(), crest[index]), status, index));
+        }
+
+        final Map<Long, Column> columns = new LinkedHashMap<>();
+        int length = 0;
+        final int before = (level.thickness() - 1) / 2;
+        for (int i = 0; i < center.size(); i++)
+        {
             final WallTrace.Point cell = center.get(i);
-            if (!towerCells.containsKey(key(cell.x(), cell.z())))
+            if (!towerCells.contains(key(cell.x(), cell.z())) && !gateIndexes.contains(i))
             {
                 length++;
             }
@@ -222,7 +371,7 @@ public final class WallLayout
                     final int x = cell.x() + dx;
                     final int z = cell.z() + dz;
                     final long key = key(x, z);
-                    if (towerCells.containsKey(key) || columns.containsKey(key))
+                    if (towerCells.contains(key) || gateCells.contains(key) || columns.containsKey(key))
                     {
                         continue;
                     }
@@ -231,16 +380,48 @@ public final class WallLayout
                     if (status != Status.OK)
                     {
                         // Where it cannot stand, show the slice of wall that would cut through, at the crest
-                        columns.put(key, new Column(x, z, crest - level.height() + 1, crest, status, i));
+                        columns.put(key, new Column(x, z, crest[i] - level.height() + 1, crest[i], status, i));
                         continue;
                     }
                     // Same height everywhere, give or take the smoothing
-                    final int top = Math.max(probe.ground() + level.height() - 1, Math.min(probe.ground() + level.height() + 1, crest));
+                    final int top = Math.max(probe.ground() + level.height() - 1, Math.min(probe.ground() + level.height() + 1, crest[i]));
                     columns.put(key, new Column(x, z, probe.ground() + 1, top, status, i));
                 }
             }
         }
-        return new WallLayout(new ArrayList<>(columns.values()), towers, length);
+        return new WallLayout(new ArrayList<>(columns.values()), towers, gates, length, center, closed, towerCells);
+    }
+
+    /**
+     * The straight axis (unit x or z step) of the trace around cell i when a whole gatehouse fits there, clear of the
+     * towers; null otherwise. Gates only go on north-south or east-west stretches.
+     */
+    @Nullable
+    private static int[] direction(final List<WallTrace.Point> center, final int i, final boolean closed, final Set<Long> towerCells)
+    {
+        final int n = center.size();
+        if (!closed && (i - GATE_HALF < 0 || i + GATE_HALF >= n) || n < GATE_HALF * 2 + 1)
+        {
+            return null;
+        }
+        final WallTrace.Point here = center.get(i);
+        final WallTrace.Point next = center.get(Math.floorMod(i + 1, n));
+        final int ux = next.x() - here.x();
+        final int uz = next.z() - here.z();
+        for (int along = -GATE_HALF; along <= GATE_HALF; along++)
+        {
+            final WallTrace.Point cell = center.get(Math.floorMod(i + along, n));
+            if (cell.x() != here.x() + along * ux || cell.z() != here.z() + along * uz)
+            {
+                return null;
+            }
+            // The gatehouse's turrets may touch a tower's side, not overlap it
+            if (towerCells.contains(key(cell.x(), cell.z())))
+            {
+                return null;
+            }
+        }
+        return new int[] {ux, uz};
     }
 
     /**

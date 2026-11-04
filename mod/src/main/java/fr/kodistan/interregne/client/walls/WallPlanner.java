@@ -170,12 +170,16 @@ public final class WallPlanner
         PROBES.clear();
     }
 
-    static void show(@Nullable final WallLayout layout, @Nullable final WallTrace.Point at, final boolean closing)
+    static void show(@Nullable final WallLayout layout, @Nullable final WallTrace.Point at, final boolean closing, @Nullable final WallTrace.Point gate)
     {
         ghost = layout;
         cursor = at;
         cursorClosing = closing;
+        gatePreview = gate;
     }
+
+    @Nullable
+    private static WallTrace.Point gatePreview;
 
     /**
      * The column under the mouse, given in screen fractions (0..1 from the top left), or null when it points at the
@@ -272,6 +276,11 @@ public final class WallPlanner
                 box(out, matrix, tower.x(), tower.bottom(), tower.z(), tower.x() + tower.size(), tower.top() + 1, tower.z() + tower.size(),
                   color(tower.status(), true));
             }
+            for (final WallLayout.Gate gate : ghost.gates())
+            {
+                final boolean preview = gatePreview != null && gatePreview.x() == gate.x() && gatePreview.z() == gate.z();
+                gate(out, matrix, gate, gate.status() != WallLayout.Status.OK ? color(gate.status(), false) : preview ? GATE_PREVIEW : GATE);
+            }
         }
         if (cursor != null)
         {
@@ -281,6 +290,34 @@ public final class WallPlanner
         }
         buffers.endBatch(RenderType.debugQuads());
         pose.popPose();
+    }
+
+    private static final float[] GATE = {1.0f, 0.80f, 0.25f, 0.50f};
+    private static final float[] GATE_PREVIEW = {1.0f, 0.93f, 0.55f, 0.45f};
+
+    /**
+     * A gatehouse: its two turrets, the lintel over the passage and a thin strip on the passage floor.
+     */
+    private static void gate(final VertexConsumer out, final Matrix4f m, final WallLayout.Gate gate, final float[] color)
+    {
+        final int half = WallLayout.GATE_HALF;
+        final int inner = WallLayout.PASSAGE_HALF;
+        final int depth = gate.depth();
+        // Corners of a span along the wall (from a to b inclusive) and across it, as a box
+        gateBox(out, m, gate, -half, -inner - 1, -depth, depth, gate.floor() + 1, gate.crest() + 3, color);
+        gateBox(out, m, gate, inner + 1, half, -depth, depth, gate.floor() + 1, gate.crest() + 3, color);
+        gateBox(out, m, gate, -inner, inner, -depth, depth, gate.crest(), gate.crest() + 2, color);
+        gateBox(out, m, gate, -inner, inner, -depth, depth, gate.floor() + 1, gate.floor() + 1.1f, color);
+    }
+
+    private static void gateBox(final VertexConsumer out, final Matrix4f m, final WallLayout.Gate gate, final int along0, final int along1,
+      final int across0, final int across1, final float y0, final float y1, final float[] color)
+    {
+        final int ax = gate.x() + along0 * gate.ux() - across0 * gate.uz();
+        final int az = gate.z() + along0 * gate.uz() + across0 * gate.ux();
+        final int bx = gate.x() + along1 * gate.ux() - across1 * gate.uz();
+        final int bz = gate.z() + along1 * gate.uz() + across1 * gate.ux();
+        box(out, m, Math.min(ax, bx), y0, Math.min(az, bz), Math.max(ax, bx) + 1, y1, Math.max(az, bz) + 1, color);
     }
 
     private static float[] color(final WallLayout.Status status, final boolean tower)

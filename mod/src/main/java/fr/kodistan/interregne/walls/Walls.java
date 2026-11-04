@@ -11,6 +11,9 @@ import fr.kodistan.interregne.network.WallBuildPayload;
 import fr.kodistan.interregne.network.WallSyncPayload;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -21,7 +24,6 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +52,7 @@ public final class Walls
      */
     public static int seconds(final WallLayout layout)
     {
-        return Math.min(150, 30 + layout.length() / 8 + layout.towers().size() * 2);
+        return Math.min(150, 30 + layout.length() / 8 + layout.towers().size() * 2 + layout.gates().size() * 4);
     }
 
     public static void onBuild(final WallBuildPayload payload, final IPayloadContext context)
@@ -72,31 +74,35 @@ public final class Walls
             refuse(player, "Cette colonie a déjà sa muraille.");
             return;
         }
-        final int count = Math.min(payload.xs().size(), payload.zs().size());
-        if (count < 2 || count > MAX_POINTS || (payload.closed() && count < 3))
+        final List<WallTrace.Point> points = WallTrace.unflat(payload.points());
+        final List<WallTrace.Point> gates = WallTrace.unflat(payload.gates());
+        final int count = points.size();
+        if (count < 2 || count > MAX_POINTS || (payload.closed() && count < 3) || gates.size() > WallLevels.MAX_GATES)
         {
             return;
         }
-        final BlockPos center = colony.getCenter();
-        final List<WallTrace.Point> points = new ArrayList<>();
-        for (int i = 0; i < count; i++)
+        if (gates.isEmpty())
         {
-            final WallTrace.Point point = new WallTrace.Point(payload.xs().get(i), payload.zs().get(i));
+            refuse(player, "Une muraille a besoin d'au moins une porte.");
+            return;
+        }
+        final BlockPos center = colony.getCenter();
+        for (final WallTrace.Point point : points)
+        {
             if (Math.abs(point.x() - center.getX()) > MAX_REACH || Math.abs(point.z() - center.getZ()) > MAX_REACH)
             {
                 refuse(player, "La muraille s'éloigne trop de l'hôtel de ville.");
                 return;
             }
-            points.add(point);
         }
 
         final int wallLevel = 1;
         final WallLevels.Level look = WallLevels.of(wallLevel);
-        final WallLayout layout = WallLayout.of(points, payload.closed(), look, (x, z) -> Terrain.probe(level, x, z),
+        final WallLayout layout = WallLayout.of(points, payload.closed(), gates, look, (x, z) -> Terrain.probe(level, x, z),
           (x, z) -> colony.isCoordInColony(level, new BlockPos(x, 64, z)));
         if (layout.blocked() > 0)
         {
-            refuse(player, "Le tracé traverse un bâtiment ou sort de la colonie : retire les tronçons rouges.");
+            refuse(player, "Le tracé traverse un bâtiment, sort de la colonie ou une porte ne tient pas : retire les parties rouges.");
             return;
         }
         final long cost = player.isCreative() ? 0 : layout.cost(look);
@@ -112,15 +118,28 @@ public final class Walls
         }
 
         final int seconds = seconds(layout);
-        final WallRegistry.Wall wall = new WallRegistry.Wall(List.copyOf(points), payload.closed(), wallLevel);
+        final WallRegistry.Wall wall = new WallRegistry.Wall(List.copyOf(points), List.copyOf(gates), payload.closed(), wallLevel);
         BUILDING.add(key);
         sync(player.server, key, wall, true);
-        WallSite.launch(level, WallBlocks.of(level, layout, wallLevel), seconds, wallLevel, () -> {
+        WallSite.launch(level, WallBlocks.of(level, layout, wallLevel), seconds, wallLevel, bannerOf(colony), () -> {
             BUILDING.remove(key);
             registry.put(colony, wall);
             sync(player.server, key, wall, false);
         });
         player.sendSystemMessage(Component.literal("Chantier de la muraille lancé : " + seconds + " s.").withStyle(ChatFormatting.GOLD));
+    }
+
+    /**
+     * The colony's banner, for the gates.
+     */
+    private static ItemStack bannerOf(final IColony colony)
+    {
+        final ItemStack banner = new ItemStack(Items.WHITE_BANNER);
+        if (colony.getColonyFlag() != null)
+        {
+            banner.set(DataComponents.BANNER_PATTERNS, colony.getColonyFlag());
+        }
+        return banner;
     }
 
     private static void refuse(final ServerPlayer player, final String message)
@@ -130,8 +149,7 @@ public final class Walls
 
     private static WallSyncPayload payloadOf(final String key, final WallRegistry.Wall wall, final boolean building)
     {
-        return new WallSyncPayload(key, wall.points().stream().map(WallTrace.Point::x).toList(), wall.points().stream().map(WallTrace.Point::z).toList(),
-          wall.closed(), wall.level(), building);
+        return new WallSyncPayload(key, WallTrace.flat(wall.points()), WallTrace.flat(wall.gates()), wall.closed(), wall.level(), building);
     }
 
     private static void sync(final MinecraftServer server, final String key, final WallRegistry.Wall wall, final boolean building)
