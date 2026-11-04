@@ -6,9 +6,7 @@ import com.minecolonies.api.colony.buildings.views.IBuildingView;
 import com.minecolonies.api.colony.buildings.workerbuildings.ITownHallView;
 import com.minecolonies.api.colony.requestsystem.request.IRequest;
 import com.minecolonies.core.client.gui.map.WindowColonyMap;
-import com.minecolonies.core.client.gui.townhall.WindowAlliancePage;
 import com.minecolonies.core.client.gui.townhall.WindowMainPage;
-import com.minecolonies.core.client.gui.townhall.WindowPermissionsPage;
 import com.minecolonies.core.client.gui.townhall.WindowSettings;
 import com.minecolonies.core.client.gui.townhall.WindowStatsPage;
 import com.minecolonies.core.client.gui.townhall.WindowTownHallNameEntry;
@@ -408,8 +406,8 @@ public final class ColonyHubScreen extends ParchmentScreen
           new Tool("Carte", Icon.of(Items.FILLED_MAP), townHall.getBuildingLevel() < ColonyMaps.UNLOCK_LEVEL, this::openMap),
           new Tool("Statistiques", Icon.module("stats"), false, () -> new WindowStatsPage((BuildingTownHall.View) townHall).open()),
           new Tool("Réglages", Icon.module("settings"), false, () -> new WindowSettings((BuildingTownHall.View) townHall).open()),
-          new Tool("Permissions", Icon.module("scepter"), false, () -> new WindowPermissionsPage((BuildingTownHall.View) townHall).open()),
-          new Tool("Alliances", Icon.of(Items.WHITE_BANNER), false, () -> new WindowAlliancePage((BuildingTownHall.View) townHall).open()),
+          new Tool("Permissions", Icon.module("scepter"), false, () -> PermissionsScreen.open((BuildingTownHall.View) townHall, this)),
+          new Tool("Alliances", Icon.of(Items.WHITE_BANNER), false, () -> AlliancesScreen.open((BuildingTownHall.View) townHall, this)),
           new Tool("Apparence", Icon.module("domum"), false, () ->
           {
               openOriginal = true;
@@ -545,10 +543,22 @@ public final class ColonyHubScreen extends ParchmentScreen
           new Tile("Demandes", Integer.toString(requests), Icon.module("requests"), requests > 0 ? Ui.State.WAIT : Ui.State.OK, () -> show(Page.REQUESTS))));
         y = tileRow(graphics, mouseX, mouseY, x, y + 4, tileW, List.of(
           new Tile("Bâtiments", Integer.toString(buildings.size()), Icon.of(Items.BRICKS), blocked > 0 ? Ui.State.BAD : Ui.State.OK, () -> show(Page.BUILDINGS)),
-          new Tile("Chantiers", Integer.toString(sites), Icon.of(Items.IRON_PICKAXE), Ui.State.OK, () -> show(Page.BUILDINGS))));
+          new Tile("Chantiers", Integer.toString(sites), Icon.of(Items.IRON_PICKAXE), Ui.State.OK, () -> show(Page.BUILDINGS)),
+          mercenaries()));
 
         y = Ui.separator(graphics, x, y, width);
         return renderSeat(graphics, mouseX, mouseY, x, y, width);
+    }
+
+    /**
+     * The mercenaries' tile: ready, or resting for so many minutes.
+     */
+    private Tile mercenaries()
+    {
+        final long used = colony.getMercenaryUseTime();
+        final long wait = used == 0 ? 0 : Math.max(0, com.minecolonies.api.util.constant.Constants.TICKS_FOURTY_MIN - (colony.getWorld().getGameTime() - used));
+        return new Tile("Mercenaires", wait == 0 ? "Prêts" : (wait / 1200 + 1) + " min", Icon.of(Items.IRON_SWORD), wait == 0 ? Ui.State.OK : Ui.State.WAIT,
+          () -> MercenaryScreen.open(townHall, this));
     }
 
     /**
