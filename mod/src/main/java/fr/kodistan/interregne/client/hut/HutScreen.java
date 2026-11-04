@@ -150,13 +150,54 @@ public final class HutScreen extends ParchmentScreen
 
     private void renderHeader(final GuiGraphics graphics, final int mouseX, final int mouseY)
     {
-        int x = x0 + 8 + font.width(title) + 6;
-        final String level = "Niveau " + building.getBuildingLevel() + " / " + building.getBuildingMaxLevel();
-        graphics.drawString(font, level, x, y0 + 7, Palette.MUTED, false);
-        x += font.width(level) + 6;
+        int x = x0 + 8 + font.width(title) + 8;
+        final int level = building.getBuildingLevel();
+        final int max = building.getBuildingMaxLevel();
+        // « Niveau 2 » and one square per level in its own colour, filled up to the current one
+        final String text = level == 0 ? "Pas construit" : "Niveau " + level;
+        final int plateW = font.width(text) + 10 + max * 8;
+        Ui.plate(graphics, x, y0 + 4, x + plateW, y0 + 17, Palette.PAPER_LIGHT, Palette.EDGE, Palette.PAPER_LIGHT);
+        graphics.drawString(font, text, x + 4, y0 + 7, Palette.INK, false);
+        int px = x + 6 + font.width(text);
+        for (int l = 1; l <= max; l++)
+        {
+            graphics.fill(px, y0 + 7, px + 6, y0 + 14, Palette.levelEdge(l));
+            graphics.fill(px + 1, y0 + 8, px + 5, y0 + 13, l <= level ? Palette.levelFill(l) : Palette.PAPER_LIGHT);
+            px += 8;
+        }
+        x += plateW + 6;
         final boolean over = Ui.inside(mouseX, mouseY, x - 2, y0 + 4, 12, 12);
-        graphics.drawString(font, "✎", x, y0 + 7, over ? Palette.SELECTED : Palette.MUTED, false);
+        graphics.drawString(font, "✎", x, y0 + 7, over ? Palette.SELECTED : headerText(), false);
         hits.add(new Hit(x - 2, y0 + 4, 12, 12, () -> new WindowHutNameEntry(building).open()));
+    }
+
+    @Override
+    protected Integer headerFill()
+    {
+        return Palette.levelFill(building.getBuildingLevel());
+    }
+
+    @Override
+    protected int headerEdge()
+    {
+        return Palette.levelEdge(building.getBuildingLevel());
+    }
+
+    @Override
+    protected int headerText()
+    {
+        return Palette.levelText(building.getBuildingLevel());
+    }
+
+    /**
+     * A heading on a band of this level's colour, across the side panel; returns the y below it.
+     */
+    private int levelHeading(final GuiGraphics graphics, final int x, final int y, final int width, final String text, final int level)
+    {
+        Ui.plate(graphics, x - 3, y - 2, x + width + 3, y + 12, Palette.levelFill(level), Palette.levelEdge(level), Palette.levelFill(level));
+        final Component bold = Component.literal(fit(text, width - 2)).withStyle(ChatFormatting.BOLD);
+        graphics.drawString(font, bold, x, y + 1, Palette.levelText(level), false);
+        return y + 16;
     }
 
     // --- Left: the building's pages and its tools ---
@@ -362,21 +403,28 @@ public final class HutScreen extends ParchmentScreen
         for (final Worker worker : workers)
         {
             final ICitizenDataView citizen = worker.citizen();
-            Ui.card(graphics, x, y, width, WORKER_H - 2, false, false, false);
-            drawFace(graphics, citizen, x + 4, y + 3);
-            graphics.drawString(font, Component.literal(citizen.getName()).withStyle(ChatFormatting.BOLD), x + 24, y + 3, Palette.INK, false);
-
-            int chipX = x + width - 4;
+            final Component name = Component.literal(citizen.getName()).withStyle(ChatFormatting.BOLD);
             final List<Map.Entry<String, Ui.State>> chips = chips(citizen);
-            for (int i = chips.size() - 1; i >= 0; i--)
+            int chipsW = 0;
+            for (final Map.Entry<String, Ui.State> chip : chips)
             {
-                chipX -= font.width(chips.get(i).getKey()) + 8;
-                Ui.chip(graphics, font, chipX, y + 6, chips.get(i).getKey(), chips.get(i).getValue());
-                chipX -= 3;
+                chipsW += font.width(chip.getKey()) + 11;
             }
-            final String line = worker.job() + " · " + activity(citizen);
-            graphics.drawString(font, fit(line, chipX - x - 26), x + 24, y + 12, Palette.MUTED, false);
-            y += WORKER_H;
+            // Chips beside the name when they fit, on their own line below otherwise
+            final boolean inline = font.width(name) + chipsW + 30 <= width;
+            final int cardH = inline || chips.isEmpty() ? WORKER_H - 2 : WORKER_H + 11;
+            Ui.card(graphics, x, y, width, cardH, false, false, false);
+            drawFace(graphics, citizen, x + 4, y + 3);
+            graphics.drawString(font, name, x + 24, y + 3, Palette.INK, false);
+            graphics.drawString(font, fit(worker.job() + " · " + activity(citizen), width - 28), x + 24, y + 12, Palette.MUTED, false);
+
+            int chipX = inline ? x + width - 4 - chipsW + 3 : x + 24;
+            final int chipY = inline ? y + 2 : y + 22;
+            for (final Map.Entry<String, Ui.State> chip : chips)
+            {
+                chipX += Ui.chip(graphics, font, chipX, chipY, chip.getKey(), chip.getValue()) + 3;
+            }
+            y += cardH + 2;
         }
         return y + 2;
     }
@@ -633,7 +681,7 @@ public final class HutScreen extends ParchmentScreen
         final int secondaryY = canUpgrade ? buttonY - Ui.BUTTON_H - 3 : buttonY;
         if (!canUpgrade)
         {
-            y = Ui.wrapped(graphics, font, Component.literal("Niveau maximum").withStyle(ChatFormatting.BOLD), x, y, width, Palette.INK, 10) + 2;
+            y = levelHeading(graphics, x, y, width, "Niveau maximum", level);
             final String desc = CatalogueIndex.buildingDesc(idOf(building));
             if (desc != null)
             {
@@ -645,7 +693,7 @@ public final class HutScreen extends ParchmentScreen
 
         final int target = level + 1;
         final String heading = level == 0 ? "Construire le bâtiment" : "Passer au niveau " + target;
-        y = Ui.wrapped(graphics, font, Component.literal(heading).withStyle(ChatFormatting.BOLD), x, y, width, Palette.INK, 10) + 2;
+        y = levelHeading(graphics, x, y, width, heading, target);
 
         final ITownHallView townHall = building.getColony().getTownHall();
         final String refusal = TownHallCap.refusal(building instanceof ITownHallView, target, townHall == null ? 0 : townHall.getBuildingLevel());
@@ -690,8 +738,17 @@ public final class HutScreen extends ParchmentScreen
 
         sideButton(graphics, mouseX, mouseY, x, secondaryY, width, secondary, Ui.ButtonStyle.SECONDARY, true, this::openBuildWindow);
         final String action = refusal != null ? "Hôtel de ville niv. " + target + " requis" : level == 0 ? "Construire" : "Améliorer";
-        sideButton(graphics, mouseX, mouseY, x, buttonY, width, action, Ui.ButtonStyle.PRIMARY, refusal == null && affordable,
-          () -> new BuildRequestMessage(building, BuildRequestMessage.Mode.BUILD, BlockPos.ZERO).sendToServer());
+        final boolean enabled = refusal == null && affordable;
+        Ui.levelButton(graphics, font, x, buttonY, width, Ui.BUTTON_H, fit(action, width - 6), target, enabled,
+          Ui.inside(mouseX, mouseY, x, buttonY, width, Ui.BUTTON_H));
+        if (enabled)
+        {
+            hits.add(new Hit(x, buttonY, width, Ui.BUTTON_H, () ->
+            {
+                new BuildRequestMessage(building, BuildRequestMessage.Mode.BUILD, BlockPos.ZERO).sendToServer();
+                onClose();
+            }));
+        }
     }
 
     private void sideButton(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width, final String label,
@@ -733,7 +790,10 @@ public final class HutScreen extends ParchmentScreen
             sub = level == 0 ? "Niveau 1" : "Niveau " + level + " → " + (level + 1);
             seconds = BuildCosts.secondsForLevel(level + 1);
         }
-        y = Ui.wrapped(graphics, font, Component.literal(heading).withStyle(ChatFormatting.BOLD), x, y, width, Palette.INK, 10);
+        // Demolition is red like its site bar; repair keeps the current level's colour
+        final int colourLevel = building.isRepairing() || building.isDeconstructing() ? level : level + 1;
+        y = building.isDeconstructing() ? Ui.wrapped(graphics, font, Component.literal(heading).withStyle(ChatFormatting.BOLD), x, y, width, Palette.RED, 10)
+                                        : levelHeading(graphics, x, y, width, heading, colourLevel);
         if (sub != null)
         {
             graphics.drawString(font, sub, x, y, Palette.MUTED, false);
@@ -748,7 +808,14 @@ public final class HutScreen extends ParchmentScreen
             Ui.wrapped(graphics, font, Component.literal("Le chantier avance. Approchez-vous pour suivre sa barre."), x, y, width, Palette.MUTED, 9);
             return;
         }
-        Ui.progressBar(graphics, x, y, width, 6, progress, Ui.State.OK);
+        if (building.isDeconstructing())
+        {
+            Ui.progressBar(graphics, x, y, width, 6, progress, Ui.State.BAD);
+        }
+        else
+        {
+            Ui.progressBar(graphics, x, y, width, 6, progress, Palette.levelFill(colourLevel), Palette.levelEdge(colourLevel));
+        }
         y += 10;
         final int left = Math.max(1, Math.round((1 - progress) * seconds));
         graphics.drawString(font, Math.round(progress * 100) + " % · encore " + BuildCosts.formatSeconds(left) + " environ", x, y, Palette.INK, false);

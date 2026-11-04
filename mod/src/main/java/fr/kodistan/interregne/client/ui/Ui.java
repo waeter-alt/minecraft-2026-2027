@@ -215,6 +215,37 @@ public final class Ui
     }
 
     /**
+     * A button in a building level's colour, for what buys that level.
+     */
+    public static void levelButton(final GuiGraphics graphics, final Font font, final int x, final int y, final int width, final int height, final String label,
+      final int level, final boolean enabled, final boolean hover)
+    {
+        if (!enabled)
+        {
+            button(graphics, font, x, y, width, height, label, ButtonStyle.PRIMARY, false, hover);
+            return;
+        }
+        plate(graphics, x, y, x + width, y + height, Palette.levelFill(level), Palette.levelEdge(level), Palette.levelFill(level));
+        if (hover)
+        {
+            graphics.renderOutline(x + 1, y + 1, width - 2, height - 2, Palette.levelText(level));
+        }
+        final Component bold = Component.literal(label).withStyle(ChatFormatting.BOLD);
+        graphics.drawString(font, bold, x + (width - font.width(bold)) / 2, y + (height - 8) / 2, Palette.levelText(level), false);
+    }
+
+    /**
+     * A small badge in a building level's colour (« Niv. 3 »); returns its width.
+     */
+    public static int levelBadge(final GuiGraphics graphics, final Font font, final int x, final int y, final String text, final int level)
+    {
+        final int width = font.width(text) + 8;
+        plate(graphics, x, y, x + width, y + 12, Palette.levelFill(level), Palette.levelEdge(level), Palette.levelFill(level));
+        graphics.drawString(font, text, x + 4, y + 2, Palette.levelText(level), false);
+        return width;
+    }
+
+    /**
      * A one-line state banner: coloured dot, the state in bold, then what it means.
      */
     public static void banner(final GuiGraphics graphics, final Font font, final int x, final int y, final int width, final State state, final String title,
@@ -245,6 +276,15 @@ public final class Ui
         graphics.fill(x, y, x + width, y + height, Palette.PAPER_DARK);
         final int filled = Math.round(width * Math.max(0, Math.min(1, fraction)));
         graphics.fill(x, y, x + filled, y + height, state.strong);
+    }
+
+    public static void progressBar(final GuiGraphics graphics, final int x, final int y, final int width, final int height, final float fraction,
+      final int color, final int edge)
+    {
+        graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, edge);
+        graphics.fill(x, y, x + width, y + height, Palette.PAPER_DARK);
+        final int filled = Math.round(width * Math.max(0, Math.min(1, fraction)));
+        graphics.fill(x, y, x + filled, y + height, color);
     }
 
     /**

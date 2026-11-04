@@ -54,15 +54,22 @@ public abstract class ParchmentScreen extends Screen
     {
         super.render(graphics, mouseX, mouseY, partialTick);
         Ui.plate(graphics, x0, y0, x0 + w, y0 + h, Palette.PAPER, Palette.EDGE, Palette.PAPER_LIGHT);
+        final Integer band = headerFill();
+        final int ink = band == null ? Palette.INK : headerText();
+        final int muted = band == null ? Palette.MUTED : headerText();
+        if (band != null)
+        {
+            Ui.plate(graphics, x0 + 2, y0 + 2, x0 + w - 2, y0 + 19, band, headerEdge(), band);
+        }
         int titleX = x0 + 8;
         final String crumb = crumb();
         if (crumb != null)
         {
-            graphics.drawString(font, crumb + " › ", titleX, y0 + 7, Palette.MUTED, false);
+            graphics.drawString(font, crumb + " › ", titleX, y0 + 7, muted, false);
             titleX += font.width(crumb + " › ");
         }
-        graphics.drawString(font, title, titleX, y0 + 7, Palette.INK, false);
-        graphics.drawString(font, "✕", x0 + w - 13, y0 + 6, overClose(mouseX, mouseY) ? Palette.RED : Palette.MUTED, false);
+        graphics.drawString(font, title, titleX, y0 + 7, ink, false);
+        graphics.drawString(font, "✕", x0 + w - 13, y0 + 6, overClose(mouseX, mouseY) ? Palette.RED : muted, false);
         graphics.fill(x0 + 4, y0 + 19, x0 + w - 4, y0 + 20, Palette.RULE);
         renderContent(graphics, mouseX, mouseY);
     }
@@ -79,6 +86,28 @@ public abstract class ParchmentScreen extends Screen
     protected String crumb()
     {
         return null;
+    }
+
+    /**
+     * A coloured band behind the header (a hut's level colour…), or null for plain parchment.
+     */
+    @Nullable
+    protected Integer headerFill()
+    {
+        return null;
+    }
+
+    protected int headerEdge()
+    {
+        return Palette.EDGE;
+    }
+
+    /**
+     * The header's text colour on its band.
+     */
+    protected int headerText()
+    {
+        return Palette.INK;
     }
 
     /**

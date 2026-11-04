@@ -34,7 +34,38 @@ public final class Palette
     public static final int RED         = 0xFFA32D2D;
     public static final int RED_SOFT    = 0xFFF0CFC4;
 
+    /**
+     * Building level colours, the same as the construction site bars: 1 white, 2 green, 3 blue, 4 purple, 5 gold.
+     * Index 0 is a building not built yet.
+     */
+    private static final int[] LEVEL_FILL = {0xFFB8A888, 0xFFF4F1EA, 0xFF4CA83A, 0xFF3A7BD5, 0xFF9B4DCA, 0xFFE8B021};
+    private static final int[] LEVEL_EDGE = {0xFF7A6A4E, 0xFF8E8778, 0xFF2B6620, 0xFF1F4C8C, 0xFF5E2A80, 0xFF8A6410};
+    private static final int[] LEVEL_TEXT = {0xFF3A2A18, 0xFF3A3A3A, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFF3A2A08};
+
     private Palette()
     {
+    }
+
+    private static int clampLevel(final int level)
+    {
+        return Math.max(0, Math.min(LEVEL_FILL.length - 1, level));
+    }
+
+    public static int levelFill(final int level)
+    {
+        return LEVEL_FILL[clampLevel(level)];
+    }
+
+    public static int levelEdge(final int level)
+    {
+        return LEVEL_EDGE[clampLevel(level)];
+    }
+
+    /**
+     * Text drawn on the level's fill: dark on white and gold, white on the others.
+     */
+    public static int levelText(final int level)
+    {
+        return LEVEL_TEXT[clampLevel(level)];
     }
 }
