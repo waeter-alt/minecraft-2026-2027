@@ -7,6 +7,11 @@ import com.minecolonies.api.colony.buildings.modules.IItemListModuleView;
 import com.minecolonies.api.colony.buildings.modules.IMinimumStockModuleView;
 import com.minecolonies.api.colony.buildings.views.IBuildingView;
 import com.minecolonies.core.colony.buildings.moduleviews.BuildingStatisticsModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.CourierAssignmentModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.EnchanterStationsModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.ExpeditionLogModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.MinerAssignmentModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.WarehouseOptionsModuleView;
 import com.minecolonies.core.colony.buildings.moduleviews.CraftingModuleView;
 import com.minecolonies.core.colony.buildings.moduleviews.FieldsModuleView;
 import com.minecolonies.core.colony.buildings.moduleviews.GraveyardManagementModuleView;
@@ -100,6 +105,22 @@ public final class ModuleScreens
         else if (view instanceof GraveyardManagementModuleView graveyard)
         {
             GraveyardScreen.open(building, graveyard, parent);
+        }
+        else if (view instanceof EnchanterStationsModuleView stations)
+        {
+            EnchanterScreen.open(building, stations, parent);
+        }
+        else if (view instanceof WarehouseOptionsModuleView options)
+        {
+            WarehouseOptionsScreen.open(building, options, parent);
+        }
+        else if (view instanceof ExpeditionLogModuleView log)
+        {
+            ExpeditionScreen.open(building, log, parent);
+        }
+        else if (view instanceof CourierAssignmentModuleView || view instanceof MinerAssignmentModuleView)
+        {
+            HireScreen.open(building, parent);
         }
         else if (view.getClass() == CraftingModuleView.class)
         {

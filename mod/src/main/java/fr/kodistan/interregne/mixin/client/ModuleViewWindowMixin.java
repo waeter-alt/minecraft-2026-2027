@@ -3,7 +3,12 @@ package fr.kodistan.interregne.mixin.client;
 import com.ldtteam.blockui.views.BOWindow;
 import com.minecolonies.api.colony.buildings.modules.IBuildingModuleView;
 import com.minecolonies.core.colony.buildings.moduleviews.BuildingStatisticsModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.CourierAssignmentModuleView;
 import com.minecolonies.core.colony.buildings.moduleviews.CraftingModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.EnchanterStationsModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.ExpeditionLogModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.MinerAssignmentModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.WarehouseOptionsModuleView;
 import com.minecolonies.core.colony.buildings.moduleviews.EntityListModuleView;
 import com.minecolonies.core.colony.buildings.moduleviews.FoodItemListModuleView;
 import com.minecolonies.core.colony.buildings.moduleviews.ItemListModuleView;
@@ -28,7 +33,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(value = {ItemListModuleView.class, FoodItemListModuleView.class, EntityListModuleView.class, MinimumStockModuleView.class,
   BuildingStatisticsModuleView.class, RequestTaskModuleView.class, CraftingModuleView.class, RestaurantMenuModuleView.class, ToolModuleView.class,
   BuildingFarmer.FarmerFieldsModuleView.class, BuildingPlantation.PlantationFieldsModuleView.class, MinerLevelManagementModuleView.class,
-  MinerGuardAssignModuleView.class, GraveyardManagementModuleView.class}, remap = false)
+  MinerGuardAssignModuleView.class, GraveyardManagementModuleView.class, EnchanterStationsModuleView.class, WarehouseOptionsModuleView.class,
+  ExpeditionLogModuleView.class, CourierAssignmentModuleView.class, MinerAssignmentModuleView.class}, remap = false)
 public abstract class ModuleViewWindowMixin
 {
     @Inject(method = "getWindow", at = @At("RETURN"))
