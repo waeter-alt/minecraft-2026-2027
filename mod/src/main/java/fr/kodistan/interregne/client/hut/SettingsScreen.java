@@ -26,6 +26,7 @@ import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * A building's settings, one card each: its name, what it does, and the control right beside it (an on/off switch,
@@ -80,14 +81,41 @@ public final class SettingsScreen extends ModuleScreen
         return true;
     }
 
+    /**
+     * Settings MineColonies left without a text (the town hall's): their name and what they do.
+     */
+    private static final Map<String, String[]> UNTRANSLATED = Map.of(
+      "minecolonies:kidspawn", new String[] {"Nouveaux citoyens", "Des citoyens naissent ou s'installent quand il y a des lits libres."},
+      "minecolonies:enterleave", new String[] {"Messages d'entrée et de sortie", "Un message quand un joueur entre dans la colonie ou en sort."},
+      "minecolonies:autohiring", new String[] {"Embauche automatique", "Les citoyens sans emploi sont embauchés là où il manque du monde."},
+      "minecolonies:autohousing", new String[] {"Logement automatique", "Les citoyens sans lit sont logés là où il y a de la place."},
+      "minecolonies:tape", new String[] {"Ruban de chantier", "Les chantiers sont entourés de ruban pendant la construction."});
+
     private static String nameOf(final ISettingKey<?> key)
     {
-        return Component.translatable(NAME_KEY + key.getUniqueId()).getString();
+        final String text = NAME_KEY + key.getUniqueId();
+        if (I18n.exists(text))
+        {
+            return Component.translatable(text).getString();
+        }
+        final String[] known = UNTRANSLATED.get(key.getUniqueId().toString());
+        if (known != null)
+        {
+            return known[0];
+        }
+        // Never a raw key: the id's path, made readable
+        final String path = key.getUniqueId().getPath().replace('_', ' ');
+        return path.isEmpty() ? path : Character.toUpperCase(path.charAt(0)) + path.substring(1);
     }
 
     @Nullable
     private static String descriptionOf(final ISettingKey<?> key, final ISetting<?> setting)
     {
+        final String[] known = UNTRANSLATED.get(key.getUniqueId().toString());
+        if (known != null && !I18n.exists(TOOLTIP_KEY + key.getUniqueId()))
+        {
+            return known[1];
+        }
         final String tooltip = TOOLTIP_KEY + key.getUniqueId();
         if (I18n.exists(tooltip))
         {

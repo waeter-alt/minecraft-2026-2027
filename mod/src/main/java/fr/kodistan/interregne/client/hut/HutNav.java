@@ -124,6 +124,16 @@ public final class HutNav
         {
             tools.add(new Tool("Colonie", Icon.of(townHall.getBuildingType().getBuildingBlock()), () -> ColonyHubScreen.open(townHall)));
         }
+        if (townHall != null)
+        {
+            tools.add(new Tool("Carte", Icon.of(Items.FILLED_MAP), () -> {
+                final String why = ColonyHubScreen.openMap(townHall);
+                if (why != null && Minecraft.getInstance().player != null)
+                {
+                    Minecraft.getInstance().player.displayClientMessage(Component.literal("Carte : " + why), true);
+                }
+            }));
+        }
         return tools;
     }
 

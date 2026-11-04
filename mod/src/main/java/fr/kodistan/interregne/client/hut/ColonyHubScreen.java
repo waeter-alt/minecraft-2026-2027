@@ -481,20 +481,32 @@ public final class ColonyHubScreen extends ParchmentScreen
      */
     private void openMap()
     {
+        final String why = openMap(townHall);
+        if (why != null)
+        {
+            notice(why);
+        }
+    }
+
+    /**
+     * Opens the colony map, from the hub or any building; returns why it cannot open, or null when it did.
+     */
+    @Nullable
+    public static String openMap(final ITownHallView townHall)
+    {
         if (townHall.getBuildingLevel() < ColonyMaps.UNLOCK_LEVEL)
         {
-            notice("la carte se débloque au niveau " + ColonyMaps.UNLOCK_LEVEL + " de l'hôtel de ville. Améliorez-le pour la voir.");
-            return;
+            return "la carte se débloque au niveau " + ColonyMaps.UNLOCK_LEVEL + " de l'hôtel de ville. Améliorez-le pour la voir.";
         }
         if (townHall.getMapDataList().isEmpty())
         {
-            notice("la carte se dessine encore, revenez dans un instant.");
-            return;
+            return "la carte se dessine encore, revenez dans un instant.";
         }
         final WindowColonyMap map = new WindowColonyMap(true, townHall);
         map.findPaneByID("inventory").hide();
         map.findPaneByID("warning").hide();
         map.open();
+        return null;
     }
 
     private void notice(final String text)
