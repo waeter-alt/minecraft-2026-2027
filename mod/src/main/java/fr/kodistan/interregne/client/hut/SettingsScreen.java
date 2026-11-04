@@ -3,7 +3,13 @@ package fr.kodistan.interregne.client.hut;
 import com.minecolonies.api.colony.buildings.modules.settings.ISetting;
 import com.minecolonies.api.colony.buildings.modules.settings.ISettingKey;
 import com.minecolonies.api.colony.buildings.views.IBuildingView;
+import com.minecolonies.core.colony.buildings.AbstractBuildingGuards;
+import com.minecolonies.core.colony.buildings.modules.BuildingModules;
+import com.minecolonies.core.colony.buildings.modules.settings.GuardPatrolModeSetting;
 import com.minecolonies.core.colony.buildings.moduleviews.SettingsModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.ToolModuleView;
+import com.minecolonies.core.network.messages.server.colony.building.GiveToolMessage;
+import net.minecraft.core.BlockPos;
 import com.minecolonies.core.colony.buildings.modules.settings.BoolSetting;
 import com.minecolonies.core.colony.buildings.modules.settings.GuardTaskSetting;
 import com.minecolonies.core.colony.buildings.modules.settings.IntSetting;
@@ -66,7 +72,7 @@ public final class SettingsScreen extends ModuleScreen
         for (final ISettingKey<? extends ISetting> key : module.getSettingsToShow())
         {
             final ISetting<?> setting = module.getSetting(key);
-            if (!(setting instanceof BoolSetting || setting instanceof IntSetting || (setting instanceof StringSetting && !(setting instanceof GuardTaskSetting))))
+            if (!(setting instanceof BoolSetting || setting instanceof IntSetting || setting instanceof StringSetting))
             {
                 return false;
             }
@@ -128,9 +134,14 @@ public final class SettingsScreen extends ModuleScreen
         final String description = descriptionOf(key, setting);
         final List<net.minecraft.util.FormattedCharSequence> lines = description == null ? List.of() : font.split(Component.literal(description), textW);
         final int shown = Math.min(lines.size(), 3);
-        final int height = Math.max(22, 14 + shown * 9 + 3);
+        final int base = Math.max(22, 14 + shown * 9 + 3);
+        final int height = base + (setting instanceof GuardTaskSetting ? 18 : 0);
 
         Ui.card(graphics, x, y, width, height, false, false, !active);
+        if (setting instanceof GuardTaskSetting task)
+        {
+            guardPositions(graphics, mouseX, mouseY, x + 6, y + base - 2, width - 12, task);
+        }
         graphics.drawString(font, Component.literal(fit(nameOf(key), textW)).withStyle(ChatFormatting.BOLD), x + 6, y + 4, active ? Palette.INK : Palette.MUTED, false);
         for (int i = 0; i < shown; i++)
         {
@@ -142,7 +153,7 @@ public final class SettingsScreen extends ModuleScreen
         }
 
         final int cx = x + width - 6 - controlW;
-        final int cy = y + (height - 14) / 2;
+        final int cy = y + (base - 14) / 2;
         if (setting instanceof BoolSetting bool)
         {
             toggle(graphics, mouseX, mouseY, cx, cy, key, bool, active);
@@ -160,6 +171,37 @@ public final class SettingsScreen extends ModuleScreen
             hint = setting.getInactiveReason() != null ? setting.getInactiveReason().getString() : "Pas disponible pour l'instant.";
         }
         return y + height + 3;
+    }
+
+    /**
+     * Under a guard's task, what that task still needs: the points to place with the scepter (patrol by hand, guard),
+     * or the mine being patrolled.
+     */
+    private void guardPositions(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width,
+      final GuardTaskSetting task)
+    {
+        final String value = task.getValue();
+        final boolean manual = module.getSetting(AbstractBuildingGuards.PATROL_MODE) != null
+                                 && GuardPatrolModeSetting.MANUAL.equals(module.getSetting(AbstractBuildingGuards.PATROL_MODE).getValue());
+        if (GuardTaskSetting.PATROL_MINE.equals(value))
+        {
+            final BlockPos mine = building instanceof AbstractBuildingGuards.View guards ? guards.getMinePos() : null;
+            graphics.drawString(font, mine == null ? "Aucune mine assignée : assigne-la depuis la mine." : "Patrouille la mine en " + mine.toShortString() + ".",
+              x, y + 3, mine == null ? Palette.AMBER_TEXT : Palette.GREEN, false);
+            return;
+        }
+        if (GuardTaskSetting.GUARD.equals(value) || (GuardTaskSetting.PATROL.equals(value) && manual))
+        {
+            final String label = GuardTaskSetting.GUARD.equals(value) ? "Prendre le sceptre · placer le poste" : "Prendre le sceptre · placer les points";
+            final ToolModuleView tool = building.getModuleView(BuildingModules.GUARD_TOOL);
+            button(graphics, mouseX, mouseY, x, y, label, Ui.ButtonStyle.PRIMARY, tool != null, "Clic droit avec le sceptre sur les blocs à garder.", () -> {
+                new GiveToolMessage(building, tool.getTool()).sendToServer();
+                minecraft.setScreen(null);
+            });
+            return;
+        }
+        final String text = GuardTaskSetting.FOLLOW.equals(value) ? "Les gardes te suivent partout." : "Ils patrouillent seuls autour de la colonie.";
+        graphics.drawString(font, text, x, y + 3, Palette.MUTED, false);
     }
 
     // --- Controls ---

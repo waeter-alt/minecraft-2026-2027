@@ -16,8 +16,8 @@ import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * A Comptoir régional: the region's crate it produces and how often, the countdown to the next one, its reserve with a
- * button to take it, the next level, and the colony's crates in the warehouse.
+ * A Comptoir régional. First its reserve of the region's crate with the countdown to the next one; then taking the
+ * reserve; then the next level and what it changes; last the colony's crates in the warehouse.
  */
 public final class ComptoirScreen extends CounterScreen
 {
@@ -27,7 +27,7 @@ public final class ComptoirScreen extends CounterScreen
 
     private ComptoirScreen(final OpenComptoirPayload state)
     {
-        super("Comptoir régional", 360, 240);
+        super("Comptoir régional", 360, 250);
         show(state);
     }
 
@@ -79,39 +79,48 @@ public final class ComptoirScreen extends CounterScreen
             Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, "En attente", "la région n'est pas encore attribuée");
             return y + 21;
         }
-        Ui.banner(graphics, font, x, y, width, Ui.State.OK, "Niveau " + state.level() + " / 5",
-          "une caisse toutes les " + BuildCosts.formatSeconds(state.seconds()) + " · prochaine dans " + BuildCosts.formatSeconds(secondsLeft));
-        y += 21;
+        final String region = crate.regionName().isEmpty() ? "" : crate.regionName().toUpperCase();
+        final int top = y;
+        final boolean full = state.stock() >= state.storage();
+        final String where = state.warehouse() ? " · elle part à l'entrepôt" : full ? " · réserve pleine, la production s'arrête" : "";
+        y = hero(graphics, x, y, width, crate.stack(1), "RÉSERVE · " + region, state.stock() + " / " + state.storage() + (state.storage() > 1 ? " caisses" : " caisse"),
+          "Prochaine dans " + BuildCosts.formatSeconds(secondsLeft) + where);
+        heroGauge(graphics, x, top, width, state.stock(), state.storage());
+        final String badge = "Niv. " + state.level();
+        Ui.levelBadge(graphics, font, x + width - 8 - font.width(badge) - 8, top + 6, badge, state.level());
 
-        // The region's crate and the reserve
-        Ui.card(graphics, x, y, width, 40, false, false, false);
-        Icon.of(crate.stack(1)).draw(graphics, x + 5, y + 4, 32);
-        addSlot(x + 5, y + 4, 32, crate.stack(1), mouseY);
-        final String region = state.region().isEmpty() ? "" : Character.toUpperCase(crate.regionName().charAt(0)) + crate.regionName().substring(1);
-        graphics.drawString(font, Component.literal(region).withStyle(ChatFormatting.BOLD), x + 44, y + 5, Palette.INK, false);
-        graphics.drawString(font, "Réserve : " + state.stock() + " / " + state.storage() + (state.stock() > 1 ? " caisses" : " caisse"), x + 44, y + 16, Palette.INK, false);
-        graphics.drawString(font, fit(state.warehouse() ? "La production va à l'entrepôt de la colonie." : "Pas d'entrepôt : elle reste ici, jusqu'à " + state.storage() + ".",
-          width - 150), x + 44, y + 27, Palette.MUTED, false);
-        final String take = "Prendre la réserve";
-        button(graphics, mouseX, mouseY, x + width - 6 - buttonWidth(take), y + 13, take, Ui.ButtonStyle.PRIMARY, state.stock() > 0,
-          state.stock() > 0 ? "Les caisses vont dans ton inventaire." : "La réserve est vide.", () -> send(RegionActionPayload.COMPTOIR_TAKE));
-        y += 44;
+        y = bigButton(graphics, mouseX, mouseY, x, y, width,
+          state.stock() > 0 ? "Prendre " + state.stock() + (state.stock() > 1 ? " caisses" : " caisse") : "Réserve vide", state.stock() > 0,
+          state.stock() > 0 ? "Les caisses vont dans ton inventaire." : "Une caisse toutes les " + BuildCosts.formatSeconds(state.seconds()) + ".",
+          () -> send(RegionActionPayload.COMPTOIR_TAKE));
 
         // The next level
         if (state.upgradeCost() < 0)
         {
-            graphics.drawString(font, Component.literal("Niveau maximal atteint").withStyle(ChatFormatting.BOLD), x + 2, y + 3, Palette.MUTED, false);
+            graphics.drawString(font, Component.literal("Niveau maximal · une caisse toutes les " + BuildCosts.formatSeconds(state.seconds())).withStyle(ChatFormatting.BOLD),
+              x + 2, y + 3, Palette.MUTED, false);
             return y + 16;
         }
         final int next = state.level() + 1;
         Ui.plate(graphics, x, y, x + width, y + 30, Palette.levelSoft(next), Palette.levelEdge(next), Palette.levelSoft(next));
-        graphics.drawString(font, Component.literal("Niveau " + next).withStyle(ChatFormatting.BOLD), x + 6, y + 4, Palette.INK, false);
-        graphics.drawString(font, "une caisse toutes les " + BuildCosts.formatSeconds(state.nextSeconds()), x + 6, y + 16, Palette.MUTED, false);
+        graphics.drawString(font, Component.literal("Niveau " + next).withStyle(ChatFormatting.BOLD), x + 6, y + 5, Palette.INK, false);
+        graphics.drawString(font, "une caisse toutes les " + BuildCosts.formatSeconds(state.nextSeconds()) + " (au lieu de " + BuildCosts.formatSeconds(state.seconds()) + ")",
+          x + 6, y + 17, Palette.MUTED, false);
         final String upgrade = "Améliorer · " + Wallet.format(state.upgradeCost());
         final boolean can = state.purse() >= state.upgradeCost() || minecraft.player.isCreative();
-        button(graphics, mouseX, mouseY, x + width - 6 - buttonWidth(upgrade), y + 8, upgrade, Ui.ButtonStyle.PRIMARY, can,
-          can ? "Payé avec les couronnes sur toi." : "Il te faut " + couronnes(state.upgradeCost()) + " sur toi.", () -> send(RegionActionPayload.COMPTOIR_UPGRADE));
-        return y + 34;
+        final int bw = buttonWidth(upgrade);
+        final int bx = x + width - 6 - bw;
+        final boolean over = Ui.inside(mouseX, mouseY, bx, y + 8, bw, 14);
+        Ui.levelButton(graphics, font, bx, y + 8, bw, 14, upgrade, next, can, over);
+        if (can)
+        {
+            addHit(bx, y + 8, bw, 14, () -> send(RegionActionPayload.COMPTOIR_UPGRADE));
+        }
+        if (over)
+        {
+            hint = can ? "Payé avec les couronnes sur toi." : "Il te faut " + couronnes(state.upgradeCost()) + " sur toi.";
+        }
+        return y + 35;
     }
 
     @Override

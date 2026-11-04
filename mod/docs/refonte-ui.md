@@ -120,7 +120,14 @@ Pas faits : les ordres de travail (seulement pour le constructeur, retiré), la 
 - camp de départ : `SuppliesScreen`, un panneau sur le côté qui pilote la fenêtre d'origine sans l'afficher ;
 - nos blocs (`client/blocks`) : banque, banque régionale, trône avec le trésor en onglet, marché, comptoir, choix de culture. Le registre de l'entrepôt devient `hut/TerminalScreen`. Les anciennes fenêtres BlockUI et leurs XML sont supprimées.
 
-Restent dans l'ancien style : les réglages de type bloc, recette et tâche de garde ; la caserne (espions, bannière de ralliement) ; la grille d'artisanat (`DOCraftingWindow`) ; la recherche ; les réglages et statistiques de la colonie ; le journal des quêtes ; le choix du style (`WindowSwitchPack`) ; le renommage d'un bâtiment.
+**Fait ensuite, le 2026-11-04 (soir)** :
+- les pages de l'hôtel de ville (statistiques, réglages, permissions, alliances, apparence) s'ouvrent dans le hub : sa colonne de gauche et son en-tête restent en place ;
+- statistiques de la colonie (`StatsScreen.openColony`) : population en tête, métiers occupés sur places, puis l'activité ;
+- `AppearanceScreen` : couleur (pastilles), drapeau, style des bâtiments, allure et noms des citoyens. Le verrou Patreon est retiré : tout est ouvert à qui dirige la colonie ;
+- réglages des gardes : la tâche se règle dans `SettingsScreen`, avec dessous le bouton qui donne le sceptre (poste ou points de patrouille) ou la mine patrouillée ;
+- nos blocs refaits sur une même hiérarchie (`CounterScreen`) : une carte « héros » en cuir avec le chiffre qui compte (solde, trésor, bourse, réserve, dîme due), puis l'action principale en large bouton vert, puis les autres mouvements, un panneau chacun, avec le résultat affiché pendant la saisie (frais compris). Le trône montre la dîme caisse par caisse (payload structuré).
+
+Restent dans l'ancien style : les réglages de type bloc et recette ; la caserne (espions, bannière de ralliement) ; la grille d'artisanat (`DOCraftingWindow`) ; la recherche ; le journal des quêtes ; le choix du style (`WindowSwitchPack`) et l'éditeur de drapeau (`WindowBannerPicker`), ouverts depuis la page Apparence ; le renommage d'un bâtiment.
 
 Liste d'origine des cas particuliers : layoutbuilderres, layoutenchanter, layoutexpeditionlog, layoutfarmfields, layoutplantationfields, layoutgraveyard, layoutguardlist, layoutminermodule, layouttool, layoutuniversity, layoutwarehouseoptions.
 

@@ -1,8 +1,13 @@
 package fr.kodistan.interregne.client.hut;
 
+import com.minecolonies.api.colony.ICitizenDataView;
+import com.minecolonies.api.colony.IColonyView;
 import com.minecolonies.api.colony.buildings.views.IBuildingView;
 import com.minecolonies.api.colony.managers.interfaces.IStatisticsManager;
 import com.minecolonies.core.colony.buildings.moduleviews.BuildingStatisticsModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.CombinedHiringLimitModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.WorkerBuildingModuleView;
+import com.minecolonies.core.colony.buildings.views.AbstractBuildingView;
 import fr.kodistan.interregne.client.ui.Palette;
 import fr.kodistan.interregne.client.ui.Ui;
 import net.minecraft.ChatFormatting;
@@ -15,12 +20,16 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
 
 import static com.minecolonies.api.util.constant.TranslationConstants.PARTIAL_STATS_MODIFIER_NAME;
 
 /**
  * What a building did: one line per statistic with its number in bold, over yesterday, the last 7 days, the last 100
- * days or all time, biggest first; empty lines hidden on request. Replaces MineColonies' statistics page.
+ * days or all time, biggest first; empty lines hidden on request. Replaces MineColonies' statistics page. For the
+ * whole colony (no module), its population and trades come first: this replaces the town hall's statistics too.
  */
 public final class StatsScreen extends ModuleScreen
 {
@@ -28,6 +37,7 @@ public final class StatsScreen extends ModuleScreen
     private static final int[] DAYS = {1, 7, 100, -1};
 
     private final int moduleId;
+    @Nullable
     private BuildingStatisticsModuleView module;
     private static int period;
     private static boolean hideZero = true;
@@ -39,15 +49,34 @@ public final class StatsScreen extends ModuleScreen
         this.moduleId = module.getProducer().getRuntimeID();
     }
 
+    private StatsScreen(final IBuildingView townHall, @Nullable final Screen parent)
+    {
+        super("Statistiques", townHall, parent, 400);
+        this.module = null;
+        this.moduleId = -1;
+    }
+
     public static void open(final IBuildingView building, final BuildingStatisticsModuleView module, @Nullable final Screen parent)
     {
         Minecraft.getInstance().setScreen(new StatsScreen(building, module, parent));
+    }
+
+    /**
+     * The whole colony's statistics, from its town hall.
+     */
+    public static void openColony(final IBuildingView townHall, @Nullable final Screen parent)
+    {
+        Minecraft.getInstance().setScreen(new StatsScreen(townHall, parent));
     }
 
     @Override
     public void tick()
     {
         super.tick();
+        if (module == null)
+        {
+            return;
+        }
         final BuildingStatisticsModuleView fresh = building.getModuleViewMatching(BuildingStatisticsModuleView.class, m -> m.getProducer().getRuntimeID() == moduleId);
         if (fresh != null)
         {
@@ -61,7 +90,7 @@ public final class StatsScreen extends ModuleScreen
 
     private List<Line> lines()
     {
-        final IStatisticsManager stats = module.getBuildingStatisticsManager();
+        final IStatisticsManager stats = module == null ? building.getColony().getStatisticsManager() : module.getBuildingStatisticsManager();
         final int days = DAYS[period];
         final int today = building.getColony().getDay();
         final List<Line> lines = new ArrayList<>();
@@ -92,8 +121,12 @@ public final class StatsScreen extends ModuleScreen
     }
 
     @Override
-    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width)
+    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
+        if (module == null)
+        {
+            y = population(graphics, x, y, width);
+        }
         segmented(graphics, mouseX, mouseY, x, y, PERIODS, period, index -> {
             period = index;
             resetScroll();
@@ -103,9 +136,93 @@ public final class StatsScreen extends ModuleScreen
         return y + 20;
     }
 
+    /**
+     * The colony's headcount against its beds, as a banner.
+     */
+    private int population(final GuiGraphics graphics, final int x, final int y, final int width)
+    {
+        final IColonyView colony = building.getColony();
+        final int citizens = colony.getCitizens().size();
+        final int limit = Math.max(citizens, colony.getCitizenCountLimit());
+        int children = 0;
+        int idle = 0;
+        for (final ICitizenDataView citizen : colony.getCitizens().values())
+        {
+            if (citizen.isChild())
+            {
+                children++;
+            }
+            else if (citizen.getJobView() == null)
+            {
+                idle++;
+            }
+        }
+        final boolean full = citizens >= limit;
+        Ui.banner(graphics, font, x, y, width, full ? Ui.State.WAIT : Ui.State.OK, citizens + " / " + limit + " citoyens",
+          (full ? "plus de lit libre · " : "") + idle + " sans emploi · " + children + (children > 1 ? " enfants" : " enfant"));
+        return y + 21;
+    }
+
+    /**
+     * Each trade with how many work it and how many could, counted as MineColonies does (shared hiring limits
+     * included).
+     */
+    private Map<String, int[]> trades()
+    {
+        final Map<String, int[]> trades = new TreeMap<>();
+        for (final IBuildingView each : building.getColony().getBuildings())
+        {
+            if (!(each instanceof AbstractBuildingView))
+            {
+                continue;
+            }
+            for (final WorkerBuildingModuleView worker : each.getModuleViews(WorkerBuildingModuleView.class))
+            {
+                int max = worker.getMaxInhabitants();
+                if (worker instanceof CombinedHiringLimitModuleView)
+                {
+                    int assigned = 0;
+                    for (final WorkerBuildingModuleView combined : each.getModuleViews(WorkerBuildingModuleView.class))
+                    {
+                        assigned += combined.getAssignedCitizens().size();
+                    }
+                    max = max - assigned + worker.getAssignedCitizens().size();
+                }
+                String name = Component.translatable(worker.getJobDisplayName().toLowerCase(Locale.US)).getString();
+                name = name.isEmpty() ? name : Character.toUpperCase(name.charAt(0)) + name.substring(1);
+                final int[] counts = trades.computeIfAbsent(name, key -> new int[2]);
+                counts[0] += worker.getAssignedCitizens().size();
+                counts[1] += max;
+            }
+        }
+        return trades;
+    }
+
     @Override
     protected int renderBody(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
+        if (module == null)
+        {
+            // Trades three across: every post filled in green, a free one in amber
+            Ui.label(graphics, font, "MÉTIERS", x, y);
+            y += 11;
+            final int columnW = (width - 6) / 3;
+            int i = 0;
+            for (final Map.Entry<String, int[]> trade : trades().entrySet())
+            {
+                final int cx = x + (i % 3) * (columnW + 3);
+                final int cy = y + (i / 3) * 13;
+                final int[] counts = trade.getValue();
+                final String count = counts[0] + "/" + counts[1];
+                final int color = counts[1] == 0 ? Palette.MUTED : counts[0] >= counts[1] ? Palette.GREEN : Palette.AMBER_TEXT;
+                graphics.drawString(font, fit(trade.getKey(), columnW - font.width(count) - 8), cx + 2, cy + 2, Palette.INK, false);
+                graphics.drawString(font, Component.literal(count).withStyle(ChatFormatting.BOLD), cx + columnW - 2 - font.width(count), cy + 2, color, false);
+                i++;
+            }
+            y += ((i + 2) / 3) * 13 + 6;
+            Ui.label(graphics, font, "ACTIVITÉ", x, y);
+            y += 12;
+        }
         final List<Line> lines = lines();
         if (lines.isEmpty())
         {

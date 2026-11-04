@@ -79,7 +79,7 @@ public abstract class PageScreen extends ParchmentScreen
      */
     protected void addSearch(final int dy)
     {
-        addField(x0 + w - 128, y0 + HEADER + dy, 116, "Rechercher…");
+        addField(x0 + w - 128, contentTop() - 6 + dy, 116, "Rechercher…");
     }
 
     /**
@@ -106,6 +106,14 @@ public abstract class PageScreen extends ParchmentScreen
     protected int left()
     {
         return x0 + 10;
+    }
+
+    /**
+     * Where the page's top starts, below the window's header.
+     */
+    protected int contentTop()
+    {
+        return y0 + HEADER + 6;
     }
 
     protected int innerWidth()
@@ -141,7 +149,7 @@ public abstract class PageScreen extends ParchmentScreen
         clipTop = Integer.MIN_VALUE;
         clipBottom = Integer.MAX_VALUE;
         renderChrome(graphics, mouseX, mouseY);
-        final int top = renderTop(graphics, mouseX, mouseY, x, y0 + HEADER + 6, width);
+        final int top = renderTop(graphics, mouseX, mouseY, x, contentTop(), width);
         if (search != null)
         {
             search.render(graphics, mouseX, mouseY, 0);

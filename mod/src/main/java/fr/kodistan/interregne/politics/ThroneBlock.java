@@ -2,6 +2,7 @@ package fr.kodistan.interregne.politics;
 
 import com.minecolonies.api.colony.IColony;
 import fr.kodistan.interregne.economy.Wallet;
+import fr.kodistan.interregne.region.Crate;
 import fr.kodistan.interregne.network.OpenThronePayload;
 import fr.kodistan.interregne.network.ThroneActionPayload;
 import net.minecraft.ChatFormatting;
@@ -102,14 +103,16 @@ public class ThroneBlock extends Block
         final Empire empire = Empire.get(server);
         final boolean intendantOnline = server.getPlayerList().getPlayers().stream().anyMatch(online -> empire.isIntendant(online.getUUID()));
 
-        final String state = "Trésor impérial : " + Wallet.format(empire.treasury()) + " couronnes"
-                               + "\nPoids de la dîme : " + empire.titheWeight().label()
-                               + "\nDîme : " + (empire.titheActive() ? "échéance dans " + Proclamations.formatDelay(empire.titheDueAt() - System.currentTimeMillis()) : "aucune en cours")
-                               + (intendantOnline ? "" : "\nPilote automatique : actif");
-
         final IColony colony = Tithe.colonyOf(player);
-        final String colonyLine = colony == null || !empire.titheActive() ? ""
-                                    : colony.getName() + " doit encore : " + Tithe.describe(Tithe.remaining(server, colony));
-        PacketDistributor.sendToPlayer(player, new OpenThronePayload(pos, empire.isIntendant(player.getUUID()) || player.hasPermissions(2), state, colonyLine, empire.treasury()));
+        final int[] basket = new int[Crate.values().length];
+        final int[] owed = new int[Crate.values().length];
+        if (colony != null && empire.titheActive())
+        {
+            Tithe.basket(server, colony).forEach((crate, count) -> basket[crate.ordinal()] = count);
+            Tithe.remaining(server, colony).forEach((crate, count) -> owed[crate.ordinal()] = count);
+        }
+        final long secondsLeft = Math.max(0, (empire.titheDueAt() - System.currentTimeMillis()) / 1000);
+        PacketDistributor.sendToPlayer(player, new OpenThronePayload(pos, empire.isIntendant(player.getUUID()) || player.hasPermissions(2),
+          empire.titheWeight().ordinal(), empire.titheActive(), secondsLeft, !intendantOnline, colony == null ? "" : colony.getName(), basket, owed, empire.treasury()));
     }
 }

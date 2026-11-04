@@ -6,11 +6,9 @@ import com.minecolonies.api.colony.buildings.views.IBuildingView;
 import com.minecolonies.api.colony.buildings.workerbuildings.ITownHallView;
 import com.minecolonies.api.colony.requestsystem.request.IRequest;
 import com.minecolonies.core.client.gui.map.WindowColonyMap;
-import com.minecolonies.core.client.gui.townhall.WindowMainPage;
-import com.minecolonies.core.client.gui.townhall.WindowSettings;
-import com.minecolonies.core.client.gui.townhall.WindowStatsPage;
 import com.minecolonies.core.client.gui.townhall.WindowTownHallNameEntry;
 import com.minecolonies.core.colony.buildings.moduleviews.WorkerBuildingModuleView;
+import com.minecolonies.core.colony.buildings.modules.BuildingModules;
 import com.minecolonies.core.colony.buildings.workerbuildings.BuildingTownHall;
 import fr.kodistan.interregne.client.catalogue.CatalogueIndex;
 import fr.kodistan.interregne.client.hud.Grievances;
@@ -103,6 +101,11 @@ public final class ColonyHubScreen extends ParchmentScreen
     private ITownHallView townHall;
     private final IColonyView colony;
     private Page page = Page.OVERVIEW;
+    /**
+     * The tool whose page shows in place of the hub's own (« Permissions »…), lit in the left column; null on the hub.
+     */
+    @Nullable
+    private String litTool;
     private final List<Hit> hits = new ArrayList<>();
     private final List<Ui.Slot> slots = new ArrayList<>();
     @Nullable
@@ -402,17 +405,75 @@ public final class ColonyHubScreen extends ParchmentScreen
 
     private List<Tool> tools()
     {
+        final BuildingTownHall.View view = (BuildingTownHall.View) townHall;
         return List.of(
           new Tool("Carte", Icon.of(Items.FILLED_MAP), townHall.getBuildingLevel() < ColonyMaps.UNLOCK_LEVEL, this::openMap),
-          new Tool("Statistiques", Icon.module("stats"), false, () -> new WindowStatsPage((BuildingTownHall.View) townHall).open()),
-          new Tool("Réglages", Icon.module("settings"), false, () -> new WindowSettings((BuildingTownHall.View) townHall).open()),
-          new Tool("Permissions", Icon.module("scepter"), false, () -> PermissionsScreen.open((BuildingTownHall.View) townHall, this)),
-          new Tool("Alliances", Icon.of(Items.WHITE_BANNER), false, () -> AlliancesScreen.open((BuildingTownHall.View) townHall, this)),
-          new Tool("Apparence", Icon.module("domum"), false, () ->
-          {
-              openOriginal = true;
-              new WindowMainPage((BuildingTownHall.View) townHall).open();
-          }));
+          new Tool("Statistiques", Icon.module("stats"), false, () -> StatsScreen.openColony(townHall, this)),
+          new Tool("Réglages", Icon.module("settings"), false, () -> SettingsScreen.open(townHall, view.getModuleView(BuildingModules.TOWNHALL_SETTINGS), this)),
+          new Tool("Permissions", Icon.module("scepter"), false, () -> PermissionsScreen.open(view, this)),
+          new Tool("Alliances", Icon.of(Items.WHITE_BANNER), false, () -> AlliancesScreen.open(view, this)),
+          new Tool("Apparence", Icon.module("domum"), false, () -> AppearanceScreen.open(view, this)));
+    }
+
+    // --- Pages of the colony shown in the hub's frame (permissions, settings…): they keep its header and left column ---
+
+    /**
+     * Lays the hub out for this screen size, as the page showing in its frame is.
+     */
+    void sync(final Minecraft minecraft, final int width, final int height)
+    {
+        init(minecraft, width, height);
+    }
+
+    int frameX()
+    {
+        return x0;
+    }
+
+    int frameY()
+    {
+        return y0;
+    }
+
+    int frameW()
+    {
+        return w;
+    }
+
+    int frameH()
+    {
+        return h;
+    }
+
+    static int navWidth()
+    {
+        return NAV_W;
+    }
+
+    static int headerHeight()
+    {
+        return HDR;
+    }
+
+    /**
+     * The hub's frame and left column around a page, that tool lit.
+     */
+    void chrome(final GuiGraphics graphics, final int mouseX, final int mouseY, final String tool)
+    {
+        hits.clear();
+        hint = null;
+        litTool = tool;
+        renderFrame(graphics, mouseX, mouseY);
+        renderNav(graphics, mouseX, mouseY);
+        litTool = null;
+    }
+
+    /**
+     * A click in the hub's frame or left column around a page.
+     */
+    boolean chromeClicked(final double mouseX, final double mouseY)
+    {
+        return clicked(mouseX, mouseY);
     }
 
     /**
@@ -451,8 +512,15 @@ public final class ColonyHubScreen extends ParchmentScreen
         int y = y0 + HDR + 7;
         for (final Page p : Page.values())
         {
-            Ui.navItem(graphics, font, x, y, width, p.icon, p.label, p == page, Ui.inside(mouseX, mouseY, x, y, width, Ui.NAV_ROW));
-            hits.add(new Hit(x, y, width, Ui.NAV_ROW, () -> show(p)));
+            final boolean lit = litTool == null && p == page;
+            Ui.navItem(graphics, font, x, y, width, p.icon, p.label, lit, !lit && Ui.inside(mouseX, mouseY, x, y, width, Ui.NAV_ROW));
+            hits.add(new Hit(x, y, width, Ui.NAV_ROW, () -> {
+                show(p);
+                if (minecraft.screen != this)
+                {
+                    minecraft.setScreen(this);
+                }
+            }));
             y += Ui.NAV_ROW + 1;
         }
 
@@ -461,8 +529,9 @@ public final class ColonyHubScreen extends ParchmentScreen
         graphics.fill(x + 2, y - 3, x + width - 2, y - 2, Palette.RULE);
         for (final Tool tool : tools)
         {
-            final boolean over = Ui.inside(mouseX, mouseY, x, y, width, Ui.NAV_ROW);
-            Ui.navItem(graphics, font, x, y, width, tool.icon(), tool.label(), false, over);
+            final boolean lit = tool.label().equals(litTool);
+            final boolean over = !lit && Ui.inside(mouseX, mouseY, x, y, width, Ui.NAV_ROW);
+            Ui.navItem(graphics, font, x, y, width, tool.icon(), tool.label(), lit, over);
             if (tool.locked())
             {
                 final String lock = "niv. " + ColonyMaps.UNLOCK_LEVEL;

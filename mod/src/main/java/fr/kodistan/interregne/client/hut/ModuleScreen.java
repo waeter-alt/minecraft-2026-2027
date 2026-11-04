@@ -11,7 +11,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * What every page of a building shares on top of {@link PageScreen}: the building's name before the title, the
  * newest view of the building, and Escape back to the hut window. Opened from the hut window, a page takes the hut
- * window's place with the same header and left column ({@link HutNav}), only the right part being its own.
+ * window's place with the same header and left column ({@link HutNav}), only the right part being its own; a page of
+ * the colony opened from the colony hub keeps the hub's frame and left column the same way.
  */
 public abstract class ModuleScreen extends PageScreen
 {
@@ -25,6 +26,11 @@ public abstract class ModuleScreen extends PageScreen
      * Which entry of the left column is lit: this page's key, or a tool's label.
      */
     String navCurrent;
+    /**
+     * The colony hub this page shows in, whose frame and left column it keeps; null otherwise.
+     */
+    @Nullable
+    final ColonyHubScreen hub;
 
     protected ModuleScreen(final String title, final IBuildingView building, @Nullable final Screen parent, final int preferredWidth)
     {
@@ -32,6 +38,7 @@ public abstract class ModuleScreen extends PageScreen
         this.building = building;
         this.hut = parent instanceof HutScreen screen ? screen : parent instanceof ModuleScreen page ? page.hut : null;
         this.navCurrent = parent instanceof ModuleScreen page ? page.navCurrent : HutNav.OVERVIEW;
+        this.hub = parent instanceof ColonyHubScreen screen ? screen : parent instanceof ModuleScreen page ? page.hub : null;
     }
 
     protected final boolean framed()
@@ -42,7 +49,48 @@ public abstract class ModuleScreen extends PageScreen
     @Override
     protected boolean compact()
     {
-        return !framed();
+        return !framed() && hub == null;
+    }
+
+    @Override
+    protected void init()
+    {
+        if (hub != null)
+        {
+            // Same place and size as the hub around it
+            hub.sync(minecraft, width, height);
+        }
+        super.init();
+        if (hub != null)
+        {
+            x0 = hub.frameX();
+            y0 = hub.frameY();
+            w = hub.frameW();
+            h = hub.frameH();
+        }
+    }
+
+    @Override
+    protected void renderFrame(final GuiGraphics graphics, final int mouseX, final int mouseY)
+    {
+        if (hub != null)
+        {
+            hub.chrome(graphics, mouseX, mouseY, title.getString());
+            return;
+        }
+        super.renderFrame(graphics, mouseX, mouseY);
+    }
+
+    @Override
+    protected int contentTop()
+    {
+        return hub != null ? y0 + ColonyHubScreen.headerHeight() + 7 : super.contentTop();
+    }
+
+    @Override
+    protected boolean clicked(final double mouseX, final double mouseY)
+    {
+        return super.clicked(mouseX, mouseY) || hub != null && hub.chromeClicked(mouseX, mouseY);
     }
 
     @Override
@@ -102,13 +150,13 @@ public abstract class ModuleScreen extends PageScreen
     @Override
     protected int left()
     {
-        return framed() ? x0 + HutNav.NAV_W + 8 : super.left();
+        return framed() ? x0 + HutNav.NAV_W + 8 : hub != null ? x0 + ColonyHubScreen.navWidth() + 7 : super.left();
     }
 
     @Override
     protected int innerWidth()
     {
-        return framed() ? w - HutNav.NAV_W - 22 : super.innerWidth();
+        return framed() ? w - HutNav.NAV_W - 22 : hub != null ? w - ColonyHubScreen.navWidth() - 16 : super.innerWidth();
     }
 
     @Override
