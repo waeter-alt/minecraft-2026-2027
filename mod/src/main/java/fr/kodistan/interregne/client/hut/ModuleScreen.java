@@ -168,6 +168,11 @@ public abstract class ModuleScreen extends PageScreen
               this::addHit);
             HutNav.nav(graphics, font, x0, y0, w, h, building, hut, navCurrent, mouseX, mouseY, this::addHit);
         }
+        if (hub != null)
+        {
+            // The town hall's frame around this page: its hover help (Influence and gold, the left column) shows here too
+            hint = hub.chromeHint();
+        }
     }
 
     @Override

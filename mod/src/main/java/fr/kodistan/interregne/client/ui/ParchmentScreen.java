@@ -57,7 +57,7 @@ public abstract class ParchmentScreen extends Screen
         super.render(graphics, mouseX, mouseY, partialTick);
         renderFrame(graphics, mouseX, mouseY);
         renderContent(graphics, mouseX, mouseY);
-        if (walletW > 0 && Ui.inside(mouseX, mouseY, walletX, y0 + 3, walletW, 15))
+        if (showWallet() && walletW > 0 && Ui.inside(mouseX, mouseY, walletX, y0 + 3, walletW, 15))
         {
             graphics.renderTooltip(font, font.split(Component.literal(walletHint()), 220), mouseX, mouseY);
         }
@@ -70,12 +70,22 @@ public abstract class ParchmentScreen extends Screen
     /**
      * Whether the header shows the player's Influence and gold (most windows do; one with a header of its own does not).
      */
+    protected int walletWidth()
+    {
+        return walletW;
+    }
+
+    protected int walletLeft()
+    {
+        return walletX;
+    }
+
     protected boolean showWallet()
     {
         return true;
     }
 
-    private static String walletHint()
+    protected static String walletHint()
     {
         return "Influence : " + Wallet.format(InterregneHud.influence()) + ".\nOr : " + Wallet.format(walletGold()) + " couronnes, dont "
           + Wallet.format(InterregneHud.carried()) + " sur toi, " + Wallet.format(InterregneHud.bank()) + " à la Banque impériale et "
@@ -94,6 +104,14 @@ public abstract class ParchmentScreen extends Screen
      */
     private int drawWallet(final GuiGraphics graphics, final int right, final int titleRoom, final int ink)
     {
+        return drawWallet(graphics, right, y0, titleRoom, ink);
+    }
+
+    /**
+     * The same tag at any height (top: where the standard header's top would be), for windows with a header of their own.
+     */
+    protected int drawWallet(final GuiGraphics graphics, final int right, final int top, final int titleRoom, final int ink)
+    {
         String influence = Wallet.format(InterregneHud.influence());
         String gold = Wallet.format(walletGold());
         if (tagWidth(influence, gold) > Math.max(0, right - x0 - 8 - titleRoom))
@@ -105,13 +123,13 @@ public abstract class ParchmentScreen extends Screen
         int x = right - width;
         walletX = x;
         walletW = width;
-        Ui.influence(graphics, x, y0 + 6, 9);
+        Ui.influence(graphics, x, top + 6, 9);
         x += 11;
-        graphics.drawString(font, influence, x, y0 + 7, ink, false);
+        graphics.drawString(font, influence, x, top + 7, ink, false);
         x += font.width(influence) + 7;
-        Ui.coinTight(graphics, x, y0 + 6, 9);
+        Ui.coinTight(graphics, x, top + 6, 9);
         x += 11;
-        graphics.drawString(font, gold, x, y0 + 7, ink, false);
+        graphics.drawString(font, gold, x, top + 7, ink, false);
         return walletX;
     }
 

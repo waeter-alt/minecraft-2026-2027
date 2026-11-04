@@ -221,7 +221,7 @@ public final class ColonyHubScreen extends ParchmentScreen
     @Override
     protected boolean showWallet()
     {
-        // Its own header has no room for it, and its desk already shows the purse
+        // Drawn in its own header, beside the level, with its breakdown as the hub's hint
         return false;
     }
 
@@ -241,7 +241,26 @@ public final class ColonyHubScreen extends ParchmentScreen
         }
         Icon.of(banner).draw(graphics, x0 + 8, y0 + 3, 32);
 
-        final Component name = Component.literal(colony.getName()).withStyle(ChatFormatting.BOLD);
+        // The town hall's level, plainly and large, in its colour
+        final int level = townHall.getBuildingLevel();
+        final Component label = Component.literal("Niveau " + level).withStyle(ChatFormatting.BOLD);
+        final int plateW = font.width(label) + 32;
+        final int plateX = x0 + w - 26 - plateW;
+        final int plateY = y0 + 7;
+
+        // The player's Influence and gold, left of the level, as every building window shows them
+        final String subtitle = "Hôtel de ville · siège de la colonie";
+        final Component fullName = Component.literal(colony.getName()).withStyle(ChatFormatting.BOLD);
+        final int textRoom = Math.max(font.width(fullName) + 17, font.width("Hôtel de ville"));
+        final int walletLeft = drawWallet(graphics, plateX - 10, plateY + 2, 36 + Math.min(textRoom, 120), Palette.GOLD_TEXT);
+        if (Ui.inside(mouseX, mouseY, walletLeft, plateY + 4, walletWidth(), 15))
+        {
+            hint = walletHint();
+        }
+        final int textW = walletLeft - 10 - (x0 + 44);
+
+        final Component name = font.width(fullName) + 17 <= textW ? fullName
+                                 : Component.literal(fit(colony.getName(), Math.max(0, textW - 17 - colony.getName().length()))).withStyle(ChatFormatting.BOLD);
         graphics.drawString(font, name, x0 + 44, y0 + 10, Palette.GOLD_TEXT, true);
         final int penX = x0 + 44 + font.width(name) + 5;
         final boolean overPen = Ui.inside(mouseX, mouseY, penX - 2, y0 + 8, 12, 12);
@@ -251,14 +270,8 @@ public final class ColonyHubScreen extends ParchmentScreen
         {
             hint = "Renommer la colonie";
         }
-        graphics.drawString(font, "Hôtel de ville · siège de la colonie", x0 + 44, y0 + 22, 0xFFC9A877, false);
-
-        // The town hall's level, plainly and large, in its colour
-        final int level = townHall.getBuildingLevel();
-        final Component label = Component.literal("Niveau " + level).withStyle(ChatFormatting.BOLD);
-        final int plateW = font.width(label) + 32;
-        final int plateX = x0 + w - 26 - plateW;
-        final int plateY = y0 + 7;
+        // Short of room, the motto goes and the building's name stays whole
+        graphics.drawString(font, fit(font.width(subtitle) <= textW ? subtitle : "Hôtel de ville", textW), x0 + 44, y0 + 22, 0xFFC9A877, false);
         Ui.plate(graphics, plateX, plateY, plateX + plateW, plateY + 25, Palette.levelFill(level), Palette.levelEdge(level), Palette.levelFill(level));
         graphics.renderOutline(plateX + 2, plateY + 2, plateW - 4, 21, mix(Palette.levelFill(level) & 0xFFFFFF, 0xFFFFFF, 0.45F) | 0xFF000000);
         graphics.drawString(font, label, plateX + 16, plateY + 9, Palette.levelText(level), false);
@@ -524,6 +537,11 @@ public final class ColonyHubScreen extends ParchmentScreen
     /**
      * A click in the hub's frame or left column around a page.
      */
+    String chromeHint()
+    {
+        return hint;
+    }
+
     boolean chromeClicked(final double mouseX, final double mouseY)
     {
         return clicked(mouseX, mouseY);
