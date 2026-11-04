@@ -40,8 +40,8 @@ public final class SettingsScreen extends ParchmentScreen
     {
     }
 
-    private final IBuildingView building;
-    private final SettingsModuleView module;
+    private IBuildingView building;
+    private SettingsModuleView module;
     private final List<Hit> hits = new ArrayList<>();
     @Nullable
     private String hint;
@@ -53,6 +53,23 @@ public final class SettingsScreen extends ParchmentScreen
         super(Component.literal("Réglages"), parent);
         this.building = building;
         this.module = module;
+    }
+
+    @Override
+    public void tick()
+    {
+        // The colony swaps building views on each update: follow the newest
+        final IBuildingView fresh = building.getColony().getBuilding(building.getID());
+        if (fresh != null)
+        {
+            building = fresh;
+            final int id = module.getProducer().getRuntimeID();
+            final SettingsModuleView view = fresh.getModuleViewMatching(SettingsModuleView.class, m -> m.getProducer().getRuntimeID() == id);
+            if (view != null)
+            {
+                module = view;
+            }
+        }
     }
 
     public static void open(final IBuildingView building, final SettingsModuleView module, @Nullable final Screen parent)

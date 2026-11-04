@@ -11,6 +11,7 @@ import net.minecraft.client.gui.screens.Screen;
 import com.minecolonies.core.client.gui.WindowAssignCitizen;
 import com.minecolonies.core.client.gui.WindowHireWorker;
 import fr.kodistan.interregne.client.hut.HireScreen;
+import fr.kodistan.interregne.client.hut.ModuleScreens;
 import fr.kodistan.interregne.client.hut.HousingScreen;
 import com.minecolonies.core.client.gui.WindowHutMinPlaceholder;
 import com.minecolonies.core.client.gui.WindowRequestDetail;
@@ -40,7 +41,11 @@ public abstract class BOWindowMixin
     private void interregne$hutScreen(final CallbackInfo ci)
     {
         final Class<?> type = ((Object) this).getClass();
-        if ((type == WindowHutWorkerModulePlaceholder.class || type == WindowHutMinPlaceholder.class) && HutScreen.enabled())
+        if (HutScreen.enabled() && ModuleScreens.replace((BOWindow) (Object) this))
+        {
+            ci.cancel();
+        }
+        else if ((type == WindowHutWorkerModulePlaceholder.class || type == WindowHutMinPlaceholder.class) && HutScreen.enabled())
         {
             ci.cancel();
             HutScreen.open(((AbstractWindowModuleBuildingAccessor) this).interregne$building());

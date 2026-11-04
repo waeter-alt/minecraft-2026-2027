@@ -94,6 +94,14 @@ Les modules génériques d'abord, car ils couvrent la plupart des huttes :
 
 **Réglages faits le 2026-11-04** (`client/hut/SettingsScreen`) : une carte par réglage, avec son nom, ce qu'il fait et le contrôle à droite. Oui/Non pour les interrupteurs, tous les choix côte à côte quand ils tiennent (sinon un bouton ⟳ qui passe au suivant), − / + pour les nombres (Maj : par 10). Un réglage indisponible est grisé et le survol dit pourquoi. Les bâtiments qui ont un réglage d'un autre type (bloc, recette, tâche de garde) gardent la page d'origine pour l'instant.
 
+**Listes, stock, statistiques, recettes et tâches faits le 2026-11-04** (base commune `client/hut/ModuleScreen`, aiguillage `ModuleScreens` + `ModuleViewWindowMixin`) :
+- `ItemListScreen` (filtres d'objets, et listes de nourriture avec le niveau de maison requis) et `EntityListScreen` (monstres des gardes, avec l'œuf de chaque monstre) : une carte par élément, verte quand elle est cochée, sur deux colonnes. Recherche, filtre Tous / Cochés / Décochés, « Tout cocher », « Tout décocher » (sur ce qui est affiché) et « Par défaut ».
+- `MinimumStockScreen` : chaque objet suivi avec sa quantité en piles (− / +, Maj : par 10) et « Retirer ». « + Ajouter un objet » ouvre `ItemPickerScreen`, notre sélecteur : tous les objets, ceux de l'inventaire d'abord, recherche et quantité.
+- `StatsScreen` : période en boutons (Hier, 7 jours, 100 jours, Depuis le début), nombre en gras dans sa colonne, les plus grands d'abord, « Masquer les zéros ».
+- `RecipesScreen` : sortie ← ingrédients, outil ou bloc requis, ▲ / ▼ (Maj : tout en haut / en bas), Activer / Désactiver, Oublier. « + Apprendre une recette » ouvre la grille d'artisanat de MineColonies.
+- `TasksScreen` : la file du bâtiment (livraisons…), avec le trajet, la priorité et l'état. Un clic ouvre la demande.
+Pas faits : les ordres de travail (seulement pour le constructeur, retiré), la grille d'artisanat elle-même (`DOCraftingWindow`).
+
 Puis les cas particuliers : layoutbuilderres, layoutenchanter, layoutexpeditionlog, layoutfarmfields, layoutplantationfields, layoutgraveyard, layoutguardlist, layoutminermodule, layouttool, layoutuniversity, layoutwarehouseoptions.
 
 Déjà modifiés par nos mixins (à intégrer, pas à casser) :

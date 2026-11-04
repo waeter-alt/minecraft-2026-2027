@@ -52,6 +52,7 @@
     "client.WindowClipBoardAccessor",
     "client.WindowHireWorkerAccessor",
     "client.WindowAssignCitizenAccessor",
-    "client.SettingsModuleWindowAccessor"
+    "client.SettingsModuleWindowAccessor",
+    "client.ModuleViewWindowMixin"
   ]
 }
