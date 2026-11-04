@@ -71,7 +71,6 @@ public final class ColonyHubScreen extends ParchmentScreen
         OVERVIEW("Vue d'ensemble", Icon.module("main")),
         BUILDINGS("Bâtiments", Icon.of(Items.BRICKS)),
         CITIZENS("Citoyens", Icon.module("workers")),
-        REQUESTS("Demandes", Icon.module("requests")),
         INTENDANCE("Intendance", Icon.of(Items.GOLD_INGOT)),
         WALLS("Murailles", Icon.of(Items.STONE_BRICK_WALL));
 
@@ -364,9 +363,7 @@ public final class ColonyHubScreen extends ParchmentScreen
             case OVERVIEW -> renderOverview(graphics, mouseX, my, x, y, width);
             case BUILDINGS -> renderBuildings(graphics, mouseX, my, x, y, width);
             case CITIZENS -> renderCitizens(graphics, mouseX, my, x, y, width);
-            case REQUESTS -> renderRequests(graphics, mouseX, my, x, y, width);
-            case INTENDANCE -> renderSoon(graphics, x, y, width, "Intendance",
-              "Les services de l'Intendance impériale arrivent bientôt : régler en Couronnes ce que réclame ta colonie.");
+            case INTENDANCE -> renderIntendance(graphics, mouseX, my, x, y, width);
             case WALLS -> renderSoon(graphics, x, y, width, "Murailles", "Les murailles de la colonie arrivent bientôt.");
         };
         graphics.disableScissor();
@@ -695,8 +692,8 @@ public final class ColonyHubScreen extends ParchmentScreen
           new Tile("Citoyens", citizens.size() + " / " + colony.getCitizenCountLimit(), Icon.module("workers"), Ui.State.OK, () -> show(Page.CITIZENS)),
           new Tile("Bonheur", format(happiness) + " / 10", Icon.module("happiness"), happiness < 4 ? Ui.State.BAD : happiness < 7 ? Ui.State.WAIT : Ui.State.OK,
             () -> show(Page.CITIZENS)),
-          new Tile("Doléances", Integer.toString(grievances), Icon.of(Items.WRITABLE_BOOK), grievances > 0 ? Ui.State.WAIT : Ui.State.OK, () -> show(Page.CITIZENS)),
-          new Tile("Demandes", Integer.toString(requests), Icon.module("requests"), requests > 0 ? Ui.State.WAIT : Ui.State.OK, () -> show(Page.REQUESTS))));
+          new Tile("Doléances", Integer.toString(grievances), Icon.of(Items.WRITABLE_BOOK), grievances > 0 ? Ui.State.WAIT : Ui.State.OK, () -> show(Page.INTENDANCE)),
+          new Tile("Demandes", Integer.toString(requests), Icon.module("requests"), requests > 0 ? Ui.State.WAIT : Ui.State.OK, () -> show(Page.INTENDANCE))));
         y = tileRow(graphics, mouseX, mouseY, x, y + 4, tileW, columns, List.of(
           new Tile("Bâtiments", Integer.toString(buildings.size()), Icon.of(Items.BRICKS), blocked > 0 ? Ui.State.BAD : Ui.State.OK, () -> show(Page.BUILDINGS)),
           new Tile("Chantiers", Integer.toString(sites), Icon.of(Items.IRON_PICKAXE), Ui.State.OK, () -> show(Page.BUILDINGS)),
@@ -1052,14 +1049,71 @@ public final class ColonyHubScreen extends ParchmentScreen
         return all;
     }
 
+    /**
+     * Everything the colony asks for in one place: its citizens' grievances, then its workers' requests. Settling them
+     * with Couronnes comes later.
+     */
+    private int renderIntendance(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
+    {
+        y = Ui.wrapped(graphics, font, Component.literal("Tout ce que ta colonie réclame. Bientôt, tu pourras le régler en Couronnes."), x, y, width, Palette.MUTED, 10) + 6;
+        y = renderGrievances(graphics, mouseX, mouseY, x, y, width) + 6;
+        return renderRequests(graphics, mouseX, mouseY, x, y, width);
+    }
+
+    private int renderGrievances(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
+    {
+        final List<ICitizenDataView> unhappy = new ArrayList<>();
+        int total = 0;
+        for (final ICitizenDataView citizen : colony.getCitizens().values())
+        {
+            final int count = Grievances.count(citizen);
+            if (count > 0)
+            {
+                unhappy.add(citizen);
+                total += count;
+            }
+        }
+        if (unhappy.isEmpty())
+        {
+            Ui.label(graphics, font, "DOLÉANCES", x, y);
+            return Ui.wrapped(graphics, font, Component.literal("Aucun citoyen ne se plaint."), x, y + 12, width, Palette.MUTED, 10) + 2;
+        }
+        Ui.label(graphics, font, fit(total + (total == 1 ? " DOLÉANCE" : " DOLÉANCES") + " · " + unhappy.size() + " CITOYEN" + (unhappy.size() == 1 ? "" : "S"), width), x, y);
+        y += 12;
+        for (final ICitizenDataView citizen : unhappy)
+        {
+            final List<Component> texts = Grievances.texts(citizen);
+            final boolean over = Ui.inside(mouseX, mouseY, x, y, width, 22);
+            Ui.card(graphics, x, y, width, 22, false, over, false);
+            Icon.of(citizen.isSick() ? new ItemStack(Items.POTION) : new ItemStack(Items.WRITABLE_BOOK)).draw(graphics, x + 3, y + 3, 16);
+            // The chip says how many, when there is room for it beside the text
+            final String chip = texts.size() == 1 ? "1 doléance" : texts.size() + " doléances";
+            final int chipW = font.width(chip) + 8;
+            final boolean room = width - chipW - 40 >= 70;
+            final int textW = room ? width - chipW - 40 : width - 34;
+            if (room)
+            {
+                Ui.chip(graphics, font, x + width - chipW - 12, y + 6, chip, citizen.isSick() ? Ui.State.BAD : Ui.State.WAIT);
+            }
+            graphics.drawString(font, fit(citizen.getName(), textW), x + 23, y + 3, Palette.INK, false);
+            final String first = texts.isEmpty() ? "" : texts.get(0).getString();
+            graphics.drawString(font, fit(first, textW), x + 23, y + 12, Palette.MUTED, false);
+            graphics.drawString(font, "›", x + width - 9, y + 7, Palette.MUTED, false);
+            addHit(x, y, width, 22, () -> CitizenScreen.open(citizen, this));
+            y += 24;
+        }
+        return y;
+    }
+
     private int renderRequests(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         final List<OpenRequest> requests = requests();
         if (requests.isEmpty())
         {
-            return Ui.wrapped(graphics, font, Component.literal("Personne n'attend rien : la colonie ne manque de rien."), x, y, width, Palette.MUTED, 10) + 2;
+            Ui.label(graphics, font, "DEMANDES DES TRAVAILLEURS", x, y);
+            return Ui.wrapped(graphics, font, Component.literal("Personne n'attend rien : la colonie ne manque de rien."), x, y + 12, width, Palette.MUTED, 10) + 2;
         }
-        Ui.label(graphics, font, requests.size() + " DEMANDES OUVERTES", x, y);
+        Ui.label(graphics, font, fit(requests.size() + (requests.size() == 1 ? " DEMANDE" : " DEMANDES") + " DES TRAVAILLEURS", width), x, y);
         y += 12;
         for (final OpenRequest open : requests)
         {
@@ -1072,8 +1126,12 @@ public final class ColonyHubScreen extends ParchmentScreen
             slots.add(new Ui.Slot(x + 3, y + 3, 16, stack));
             final String state = CitizenBits.requestStateText(request);
             final int chipW = font.width(state) + 8;
-            Ui.chip(graphics, font, x + width - chipW - 12, y + 6, state, CitizenBits.requestState(request));
-            final int textW = width - chipW - 40;
+            final boolean room = width - chipW - 40 >= 70;
+            final int textW = room ? width - chipW - 40 : width - 34;
+            if (room)
+            {
+                Ui.chip(graphics, font, x + width - chipW - 12, y + 6, state, CitizenBits.requestState(request));
+            }
             graphics.drawString(font, fit(request.getShortDisplayString().getString(), textW), x + 23, y + 3, Palette.INK, false);
             graphics.drawString(font, fit("pour " + nameOf(open.building()), textW), x + 23, y + 12, Palette.MUTED, false);
             graphics.drawString(font, "›", x + width - 9, y + 7, Palette.MUTED, false);

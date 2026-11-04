@@ -33,6 +33,23 @@ public final class Grievances
     }
 
     /**
+     * What this citizen waits on, in the citizen's own words.
+     */
+    public static java.util.List<net.minecraft.network.chat.Component> texts(final ICitizenDataView citizen)
+    {
+        final Minecraft minecraft = Minecraft.getInstance();
+        final java.util.List<net.minecraft.network.chat.Component> texts = new java.util.ArrayList<>();
+        for (final IInteractionResponseHandler interaction : citizen.getOrderedInteractions())
+        {
+            if (unresolved(interaction, minecraft))
+            {
+                texts.add(interaction.getInquiry());
+            }
+        }
+        return texts;
+    }
+
+    /**
      * A request, a sickness, a complaint: anything the citizen waits on, not small talk.
      */
     private static boolean unresolved(final IInteractionResponseHandler interaction, final Minecraft minecraft)
