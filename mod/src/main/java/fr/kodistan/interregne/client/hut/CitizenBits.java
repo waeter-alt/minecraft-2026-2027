@@ -120,19 +120,28 @@ public final class CitizenBits
     }
 
     /**
+     * True while one of our screens draws an entity: LivingEntityRendererMixin then hides its name tag.
+     */
+    private static boolean drawingInScreen;
+
+    public static boolean drawingInScreen()
+    {
+        return drawingInScreen;
+    }
+
+    /**
      * Draw an entity in our screens without the name floating over its head.
      */
     private static void withoutName(final LivingEntity living, final Runnable draw)
     {
-        final boolean shown = living.isCustomNameVisible();
-        living.setCustomNameVisible(false);
+        drawingInScreen = true;
         try
         {
             draw.run();
         }
         finally
         {
-            living.setCustomNameVisible(shown);
+            drawingInScreen = false;
         }
     }
 

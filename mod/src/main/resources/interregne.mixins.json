@@ -44,6 +44,7 @@
     "client.AbstractBlueprintManipulationWindowAccessor",
     "client.AbstractWindowModuleBuildingAccessor",
     "client.BOWindowMixin",
-    "client.BossHealthOverlayAccessor"
+    "client.BossHealthOverlayAccessor",
+    "client.LivingEntityRendererMixin"
   ]
 }
