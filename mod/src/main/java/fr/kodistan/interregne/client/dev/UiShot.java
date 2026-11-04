@@ -32,7 +32,8 @@ import java.util.stream.Stream;
  * Drop {@code uishot/request.properties} in the client's game directory:
  * <pre>
  * world=Test_citadelle            (optional: opened from the title screen when no world is loaded)
- * screen=hub:intendance,block:all (what to capture, see {@link UiScenarios}; "list" only reports the building types)
+ * screen=hub:intendance,block:all (what to capture, see {@link UiScenarios}; "list" only reports the building types,
+ *                                  "none" only opens the world)
  * only=intendance-short           (optional: comma-separated target names to keep)
  * sizes=1553x1011@4,854x480@2     (optional: window size and GUI scale per capture)
  * hover=x,y                       (optional: forced mouse position in GUI pixels, default off-screen)
@@ -221,6 +222,13 @@ public final class UiShot
         }
         if (ticks < LOAD_TIMEOUT_TICKS - 1)
         {
+            return;
+        }
+        if (screen.equals("none"))
+        {
+            // Only open the world, for a gameplay scenario
+            report.add("World open");
+            phase = Phase.DONE;
             return;
         }
         if (screen.equals("list"))

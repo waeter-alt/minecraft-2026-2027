@@ -111,6 +111,12 @@ neoForge {
             sourceSet(sourceSets.main)
         }
     }
+
+    // JUnit tests run with the game and the mods loaded, so they can use real items and inventories
+    unitTest {
+        enable()
+        testedMod = mods."${mod_id}"
+    }
 }
 
 // Sets up a dependency configuration called 'localRuntime'.
@@ -128,6 +134,17 @@ dependencies {
             'libs/structurize-1.0.793-1.21.1.jar',
             'libs/blockui-1.0.205-1.21.1.jar',
             'libs/domum-ornamentum-1.0.223-snapshot-main.jar')
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "failed"
+        exceptionFormat "short"
+    }
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
