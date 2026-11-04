@@ -352,6 +352,16 @@ public final class Ui
         graphics.blit(COIN, x, y, size, size, 0, 0, 16, 16, 16, 16);
     }
 
+    /**
+     * The coin cropped to its own pixels (the texture is mostly empty), so it reads as big as the Influence star
+     * drawn at the same width.
+     */
+    public static void coinTight(final GuiGraphics graphics, final int x, final int y, final int width)
+    {
+        final int height = width * 7 / 9;
+        graphics.blit(COIN, x, y + (width - height) / 2, width, height, 3, 4, 9, 7, 16, 16);
+    }
+
     public static final ResourceLocation INFLUENCE = ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "textures/gui/hud_influence.png");
 
     /**

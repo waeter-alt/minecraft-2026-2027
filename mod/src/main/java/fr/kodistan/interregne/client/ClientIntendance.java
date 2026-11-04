@@ -32,6 +32,14 @@ public final class ClientIntendance
     @Nullable
     public static IntendanceQuotePayload of(final int colony)
     {
+        if (fr.kodistan.interregne.client.dev.DevOverrides.quoteLoading)
+        {
+            return null;
+        }
+        if (fr.kodistan.interregne.client.dev.DevOverrides.quote != null)
+        {
+            return fr.kodistan.interregne.client.dev.DevOverrides.quote;
+        }
         if (Util.getMillis() - askedAt > REFRESH_MS)
         {
             askedAt = Util.getMillis();

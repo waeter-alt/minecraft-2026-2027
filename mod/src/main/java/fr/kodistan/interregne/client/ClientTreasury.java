@@ -43,6 +43,10 @@ public final class ClientTreasury
      */
     public static long of(final IColonyView colony)
     {
+        if (fr.kodistan.interregne.client.dev.DevOverrides.treasury != null)
+        {
+            return fr.kodistan.interregne.client.dev.DevOverrides.treasury;
+        }
         return colony == null ? 0 : BALANCES.getOrDefault(RegionalTreasury.keyOf(colony.getDimension(), colony.getID()), 0L);
     }
 }

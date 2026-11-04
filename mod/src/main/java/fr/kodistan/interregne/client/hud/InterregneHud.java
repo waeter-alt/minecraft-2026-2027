@@ -63,6 +63,10 @@ public final class InterregneHud
      */
     public static long influence()
     {
+        if (fr.kodistan.interregne.client.dev.DevOverrides.influence != null)
+        {
+            return fr.kodistan.interregne.client.dev.DevOverrides.influence;
+        }
         return influence;
     }
     private static long influenceDelta;

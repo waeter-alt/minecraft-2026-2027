@@ -61,6 +61,10 @@ public final class ColonyHubScreen extends ParchmentScreen
     private static final int HDR = 38;
     private static final int SEPARATOR = 6;
     private static final int PRICE_ICON = 12;
+    /**
+     * One row of an Intendance list: two lines of text and an item icon, with air above and below.
+     */
+    private static final int ROW_H = 24;
 
     /**
      * The rune band around the window, in the town hall's level colour.
@@ -130,6 +134,13 @@ public final class ColonyHubScreen extends ParchmentScreen
      * Which detailed list of the Intendance is unfolded: none, the grievances or the supplies.
      */
     private int intendanceList;
+    /**
+     * Set when a list was just unfolded: the next frame scrolls so it shows, since it opens under the card and may
+     * land below the window.
+     */
+    private boolean revealList;
+    private int viewTop;
+    private int viewBottom;
     private int contentHeight;
 
     private ColonyHubScreen(final ITownHallView townHall)
@@ -144,6 +155,21 @@ public final class ColonyHubScreen extends ParchmentScreen
         if (townHall instanceof ITownHallView view)
         {
             Minecraft.getInstance().setScreen(new ColonyHubScreen(view));
+        }
+    }
+
+    /**
+     * Dev captures only: opens the hub straight on a page (by its enum name, any case), with an Intendance list unfolded.
+     */
+    public static void openDev(final IBuildingView townHall, final String page, final int intendanceList)
+    {
+        if (townHall instanceof ITownHallView view)
+        {
+            final ColonyHubScreen screen = new ColonyHubScreen(view);
+            screen.page = Page.valueOf(page.toUpperCase(java.util.Locale.ROOT));
+            screen.intendanceList = intendanceList;
+            screen.revealList = intendanceList != 0;
+            Minecraft.getInstance().setScreen(screen);
         }
     }
 
@@ -364,6 +390,8 @@ public final class ColonyHubScreen extends ParchmentScreen
         final int top = y0 + HDR + 7;
         final int bottom = y0 + h - 5;
         scroll = Math.max(0, Math.min(scroll, contentHeight - (bottom - top)));
+        viewTop = top;
+        viewBottom = bottom;
         final int my = Ui.inside(mouseX, mouseY, x, top, width, bottom - top) ? mouseY : Integer.MIN_VALUE;
         graphics.enableScissor(x, top, x + width, bottom);
         int y = top - scroll;
@@ -1088,12 +1116,14 @@ public final class ColonyHubScreen extends ParchmentScreen
         {
             careParts.add(hungry + (hungry == 1 ? " affamé à nourrir" : " affamés à nourrir"));
         }
+        final int careTop = y;
         final String careText = quote == null ? "…" : care.isEmpty() ? "Aucun malade ni affamé." : String.join(", ", careParts) + ".";
         y = desk(graphics, mouseX, mouseY, x, y, width, Icon.of(Items.WRITABLE_BOOK), "DOLÉANCES", careText, quote == null ? -1 : quote.careGold(),
           quote == null ? 0 : quote.careInfluence(), !care.isEmpty(), 1, IntendanceActionPayload.SETTLE_GRIEVANCES);
         if (intendanceList == 1)
         {
             y = renderCareRows(graphics, mouseX, mouseY, x, y, width, care) + 4;
+            reveal(careTop, y);
         }
         y += 6;
 
@@ -1105,13 +1135,27 @@ public final class ColonyHubScreen extends ParchmentScreen
             supplyText += rare == supplies.size() ? (rare == 1 ? " Objet rare : à fournir toi-même." : " Objets rares : à fournir toi-même.")
                             : " Dont " + rare + (rare == 1 ? " rare" : " rares") + ", à fournir toi-même.";
         }
+        final int supplyTop = y;
         y = desk(graphics, mouseX, mouseY, x, y, width, Icon.module("requests"), "FOURNITURES DES TRAVAILLEURS", supplyText, quote == null ? -1 : quote.supplyGold(),
           quote == null ? 0 : quote.supplyInfluence(), !supplies.isEmpty(), 2, IntendanceActionPayload.SETTLE_SUPPLIES);
         if (intendanceList == 2)
         {
             y = renderSupplyRows(graphics, mouseX, mouseY, x, y, width, supplies) + 4;
+            reveal(supplyTop, y);
         }
         return y;
+    }
+
+    /**
+     * Once, after a list was unfolded: scroll just enough for the list's end to show, never past its card's top.
+     */
+    private void reveal(final int cardTop, final int listEnd)
+    {
+        if (revealList)
+        {
+            revealList = false;
+            scroll += Math.max(0, Math.min(listEnd - viewBottom, cardTop - viewTop));
+        }
     }
 
     /**
@@ -1140,7 +1184,8 @@ public final class ColonyHubScreen extends ParchmentScreen
         }
         ty += 4;
 
-        final long purse = minecraft.player == null ? 0 : Wallet.value(new PlayerMainInvWrapper(minecraft.player.getInventory()));
+        final long purse = fr.kodistan.interregne.client.dev.DevOverrides.purse != null ? fr.kodistan.interregne.client.dev.DevOverrides.purse
+                             : minecraft.player == null ? 0 : Wallet.value(new PlayerMainInvWrapper(minecraft.player.getInventory()));
         final long money = ClientTreasury.of(colony) + purse;
         final long ownInfluence = InterregneHud.influence();
         final boolean priced = gold > 0;
@@ -1184,7 +1229,10 @@ public final class ColonyHubScreen extends ParchmentScreen
         Ui.button(graphics, font, listX, listY, listWidth, listH, listLabel, Ui.ButtonStyle.SECONDARY, hasList, overList);
         if (hasList)
         {
-            addHit(listX, listY, listWidth, listH, () -> intendanceList = intendanceList == list ? 0 : list);
+            addHit(listX, listY, listWidth, listH, () -> {
+                intendanceList = intendanceList == list ? 0 : list;
+                revealList = intendanceList != 0;
+            });
         }
         return y + height + 4;
     }
@@ -1246,8 +1294,8 @@ public final class ColonyHubScreen extends ParchmentScreen
             graphics.drawString(font, verbText, cx, textY, verbColor, false);
             cx += font.width(verbText) + 12;
         }
-        Ui.coin(graphics, cx, iconY, PRICE_ICON);
-        cx += PRICE_ICON + 2;
+        Ui.coinTight(graphics, cx, iconY, PRICE_ICON);
+        cx += PRICE_ICON + 3;
         graphics.drawString(font, parts.get(0), cx, textY, goldOk ? plain : Palette.RED, false);
         cx += font.width(parts.get(0)) + 10;
         Ui.influence(graphics, cx, iconY, PRICE_ICON);
@@ -1282,7 +1330,7 @@ public final class ColonyHubScreen extends ParchmentScreen
     {
         final String value = Wallet.format(cost);
         final int w = 12 + font.width(value);
-        Ui.coin(graphics, right - w, y + 6, 10);
+        Ui.coinTight(graphics, right - w, y + 6, 10);
         graphics.drawString(font, Component.literal(value).withStyle(ChatFormatting.BOLD), right - font.width(value) - 1, y + 7, Palette.INK, false);
         return w;
     }
@@ -1293,18 +1341,18 @@ public final class ColonyHubScreen extends ParchmentScreen
         for (final IntendanceQuotePayload.Care row : care)
         {
             final ICitizenDataView citizen = colony.getCitizen(row.citizen());
-            final boolean over = citizen != null && Ui.inside(mouseX, mouseY, x, y, width, 22);
-            Ui.card(graphics, x, y, width, 22, false, over, false);
-            Icon.of(row.sick() ? new ItemStack(Items.POTION) : new ItemStack(Items.BREAD)).draw(graphics, x + 3, y + 3, 16);
-            final int priceW = rowPrice(graphics, x + width - 6, y, row.cost());
+            final boolean over = citizen != null && Ui.inside(mouseX, mouseY, x, y, width, ROW_H);
+            Ui.card(graphics, x, y, width, ROW_H, false, over, false);
+            Icon.of(row.sick() ? new ItemStack(Items.POTION) : new ItemStack(Items.BREAD)).draw(graphics, x + 3, y + 4, 16);
+            final int priceW = rowPrice(graphics, x + width - 6, y + 1, row.cost());
             final int textW = width - 23 - priceW - 12;
-            graphics.drawString(font, fit(row.name(), textW), x + 23, y + 3, Palette.INK, false);
-            graphics.drawString(font, fit(row.sick() ? "malade : l'Intendance le soigne" : "affamé : l'Intendance le nourrit", textW), x + 23, y + 12, Palette.MUTED, false);
+            graphics.drawString(font, fit(row.name(), textW), x + 23, y + 4, Palette.INK, false);
+            graphics.drawString(font, fit(row.sick() ? "malade : l'Intendance le soigne" : "affamé : l'Intendance le nourrit", textW), x + 23, y + 14, Palette.MUTED, false);
             if (citizen != null)
             {
-                addHit(x, y, width, 22, () -> CitizenScreen.open(citizen, this));
+                addHit(x, y, width, ROW_H, () -> CitizenScreen.open(citizen, this));
             }
-            y += 24;
+            y += ROW_H + 2;
         }
         return y;
     }
@@ -1314,25 +1362,25 @@ public final class ColonyHubScreen extends ParchmentScreen
     {
         for (final IntendanceQuotePayload.Supply row : supplies)
         {
-            Ui.card(graphics, x, y, width, 22, false, false, false);
-            Icon.of(row.stack()).draw(graphics, x + 3, y + 3, 16);
-            slots.add(new Ui.Slot(x + 3, y + 3, 16, row.stack()));
+            Ui.card(graphics, x, y, width, ROW_H, false, false, false);
+            Icon.of(row.stack()).draw(graphics, x + 3, y + 4, 16);
+            slots.add(new Ui.Slot(x + 3, y + 4, 16, row.stack()));
             final int rightW;
             if (row.rare())
             {
                 // Never sold: the player brings it
                 final String chip = "À fournir";
                 rightW = font.width(chip) + 8;
-                Ui.chip(graphics, font, x + width - 6 - rightW, y + 6, chip, Ui.State.BAD);
+                Ui.chip(graphics, font, x + width - 6 - rightW, y + 7, chip, Ui.State.BAD);
             }
             else
             {
-                rightW = rowPrice(graphics, x + width - 6, y, row.cost());
+                rightW = rowPrice(graphics, x + width - 6, y + 1, row.cost());
             }
             final int textW = width - 23 - rightW - 12;
-            graphics.drawString(font, fit(row.stack().getCount() + " × " + row.stack().getHoverName().getString(), textW), x + 23, y + 3, Palette.INK, false);
-            graphics.drawString(font, fit("pour " + row.forWhom().getString(), textW), x + 23, y + 12, Palette.MUTED, false);
-            y += 24;
+            graphics.drawString(font, fit(row.stack().getCount() + " × " + row.stack().getHoverName().getString(), textW), x + 23, y + 4, Palette.INK, false);
+            graphics.drawString(font, fit("pour " + row.forWhom().getString(), textW), x + 23, y + 14, Palette.MUTED, false);
+            y += ROW_H + 2;
         }
         return y;
     }
