@@ -1,5 +1,10 @@
 package fr.kodistan.interregne.client;
 
+import fr.kodistan.interregne.client.blocks.BankScreen;
+import fr.kodistan.interregne.client.blocks.ComptoirScreen;
+import fr.kodistan.interregne.client.blocks.MarketScreen;
+import fr.kodistan.interregne.client.blocks.RegionalBankScreen;
+import fr.kodistan.interregne.client.blocks.ThroneScreen;
 import fr.kodistan.interregne.client.hud.InterregneHud;
 import fr.kodistan.interregne.network.CrateStockPayload;
 import fr.kodistan.interregne.network.FarmCropsSyncPayload;
@@ -40,7 +45,7 @@ public final class ClientPayloads
 
     public static void openThrone(final OpenThronePayload payload)
     {
-        WindowThrone.open(payload);
+        ThroneScreen.open(payload);
     }
 
     public static void syncInfluence(final InfluenceSyncPayload payload)
@@ -54,12 +59,12 @@ public final class ClientPayloads
 
     public static void openBank(final OpenBankPayload payload)
     {
-        WindowBank.open(payload);
+        BankScreen.open(payload);
     }
 
     public static void openRegionalBank(final OpenRegionalBankPayload payload)
     {
-        WindowRegionalBank.open(payload);
+        RegionalBankScreen.open(payload);
     }
 
     public static void syncTreasury(final TreasurySyncPayload payload)
@@ -69,11 +74,11 @@ public final class ClientPayloads
 
     public static void openComptoir(final OpenComptoirPayload payload)
     {
-        WindowComptoir.open(payload);
+        ComptoirScreen.open(payload);
     }
 
     public static void openMarket(final OpenMarketPayload payload)
     {
-        WindowMarket.open(payload);
+        MarketScreen.open(payload);
     }
 }

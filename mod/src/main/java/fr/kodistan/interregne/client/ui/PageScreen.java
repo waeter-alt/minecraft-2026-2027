@@ -79,13 +79,23 @@ public abstract class PageScreen extends ParchmentScreen
      */
     protected void addSearch(final int dy)
     {
+        addField(x0 + w - 128, y0 + HEADER + dy, 116, "Rechercher…");
+    }
+
+    /**
+     * The page's text field (a search, a name, an amount…) at this place; call from {@link #init()} of the page. What was
+     * typed survives a resize.
+     */
+    protected EditBox addField(final int x, final int y, final int width, final String placeholder)
+    {
         final String typed = search == null ? "" : search.getValue();
-        search = new EditBox(font, x0 + w - 128, y0 + HEADER + dy, 116, 12, Component.literal("Rechercher"));
+        search = new EditBox(font, x, y, width, 12, Component.literal(placeholder));
         search.setBordered(true);
-        search.setHint(Component.literal("Rechercher…"));
+        search.setHint(Component.literal(placeholder));
         search.setValue(typed);
         search.setResponder(text -> scroll = 0);
         addWidget(search);
+        return search;
     }
 
     protected String query()
