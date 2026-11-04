@@ -20,7 +20,7 @@ Fenêtres d'origine : `core/client/gui/townhall/` (`WindowMainPage`, `WindowInfo
 
 ## Style
 
-Le hub a son propre cadre : velours bleu nuit, double bordure dorée, bannière et nom de la colonie en grand, et le niveau de l'hôtel de ville en médaillon. Les pages sont des onglets, les outils des icônes à droite. Les huttes restent en parchemin, pour qu'on sente qu'on est au siège de la colonie.
+Le hub est le registre de la colonie : le livre ouvert de MineColonies, à sa taille exacte, avec un marque-page rouge par chapitre sur la gauche (le marque-page survolé ou ouvert montre son nom). Le texte est à taille normale, à l'encre, avec des titres de chapitre rouges entre deux filets. La vue d'ensemble montre à gauche les armes, le nom, l'état et le siège, et à droite les chiffres en registre (pointillés jusqu'à la valeur) puis les registres (outils). Les listes courent sur les deux pages ; la molette ou « Suivant › » tourne les pages. Les huttes restent en parchemin.
 
 ## Ce que le hub ajoute
 
