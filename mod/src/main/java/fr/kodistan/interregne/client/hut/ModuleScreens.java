@@ -20,7 +20,6 @@ import com.minecolonies.core.colony.buildings.moduleviews.MinerLevelManagementMo
 import com.minecolonies.core.colony.buildings.moduleviews.RestaurantMenuModuleView;
 import com.minecolonies.core.colony.buildings.moduleviews.ToolModuleView;
 import com.minecolonies.core.colony.buildings.moduleviews.RequestTaskModuleView;
-import fr.kodistan.interregne.client.ui.ParchmentScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import org.jetbrains.annotations.Nullable;
@@ -59,9 +58,8 @@ public final class ModuleScreens
         pendingView = null;
         pendingWindow = null;
         final IBuildingView building = view.getBuildingView();
-        // From one of our screens (the hut window), Escape goes back to it
-        final Screen current = Minecraft.getInstance().screen;
-        final Screen parent = current instanceof ParchmentScreen ? current : null;
+        // From the hut window or one of its pages, the page takes the hut window's place and Escape goes back to it
+        final Screen parent = HutNav.parentFor(Minecraft.getInstance().screen);
         if (view instanceof IItemListModuleView list)
         {
             ItemListScreen.open(building, list, parent);
@@ -130,6 +128,18 @@ public final class ModuleScreens
         {
             return false;
         }
+        mark(view);
         return true;
+    }
+
+    /**
+     * Lights the page's entry in the left column of the screen just opened.
+     */
+    public static void mark(final IBuildingModuleView view)
+    {
+        if (Minecraft.getInstance().screen instanceof ModuleScreen page)
+        {
+            page.navCurrent = HutNav.key(view);
+        }
     }
 }

@@ -19,7 +19,9 @@ import java.util.List;
 /**
  * What every page of a building shares: the building's name before the title, a fixed top (banner, filters) and a
  * scrolling body below, click targets clipped to what is visible, item and text tooltips, and Escape back to the hut
- * window. A page draws its top in {@link #renderTop} and its body in {@link #renderBody}.
+ * window. A page draws its top in {@link #renderTop} and its body in {@link #renderBody}. Opened from the hut window,
+ * a page takes the hut window's place with the same header and left column ({@link HutNav}), only the right part
+ * being its own.
  */
 public abstract class ModuleScreen extends ParchmentScreen
 {
@@ -28,6 +30,15 @@ public abstract class ModuleScreen extends ParchmentScreen
     }
 
     protected IBuildingView building;
+    /**
+     * The hut window this page belongs to, whose header and left column it keeps; null when opened on its own.
+     */
+    @Nullable
+    final HutScreen hut;
+    /**
+     * Which entry of the left column is lit: this page's key, or a tool's label.
+     */
+    String navCurrent;
     private final List<Hit> hits = new ArrayList<>();
     private final List<Ui.Slot> slots = new ArrayList<>();
     @Nullable
@@ -51,14 +62,24 @@ public abstract class ModuleScreen extends ParchmentScreen
         super(Component.literal(title), parent);
         this.building = building;
         this.preferredWidth = preferredWidth;
+        this.hut = parent instanceof HutScreen screen ? screen : parent instanceof ModuleScreen page ? page.hut : null;
+        this.navCurrent = parent instanceof ModuleScreen page ? page.navCurrent : HutNav.OVERVIEW;
+    }
+
+    protected final boolean framed()
+    {
+        return hut != null;
     }
 
     @Override
     protected void init()
     {
         super.init();
-        w = Math.min(width - 16, preferredWidth);
-        x0 = (width - w) / 2;
+        if (!framed())
+        {
+            w = Math.min(width - 16, preferredWidth);
+            x0 = (width - w) / 2;
+        }
     }
 
     /**
@@ -95,7 +116,32 @@ public abstract class ModuleScreen extends ParchmentScreen
     @Nullable
     protected String crumb()
     {
-        return RequestScreen.nameOf(building);
+        return framed() ? hut.crumb() : RequestScreen.nameOf(building);
+    }
+
+    @Override
+    protected Component shownTitle()
+    {
+        return framed() ? hut.getTitle() : title;
+    }
+
+    @Override
+    @Nullable
+    protected Integer headerFill()
+    {
+        return framed() ? Palette.levelFill(building.getBuildingLevel()) : null;
+    }
+
+    @Override
+    protected int headerEdge()
+    {
+        return framed() ? Palette.levelEdge(building.getBuildingLevel()) : super.headerEdge();
+    }
+
+    @Override
+    protected int headerText()
+    {
+        return framed() ? Palette.levelText(building.getBuildingLevel()) : super.headerText();
     }
 
     @Override
@@ -112,12 +158,12 @@ public abstract class ModuleScreen extends ParchmentScreen
 
     protected final int left()
     {
-        return x0 + 10;
+        return framed() ? x0 + HutNav.NAV_W + 8 : x0 + 10;
     }
 
     protected final int innerWidth()
     {
-        return w - 24;
+        return framed() ? w - HutNav.NAV_W - 22 : w - 24;
     }
 
     /**
@@ -140,6 +186,12 @@ public abstract class ModuleScreen extends ParchmentScreen
         final int width = innerWidth();
         clipTop = Integer.MIN_VALUE;
         clipBottom = Integer.MAX_VALUE;
+        if (framed())
+        {
+            HutNav.header(graphics, font, x0 + 8 + font.width(shownTitle()) + (crumb() == null ? 0 : font.width(crumb() + " › ")), y0, building, headerText(), mouseX, mouseY,
+              this::addHit);
+            HutNav.nav(graphics, font, x0, y0, h, building, hut, navCurrent, mouseX, mouseY, this::addHit);
+        }
         final int top = renderTop(graphics, mouseX, mouseY, x, y0 + HEADER + 6, width);
         if (search != null)
         {

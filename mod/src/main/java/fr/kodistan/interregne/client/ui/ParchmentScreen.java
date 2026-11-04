@@ -77,7 +77,7 @@ public abstract class ParchmentScreen extends Screen
             graphics.drawString(font, crumb + " › ", titleX, y0 + 7, muted, false);
             titleX += font.width(crumb + " › ");
         }
-        graphics.drawString(font, title, titleX, y0 + 7, ink, false);
+        graphics.drawString(font, shownTitle(), titleX, y0 + 7, ink, false);
         graphics.drawString(font, "✕", x0 + w - 13, y0 + 6, overClose(mouseX, mouseY) ? Palette.RED : muted, false);
         graphics.fill(x0 + 4, y0 + 19, x0 + w - 4, y0 + 20, Palette.RULE);
     }
@@ -86,6 +86,14 @@ public abstract class ParchmentScreen extends Screen
      * Everything below the header.
      */
     protected abstract void renderContent(GuiGraphics graphics, int mouseX, int mouseY);
+
+    /**
+     * The title in the header; a page of a building shows the building's instead of its own.
+     */
+    protected Component shownTitle()
+    {
+        return title;
+    }
 
     /**
      * Where this window sits, shown before the title (« Colonie »…), or null.

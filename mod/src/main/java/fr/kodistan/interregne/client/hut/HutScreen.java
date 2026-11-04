@@ -54,7 +54,7 @@ import java.util.Map;
  */
 public final class HutScreen extends ParchmentScreen
 {
-    private static final int NAV_W = 112;
+    private static final int NAV_W = HutNav.NAV_W;
     private static final int SIDE_W = 150;
     private static final int WORKER_H = 24;
     private static final int REQUEST_H = 18;
@@ -181,25 +181,7 @@ public final class HutScreen extends ParchmentScreen
 
     private void renderHeader(final GuiGraphics graphics, final int mouseX, final int mouseY)
     {
-        int x = x0 + 8 + font.width(title) + 8;
-        final int level = building.getBuildingLevel();
-        final int max = building.getBuildingMaxLevel();
-        // « Niveau 2 » and one square per level in its own colour, filled up to the current one
-        final String text = level == 0 ? "Pas construit" : "Niveau " + level;
-        final int plateW = font.width(text) + 10 + max * 8;
-        Ui.plate(graphics, x, y0 + 4, x + plateW, y0 + 17, Palette.PAPER_LIGHT, Palette.EDGE, Palette.PAPER_LIGHT);
-        graphics.drawString(font, text, x + 4, y0 + 7, Palette.INK, false);
-        int px = x + 6 + font.width(text);
-        for (int l = 1; l <= max; l++)
-        {
-            graphics.fill(px, y0 + 7, px + 6, y0 + 14, Palette.levelEdge(l));
-            graphics.fill(px + 1, y0 + 8, px + 5, y0 + 13, l <= level ? Palette.levelFill(l) : Palette.PAPER_LIGHT);
-            px += 8;
-        }
-        x += plateW + 6;
-        final boolean over = Ui.inside(mouseX, mouseY, x - 2, y0 + 4, 12, 12);
-        graphics.drawString(font, "✎", x, y0 + 7, over ? Palette.SELECTED : headerText(), false);
-        hits.add(new Hit(x - 2, y0 + 4, 12, 12, () -> new WindowHutNameEntry(building).open()));
+        HutNav.header(graphics, font, x0 + 8 + font.width(title), y0, building, headerText(), mouseX, mouseY, (x, y, w, h, a) -> hits.add(new Hit(x, y, w, h, a)));
     }
 
     @Override
@@ -233,89 +215,20 @@ public final class HutScreen extends ParchmentScreen
 
     // --- Left: the building's pages and its tools ---
 
-    private List<IBuildingModuleView> pages()
-    {
-        final List<IBuildingModuleView> pages = new ArrayList<>();
-        for (final IBuildingModuleView view : building.getAllModuleViews())
-        {
-            if (view.isPageVisible())
-            {
-                pages.add(view);
-            }
-        }
-        return pages;
-    }
-
     private void renderNav(final GuiGraphics graphics, final int mouseX, final int mouseY)
     {
-        final int x = x0 + 5;
-        final int width = NAV_W - 8;
-        verticalRule(graphics, x0 + NAV_W);
-        Ui.label(graphics, font, "BÂTIMENT", x + 2, y0 + 25);
-        int y = y0 + 36;
-        Ui.navItem(graphics, font, x, y, width, Icon.module("main"), "Vue d'ensemble", true, false);
-        y += Ui.NAV_ROW + 1;
-
-        final List<Tool> tools = tools();
-        final int toolsTop = y0 + h - 6 - tools.size() * (Ui.NAV_ROW + 1);
-        for (final IBuildingModuleView view : pages())
-        {
-            if (y + Ui.NAV_ROW > toolsTop - 4)
-            {
-                break;
-            }
-            final String label = fit(Component.translatable(view.getDesc().toLowerCase(Locale.US)).getString(), width - 22);
-            final boolean over = Ui.inside(mouseX, mouseY, x, y, width, Ui.NAV_ROW);
-            Ui.navItem(graphics, font, x, y, width, Icon.texture(view.getIconResourceLocation(), 20), label, false, over);
-            hits.add(new Hit(x, y, width, Ui.NAV_ROW, () -> openModule(view)));
-            y += Ui.NAV_ROW + 1;
-        }
-
-        graphics.fill(x + 2, toolsTop - 3, x + width - 2, toolsTop - 2, Palette.RULE);
-        y = toolsTop;
-        for (final Tool tool : tools)
-        {
-            Ui.navItem(graphics, font, x, y, width, tool.icon(), tool.label(), false, Ui.inside(mouseX, mouseY, x, y, width, Ui.NAV_ROW));
-            hits.add(new Hit(x, y, width, Ui.NAV_ROW, tool.action()));
-            y += Ui.NAV_ROW + 1;
-        }
+        HutNav.nav(graphics, font, x0, y0, h, building, this, HutNav.OVERVIEW, mouseX, mouseY, (x, y, w, h, a) -> hits.add(new Hit(x, y, w, h, a)));
     }
 
-    private record Tool(String label, Icon icon, Runnable action)
+    boolean fromHub()
     {
-    }
-
-    /**
-     * Chest, whole stock, help when MineColonies has a text for this building, and the colony hub when this window was
-     * not opened from it.
-     */
-    private List<Tool> tools()
-    {
-        final List<Tool> tools = new ArrayList<>();
-        tools.add(new Tool("Coffre", Icon.of(Items.CHEST), () -> new OpenInventoryMessage(building).sendToServer()));
-        tools.add(new Tool("Tout le stock", Icon.module("inventory"), () -> StockScreen.open(building, this)));
-        if (I18n.exists(HelpScreen.prefix(building) + "0"))
-        {
-            tools.add(new Tool("Aide", Icon.of(Items.BOOK), () -> HelpScreen.open(building, this)));
-        }
-        final ITownHallView townHall = building.getColony().getTownHall();
-        if (!(parent instanceof ColonyHubScreen) && townHall != null && townHall != building)
-        {
-            tools.add(new Tool("Colonie", Icon.of(townHall.getBuildingType().getBuildingBlock()), () -> ColonyHubScreen.open(townHall)));
-        }
-        return tools;
+        return parent instanceof ColonyHubScreen;
     }
 
     @Override
     protected String crumb()
     {
         return parent instanceof ColonyHubScreen ? "Colonie" : null;
-    }
-
-    private void openModule(final IBuildingModuleView view)
-    {
-        minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.BOOK_PAGE_TURN, 1.0F));
-        view.getWindow().open();
     }
 
     // --- Middle: state, workers, production, requests ---

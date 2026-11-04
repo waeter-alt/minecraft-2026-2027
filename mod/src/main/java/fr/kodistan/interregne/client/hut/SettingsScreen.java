@@ -10,19 +10,15 @@ import com.minecolonies.core.colony.buildings.modules.settings.IntSetting;
 import com.minecolonies.core.colony.buildings.modules.settings.StringSetting;
 import com.minecolonies.core.network.messages.server.colony.building.TriggerSettingMessage;
 import fr.kodistan.interregne.client.ui.Palette;
-import fr.kodistan.interregne.client.ui.ParchmentScreen;
 import fr.kodistan.interregne.client.ui.Ui;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
-import net.minecraft.sounds.SoundEvents;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,28 +26,17 @@ import java.util.List;
  * every choice laid out when they fit, or a number with − and +). Replaces MineColonies' settings page for every
  * building whose settings are all of these kinds; the others keep the original page.
  */
-public final class SettingsScreen extends ParchmentScreen
+public final class SettingsScreen extends ModuleScreen
 {
     private static final int WIDTH = 380;
     private static final String NAME_KEY = "com.minecolonies.coremod.setting.";
     private static final String TOOLTIP_KEY = "com.minecolonies.coremod.setting.tooltip.";
 
-    private record Hit(int x, int y, int width, int height, Runnable action)
-    {
-    }
-
-    private IBuildingView building;
     private SettingsModuleView module;
-    private final List<Hit> hits = new ArrayList<>();
-    @Nullable
-    private String hint;
-    private int scroll;
-    private int contentHeight;
 
     private SettingsScreen(final IBuildingView building, final SettingsModuleView module, @Nullable final Screen parent)
     {
-        super(Component.literal("Réglages"), parent);
-        this.building = building;
+        super("Réglages", building, parent, WIDTH);
         this.module = module;
     }
 
@@ -59,16 +44,12 @@ public final class SettingsScreen extends ParchmentScreen
     public void tick()
     {
         // The colony swaps building views on each update: follow the newest
-        final IBuildingView fresh = building.getColony().getBuilding(building.getID());
-        if (fresh != null)
+        super.tick();
+        final int id = module.getProducer().getRuntimeID();
+        final SettingsModuleView view = building.getModuleViewMatching(SettingsModuleView.class, m -> m.getProducer().getRuntimeID() == id);
+        if (view != null)
         {
-            building = fresh;
-            final int id = module.getProducer().getRuntimeID();
-            final SettingsModuleView view = fresh.getModuleViewMatching(SettingsModuleView.class, m -> m.getProducer().getRuntimeID() == id);
-            if (view != null)
-            {
-                module = view;
-            }
+            module = view;
         }
     }
 
@@ -93,32 +74,6 @@ public final class SettingsScreen extends ParchmentScreen
         return true;
     }
 
-    @Override
-    protected void init()
-    {
-        super.init();
-        w = Math.min(width - 16, WIDTH);
-        x0 = (width - w) / 2;
-    }
-
-    @Override
-    @Nullable
-    protected String crumb()
-    {
-        return RequestScreen.nameOf(building);
-    }
-
-    @Override
-    public void onClose()
-    {
-        if (parent == null)
-        {
-            building.openGui(false);
-            return;
-        }
-        super.onClose();
-    }
-
     private static String nameOf(final ISettingKey<?> key)
     {
         return Component.translatable(NAME_KEY + key.getUniqueId()).getString();
@@ -136,19 +91,14 @@ public final class SettingsScreen extends ParchmentScreen
     }
 
     @Override
-    protected void renderContent(final GuiGraphics graphics, final int mouseX, final int mouseY)
+    protected int renderTop(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width)
     {
-        hits.clear();
-        hint = null;
-        final int x = x0 + 10;
-        final int width = w - 24;
-        final int top = y0 + HEADER + 6;
-        final int bottom = y0 + h - 5;
-        scroll = Math.max(0, Math.min(scroll, contentHeight - (bottom - top)));
-        final int my = Ui.inside(mouseX, mouseY, x, top, width, bottom - top) ? mouseY : Integer.MIN_VALUE;
+        return y;
+    }
 
-        graphics.enableScissor(x, top, x + width, bottom);
-        int y = top - scroll;
+    @Override
+    protected int renderBody(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
+    {
         final List<ISettingKey<? extends ISetting>> keys = module.getSettingsToShow();
         if (keys.isEmpty())
         {
@@ -160,31 +110,17 @@ public final class SettingsScreen extends ParchmentScreen
             final ISetting<?> setting = module.getSetting(key);
             if (setting != null)
             {
-                y = row(graphics, mouseX, my, x, y, width, key, setting, top, bottom);
+                y = row(graphics, mouseX, mouseY, x, y, width, key, setting);
             }
         }
-        graphics.disableScissor();
-
-        contentHeight = y + scroll - top;
-        if (contentHeight > bottom - top)
-        {
-            final int track = bottom - top;
-            final int thumb = Math.max(12, track * track / contentHeight);
-            final int thumbY = top + (track - thumb) * scroll / Math.max(1, contentHeight - track);
-            graphics.fill(x + width + 2, top, x + width + 4, bottom, Palette.PAPER_DARK);
-            graphics.fill(x + width + 2, thumbY, x + width + 4, thumbY + thumb, Palette.RULE);
-        }
-        if (hint != null)
-        {
-            graphics.renderTooltip(font, font.split(Component.literal(hint), 220), mouseX, mouseY);
-        }
+        return y;
     }
 
     /**
      * One setting's card; returns the y below it.
      */
     private int row(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width,
-      final ISettingKey<?> key, final ISetting<?> setting, final int top, final int bottom)
+      final ISettingKey<?> key, final ISetting<?> setting)
     {
         final boolean active = setting.isActive(module);
         final int controlW = controlWidth(setting);
@@ -209,15 +145,15 @@ public final class SettingsScreen extends ParchmentScreen
         final int cy = y + (height - 14) / 2;
         if (setting instanceof BoolSetting bool)
         {
-            toggle(graphics, mouseX, mouseY, cx, cy, key, bool, active, top, bottom);
+            toggle(graphics, mouseX, mouseY, cx, cy, key, bool, active);
         }
         else if (setting instanceof IntSetting number)
         {
-            stepper(graphics, mouseX, mouseY, cx, cy, key, number, active, top, bottom);
+            stepper(graphics, mouseX, mouseY, cx, cy, key, number, active);
         }
         else if (setting instanceof StringSetting choice)
         {
-            choices(graphics, mouseX, mouseY, cx, cy, key, choice, active, top, bottom);
+            choices(graphics, mouseX, mouseY, cx, cy, key, choice, active);
         }
         if (!active && Ui.inside(mouseX, mouseY, cx, cy, controlW, 14))
         {
@@ -279,7 +215,7 @@ public final class SettingsScreen extends ParchmentScreen
     }
 
     private void toggle(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final ISettingKey<?> key,
-      final BoolSetting bool, final boolean active, final int top, final int bottom)
+      final BoolSetting bool, final boolean active)
     {
         final boolean on = bool.getValue();
         final int half = 31;
@@ -302,7 +238,7 @@ public final class SettingsScreen extends ParchmentScreen
               current ? (yes ? Palette.GREEN_TEXT : Palette.INK) : Palette.MUTED, false);
             if (active && !current)
             {
-                addHit(bx, y, half, 14, top, bottom, () -> {
+                addHit(bx, y, half, 14, () -> {
                     bool.trigger();
                     send(key, bool);
                 });
@@ -311,7 +247,7 @@ public final class SettingsScreen extends ParchmentScreen
     }
 
     private void stepper(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final ISettingKey<?> key,
-      final IntSetting number, final boolean active, final int top, final int bottom)
+      final IntSetting number, final boolean active)
     {
         final int value = number.getValue();
         final boolean overMinus = Ui.inside(mouseX, mouseY, x, y, 16, 14);
@@ -325,9 +261,9 @@ public final class SettingsScreen extends ParchmentScreen
         {
             if (value > 0)
             {
-                addHit(x, y, 16, 14, top, bottom, () -> change(key, number, -step()));
+                addHit(x, y, 16, 14, () -> change(key, number, -step()));
             }
-            addHit(x + 54, y, 16, 14, top, bottom, () -> change(key, number, step()));
+            addHit(x + 54, y, 16, 14, () -> change(key, number, step()));
             if (overMinus || overPlus)
             {
                 hint = "Maj : par 10";
@@ -347,7 +283,7 @@ public final class SettingsScreen extends ParchmentScreen
     }
 
     private void choices(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final ISettingKey<?> key,
-      final StringSetting choice, final boolean active, final int top, final int bottom)
+      final StringSetting choice, final boolean active)
     {
         final List<String> options = choice.getSettings();
         if (segmented(choice))
@@ -372,7 +308,7 @@ public final class SettingsScreen extends ParchmentScreen
                 if (active && allowed && !current)
                 {
                     final String value = options.get(i);
-                    addHit(bx, y, bw, 14, top, bottom, () -> {
+                    addHit(bx, y, bw, 14, () -> {
                         choice.set(value);
                         send(key, choice);
                     });
@@ -387,7 +323,7 @@ public final class SettingsScreen extends ParchmentScreen
         Ui.button(graphics, font, x, y, bw, 14, fit(option(choice.getValue()) + " ⟳", bw - 6), Ui.ButtonStyle.SECONDARY, active, over);
         if (active)
         {
-            addHit(x, y, bw, 14, top, bottom, () -> {
+            addHit(x, y, bw, 14, () -> {
                 choice.trigger();
                 send(key, choice);
             });
@@ -404,37 +340,5 @@ public final class SettingsScreen extends ParchmentScreen
     private void send(final ISettingKey<?> key, final ISetting<?> setting)
     {
         new TriggerSettingMessage(building, key, setting, module.getProducer().getRuntimeID()).sendToServer();
-    }
-
-    private void addHit(final int x, final int y, final int width, final int height, final int top, final int bottom, final Runnable action)
-    {
-        final int hitTop = Math.max(y, top);
-        final int hitBottom = Math.min(y + height, bottom);
-        if (hitBottom > hitTop)
-        {
-            hits.add(new Hit(x, hitTop, width, hitBottom - hitTop, action));
-        }
-    }
-
-    @Override
-    protected boolean clicked(final double mouseX, final double mouseY)
-    {
-        for (final Hit hit : List.copyOf(hits))
-        {
-            if (Ui.inside(mouseX, mouseY, hit.x(), hit.y(), hit.width(), hit.height()))
-            {
-                minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
-                hit.action().run();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public boolean mouseScrolled(final double mouseX, final double mouseY, final double scrollX, final double scrollY)
-    {
-        scroll -= (int) (scrollY * 12);
-        return true;
     }
 }

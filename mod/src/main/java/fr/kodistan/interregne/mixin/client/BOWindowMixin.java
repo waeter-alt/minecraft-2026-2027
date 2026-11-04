@@ -11,6 +11,7 @@ import fr.kodistan.interregne.client.hut.ItemPickerScreen;
 import com.minecolonies.api.colony.IVisitorViewData;
 import com.minecolonies.core.client.gui.modules.SettingsModuleWindow;
 import fr.kodistan.interregne.client.hut.SettingsScreen;
+import fr.kodistan.interregne.client.hut.HutNav;
 import fr.kodistan.interregne.client.ui.ParchmentScreen;
 import net.minecraft.client.gui.screens.Screen;
 import com.minecolonies.core.client.gui.WindowAssignCitizen;
@@ -91,9 +92,8 @@ public abstract class BOWindowMixin
         {
             ci.cancel();
             final SettingsModuleWindowAccessor settings = (SettingsModuleWindowAccessor) this;
-            // From one of our screens (the hut window), Escape goes back to it
-            final Screen current = Minecraft.getInstance().screen;
-            SettingsScreen.open(settings.interregne$building(), settings.interregne$module(), current instanceof ParchmentScreen ? current : null);
+            SettingsScreen.open(settings.interregne$building(), settings.interregne$module(), HutNav.parentFor(Minecraft.getInstance().screen));
+            ModuleScreens.mark(settings.interregne$module());
         }
         else if (type == WindowInteraction.class && HutScreen.enabled()
                    && !(((WindowInteractionAccessor) this).interregne$citizen() instanceof IVisitorViewData))

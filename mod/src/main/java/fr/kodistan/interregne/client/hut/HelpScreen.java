@@ -21,6 +21,7 @@ public final class HelpScreen extends ModuleScreen
     private HelpScreen(final IBuildingView building, @Nullable final Screen parent)
     {
         super("Aide", building, parent, 340);
+        navCurrent = "Aide";
     }
 
     public static void open(final IBuildingView building, @Nullable final Screen parent)

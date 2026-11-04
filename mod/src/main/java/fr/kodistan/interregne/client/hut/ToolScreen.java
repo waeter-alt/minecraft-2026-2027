@@ -38,8 +38,11 @@ public final class ToolScreen extends ModuleScreen
     protected void init()
     {
         super.init();
-        h = Math.min(h, 120);
-        y0 = (height - h) / 2;
+        if (!framed())
+        {
+            h = Math.min(h, 120);
+            y0 = (height - h) / 2;
+        }
     }
 
     @Override

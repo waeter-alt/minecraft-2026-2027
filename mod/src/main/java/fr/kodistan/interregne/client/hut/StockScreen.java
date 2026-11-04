@@ -44,6 +44,7 @@ public final class StockScreen extends ModuleScreen
     private StockScreen(final IBuildingView building, @Nullable final Screen parent)
     {
         super("Tout le stock", building, parent, 380);
+        navCurrent = "Tout le stock";
         count();
     }
 
