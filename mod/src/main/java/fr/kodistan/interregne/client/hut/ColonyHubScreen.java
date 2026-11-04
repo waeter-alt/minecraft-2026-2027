@@ -21,14 +21,13 @@ import fr.kodistan.interregne.client.ui.Palette;
 import fr.kodistan.interregne.client.ui.ParchmentScreen;
 import fr.kodistan.interregne.client.ui.Ui;
 import fr.kodistan.interregne.colony.ColonyMaps;
-import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -42,38 +41,17 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * The colony hub, opened from the town hall: the colony's register, an open book with a bookmark per chapter. The
- * overview faces the colony's figures; buildings, citizens and requests run over both pages, problems first, each
- * row one click away from its own window. MineColonies' rarer town hall pages stay reachable from the overview.
+ * The colony hub, opened from the town hall: how the colony is doing, every building, every citizen, every open
+ * request, each one click away from its own window. MineColonies' rarer town hall pages stay reachable as tools.
  */
 public final class ColonyHubScreen extends ParchmentScreen
 {
-    private static final ResourceLocation BOOK = ResourceLocation.fromNamespaceAndPath("minecolonies", "textures/gui/townhall_book.png");
-    private static final int BOOK_W = 374;
-    private static final int BOOK_H = 243;
+    private static final int NAV_W = 112;
 
     /**
-     * Inside the book's ink frame: two pages either side of the spine.
+     * The seat's header: a leather band holding the colony's banner, its name and the town hall's level.
      */
-    private static final int LEFT = 28;
-    private static final int RIGHT = 196;
-    private static final int PAGE_W = 150;
-    private static final int TOP = 28;
-    private static final int BOTTOM = 214;
-    private static final int ROW_H = 22;
-    private static final int ROWS_PER_PAGE = (BOTTOM - 12 - (TOP + 16)) / ROW_H;
-
-    /**
-     * The register's inks, on the book's cream pages.
-     */
-    private static final int INK = 0xFF2E2118;
-    private static final int MUTED = 0xFF8A7A66;
-    private static final int ACCENT = 0xFF8C2A2A;
-    private static final int RULE = 0xFFD9CBB0;
-    private static final int HOVER = 0x1C8C2A2A;
-    private static final int RIBBON = 0xFF7A1F24;
-    private static final int RIBBON_LIGHT = 0xFF9E3A3A;
-    private static final int RIBBON_TEXT = 0xFFF6E7C8;
+    private static final int HDR = 38;
 
     /**
      * Set just before opening MineColonies' own town hall page on purpose (« Apparence »), so it is not replaced.
@@ -112,25 +90,9 @@ public final class ColonyHubScreen extends ParchmentScreen
     {
     }
 
-    /**
-     * A row of a list running over both pages: drawn at its place, then clickable as a whole.
-     */
-    private interface RowPainter
-    {
-        void paint(GuiGraphics graphics, int x, int y, int mouseX, int mouseY);
-    }
-
-    private record Row(RowPainter painter, Runnable action)
-    {
-    }
-
     private ITownHallView townHall;
     private final IColonyView colony;
     private Page page = Page.OVERVIEW;
-    private int spread;
-    private int spreads = 1;
-    @Nullable
-    private Page hoveredTab;
     private final List<Hit> hits = new ArrayList<>();
     private final List<Ui.Slot> slots = new ArrayList<>();
     @Nullable
@@ -138,6 +100,8 @@ public final class ColonyHubScreen extends ParchmentScreen
     @Nullable
     private String notice;
     private long noticeUntil;
+    private int scroll;
+    private int contentHeight;
 
     private ColonyHubScreen(final ITownHallView townHall)
     {
@@ -165,17 +129,6 @@ public final class ColonyHubScreen extends ParchmentScreen
     }
 
     @Override
-    protected void init()
-    {
-        super.init();
-        // The book at its own size, pixel for pixel, nudged right so the bookmarks fit on its left
-        w = BOOK_W;
-        h = BOOK_H;
-        x0 = (width - w) / 2 + 20;
-        y0 = (height - h) / 2;
-    }
-
-    @Override
     public void tick()
     {
         final ITownHallView fresh = colony.getTownHall();
@@ -184,8 +137,6 @@ public final class ColonyHubScreen extends ParchmentScreen
             townHall = fresh;
         }
     }
-
-    // --- Frame: bookmarks and the book ---
 
     @Override
     public void render(final GuiGraphics graphics, final int mouseX, final int mouseY, final float partialTick)
@@ -196,72 +147,90 @@ public final class ColonyHubScreen extends ParchmentScreen
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
+    /**
+     * The same parchment as every hut, but the seat of the colony gets a leather header with gold rules: the colony's
+     * banner, its name, and the town hall's level in its colour.
+     */
     @Override
     protected void renderFrame(final GuiGraphics graphics, final int mouseX, final int mouseY)
     {
-        // Bookmarks first, so they come out from under the cover; the open one and the hovered one show their name
-        Page hovered = null;
-        int y = y0 + 40;
-        for (final Page p : Page.values())
-        {
-            final boolean on = p == page;
-            // A hovered bookmark slides out, and stays out while the mouse is on its longer self
-            final boolean over = Ui.inside(mouseX, mouseY, x0 - (p == hoveredTab ? 92 : 20), y, p == hoveredTab ? 92 : 20, 14);
-            if (over)
-            {
-                hovered = p;
-            }
-            final int out = on || over ? 92 : 20;
-            final int left = x0 - out;
-            graphics.fill(left + 3, y, x0 + 4, y + 14, over && !on ? RIBBON_LIGHT : RIBBON);
-            graphics.fill(left + 3, y, x0 + 4, y + 1, RIBBON_LIGHT);
-            graphics.fill(left + 3, y + 13, x0 + 4, y + 14, 0xFF4E1215);
-            // Swallowtail end
-            graphics.fill(left, y, left + 3, y + 5, RIBBON);
-            graphics.fill(left, y + 9, left + 3, y + 14, RIBBON);
-            if (out > 20)
-            {
-                p.icon.draw(graphics, left + 6, y + 1, 12);
-                graphics.drawString(font, p.label, left + 21, y + 3, RIBBON_TEXT, false);
-            }
-            else
-            {
-                p.icon.draw(graphics, left + 5, y + 1, 12);
-            }
-            hits.add(new Hit(left, y, out, 14, () -> show(p)));
-            y += 22;
-        }
-        hoveredTab = hovered;
+        Ui.plate(graphics, x0, y0, x0 + w, y0 + h, Palette.PAPER, Palette.EDGE, Palette.PAPER_LIGHT);
+        Ui.plate(graphics, x0 + 2, y0 + 2, x0 + w - 2, y0 + HDR, Palette.LEATHER, Palette.EDGE, Palette.LEATHER_LIGHT);
+        graphics.fill(x0 + 2, y0 + HDR, x0 + w - 2, y0 + HDR + 1, Palette.SELECTED);
+        graphics.fill(x0 + 2, y0 + HDR + 2, x0 + w - 2, y0 + HDR + 3, Palette.RULE);
 
-        graphics.blit(BOOK, x0, y0, 0, 0, BOOK_W, BOOK_H, BOOK_W, BOOK_H);
-        graphics.drawString(font, "✕", x0 + w - 13, y0 + 6, overClose(mouseX, mouseY) ? Palette.RED : MUTED, false);
+        final ItemStack banner = new ItemStack(Items.WHITE_BANNER);
+        if (colony.getColonyFlag() != null)
+        {
+            banner.set(DataComponents.BANNER_PATTERNS, colony.getColonyFlag());
+        }
+        Icon.of(banner).draw(graphics, x0 + 8, y0 + 3, 32);
+
+        final Component name = Component.literal(colony.getName()).withStyle(ChatFormatting.BOLD);
+        graphics.drawString(font, name, x0 + 44, y0 + 10, Palette.GOLD_TEXT, true);
+        final int penX = x0 + 44 + font.width(name) + 5;
+        final boolean overPen = Ui.inside(mouseX, mouseY, penX - 2, y0 + 8, 12, 12);
+        graphics.drawString(font, "✎", penX, y0 + 10, overPen ? Palette.WHITE : 0xFFC9A877, false);
+        hits.add(new Hit(penX - 2, y0 + 8, 12, 12, () -> new WindowTownHallNameEntry(colony).open()));
+        if (overPen)
+        {
+            hint = "Renommer la colonie";
+        }
+        graphics.drawString(font, "Hôtel de ville · siège de la colonie", x0 + 44, y0 + 22, 0xFFC9A877, false);
+
+        // The town hall's level, a medallion in its colour; a click opens the town hall to upgrade it
+        final int level = townHall.getBuildingLevel();
+        final String label = "Niveau " + level;
+        final int medalW = font.width(label) + 14;
+        final int medalX = x0 + w - 22 - medalW;
+        final int medalY = y0 + 11;
+        final boolean overMedal = Ui.inside(mouseX, mouseY, medalX, medalY, medalW, 16);
+        graphics.fill(medalX - 1, medalY - 1, medalX + medalW + 1, medalY + 17, overMedal ? Palette.WHITE : Palette.SELECTED);
+        Ui.plate(graphics, medalX, medalY, medalX + medalW, medalY + 16, Palette.levelFill(level), Palette.levelEdge(level), Palette.levelFill(level));
+        graphics.drawString(font, Component.literal(label).withStyle(ChatFormatting.BOLD), medalX + 7, medalY + 4, Palette.levelText(level), false);
+        hits.add(new Hit(medalX, medalY, medalW, 16, () -> HutScreen.openWith(townHall, this)));
+        if (overMedal)
+        {
+            hint = "Ouvrir l'hôtel de ville pour l'améliorer";
+        }
+
+        graphics.drawString(font, "✕", x0 + w - 13, y0 + 6, overClose(mouseX, mouseY) ? Palette.RED_SOFT : Palette.GOLD_TEXT, false);
     }
 
     @Override
     protected void renderContent(final GuiGraphics graphics, final int mouseX, final int mouseY)
     {
-        switch (page)
-        {
-            case OVERVIEW -> renderOverview(graphics, mouseX, mouseY);
-            case BUILDINGS -> renderBuildings(graphics, mouseX, mouseY);
-            case CITIZENS -> renderCitizens(graphics, mouseX, mouseY);
-            case REQUESTS -> renderRequests(graphics, mouseX, mouseY);
-        }
+        renderNav(graphics, mouseX, mouseY);
 
+        final int x = x0 + NAV_W + 7;
+        final int width = w - NAV_W - 16;
+        final int top = y0 + HDR + 7;
+        final int bottom = y0 + h - 5;
+        scroll = Math.max(0, Math.min(scroll, contentHeight - (bottom - top)));
+        final int my = Ui.inside(mouseX, mouseY, x, top, width, bottom - top) ? mouseY : Integer.MIN_VALUE;
+        graphics.enableScissor(x, top, x + width, bottom);
+        int y = top - scroll;
         if (notice != null && Util.getMillis() < noticeUntil)
         {
-            final List<net.minecraft.util.FormattedCharSequence> lines = font.split(Component.literal(notice), 220);
-            final int boxW = 232;
-            final int boxH = lines.size() * 10 + 10;
-            final int bx = x0 + (w - boxW) / 2;
-            final int by = y0 + h - boxH - 26;
-            Ui.plate(graphics, bx, by, bx + boxW, by + boxH, Palette.LEATHER, Palette.EDGE, Palette.LEATHER_LIGHT);
-            int ly = by + 6;
-            for (final net.minecraft.util.FormattedCharSequence line : lines)
-            {
-                graphics.drawString(font, line, bx + (boxW - font.width(line)) / 2, ly, Palette.GOLD_TEXT, false);
-                ly += 10;
-            }
+            Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, "Pas encore", notice);
+            y += 20;
+        }
+        y = switch (page)
+        {
+            case OVERVIEW -> renderOverview(graphics, mouseX, my, x, y, width);
+            case BUILDINGS -> renderBuildings(graphics, mouseX, my, x, y, width);
+            case CITIZENS -> renderCitizens(graphics, mouseX, my, x, y, width);
+            case REQUESTS -> renderRequests(graphics, mouseX, my, x, y, width);
+        };
+        graphics.disableScissor();
+        contentHeight = y + scroll - top;
+        if (contentHeight > bottom - top)
+        {
+            final int track = bottom - top;
+            final int thumb = Math.max(12, track * track / contentHeight);
+            final int thumbY = top + (track - thumb) * scroll / Math.max(1, contentHeight - track);
+            graphics.fill(x + width + 2, top, x + width + 4, bottom, Palette.PAPER_DARK);
+            graphics.fill(x + width + 2, thumbY, x + width + 4, thumbY + thumb, Palette.RULE);
         }
 
         for (final Ui.Slot slot : slots)
@@ -277,130 +246,17 @@ public final class ColonyHubScreen extends ParchmentScreen
         }
     }
 
-    private void show(final Page target)
+    private void addHit(final int x, final int y, final int width, final int height, final Runnable action)
     {
-        page = target;
-        spread = 0;
-        spreads = 1;
-    }
-
-    private void notice(final String text)
-    {
-        notice = text;
-        noticeUntil = Util.getMillis() + 6000;
-    }
-
-    // --- Register widgets ---
-
-    /**
-     * A chapter title centred on its page, in the cover's red, between two thin rules.
-     */
-    private void pageTitle(final GuiGraphics graphics, final String text, final int x, final int y)
-    {
-        final int textW = font.width(text);
-        final int cx = x + PAGE_W / 2;
-        graphics.drawString(font, text, cx - textW / 2, y, ACCENT, false);
-        graphics.fill(x, y + 4, cx - textW / 2 - 5, y + 5, RULE);
-        graphics.fill(cx + textW / 2 + 5, y + 4, x + PAGE_W, y + 5, RULE);
-    }
-
-    /**
-     * A thin rule with a small diamond in its middle.
-     */
-    private static void ornament(final GuiGraphics graphics, final int x, final int y, final int width)
-    {
-        final int cx = x + width / 2;
-        graphics.fill(x + 10, y + 2, cx - 6, y + 3, RULE);
-        graphics.fill(cx + 6, y + 2, x + width - 10, y + 3, RULE);
-        graphics.fill(cx - 1, y, cx + 1, y + 5, ACCENT);
-        graphics.fill(cx - 3, y + 2, cx + 3, y + 3, ACCENT);
-    }
-
-    private static void dottedRule(final GuiGraphics graphics, final int x, final int y, final int width)
-    {
-        for (int i = x; i < x + width; i += 2)
+        final int top = Math.max(y, y0 + HDR + 7);
+        final int bottom = Math.min(y + height, y0 + h - 5);
+        if (bottom > top)
         {
-            graphics.fill(i, y, i + 1, y + 1, RULE);
+            hits.add(new Hit(x, top, width, bottom - top, action));
         }
     }
 
-    private static boolean hover(final int mouseX, final int mouseY, final int x, final int y, final int width, final int height)
-    {
-        return Ui.inside(mouseX, mouseY, x - 3, y, width + 6, height);
-    }
-
-    private static int ink(final Ui.State state)
-    {
-        return switch (state)
-        {
-            case OK -> Palette.GREEN;
-            case WAIT -> Palette.AMBER_TEXT;
-            case BAD -> Palette.RED;
-        };
-    }
-
-    /**
-     * Rows running over both pages, a spread at a time; the arrows at the bottom corners turn the pages.
-     */
-    private void renderList(final GuiGraphics graphics, final int mouseX, final int mouseY, final String title, final String subtitle, final String empty,
-      final List<Row> rows)
-    {
-        final int perSpread = ROWS_PER_PAGE * 2;
-        spreads = Math.max(1, (rows.size() + perSpread - 1) / perSpread);
-        spread = Math.max(0, Math.min(spread, spreads - 1));
-        pageTitle(graphics, title, x0 + LEFT, y0 + TOP);
-        pageTitle(graphics, subtitle, x0 + RIGHT, y0 + TOP);
-        if (rows.isEmpty())
-        {
-            Ui.wrapped(graphics, font, Component.literal(empty), x0 + LEFT, y0 + TOP + 18, PAGE_W, MUTED, 10);
-        }
-        for (int side = 0; side < 2; side++)
-        {
-            final int px = x0 + (side == 0 ? LEFT : RIGHT);
-            int y = y0 + TOP + 16;
-            for (int i = 0; i < ROWS_PER_PAGE; i++)
-            {
-                final int index = spread * perSpread + side * ROWS_PER_PAGE + i;
-                if (index >= rows.size())
-                {
-                    break;
-                }
-                final Row row = rows.get(index);
-                if (hover(mouseX, mouseY, px, y, PAGE_W, ROW_H - 1))
-                {
-                    graphics.fill(px - 3, y, px + PAGE_W + 3, y + ROW_H - 1, HOVER);
-                }
-                hits.add(new Hit(px - 3, y, PAGE_W + 6, ROW_H - 1, row.action()));
-                row.painter().paint(graphics, px, y, mouseX, mouseY);
-                dottedRule(graphics, px, y + ROW_H - 1, PAGE_W);
-                y += ROW_H;
-            }
-            final String number = Integer.toString(spread * 2 + side + 1);
-            graphics.drawString(font, number, px + (PAGE_W - font.width(number)) / 2, y0 + BOTTOM - 6, MUTED, false);
-        }
-        if (spread > 0)
-        {
-            arrow(graphics, mouseX, mouseY, x0 + LEFT, "‹ Précédent", () -> spread--);
-        }
-        if (spread < spreads - 1)
-        {
-            arrow(graphics, mouseX, mouseY, x0 + RIGHT + PAGE_W - font.width("Suivant ›"), "Suivant ›", () -> spread++);
-        }
-    }
-
-    private void arrow(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final String text, final Runnable action)
-    {
-        final int y = y0 + BOTTOM - 6;
-        final boolean over = Ui.inside(mouseX, mouseY, x - 2, y - 2, font.width(text) + 4, 12);
-        graphics.drawString(font, text, x, y, over ? ACCENT : INK, false);
-        hits.add(new Hit(x - 2, y - 2, font.width(text) + 4, 12, action));
-    }
-
-    // --- Overview ---
-
-    private record Figure(String label, String value, Icon icon, Ui.State state, Runnable action)
-    {
-    }
+    // --- Navigation ---
 
     private record Tool(String label, Icon icon, boolean locked, Runnable action)
     {
@@ -408,9 +264,8 @@ public final class ColonyHubScreen extends ParchmentScreen
 
     private List<Tool> tools()
     {
-        final boolean mapLocked = townHall.getBuildingLevel() < ColonyMaps.UNLOCK_LEVEL;
         return List.of(
-          new Tool("Carte", Icon.of(Items.FILLED_MAP), mapLocked, this::openMap),
+          new Tool("Carte", Icon.of(Items.FILLED_MAP), townHall.getBuildingLevel() < ColonyMaps.UNLOCK_LEVEL, this::openMap),
           new Tool("Statistiques", Icon.module("stats"), false, () -> new WindowStatsPage((BuildingTownHall.View) townHall).open()),
           new Tool("Réglages", Icon.module("settings"), false, () -> new WindowSettings((BuildingTownHall.View) townHall).open()),
           new Tool("Permissions", Icon.module("scepter"), false, () -> new WindowPermissionsPage((BuildingTownHall.View) townHall).open()),
@@ -429,12 +284,12 @@ public final class ColonyHubScreen extends ParchmentScreen
     {
         if (townHall.getBuildingLevel() < ColonyMaps.UNLOCK_LEVEL)
         {
-            notice("La carte se débloque au niveau " + ColonyMaps.UNLOCK_LEVEL + " de l'hôtel de ville. Améliorez-le pour la voir.");
+            notice("la carte se débloque au niveau " + ColonyMaps.UNLOCK_LEVEL + " de l'hôtel de ville. Améliorez-le pour la voir.");
             return;
         }
         if (townHall.getMapDataList().isEmpty())
         {
-            notice("La carte se dessine encore : revenez dans un instant.");
+            notice("la carte se dessine encore, revenez dans un instant.");
             return;
         }
         final WindowColonyMap map = new WindowColonyMap(true, townHall);
@@ -443,7 +298,56 @@ public final class ColonyHubScreen extends ParchmentScreen
         map.open();
     }
 
-    private void renderOverview(final GuiGraphics graphics, final int mouseX, final int mouseY)
+    private void notice(final String text)
+    {
+        notice = text;
+        noticeUntil = Util.getMillis() + 6000;
+        scroll = 0;
+    }
+
+    private void renderNav(final GuiGraphics graphics, final int mouseX, final int mouseY)
+    {
+        final int x = x0 + 5;
+        final int width = NAV_W - 8;
+        graphics.fill(x0 + NAV_W, y0 + HDR + 5, x0 + NAV_W + 1, y0 + h - 4, Palette.RULE);
+        int y = y0 + HDR + 7;
+        for (final Page p : Page.values())
+        {
+            Ui.navItem(graphics, font, x, y, width, p.icon, p.label, p == page, Ui.inside(mouseX, mouseY, x, y, width, Ui.NAV_ROW));
+            hits.add(new Hit(x, y, width, Ui.NAV_ROW, () -> show(p)));
+            y += Ui.NAV_ROW + 1;
+        }
+
+        final List<Tool> tools = tools();
+        y = y0 + h - 6 - tools.size() * (Ui.NAV_ROW + 1);
+        graphics.fill(x + 2, y - 3, x + width - 2, y - 2, Palette.RULE);
+        for (final Tool tool : tools)
+        {
+            final boolean over = Ui.inside(mouseX, mouseY, x, y, width, Ui.NAV_ROW);
+            Ui.navItem(graphics, font, x, y, width, tool.icon(), tool.label(), false, over);
+            if (tool.locked())
+            {
+                final String lock = "niv. " + ColonyMaps.UNLOCK_LEVEL;
+                graphics.drawString(font, lock, x + width - 3 - font.width(lock), y + 5, Palette.MUTED, false);
+                if (over)
+                {
+                    hint = "La carte se débloque au niveau " + ColonyMaps.UNLOCK_LEVEL + " de l'hôtel de ville";
+                }
+            }
+            hits.add(new Hit(x, y, width, Ui.NAV_ROW, tool.action()));
+            y += Ui.NAV_ROW + 1;
+        }
+    }
+
+    private void show(final Page target)
+    {
+        page = target;
+        scroll = 0;
+    }
+
+    // --- Overview ---
+
+    private int renderOverview(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         final List<IBuildingView> buildings = colony.getBuildings();
         final List<ICitizenDataView> citizens = new ArrayList<>(colony.getCitizens().values());
@@ -451,7 +355,8 @@ public final class ColonyHubScreen extends ParchmentScreen
         int sites = 0;
         for (final IBuildingView building : buildings)
         {
-            if (stateOf(building).state() == Ui.State.BAD)
+            final BuildingState state = stateOf(building);
+            if (state.state() == Ui.State.BAD)
             {
                 blocked++;
             }
@@ -473,154 +378,73 @@ public final class ColonyHubScreen extends ParchmentScreen
         }
         final int requests = requests().size();
 
-        // Left page: the colony's arms, its name, its state, its seat
-        final int lx = x0 + LEFT;
-        final int cx = lx + PAGE_W / 2;
-        int y = y0 + TOP;
-        final ItemStack banner = new ItemStack(Items.WHITE_BANNER);
-        if (colony.getColonyFlag() != null)
-        {
-            banner.set(DataComponents.BANNER_PATTERNS, colony.getColonyFlag());
-        }
-        Icon.of(banner).draw(graphics, cx - 16, y, 32);
-        y += 36;
-
-        final String name = fit(colony.getName(), PAGE_W - 16);
-        final int nameW = font.width(name);
-        graphics.drawString(font, name, cx - nameW / 2, y, INK, false);
-        final int penX = cx + nameW / 2 + 4;
-        final boolean overPen = Ui.inside(mouseX, mouseY, penX - 2, y - 2, 11, 12);
-        graphics.drawString(font, "✎", penX, y, overPen ? ACCENT : MUTED, false);
-        hits.add(new Hit(penX - 2, y - 2, 11, 12, () -> new WindowTownHallNameEntry(colony).open()));
-        if (overPen)
-        {
-            hint = "Renommer la colonie";
-        }
-        y += 12;
-        final String seat = "Colonie de " + citizens.size() + (citizens.size() > 1 ? " âmes" : " âme");
-        graphics.drawString(font, seat, cx - font.width(seat) / 2, y, MUTED, false);
-        y += 14;
-        ornament(graphics, lx, y, PAGE_W);
-        y += 12;
-
-        final Ui.State state;
-        final String stateTitle;
-        final String stateText;
-        final Runnable stateAction;
         if (blocked > 0)
         {
-            state = Ui.State.BAD;
-            stateTitle = "À régler";
-            stateText = blocked + (blocked == 1 ? " bâtiment est bloqué." : " bâtiments sont bloqués.");
-            stateAction = () -> show(Page.BUILDINGS);
+            Ui.banner(graphics, font, x, y, width, Ui.State.BAD, "À régler", blocked + (blocked == 1 ? " bâtiment bloqué" : " bâtiments bloqués"));
+            addHit(x, y, width, 14, () -> show(Page.BUILDINGS));
         }
         else if (troubled > 0)
         {
-            state = Ui.State.WAIT;
-            stateTitle = "À surveiller";
-            stateText = troubled + (troubled == 1 ? " citoyen a des doléances." : " citoyens ont des doléances.");
-            stateAction = () -> show(Page.CITIZENS);
+            Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, "À surveiller", troubled + (troubled == 1 ? " citoyen a" : " citoyens ont") + " des doléances");
+            addHit(x, y, width, 14, () -> show(Page.CITIZENS));
         }
         else
         {
-            state = Ui.State.OK;
-            stateTitle = "Tout va bien";
-            stateText = "Aucun bâtiment bloqué, aucune doléance.";
-            stateAction = null;
+            Ui.banner(graphics, font, x, y, width, Ui.State.OK, "Tout va bien", "aucun bâtiment bloqué, aucune doléance");
         }
-        final int noteTop = y;
-        final boolean overNote = stateAction != null && hover(mouseX, mouseY, lx, noteTop - 3, PAGE_W, 26);
-        if (overNote)
-        {
-            graphics.fill(lx - 3, noteTop - 3, lx + PAGE_W + 3, noteTop + 23, HOVER);
-        }
-        graphics.fill(lx, y + 2, lx + 4, y + 6, ink(state));
-        graphics.drawString(font, Component.literal(stateTitle).withStyle(ChatFormatting.BOLD), lx + 8, y, ink(state), false);
-        if (stateAction != null)
-        {
-            graphics.drawString(font, "›", lx + PAGE_W - 5, y, ACCENT, false);
-            hits.add(new Hit(lx - 3, noteTop - 3, PAGE_W + 6, 26, stateAction));
-        }
-        Ui.wrapped(graphics, font, Component.literal(stateText), lx + 8, y + 11, PAGE_W - 8, INK, 10);
-        y += 32;
+        y += 20;
 
-        pageTitle(graphics, "Le siège", lx, y);
-        y += 14;
-        final int level = townHall.getBuildingLevel();
-        final boolean overHall = hover(mouseX, mouseY, lx, y, PAGE_W, 24);
-        if (overHall)
-        {
-            graphics.fill(lx - 3, y, lx + PAGE_W + 3, y + 24, HOVER);
-        }
-        Icon.of(townHall.getBuildingType().getBuildingBlock()).draw(graphics, lx, y + 4, 16);
-        graphics.drawString(font, "Hôtel de ville", lx + 21, y + 3, INK, false);
-        final String sub = level < ColonyMaps.UNLOCK_LEVEL ? "Niveau 2 : débloque la carte" : "Améliorer, réparer, stock";
-        graphics.drawString(font, fit(sub, PAGE_W - 30), lx + 21, y + 13, MUTED, false);
-        final String badge = "Niv. " + level;
-        Ui.levelBadge(graphics, font, lx + PAGE_W - font.width(badge) - 16, y + 2, badge, level);
-        graphics.drawString(font, "›", lx + PAGE_W - 5, y + 8, ACCENT, false);
-        hits.add(new Hit(lx - 3, y, PAGE_W + 6, 24, () -> HutScreen.openWith(townHall, this)));
-
-        // Right page: the figures, as a ledger, then the registers
-        final int rx = x0 + RIGHT;
-        y = y0 + TOP;
-        pageTitle(graphics, "La colonie en chiffres", rx, y);
-        y += 15;
+        // Tiles: the colony's vital signs, each opening the page that explains it
+        final int tileW = (width - 3 * 4) / 4;
         final double happiness = colony.getOverallHappiness();
-        final List<Figure> figures = List.of(
-          new Figure("Citoyens", citizens.size() + " / " + colony.getCitizenCountLimit(), Icon.module("workers"), Ui.State.OK, () -> show(Page.CITIZENS)),
-          new Figure("Bonheur", format(happiness) + " / 10", Icon.module("happiness"), happiness < 4 ? Ui.State.BAD : happiness < 7 ? Ui.State.WAIT : Ui.State.OK,
+        y = tileRow(graphics, mouseX, mouseY, x, y, tileW, List.of(
+          new Tile("Citoyens", citizens.size() + " / " + colony.getCitizenCountLimit(), Icon.module("workers"), Ui.State.OK, () -> show(Page.CITIZENS)),
+          new Tile("Bonheur", format(happiness) + " / 10", Icon.module("happiness"), happiness < 4 ? Ui.State.BAD : happiness < 7 ? Ui.State.WAIT : Ui.State.OK,
             () -> show(Page.CITIZENS)),
-          new Figure("Doléances", Integer.toString(grievances), Icon.of(Items.WRITABLE_BOOK), grievances > 0 ? Ui.State.WAIT : Ui.State.OK,
-            () -> show(Page.CITIZENS)),
-          new Figure("Demandes", Integer.toString(requests), Icon.module("requests"), requests > 0 ? Ui.State.WAIT : Ui.State.OK, () -> show(Page.REQUESTS)),
-          new Figure("Bâtiments", Integer.toString(buildings.size()), Icon.of(Items.BRICKS), blocked > 0 ? Ui.State.BAD : Ui.State.OK,
-            () -> show(Page.BUILDINGS)),
-          new Figure("Chantiers", Integer.toString(sites), Icon.of(Items.IRON_PICKAXE), Ui.State.OK, () -> show(Page.BUILDINGS)));
-        for (final Figure figure : figures)
-        {
-            if (hover(mouseX, mouseY, rx, y, PAGE_W, 15))
-            {
-                graphics.fill(rx - 3, y, rx + PAGE_W + 3, y + 15, HOVER);
-            }
-            figure.icon().draw(graphics, rx, y + 1, 12);
-            graphics.drawString(font, figure.label(), rx + 16, y + 4, INK, false);
-            final int valueW = font.width(figure.value());
-            final int valueX = rx + PAGE_W - valueW;
-            dottedRule(graphics, rx + 19 + font.width(figure.label()), y + 10, valueX - rx - 23 - font.width(figure.label()));
-            graphics.drawString(font, figure.value(), valueX, y + 4, figure.state() == Ui.State.OK ? INK : ink(figure.state()), false);
-            hits.add(new Hit(rx - 3, y, PAGE_W + 6, 15, figure.action()));
-            y += 16;
-        }
+          new Tile("Doléances", Integer.toString(grievances), Icon.of(Items.WRITABLE_BOOK), grievances > 0 ? Ui.State.WAIT : Ui.State.OK, () -> show(Page.CITIZENS)),
+          new Tile("Demandes", Integer.toString(requests), Icon.module("requests"), requests > 0 ? Ui.State.WAIT : Ui.State.OK, () -> show(Page.REQUESTS))));
+        y = tileRow(graphics, mouseX, mouseY, x, y + 4, tileW, List.of(
+          new Tile("Bâtiments", Integer.toString(buildings.size()), Icon.of(Items.BRICKS), blocked > 0 ? Ui.State.BAD : Ui.State.OK, () -> show(Page.BUILDINGS)),
+          new Tile("Chantiers", Integer.toString(sites), Icon.of(Items.IRON_PICKAXE), Ui.State.OK, () -> show(Page.BUILDINGS))));
 
-        y += 8;
-        pageTitle(graphics, "Registres", rx, y);
-        y += 15;
-        final List<Tool> tools = tools();
-        final int colW = PAGE_W / 2;
-        for (int i = 0; i < tools.size(); i++)
+        y = Ui.separator(graphics, x, y, width);
+        final int level = townHall.getBuildingLevel();
+        final boolean over = Ui.inside(mouseX, mouseY, x, y, width, 24);
+        Ui.card(graphics, x, y, width, 24, false, over, false);
+        Icon.of(townHall.getBuildingType().getBuildingBlock()).draw(graphics, x + 4, y + 4, 16);
+        graphics.drawString(font, Component.literal("Hôtel de ville").withStyle(ChatFormatting.BOLD), x + 24, y + 4, Palette.INK, false);
+        graphics.drawString(font, level < ColonyMaps.UNLOCK_LEVEL ? "Le niveau 2 débloque la carte de la colonie" : "Améliorer, réparer, voir le stock",
+          x + 24, y + 13, Palette.MUTED, false);
+        final int badgeW = Ui.levelBadge(graphics, font, x + width - 70, y + 6, "Niveau " + level, level);
+        graphics.drawString(font, "›", x + width - 70 + badgeW + 6, y + 8, Palette.MUTED, false);
+        addHit(x, y, width, 24, () -> HutScreen.openWith(townHall, this));
+        return y + 28;
+    }
+
+    private record Tile(String label, String value, Icon icon, Ui.State state, Runnable action)
+    {
+    }
+
+    private int tileRow(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int tileW, final List<Tile> tiles)
+    {
+        for (int i = 0; i < tiles.size(); i++)
         {
-            final Tool tool = tools.get(i);
-            final int tx = rx + (i % 2) * colW;
-            final int ty = y + (i / 2) * 16;
-            final boolean over = Ui.inside(mouseX, mouseY, tx - 2, ty, colW - 2, 15);
-            if (over)
+            final Tile tile = tiles.get(i);
+            final int tx = x + i * (tileW + 4);
+            final boolean over = Ui.inside(mouseX, mouseY, tx, y, tileW, 34);
+            Ui.card(graphics, tx, y, tileW, 34, false, over, false);
+            graphics.fill(tx + 1, y + 1, tx + 3, y + 33, switch (tile.state())
             {
-                graphics.fill(tx - 2, ty, tx + colW - 4, ty + 15, HOVER);
-            }
-            tool.icon().draw(graphics, tx, ty + 1, 12);
-            graphics.drawString(font, tool.label(), tx + 16, ty + 4, tool.locked() ? MUTED : INK, false);
-            if (tool.locked())
-            {
-                final String lock = "niv. " + ColonyMaps.UNLOCK_LEVEL;
-                graphics.drawString(font, lock, tx + colW - 6 - font.width(lock), ty + 4, ACCENT, false);
-                if (over)
-                {
-                    hint = "La carte se débloque au niveau " + ColonyMaps.UNLOCK_LEVEL + " de l'hôtel de ville";
-                }
-            }
-            hits.add(new Hit(tx - 2, ty, colW - 2, 15, tool.action()));
+                case OK -> Palette.GREEN;
+                case WAIT -> Palette.AMBER;
+                case BAD -> Palette.RED;
+            });
+            tile.icon().draw(graphics, tx + 6, y + 4, 12);
+            graphics.drawString(font, fit(tile.label(), tileW - 24), tx + 21, y + 6, Palette.MUTED, false);
+            graphics.drawString(font, Component.literal(tile.value()).withStyle(ChatFormatting.BOLD), tx + 7, y + 21, Palette.INK, false);
+            addHit(tx, y, tileW, 34, tile.action());
         }
+        return y + 34;
     }
 
     // --- Buildings ---
@@ -659,45 +483,50 @@ public final class ColonyHubScreen extends ParchmentScreen
         return new BuildingState(Ui.State.OK, "En marche");
     }
 
-    private void renderBuildings(final GuiGraphics graphics, final int mouseX, final int mouseY)
+    private int renderBuildings(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         final List<IBuildingView> buildings = new ArrayList<>(colony.getBuildings());
         final Map<IBuildingView, BuildingState> states = new LinkedHashMap<>();
         buildings.forEach(b -> states.put(b, stateOf(b)));
         // Problems first, then by name
         buildings.sort(Comparator.<IBuildingView>comparingInt(b -> -states.get(b).state().ordinal()).thenComparing(ColonyHubScreen::nameOf));
-        final List<Row> rows = new ArrayList<>();
+        Ui.label(graphics, font, buildings.size() + " BÂTIMENTS", x, y);
+        y += 12;
         for (final IBuildingView building : buildings)
         {
             final BuildingState state = states.get(building);
-            rows.add(new Row((graphics1, x, y, mx, my) ->
-            {
-                Icon.of(building.getBuildingType().getBuildingBlock()).draw(graphics1, x, y + 3, 16);
-                final int chipW = font.width(state.text()) + 8;
-                Ui.chip(graphics1, font, x + PAGE_W - chipW, y + 5, state.text(), state.state());
-                graphics1.drawString(font, fit(nameOf(building), PAGE_W - chipW - 26), x + 20, y + 3, INK, false);
-                levelSquares(graphics1, x + 20, y + 12, building.getBuildingLevel(), building.getBuildingMaxLevel());
-            }, () -> HutScreen.openWith(building, this)));
+            final boolean over = Ui.inside(mouseX, mouseY, x, y, width, 20);
+            Ui.card(graphics, x, y, width, 20, false, over, false);
+            Icon.of(building.getBuildingType().getBuildingBlock()).draw(graphics, x + 3, y + 2, 16);
+            final int level = building.getBuildingLevel();
+            final int badgeX = x + width - 150;
+            graphics.drawString(font, fit(nameOf(building), badgeX - x - 28), x + 23, y + 6, Palette.INK, false);
+            levelSquares(graphics, badgeX, y + 6, level, building.getBuildingMaxLevel());
+            final int chipW = font.width(state.text()) + 8;
+            Ui.chip(graphics, font, x + width - chipW - 14, y + 5, state.text(), state.state());
+            graphics.drawString(font, "›", x + width - 9, y + 6, Palette.MUTED, false);
+            addHit(x, y, width, 20, () -> HutScreen.openWith(building, this));
+            y += 22;
         }
-        renderList(graphics, mouseX, mouseY, buildings.size() + " bâtiments", "Les problèmes en tête", "Aucun bâtiment pour l'instant.", rows);
+        return y;
     }
 
     /**
      * One square per level in its colour, filled up to the building's level.
      */
-    private static void levelSquares(final GuiGraphics graphics, int x, final int y, final int level, final int max)
+    private void levelSquares(final GuiGraphics graphics, int x, final int y, final int level, final int max)
     {
         for (int l = 1; l <= max; l++)
         {
-            graphics.fill(x, y, x + 6, y + 6, l <= level ? Palette.levelEdge(l) : RULE);
-            graphics.fill(x + 1, y + 1, x + 5, y + 5, l <= level ? Palette.levelFill(l) : Palette.PAPER_LIGHT);
+            graphics.fill(x, y, x + 6, y + 7, Palette.levelEdge(l));
+            graphics.fill(x + 1, y + 1, x + 5, y + 6, l <= level ? Palette.levelFill(l) : Palette.PAPER_LIGHT);
             x += 8;
         }
     }
 
     // --- Citizens ---
 
-    private void renderCitizens(final GuiGraphics graphics, final int mouseX, final int mouseY)
+    private int renderCitizens(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         final List<ICitizenDataView> citizens = new ArrayList<>(colony.getCitizens().values());
         final Map<ICitizenDataView, List<CitizenBits.Chip>> chips = new LinkedHashMap<>();
@@ -705,38 +534,39 @@ public final class ColonyHubScreen extends ParchmentScreen
         // Those with something to settle first
         citizens.sort(Comparator.<ICitizenDataView>comparingInt(c -> -(int) chips.get(c).stream().filter(ch -> ch.action() != null).count())
           .thenComparing(ICitizenDataView::getName));
-        final List<Row> rows = new ArrayList<>();
+        Ui.label(graphics, font, citizens.size() + " / " + colony.getCitizenCountLimit() + " CITOYENS", x, y);
+        y += 12;
         for (final ICitizenDataView citizen : citizens)
         {
-            rows.add(new Row((graphics1, x, y, mx, my) ->
-            {
-                CitizenBits.face(graphics1, citizen, x, y + 3, 16);
-                graphics1.drawString(font, fit(citizen.getName(), PAGE_W - 20), x + 20, y + 2, INK, false);
+            final boolean over = Ui.inside(mouseX, mouseY, x, y, width, 22);
+            Ui.card(graphics, x, y, width, 22, false, over, false);
+            CitizenBits.face(graphics, citizen, x + 3, y + 3, 16);
+            final String job = citizen.getJob() == null || citizen.getJob().isEmpty() ? (citizen.isChild() ? "Enfant" : "Sans emploi")
+                                 : CitizenBits.jobName(citizen.getJob(), citizen.isFemale());
+            graphics.drawString(font, Component.literal(citizen.getName()).withStyle(ChatFormatting.BOLD), x + 23, y + 3, Palette.INK, false);
+            graphics.drawString(font, fit(job, width / 2 - 26), x + 23, y + 12, Palette.MUTED, false);
 
-                // Chips on the second line, right-aligned; a click on one settles the problem
-                int chipX = x + PAGE_W;
-                final List<CitizenBits.Chip> list = chips.get(citizen);
-                for (int i = list.size() - 1; i >= 0; i--)
+            // Chips right-aligned; a click on one settles the problem, elsewhere opens the sheet
+            int chipX = x + width - 12;
+            final List<CitizenBits.Chip> list = chips.get(citizen);
+            for (int i = list.size() - 1; i >= 0; i--)
+            {
+                final CitizenBits.Chip chip = list.get(i);
+                final int chipW = font.width(chip.text()) + 8;
+                chipX -= chipW;
+                final boolean overChip = chip.action() != null && Ui.inside(mouseX, mouseY, chipX, y + 6, chipW, 11);
+                Ui.chip(graphics, font, chipX, y + 6, chip.text(), chip.soft(), chip.ink(), chip.action() != null, overChip);
+                if (chip.action() != null)
                 {
-                    final CitizenBits.Chip chip = list.get(i);
-                    final int chipW = font.width(chip.text()) + 8;
-                    chipX -= chipW;
-                    final boolean overChip = chip.action() != null && Ui.inside(mx, my, chipX, y + 10, chipW, 11);
-                    Ui.chip(graphics1, font, chipX, y + 10, chip.text(), chip.soft(), chip.ink(), chip.action() != null, overChip);
-                    if (chip.action() != null)
-                    {
-                        // Added after the row's own hit would lose: put it first
-                        hits.add(0, new Hit(chipX, y + 10, chipW, 11, chip.action()));
-                    }
-                    chipX -= 2;
+                    addHit(chipX, y + 6, chipW, 11, chip.action());
                 }
-                final String job = citizen.getJob() == null || citizen.getJob().isEmpty() ? (citizen.isChild() ? "Enfant" : "Sans emploi")
-                                     : CitizenBits.jobName(citizen.getJob(), citizen.isFemale());
-                graphics1.drawString(font, fit(job, chipX - x - 22), x + 20, y + 12, MUTED, false);
-            }, () -> CitizenScreen.open(citizen, this)));
+                chipX -= 3;
+            }
+            graphics.drawString(font, "›", x + width - 9, y + 7, Palette.MUTED, false);
+            addHit(x, y, width, 22, () -> CitizenScreen.open(citizen, this));
+            y += 24;
         }
-        renderList(graphics, mouseX, mouseY, citizens.size() + " / " + colony.getCitizenCountLimit() + " citoyens", "À régler en tête",
-          "Personne n'habite encore la colonie.", rows);
+        return y;
     }
 
     // --- Requests ---
@@ -776,29 +606,36 @@ public final class ColonyHubScreen extends ParchmentScreen
         return all;
     }
 
-    private void renderRequests(final GuiGraphics graphics, final int mouseX, final int mouseY)
+    private int renderRequests(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         final List<OpenRequest> requests = requests();
-        final List<Row> rows = new ArrayList<>();
+        if (requests.isEmpty())
+        {
+            graphics.drawString(font, "Personne n'attend rien : la colonie ne manque de rien.", x, y, Palette.MUTED, false);
+            return y + 12;
+        }
+        Ui.label(graphics, font, requests.size() + " DEMANDES OUVERTES", x, y);
+        y += 12;
         for (final OpenRequest open : requests)
         {
             final IRequest<?> request = open.request();
-            rows.add(new Row((graphics1, x, y, mx, my) ->
-            {
-                final List<ItemStack> stacks = request.getDisplayStacks();
-                final ItemStack stack = stacks.isEmpty() ? new ItemStack(Items.PAPER) : stacks.get(0);
-                Icon.of(stack).draw(graphics1, x, y + 3, 16);
-                slots.add(new Ui.Slot(x, y + 3, 16, stack));
-                final String state = CitizenBits.requestStateText(request);
-                final int chipW = font.width(state) + 8;
-                Ui.chip(graphics1, font, x + PAGE_W - chipW, y + 5, state, CitizenBits.requestState(request));
-                final int textW = PAGE_W - chipW - 24;
-                graphics1.drawString(font, fit(request.getShortDisplayString().getString(), textW), x + 20, y + 2, INK, false);
-                graphics1.drawString(font, fit("pour " + nameOf(open.building()), textW), x + 20, y + 12, MUTED, false);
-            }, () -> HutScreen.openWith(open.building(), this)));
+            final boolean over = Ui.inside(mouseX, mouseY, x, y, width, 22);
+            Ui.card(graphics, x, y, width, 22, false, over, false);
+            final List<ItemStack> stacks = request.getDisplayStacks();
+            final ItemStack stack = stacks.isEmpty() ? new ItemStack(Items.PAPER) : stacks.get(0);
+            Icon.of(stack).draw(graphics, x + 3, y + 3, 16);
+            slots.add(new Ui.Slot(x + 3, y + 3, 16, stack));
+            final String state = CitizenBits.requestStateText(request);
+            final int chipW = font.width(state) + 8;
+            Ui.chip(graphics, font, x + width - chipW - 12, y + 6, state, CitizenBits.requestState(request));
+            final int textW = width - chipW - 40;
+            graphics.drawString(font, fit(request.getShortDisplayString().getString(), textW), x + 23, y + 3, Palette.INK, false);
+            graphics.drawString(font, fit("pour " + nameOf(open.building()), textW), x + 23, y + 12, Palette.MUTED, false);
+            graphics.drawString(font, "›", x + width - 9, y + 7, Palette.MUTED, false);
+            addHit(x, y, width, 22, () -> HutScreen.openWith(open.building(), this));
+            y += 24;
         }
-        renderList(graphics, mouseX, mouseY, requests.size() + (requests.size() > 1 ? " demandes ouvertes" : " demande ouverte"), "Qui attend quoi",
-          "Personne n'attend rien : la colonie ne manque de rien.", rows);
+        return y;
     }
 
     // --- Shared ---
@@ -826,13 +663,7 @@ public final class ColonyHubScreen extends ParchmentScreen
     @Override
     public boolean mouseScrolled(final double mouseX, final double mouseY, final double scrollX, final double scrollY)
     {
-        // The wheel turns the pages of a list
-        final int target = Math.max(0, Math.min(spreads - 1, spread + (scrollY < 0 ? 1 : -1)));
-        if (page != Page.OVERVIEW && target != spread)
-        {
-            spread = target;
-            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.BOOK_PAGE_TURN, 1.0F));
-        }
+        scroll -= (int) (scrollY * 12);
         return true;
     }
 }
