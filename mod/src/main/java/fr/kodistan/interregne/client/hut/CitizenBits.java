@@ -23,6 +23,7 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -134,12 +135,27 @@ public final class CitizenBits
     private static void withoutName(final LivingEntity living, final Runnable draw)
     {
         drawingInScreen = true;
+        // A citizen lying in bed (the sick, the sleeping) or sitting is drawn standing, or the portrait shows its body
+        // on its side; pose and position are put back right after
+        final Pose pose = living.getPose();
+        final double px = living.getX();
+        final double py = living.getY();
+        final double pz = living.getZ();
+        if (pose != Pose.STANDING)
+        {
+            living.setPose(Pose.STANDING);
+        }
         try
         {
             draw.run();
         }
         finally
         {
+            if (pose != Pose.STANDING)
+            {
+                living.setPose(pose);
+                living.setPos(px, py, pz);
+            }
             drawingInScreen = false;
         }
     }
