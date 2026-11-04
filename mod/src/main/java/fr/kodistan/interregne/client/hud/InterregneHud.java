@@ -57,6 +57,14 @@ public final class InterregneHud
     private static final String MIN_WIDTH_SAMPLE = "00 000";
 
     private static long influence;
+
+    /**
+     * The player's Influence as last heard from the server.
+     */
+    public static long influence()
+    {
+        return influence;
+    }
     private static long influenceDelta;
     private static long influenceChangedAt;
 

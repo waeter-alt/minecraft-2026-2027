@@ -108,8 +108,24 @@ public final class Config
     }
 
     public static final ModConfigSpec.BooleanValue INTENDANCE = BUILDER
-      .comment("Requests nobody in the colony can fill are bought automatically from the town hall treasury after a grace period")
-      .define("enabled", true);
+      .comment("Requests nobody in the colony can fill are bought automatically from the town hall treasury after a grace period (off: players settle them from the town hall's Intendance page)")
+      .define("enabled", false);
+
+    public static final ModConfigSpec.DoubleValue INTENDANCE_MARKUP = BUILDER
+      .comment("The Intendance's supplies cost this many times the automatic purchase price: building the right hut stays cheaper")
+      .defineInRange("markup", 2.0, 1.0, 100.0);
+
+    public static final ModConfigSpec.IntValue INTENDANCE_CURE_COST = BUILDER
+      .comment("Couronnes the Intendance charges to cure one sick citizen")
+      .defineInRange("cureCost", 20, 0, 100_000);
+
+    public static final ModConfigSpec.IntValue INTENDANCE_MEAL_COST = BUILDER
+      .comment("Couronnes the Intendance charges to feed one hungry citizen")
+      .defineInRange("mealCost", 3, 0, 100_000);
+
+    public static final ModConfigSpec.IntValue INTENDANCE_CROWNS_PER_INFLUENCE = BUILDER
+      .comment("Settling with the Intendance also costs the player one Influence per this many Couronnes (at least one)")
+      .defineInRange("crownsPerInfluence", 10, 1, 100_000);
 
     public static final ModConfigSpec.IntValue GRACE_SECONDS = BUILDER
       .comment("Grace period before the Intendance buys a request, leaving players time to supply it themselves")

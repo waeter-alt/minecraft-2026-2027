@@ -83,8 +83,68 @@ public final class Intendance
     /**
      * A request the Intendance will buy.
      */
-    private record Purchase(IToken<?> token, IBuilding building, ItemStack stack, int cost, long dueAt)
+    public record Purchase(IToken<?> token, IBuilding building, ItemStack stack, int cost, long dueAt)
     {
+    }
+
+    /**
+     * What the colony's workers wait on that nobody in it can supply: what the Intendance can buy, and how many
+     * strategic items it never provides.
+     */
+    public record Supplies(List<Purchase> buyable, int strategic)
+    {
+        public int cost()
+        {
+            return buyable.stream().mapToInt(Purchase::cost).sum();
+        }
+    }
+
+    public static Supplies supplies(final IColony colony)
+    {
+        final IRequestManager manager = colony.getRequestManager();
+        final List<Purchase> buyable = new ArrayList<>();
+        int strategic = 0;
+        for (final IToken<?> token : manager.getPlayerResolver().getAllAssignedRequests())
+        {
+            final IRequest<?> request = manager.getRequestForToken(token);
+            if (request == null || !(request.getRequest() instanceof IDeliverable deliverable) || request.getDisplayStacks().isEmpty())
+            {
+                continue;
+            }
+            final IBuilding building = colony.getBuildingManager().getBuilding(request.getRequester().getLocation().getInDimensionLocation());
+            if (building == null)
+            {
+                continue;
+            }
+            final ItemStack wanted = request.getDisplayStacks().getFirst().copyWithCount(Math.max(1, deliverable.getCount()));
+            if (isBuyable(wanted))
+            {
+                buyable.add(new Purchase(token, building, wanted, costOf(wanted), 0));
+            }
+            else
+            {
+                strategic++;
+            }
+        }
+        return new Supplies(buyable, strategic);
+    }
+
+    /**
+     * Deliver an already paid purchase into the requesting hut and close its request.
+     *
+     * @return false when the hut is gone or full, so nothing was delivered.
+     */
+    public static boolean deliver(final IColony colony, final Purchase purchase)
+    {
+        final IItemHandler hut = inventory(purchase.building());
+        if (hut == null || !ItemHandlerHelper.insertItemStacked(hut, purchase.stack().copy(), true).isEmpty())
+        {
+            return false;
+        }
+        ItemHandlerHelper.insertItemStacked(hut, purchase.stack().copy(), false);
+        colony.getRequestManager().overruleRequest(purchase.token(), purchase.stack().copy());
+        FIRST_SEEN.remove(purchase.token());
+        return true;
     }
 
     private Intendance()

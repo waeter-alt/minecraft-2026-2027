@@ -164,7 +164,16 @@ public class InterregneMod
               {
                   ClientPayloads.openMarket(payload);
               }
-          });
+          })
+          .playToServer(fr.kodistan.interregne.network.IntendanceActionPayload.TYPE, fr.kodistan.interregne.network.IntendanceActionPayload.STREAM_CODEC,
+            fr.kodistan.interregne.colony.IntendanceDesk::onAction)
+          .playToClient(fr.kodistan.interregne.network.IntendanceQuotePayload.TYPE, fr.kodistan.interregne.network.IntendanceQuotePayload.STREAM_CODEC,
+            (payload, context) -> {
+                if (FMLEnvironment.dist.isClient())
+                {
+                    ClientPayloads.intendanceQuote(payload);
+                }
+            });
     }
 
     /**

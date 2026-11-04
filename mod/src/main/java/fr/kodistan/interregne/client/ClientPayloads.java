@@ -82,4 +82,9 @@ public final class ClientPayloads
     {
         MarketScreen.open(payload);
     }
+
+    public static void intendanceQuote(final fr.kodistan.interregne.network.IntendanceQuotePayload payload)
+    {
+        ClientIntendance.set(payload);
+    }
 }
