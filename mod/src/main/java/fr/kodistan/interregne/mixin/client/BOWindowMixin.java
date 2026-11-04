@@ -4,6 +4,10 @@ import com.ldtteam.blockui.views.BOWindow;
 import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.IColonyView;
 import com.minecolonies.core.client.gui.WindowClipBoard;
+import com.minecolonies.core.client.gui.WindowAssignCitizen;
+import com.minecolonies.core.client.gui.WindowHireWorker;
+import fr.kodistan.interregne.client.hut.HireScreen;
+import fr.kodistan.interregne.client.hut.HousingScreen;
 import com.minecolonies.core.client.gui.WindowHutMinPlaceholder;
 import com.minecolonies.core.client.gui.WindowRequestDetail;
 import fr.kodistan.interregne.client.hut.ClipboardScreen;
@@ -23,7 +27,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * The hut window with workers opens our hut screen instead, wherever it is opened from: the hut block, a module's
  * « main » tab, the way back from the stock window; so do huts without workers. The town hall opens the colony hub,
- * the citizen window our citizen screen, the request detail and the clipboard our own.
+ * the citizen window our citizen screen, the request detail, the clipboard, hiring and housing our own.
  */
 @Mixin(value = BOWindow.class, remap = false)
 public abstract class BOWindowMixin
@@ -56,6 +60,16 @@ public abstract class BOWindowMixin
                 ci.cancel();
                 RequestScreen.openFrom(detail.interregne$request(), colony, detail.interregne$previous());
             }
+        }
+        else if (type == WindowHireWorker.class && HutScreen.enabled())
+        {
+            ci.cancel();
+            HireScreen.open(((WindowHireWorkerAccessor) this).interregne$building(), null);
+        }
+        else if (type == WindowAssignCitizen.class && HutScreen.enabled())
+        {
+            ci.cancel();
+            HousingScreen.open(((WindowAssignCitizenAccessor) this).interregne$building(), null);
         }
         else if (type == WindowClipBoard.class && HutScreen.enabled())
         {

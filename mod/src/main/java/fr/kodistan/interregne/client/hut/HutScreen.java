@@ -9,7 +9,6 @@ import com.minecolonies.api.colony.requestsystem.request.IRequest;
 import com.minecolonies.api.entity.citizen.VisibleCitizenStatus;
 import com.minecolonies.api.util.constant.TranslationConstants;
 import com.minecolonies.core.client.gui.WindowBuildBuilding;
-import com.minecolonies.core.client.gui.WindowHireWorker;
 import com.minecolonies.core.client.gui.WindowHutAllInventory;
 import com.minecolonies.core.client.gui.WindowHutNameEntry;
 import com.ldtteam.blockui.views.BOWindow;
@@ -503,7 +502,7 @@ public final class HutScreen extends ParchmentScreen
 
     private void hire()
     {
-        new WindowHireWorker(building.getColony(), building.getPosition()).open();
+        HireScreen.open(building, this);
     }
 
     private int renderProduction(final GuiGraphics graphics, final int x, int y, final int width)

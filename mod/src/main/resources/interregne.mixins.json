@@ -49,6 +49,8 @@
     "client.BossHealthOverlayAccessor",
     "client.LivingEntityRendererMixin",
     "client.WindowRequestDetailAccessor",
-    "client.WindowClipBoardAccessor"
+    "client.WindowClipBoardAccessor",
+    "client.WindowHireWorkerAccessor",
+    "client.WindowAssignCitizenAccessor"
   ]
 }
