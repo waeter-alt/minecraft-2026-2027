@@ -5,7 +5,6 @@ import com.minecolonies.api.colony.IColonyView;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.platform.Window;
 import fr.kodistan.interregne.InterregneMod;
-import fr.kodistan.interregne.client.hut.ColonyHubScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.screens.TitleScreen;
@@ -21,7 +20,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -32,19 +30,19 @@ import java.util.stream.Stream;
  * Drop {@code uishot/request.properties} in the client's game directory:
  * <pre>
  * world=Test_citadelle            (optional: opened from the title screen when no world is loaded)
- * screen=hub:intendance           (which screen, see {@link UiScenarios})
- * scenarios=payable,short         (optional: default all the screen's scenarios)
- * sizes=1553x1011@2,854x480@2     (optional: window size and GUI scale per capture)
- * hover=-1,-1                     (optional: forced mouse position in GUI pixels, default off-screen)
+ * screen=hub:intendance,block:all (what to capture, see {@link UiScenarios}; "list" only reports the building types)
+ * only=intendance-short           (optional: comma-separated target names to keep)
+ * sizes=1553x1011@4,854x480@2     (optional: window size and GUI scale per capture)
+ * hover=x,y                       (optional: forced mouse position in GUI pixels, default off-screen)
  * </pre>
- * Each scenario is captured at each size into {@code uishot/out/<scenario>_<w>x<h>_s<scale>.png}, then
+ * Each target is captured at each size into {@code uishot/out/<target>_<w>x<h>_s<scale>.png}, then
  * {@code uishot/done.txt} lists the files and any error. The window and GUI scale are put back afterwards.
  * Fake data comes from {@link DevOverrides}, which nothing sets outside a capture.
  */
 @EventBusSubscriber(modid = InterregneMod.MODID, value = Dist.CLIENT)
 public final class UiShot
 {
-    private static final String DEFAULT_SIZES = "1553x1011@2,1553x1011@3,1553x1011@4,854x480@2";
+    private static final String DEFAULT_SIZES = "1553x1011@4,1553x1011@2,854x480@2";
     private static final int SETTLE_TICKS = 8;
     private static final int LOAD_TIMEOUT_TICKS = 20 * 120;
 
@@ -57,7 +55,7 @@ public final class UiShot
     {
     }
 
-    private record Job(String scenario, Size size)
+    private record Job(UiScenarios.Target target, Size size)
     {
     }
 
@@ -65,6 +63,8 @@ public final class UiShot
     private static int ticks;
     private static String world;
     private static String screen;
+    private static List<String> only;
+    private static final List<Size> sizes = new ArrayList<>();
     private static boolean worldAsked;
     private static final List<Job> jobs = new ArrayList<>();
     private static int jobIndex;
@@ -105,21 +105,26 @@ public final class UiShot
                 }
                 case LOADING -> load(mc);
                 case APPLY -> apply(mc);
-                case WAIT ->
-                {
-                    if (ticks >= SETTLE_TICKS)
-                    {
-                        capture(mc);
-                    }
-                }
+                case WAIT -> capture(mc);
                 case DONE -> finish(mc);
             }
         }
         catch (final Exception e)
         {
-            report.add("ERROR " + e);
+            final String where = phase == Phase.APPLY || phase == Phase.WAIT ? " at " + jobs.get(jobIndex).target().name() : "";
+            report.add("ERROR" + where + " " + e);
             InterregneMod.LOGGER.error("UiShot failed", e);
-            phase = Phase.DONE;
+            // One broken screen does not stop the others
+            if (phase == Phase.APPLY || phase == Phase.WAIT)
+            {
+                jobIndex++;
+                ticks = 0;
+                phase = Phase.APPLY;
+            }
+            else
+            {
+                phase = Phase.DONE;
+            }
         }
     }
 
@@ -148,27 +153,19 @@ public final class UiShot
 
         report.clear();
         jobs.clear();
+        sizes.clear();
         jobIndex = 0;
+        colony = null;
         world = props.getProperty("world", "").trim();
         screen = props.getProperty("screen", "hub:intendance").trim();
+        only = props.containsKey("only") ? List.of(props.getProperty("only").replace(" ", "").split(",")) : null;
         worldAsked = false;
-        DevOverrides.hover = parseHover(props.getProperty("hover", "-1000,-1000"));
-
-        final List<String> scenarios = props.containsKey("scenarios")
-                                         ? Arrays.stream(props.getProperty("scenarios").split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList()
-                                         : UiScenarios.scenarios(screen);
-        final List<Size> sizes = new ArrayList<>();
+        final String[] hover = props.getProperty("hover", "-1000,-1000").split(",");
+        DevOverrides.hover = new int[] {Integer.parseInt(hover[0].trim()), Integer.parseInt(hover[1].trim())};
         for (final String spec : props.getProperty("sizes", DEFAULT_SIZES).split(","))
         {
             final String[] parts = spec.trim().split("[x@]");
             sizes.add(new Size(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2])));
-        }
-        for (final String scenario : scenarios)
-        {
-            for (final Size size : sizes)
-            {
-                jobs.add(new Job(scenario, size));
-            }
         }
 
         final Window window = mc.getWindow();
@@ -177,13 +174,6 @@ public final class UiShot
         savedScale = mc.options.guiScale().get();
         ticks = 0;
         phase = Phase.LOADING;
-        InterregneMod.LOGGER.info("UiShot: {} captures of {}", jobs.size(), screen);
-    }
-
-    private static int[] parseHover(final String spec)
-    {
-        final String[] parts = spec.split(",");
-        return new int[] {Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim())};
     }
 
     private static void load(final Minecraft mc)
@@ -206,19 +196,37 @@ public final class UiShot
         if (colony == null || colony.getTownHall() == null)
         {
             colony = IColonyManager.getInstance().getClosestColonyView(mc.level, mc.player.blockPosition());
-            if (colony == null || colony.getTownHall() == null)
+            if (colony != null && colony.getTownHall() != null)
             {
-                return;
+                // Let the rest of the colony data and the HUD arrive
+                ticks = LOAD_TIMEOUT_TICKS - 60;
             }
-            // Let the rest of the colony data and the HUD arrive
-            ticks = LOAD_TIMEOUT_TICKS - 60;
             return;
         }
-        if (ticks >= LOAD_TIMEOUT_TICKS - 1)
+        if (ticks < LOAD_TIMEOUT_TICKS - 1)
         {
-            ticks = 0;
-            phase = Phase.APPLY;
+            return;
         }
+        if (screen.equals("list"))
+        {
+            report.add("Building types: " + UiScenarios.buildingTypes(colony));
+            phase = Phase.DONE;
+            return;
+        }
+        for (final UiScenarios.Target target : UiScenarios.targets(screen, colony))
+        {
+            if (only != null && !only.contains(target.name()))
+            {
+                continue;
+            }
+            for (final Size size : sizes)
+            {
+                jobs.add(new Job(target, size));
+            }
+        }
+        InterregneMod.LOGGER.info("UiShot: {} captures of {}", jobs.size(), screen);
+        ticks = 0;
+        phase = Phase.APPLY;
     }
 
     private static void apply(final Minecraft mc)
@@ -237,8 +245,11 @@ public final class UiShot
         }
         mc.options.guiScale().set(job.size().scale());
         mc.resizeDisplay();
-        UiScenarios.apply(screen, job.scenario(), colony);
-        UiScenarios.open(screen, job.scenario(), colony);
+        final int[] hover = DevOverrides.hover;
+        DevOverrides.clear();
+        DevOverrides.hover = hover;
+        mc.setScreen(null);
+        job.target().open().run();
         ticks = 0;
         phase = Phase.WAIT;
     }
@@ -246,24 +257,26 @@ public final class UiShot
     private static void capture(final Minecraft mc) throws IOException
     {
         final Job job = jobs.get(jobIndex);
-        if (ticks == SETTLE_TICKS)
+        final int settle = SETTLE_TICKS + job.target().settleTicks();
+        if (ticks == settle)
         {
             // A late window resize may land after the screen opened: lay it out once more, then let a few frames draw
             mc.resizeDisplay();
             return;
         }
-        if (ticks < SETTLE_TICKS + 3)
+        if (ticks < settle + 3)
         {
             return;
         }
         final Window window = mc.getWindow();
-        final String name = job.scenario() + "_" + window.getWidth() + "x" + window.getHeight() + "_s" + (int) window.getGuiScale() + ".png";
+        final String name = job.target().name() + "_" + window.getWidth() + "x" + window.getHeight() + "_s" + (int) window.getGuiScale() + ".png";
         try (NativeImage image = Screenshot.takeScreenshot(mc.getMainRenderTarget()))
         {
             image.writeToFile(dir().resolve("out").resolve(name));
         }
-        final String asked = job.size().width() + "x" + job.size().height() + "@" + job.size().scale();
-        report.add(name + (name.contains(job.size().width() + "x" + job.size().height() + "_s" + job.size().scale()) ? "" : "   (asked " + asked + ")"));
+        final boolean exact = window.getWidth() == job.size().width() && window.getHeight() == job.size().height() && (int) window.getGuiScale() == job.size().scale();
+        final String screenName = mc.screen == null ? "none" : mc.screen.getClass().getSimpleName();
+        report.add(name + "  [" + screenName + "]" + (exact ? "" : "  (asked " + job.size().width() + "x" + job.size().height() + "@" + job.size().scale() + ")"));
         jobIndex++;
         ticks = 0;
         phase = Phase.APPLY;
@@ -284,7 +297,7 @@ public final class UiShot
         {
             InterregneMod.LOGGER.error("UiShot could not write its report", e);
         }
-        InterregneMod.LOGGER.info("UiShot done: {} files", report.size());
+        InterregneMod.LOGGER.info("UiShot done: {} lines", report.size());
         colony = null;
         phase = Phase.IDLE;
     }

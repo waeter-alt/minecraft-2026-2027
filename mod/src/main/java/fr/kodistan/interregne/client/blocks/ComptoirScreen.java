@@ -108,7 +108,7 @@ public final class ComptoirScreen extends CounterScreen
           x + 6, y + 17, Palette.MUTED, false);
         final String upgrade = "Améliorer · " + Wallet.format(state.upgradeCost());
         final boolean can = state.purse() >= state.upgradeCost() || minecraft.player.isCreative();
-        final int bw = buttonWidth(upgrade);
+        final int bw = Ui.levelButtonWidth(font, upgrade);
         final int bx = x + width - 6 - bw;
         final boolean over = Ui.inside(mouseX, mouseY, bx, y + 8, bw, 14);
         Ui.levelButton(graphics, font, bx, y + 8, bw, 14, upgrade, next, can, over);

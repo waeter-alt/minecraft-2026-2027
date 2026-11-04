@@ -152,7 +152,17 @@ public final class MenuScreen extends ModuleScreen
         y = cy + 22;
 
         Ui.label(graphics, font, "PLATS POSSIBLES", x, y + 3);
-        graphics.drawString(font, fit("Niv. = maison qu'il contente", width - (font.width("PLATS POSSIBLES") + 8)), x + font.width("PLATS POSSIBLES") + 8, y + 3, Palette.MUTED, false);
+        // The search box sits at the end of this line: the note keeps clear of it
+        final int noteX = x + font.width("PLATS POSSIBLES") + 8;
+        final String note = "Niv. = maison qu'il contente";
+        if (font.width(note) <= search.getX() - 6 - noteX)
+        {
+            graphics.drawString(font, note, noteX, y + 3, Palette.MUTED, false);
+        }
+        else if (font.width("Niv. = maison") <= search.getX() - 6 - noteX)
+        {
+            graphics.drawString(font, "Niv. = maison", noteX, y + 3, Palette.MUTED, false);
+        }
         search.setY(y);
         search.visible = true;
         return y + 17;

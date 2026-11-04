@@ -78,6 +78,12 @@ public final class BuildCosts
         {
             return seconds + " s";
         }
+        if (seconds >= 3600)
+        {
+            // Long waits read in hours: « 20 h 12 min », not « 1212 min »
+            final int minutes = seconds / 60 % 60;
+            return seconds / 3600 + " h" + (minutes == 0 ? "" : " " + minutes + " min");
+        }
         final int rest = seconds % 60;
         return seconds / 60 + " min" + (rest == 0 ? "" : " " + (rest < 10 ? "0" : "") + rest);
     }

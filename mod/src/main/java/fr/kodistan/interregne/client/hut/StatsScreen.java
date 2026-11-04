@@ -127,13 +127,16 @@ public final class StatsScreen extends ModuleScreen
         {
             y = population(graphics, x, y, width);
         }
-        segmented(graphics, mouseX, mouseY, x, y, PERIODS, period, index -> {
+        final int segW = segmented(graphics, mouseX, mouseY, x, y, PERIODS, period, index -> {
             period = index;
             resetScroll();
         });
         final String label = "Masquer les zéros";
-        checkbox(graphics, mouseX, mouseY, x + width - font.width("☐ " + label), y + 3, label, hideZero, () -> hideZero = !hideZero);
-        return y + 20;
+        final int boxW = font.width("☐ " + label);
+        // Beside the periods when there is room, under them otherwise
+        final boolean beside = segW + 8 + boxW <= width;
+        checkbox(graphics, mouseX, mouseY, beside ? x + width - boxW : x, beside ? y + 3 : y + 19, label, hideZero, () -> hideZero = !hideZero);
+        return y + (beside ? 20 : 34);
     }
 
     /**

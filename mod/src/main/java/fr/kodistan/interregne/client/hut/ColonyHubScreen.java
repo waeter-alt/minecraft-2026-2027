@@ -984,7 +984,10 @@ public final class ColonyHubScreen extends ParchmentScreen
             final BuildingState state = states.get(building);
             final boolean over = Ui.inside(mouseX, mouseY, x, y, width, 20);
             Ui.card(graphics, x, y, width, 20, false, over, false);
+            // Some hut models stand taller than a block: keep them inside their row
+            graphics.enableScissor(x + 1, y + 1, x + 21, y + 19);
             Icon.of(building.getBuildingType().getBuildingBlock()).draw(graphics, x + 3, y + 2, 16);
+            graphics.disableScissor();
             final int level = building.getBuildingLevel();
             final int badgeX = x + width - 150;
             graphics.drawString(font, fit(nameOf(building), badgeX - x - 28), x + 23, y + 6, Palette.INK, false);
@@ -1030,12 +1033,21 @@ public final class ColonyHubScreen extends ParchmentScreen
             CitizenBits.face(graphics, citizen, x + 3, y + 3, 16);
             final String job = citizen.getJob() == null || citizen.getJob().isEmpty() ? (citizen.isChild() ? "Enfant" : "Sans emploi")
                                  : CitizenBits.jobName(citizen.getJob(), citizen.isFemale());
-            graphics.drawString(font, Component.literal(citizen.getName()).withStyle(ChatFormatting.BOLD), x + 23, y + 3, Palette.INK, false);
-            graphics.drawString(font, fit(job, width / 2 - 26), x + 23, y + 12, Palette.MUTED, false);
 
             // Chips right-aligned; a click on one settles the problem, elsewhere opens the sheet
             int chipX = x + width - 12;
             final List<CitizenBits.Chip> list = chips.get(citizen);
+            int chipsW = 0;
+            for (final CitizenBits.Chip chip : list)
+            {
+                chipsW += font.width(chip.text()) + 8 + 3;
+            }
+            // Name and job keep clear of the chips
+            final int textW = width - 12 - chipsW - 23 - 8;
+            final String name = citizen.getName();
+            final String shownName = font.width(Component.literal(name).withStyle(ChatFormatting.BOLD)) <= textW ? name : fit(name, textW - 6);
+            graphics.drawString(font, Component.literal(shownName).withStyle(ChatFormatting.BOLD), x + 23, y + 3, Palette.INK, false);
+            graphics.drawString(font, fit(job, textW), x + 23, y + 12, Palette.MUTED, false);
             for (int i = list.size() - 1; i >= 0; i--)
             {
                 final CitizenBits.Chip chip = list.get(i);
@@ -1263,7 +1275,8 @@ public final class ColonyHubScreen extends ParchmentScreen
         boolean showHave = !payable;
         String verb = "Tout régler";
         List<Component> parts = priceParts(gold, money, goldOk, influence, ownInfluence, influenceOk, showHave);
-        while (font.width(verb) + (verb.isEmpty() ? 0 : 12) + priceWidth(parts) > width - 10)
+        // The verb is drawn bold: measure it bold, or the button overflows by a pixel per letter
+        while (font.width(Component.literal(verb).withStyle(ChatFormatting.BOLD)) + (verb.isEmpty() ? 0 : 12) + priceWidth(parts) > width - 12)
         {
             if (showHave)
             {
@@ -1320,7 +1333,7 @@ public final class ColonyHubScreen extends ParchmentScreen
 
     private int priceWidth(final List<Component> parts)
     {
-        return PRICE_ICON + 2 + font.width(parts.get(0)) + 10 + PRICE_ICON + 2 + font.width(parts.get(1));
+        return PRICE_ICON + 3 + font.width(parts.get(0)) + 10 + PRICE_ICON + 2 + font.width(parts.get(1));
     }
 
     /**

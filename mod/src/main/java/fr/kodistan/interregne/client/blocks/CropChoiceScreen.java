@@ -105,9 +105,20 @@ public final class CropChoiceScreen extends PageScreen
             final boolean over = available && Ui.inside(mouseX, mouseY, x, y, width, 24);
             Ui.card(graphics, x, y, width, 24, crop == current, over, !available);
             Icon.of(crop.produceStack()).draw(graphics, x + 4, y + 4, 16);
-            graphics.drawString(font, Component.literal(crop.label()).withStyle(ChatFormatting.BOLD), x + 26, y + 8, available ? Palette.INK : Palette.MUTED, false);
+            final Component label = Component.literal(crop.label()).withStyle(ChatFormatting.BOLD);
             final String note = crop == current ? "Culture actuelle" : available ? "" : "Il faut d'abord une ferme de " + crop.label().toLowerCase(Locale.FRENCH);
-            graphics.drawString(font, note, x + width - 6 - font.width(note), y + 8, available ? Palette.GREEN : Palette.RED, false);
+            final int noteColor = available ? Palette.GREEN : Palette.RED;
+            if (26 + font.width(label) + 10 + font.width(note) + 6 <= width)
+            {
+                graphics.drawString(font, label, x + 26, y + 8, available ? Palette.INK : Palette.MUTED, false);
+                graphics.drawString(font, note, x + width - 6 - font.width(note), y + 8, noteColor, false);
+            }
+            else
+            {
+                // Too narrow for both on one line: the note goes under the name
+                graphics.drawString(font, label, x + 26, y + 3, available ? Palette.INK : Palette.MUTED, false);
+                graphics.drawString(font, Ui.fit(font, note, width - 32), x + 26, y + 13, noteColor, false);
+            }
             if (available)
             {
                 addHit(x, y, width, 24, () -> choose(crop));

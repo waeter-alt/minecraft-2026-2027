@@ -137,8 +137,8 @@ public final class TerminalScreen extends ModuleScreen
             final String count = storage.getAmount() >= 10_000 ? storage.getAmount() / 1000 + "k" : String.valueOf(storage.getAmount());
             graphics.drawString(font, Component.literal(count).withStyle(ChatFormatting.BOLD), x + 22, y + 6, Palette.INK, false);
             graphics.drawString(font, fit(icon.getHoverName().getString(), width - 160), x + 56, y + 6, Palette.INK, false);
-            int bx = x + width - 4 - buttonWidth("Une pile");
-            button(graphics, mouseX, mouseY, bx, y + 3, "Une pile", Ui.ButtonStyle.SECONDARY, true, null, () -> take(storage, 64));
+            int bx = x + width - 4 - buttonWidth("Un stack");
+            button(graphics, mouseX, mouseY, bx, y + 3, "Un stack", Ui.ButtonStyle.SECONDARY, true, null, () -> take(storage, 64));
             bx -= buttonWidth("Un") + 3;
             button(graphics, mouseX, mouseY, bx, y + 3, "Un", Ui.ButtonStyle.SECONDARY, true, null, () -> take(storage, 1));
             y += 22;

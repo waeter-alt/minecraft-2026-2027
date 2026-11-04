@@ -86,7 +86,7 @@ public final class HutNav
         hits.add(x - 2, y0 + 4, 12, 12, () -> new WindowHutNameEntry(building).open());
     }
 
-    private static List<IBuildingModuleView> pages(final IBuildingView building)
+    public static List<IBuildingModuleView> pages(final IBuildingView building)
     {
         final List<IBuildingModuleView> pages = new ArrayList<>();
         for (final IBuildingModuleView view : building.getAllModuleViews())

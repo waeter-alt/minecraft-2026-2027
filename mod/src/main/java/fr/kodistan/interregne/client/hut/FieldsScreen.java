@@ -87,9 +87,16 @@ public final class FieldsScreen extends ModuleScreen
         Ui.banner(graphics, font, x, y, width, owned == 0 ? Ui.State.BAD : Ui.State.OK, owned + " / " + max + (max > 1 ? " parcelles" : " parcelle"), detail);
         y += 19;
         final boolean manual = module.assignFieldManually();
-        segmented(graphics, mouseX, mouseY, x, y, List.of("Automatique", "Manuelle"), manual ? 1 : 0, index -> module.setAssignFieldManually(index == 1));
-        graphics.drawString(font, manual ? "tu choisis les parcelles" : "le bâtiment prend les parcelles libres les plus proches", x + 132, y + 3, Palette.MUTED, false);
-        return y + 20;
+        final int segW = segmented(graphics, mouseX, mouseY, x, y, List.of("Automatique", "Manuelle"), manual ? 1 : 0, index -> module.setAssignFieldManually(index == 1));
+        final String note = manual ? "tu choisis les parcelles" : "le bâtiment prend les parcelles libres les plus proches";
+        final int noteX = x + segW + 8;
+        if (font.width(note) <= x + width - noteX)
+        {
+            graphics.drawString(font, note, noteX, y + 3, Palette.MUTED, false);
+            return y + 20;
+        }
+        // Too narrow beside the switch: under it
+        return Ui.wrapped(graphics, font, Component.literal(note), x + 2, y + 18, width - 4, Palette.MUTED, 10) + 4;
     }
 
     @Override

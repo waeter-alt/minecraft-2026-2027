@@ -67,10 +67,9 @@ public final class MercenaryScreen extends ModuleScreen
     {
         final IColonyView colony = building.getColony();
         final int count = count(colony);
-        Ui.wrapped(graphics, font, net.minecraft.network.chat.Component.literal(
+        y = Ui.wrapped(graphics, font, net.minecraft.network.chat.Component.literal(
           "Une troupe de " + count + " mercenaires vient défendre la colonie pendant un moment. Il en vient un de plus par tranche de dix citoyens."), x + 2, y, width - 4,
-          Palette.MUTED, 10);
-        y += 26;
+          Palette.MUTED, 10) + 4;
         for (int i = 0; i < Math.min(count, 12); i++)
         {
             Icon.of(new ItemStack(Items.IRON_SWORD)).draw(graphics, x + 2 + i * 18, y, 16);

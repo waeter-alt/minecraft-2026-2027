@@ -229,12 +229,32 @@ public final class CatalogueScreen extends ParchmentScreen
         y += 24;
         graphics.drawString(font, "BESOINS", x, y, Palette.MUTED, false);
         y += 11;
-        for (final CatalogueIndex.Need each : CatalogueIndex.Need.values())
+        final CatalogueIndex.Need[] needs = CatalogueIndex.Need.values();
+        for (int i = 0; i < needs.length; i++)
         {
-            Ui.navItem(graphics, font, x, y, LEFT_W - 8, Icon.of(each.icon()), each.label(), each == need, inside(mouseX, mouseY, x, y, LEFT_W - 8, ROW));
-            y += ROW + 1;
+            final int[] cell = needCell(i);
+            Ui.navItem(graphics, font, cell[0], cell[1], cell[2], Icon.of(needs[i].icon()), needs[i].label(), needs[i] == need,
+              inside(mouseX, mouseY, cell[0], cell[1], cell[2], ROW));
         }
         verticalRule(graphics, x0 + LEFT_W);
+    }
+
+    /**
+     * Where the i-th need sits in the left column: one per row with its name when the window is tall enough, else a
+     * grid of icons (names on hover) so the list never runs past the window's bottom. {x, y, width}.
+     */
+    private int[] needCell(final int index)
+    {
+        final int x = x0 + 6;
+        final int top = y0 + 36 + 24 + 11;
+        final int count = CatalogueIndex.Need.values().length;
+        if (top + count * (ROW + 1) <= y0 + h - 4)
+        {
+            return new int[] {x, top + index * (ROW + 1), LEFT_W - 8};
+        }
+        final int columns = 3;
+        final int cellW = (LEFT_W - 8 - (columns - 1) * 2) / columns;
+        return new int[] {x + (index % columns) * (cellW + 2), top + (index / columns) * (ROW + 1), cellW};
     }
 
     private int centerLeft()
@@ -467,10 +487,12 @@ public final class CatalogueScreen extends ParchmentScreen
             minecraft.setScreen(new StyleScreen(this));
             return true;
         }
-        int y = styleY + 24 + 11;
-        for (final CatalogueIndex.Need each : CatalogueIndex.Need.values())
+        final CatalogueIndex.Need[] needs = CatalogueIndex.Need.values();
+        for (int i = 0; i < needs.length; i++)
         {
-            if (inside(mouseX, mouseY, lx, y, LEFT_W - 8, ROW))
+            final CatalogueIndex.Need each = needs[i];
+            final int[] cell = needCell(i);
+            if (inside(mouseX, mouseY, cell[0], cell[1], cell[2], ROW))
             {
                 need = each;
                 lastNeed = each;
@@ -478,7 +500,6 @@ public final class CatalogueScreen extends ParchmentScreen
                 visible().stream().findFirst().ifPresentOrElse(this::select, () -> selected = null);
                 return true;
             }
-            y += ROW + 1;
         }
 
         final List<CatalogueIndex.Entry> list = visible();

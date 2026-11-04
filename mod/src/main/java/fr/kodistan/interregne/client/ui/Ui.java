@@ -82,6 +82,23 @@ public final class Ui
         return font.width(text) <= width ? text : font.plainSubstrByWidth(text, width - font.width("…")) + "…";
     }
 
+    /**
+     * Like {@link #fit} for text drawn in bold, which is a pixel wider per letter than plain {@code font.width} says.
+     */
+    public static String fitBold(final Font font, final String text, final int width)
+    {
+        String shown = text;
+        while (!shown.isEmpty() && font.width(Component.literal(shown).withStyle(ChatFormatting.BOLD)) > width)
+        {
+            shown = fit(font, text, font.width(shown) - 4);
+            if (shown.equals("…"))
+            {
+                break;
+            }
+        }
+        return shown;
+    }
+
     public static void plate(final GuiGraphics graphics, final int x1, final int y1, final int x2, final int y2, final int fill, final int edge, final int light)
     {
         InterregneHud.roundedPlate(graphics, x1, y1, x2, y2, fill, edge, light);
@@ -260,6 +277,14 @@ public final class Ui
         }
         final Component bold = Component.literal(label).withStyle(ChatFormatting.BOLD);
         graphics.drawString(font, bold, x + (width - font.width(bold)) / 2, y + (height - 8) / 2, Palette.levelText(level), false);
+    }
+
+    /**
+     * The width a {@link #levelButton} needs for its label, which it draws in bold.
+     */
+    public static int levelButtonWidth(final Font font, final String label)
+    {
+        return font.width(Component.literal(label).withStyle(ChatFormatting.BOLD)) + 10;
     }
 
     /**

@@ -63,37 +63,27 @@ public final class WarehouseOptionsScreen extends ModuleScreen
     protected int renderBody(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
         // Tidy up
-        Ui.card(graphics, x, y, width, 34, false, false, false);
-        Icon.of(Items.CHEST).draw(graphics, x + 5, y + 9, 16);
-        graphics.drawString(font, Component.literal("Ranger l'entrepôt").withStyle(ChatFormatting.BOLD), x + 26, y + 6, Palette.INK, false);
-        graphics.drawString(font, fit("regroupe les objets semblables dans les mêmes coffres", width - (26)), x + 26, y + 18, Palette.MUTED, false);
         final boolean canSort = building.getBuildingLevel() >= SORT_LEVEL;
         final String sort = sorted ? "Rangé ✔" : "Ranger";
-        button(graphics, mouseX, mouseY, x + width - 6 - buttonWidth(sort), y + 10, sort, Ui.ButtonStyle.PRIMARY, canSort && !sorted,
-          canSort ? null : "Possible à partir du niveau " + SORT_LEVEL + " de l'entrepôt.", () -> {
+        y = actionCard(graphics, mouseX, mouseY, x, y, width, Icon.of(Items.CHEST), "Ranger l'entrepôt", "regroupe les objets semblables dans les mêmes coffres",
+          sort, canSort && !sorted, canSort ? null : "Possible à partir du niveau " + SORT_LEVEL + " de l'entrepôt.", () -> {
               new SortWarehouseMessage(building).sendToServer();
               sorted = true;
           });
-        y += 38;
 
         // More room
         final int level = module.getStorageUpgradeLevel();
         final int max = BuildingWareHouse.MAX_STORAGE_UPGRADE;
-        Ui.card(graphics, x, y, width, 34, false, false, false);
-        Icon.of(Items.EMERALD_BLOCK).draw(graphics, x + 5, y + 9, 16);
-        graphics.drawString(font, Component.literal("Agrandir le stockage").withStyle(ChatFormatting.BOLD), x + 26, y + 6, Palette.INK, false);
-        graphics.drawString(font, level + " / " + max + " agrandissements · 1 bloc d'émeraude chacun", x + 26, y + 18, Palette.MUTED, false);
         final boolean topLevel = building.getBuildingLevel() >= building.getBuildingMaxLevel();
         final boolean room = level < max;
         final boolean hasEmerald = minecraft.player.isCreative() || minecraft.player.getInventory().countItem(Items.EMERALD_BLOCK) > 0;
         final String why = !topLevel ? "Possible quand l'entrepôt est au niveau " + building.getBuildingMaxLevel() + "."
                              : !room ? "Le stockage est déjà au maximum."
                                  : !hasEmerald ? "Il te faut un bloc d'émeraude dans ton inventaire." : "Prend un bloc d'émeraude de ton inventaire.";
-        final String upgrade = "Agrandir";
-        button(graphics, mouseX, mouseY, x + width - 6 - buttonWidth(upgrade), y + 10, upgrade, Ui.ButtonStyle.PRIMARY, topLevel && room && hasEmerald, why, () -> {
-            new UpgradeWarehouseMessage(building).sendToServer();
-            module.incrementStorageUpgrade();
-        });
-        return y + 38;
+        return actionCard(graphics, mouseX, mouseY, x, y, width, Icon.of(Items.EMERALD_BLOCK), "Agrandir le stockage",
+          level + " / " + max + " agrandissements · 1 bloc d'émeraude chacun", "Agrandir", topLevel && room && hasEmerald, why, () -> {
+              new UpgradeWarehouseMessage(building).sendToServer();
+              module.incrementStorageUpgrade();
+          });
     }
 }

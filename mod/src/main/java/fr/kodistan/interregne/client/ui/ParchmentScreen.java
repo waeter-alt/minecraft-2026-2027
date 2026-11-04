@@ -50,13 +50,8 @@ public abstract class ParchmentScreen extends Screen
     }
 
     @Override
-    public void render(final GuiGraphics graphics, int mouseX, int mouseY, final float partialTick)
+    public void render(final GuiGraphics graphics, final int mouseX, final int mouseY, final float partialTick)
     {
-        if (fr.kodistan.interregne.client.dev.DevOverrides.hover != null)
-        {
-            mouseX = fr.kodistan.interregne.client.dev.DevOverrides.hover[0];
-            mouseY = fr.kodistan.interregne.client.dev.DevOverrides.hover[1];
-        }
         super.render(graphics, mouseX, mouseY, partialTick);
         renderFrame(graphics, mouseX, mouseY);
         renderContent(graphics, mouseX, mouseY);

@@ -258,7 +258,7 @@ public final class HutScreen extends ParchmentScreen
     private int levelHeading(final GuiGraphics graphics, final int x, final int y, final int width, final String text, final int level)
     {
         Ui.plate(graphics, x - 3, y - 2, x + width + 3, y + 12, Palette.levelFill(level), Palette.levelEdge(level), Palette.levelFill(level));
-        final Component bold = Component.literal(fit(text, width - 2)).withStyle(ChatFormatting.BOLD);
+        final Component bold = Component.literal(Ui.fitBold(font, text, width - 2)).withStyle(ChatFormatting.BOLD);
         graphics.drawString(font, bold, x, y + 1, Palette.levelText(level), false);
         return y + 16;
     }
@@ -390,8 +390,12 @@ public final class HutScreen extends ParchmentScreen
             }
             tx += bw + 6;
         }
-        graphics.drawString(font, Component.literal(Ui.fit(font, total + " objets · " + stock.size() + " sortes", width - (tx - x) - 118)).withStyle(ChatFormatting.BOLD),
-          tx, top + 3, Palette.INK, false);
+        // The totals only when they fit whole beside the search box
+        final Component totals = Component.literal(total + " objets · " + stock.size() + " sortes").withStyle(ChatFormatting.BOLD);
+        if (font.width(totals) <= width - (tx - x) - 118)
+        {
+            graphics.drawString(font, totals, tx, top + 3, Palette.INK, false);
+        }
         if (stockSearch != null)
         {
             stockSearch.setX(x + width - 110);
@@ -423,13 +427,19 @@ public final class HutScreen extends ParchmentScreen
             }
             final String count = storage.getAmount() >= 10_000 ? storage.getAmount() / 1000 + "k" : String.valueOf(storage.getAmount());
             graphics.drawString(font, Component.literal(count).withStyle(ChatFormatting.BOLD), x + 22, y + 6, Palette.INK, false);
-            graphics.drawString(font, Ui.fit(font, name, width - (magic ? 150 : 64)), x + 56, y + 6, Palette.INK, false);
+            // Narrow window: « 1 » and « 64 » instead of « Un » and « Un stack » when names would lack room
+            final int fullButtonsW = font.width("Un stack") + 10 + 3 + font.width("Un") + 10 + 4;
+            final boolean shortLabels = width - 56 - fullButtonsW - 6 < 110;
+            final String pile = shortLabels ? "64" : "Un stack";
+            final String one = shortLabels ? "1" : "Un";
+            final int buttonsW = magic ? font.width(pile) + 10 + 3 + font.width(one) + 10 + 4 : 0;
+            graphics.drawString(font, Ui.fit(font, name, width - 56 - buttonsW - 6), x + 56, y + 6, Palette.INK, false);
             if (magic)
             {
-                int bx = x + width - 4 - (font.width("Une pile") + 10);
-                stockButton(graphics, mouseX, my, bx, y + 3, "Une pile", () -> take(storage, 64));
-                bx -= font.width("Un") + 10 + 3;
-                stockButton(graphics, mouseX, my, bx, y + 3, "Un", () -> take(storage, 1));
+                int bx = x + width - 4 - (font.width(pile) + 10);
+                stockButton(graphics, mouseX, my, bx, y + 3, pile, () -> take(storage, 64));
+                bx -= font.width(one) + 10 + 3;
+                stockButton(graphics, mouseX, my, bx, y + 3, one, () -> take(storage, 1));
             }
             y += 22;
         }
@@ -518,8 +528,8 @@ public final class HutScreen extends ParchmentScreen
 
         if (workers.isEmpty())
         {
-            graphics.drawString(font, canHire ? "Personne ne travaille ici." : "Construisez le bâtiment pour y embaucher.", x + 2, y, Palette.MUTED, false);
-            return y + 14;
+            return Ui.wrapped(graphics, font, Component.literal(canHire ? "Personne ne travaille ici." : "Construisez le bâtiment pour y embaucher."), x + 2, y,
+              width - 4, Palette.MUTED, 10) + 4;
         }
         for (final Worker worker : workers)
         {
@@ -867,7 +877,9 @@ public final class HutScreen extends ParchmentScreen
         }
 
         final int target = level + 1;
-        final String heading = level == 0 ? "Construire le bâtiment" : "Passer au niveau " + target;
+        final String full = level == 0 ? "Construire le bâtiment" : "Passer au niveau " + target;
+        // Narrow side column: the short form rather than a cut one
+        final String heading = font.width(Component.literal(full).withStyle(ChatFormatting.BOLD)) <= width - 2 ? full : level == 0 ? "Construire" : "Niveau " + target;
         y = levelHeading(graphics, x, y, width, heading, target);
 
         final UpgradeOffer offer = UpgradeOffer.of(building);

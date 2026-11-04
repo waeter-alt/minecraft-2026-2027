@@ -38,6 +38,7 @@
     "defaultRequire": 1
   },
   "client": [
+    "client.MouseHandlerMixin",
     "client.AbstractBlockHutMixin",
     "client.AbstractWindowModuleBuildingMixin",
     "client.WindowFieldMixin",

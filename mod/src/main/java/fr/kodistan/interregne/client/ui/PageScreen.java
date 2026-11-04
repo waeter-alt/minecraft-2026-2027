@@ -282,6 +282,30 @@ public abstract class PageScreen extends ParchmentScreen
         return width;
     }
 
+    /**
+     * A card with an icon, a bold title, a description and one button on the right. The description wraps in the room
+     * the button leaves, and the card grows to hold it, so the text never runs under the button. Returns the next y.
+     */
+    protected int actionCard(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width, final Icon icon,
+      final String title, final String text, final String label, final boolean enabled, @Nullable final String why, final Runnable action)
+    {
+        final int bw = buttonWidth(label);
+        final int textW = width - 26 - bw - 12;
+        final List<net.minecraft.util.FormattedCharSequence> lines = font.split(Component.literal(text), textW);
+        final int height = Math.max(34, 18 + lines.size() * 10 + 5);
+        Ui.card(graphics, x, y, width, height, false, false, false);
+        icon.draw(graphics, x + 5, y + (height - 16) / 2, 16);
+        graphics.drawString(font, Component.literal(Ui.fit(font, title, textW - 8)).withStyle(net.minecraft.ChatFormatting.BOLD), x + 26, y + 6, Palette.INK, false);
+        int ty = y + 18;
+        for (final net.minecraft.util.FormattedCharSequence line : lines)
+        {
+            graphics.drawString(font, line, x + 26, ty, Palette.MUTED, false);
+            ty += 10;
+        }
+        button(graphics, mouseX, mouseY, x + width - 6 - bw, y + (height - 14) / 2, label, Ui.ButtonStyle.PRIMARY, enabled, why, action);
+        return y + height + 4;
+    }
+
     protected int buttonWidth(final String label)
     {
         return font.width(label) + 10;
