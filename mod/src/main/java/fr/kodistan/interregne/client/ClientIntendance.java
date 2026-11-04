@@ -50,7 +50,15 @@ public final class ClientIntendance
 
     public static void settle(final int colony, final int action)
     {
+        settle(colony, action, 0);
+    }
+
+    /**
+     * Settle one row: cure or feed a citizen (target = its id), or deliver one supply (target = its key).
+     */
+    public static void settle(final int colony, final int action, final int target)
+    {
         askedAt = Util.getMillis();
-        PacketDistributor.sendToServer(new IntendanceActionPayload(colony, action));
+        PacketDistributor.sendToServer(new IntendanceActionPayload(colony, action, target));
     }
 }

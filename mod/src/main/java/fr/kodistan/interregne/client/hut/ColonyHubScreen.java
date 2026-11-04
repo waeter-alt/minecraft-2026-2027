@@ -10,6 +10,7 @@ import com.minecolonies.core.client.gui.townhall.WindowTownHallNameEntry;
 import com.minecolonies.core.colony.buildings.moduleviews.WorkerBuildingModuleView;
 import com.minecolonies.core.colony.buildings.modules.BuildingModules;
 import com.minecolonies.core.colony.buildings.workerbuildings.BuildingTownHall;
+import fr.kodistan.interregne.colony.IntendanceDesk;
 import fr.kodistan.interregne.client.catalogue.CatalogueIndex;
 import fr.kodistan.interregne.client.ClientIntendance;
 import net.minecraft.ChatFormatting;
@@ -1207,9 +1208,7 @@ public final class ColonyHubScreen extends ParchmentScreen
         }
         ty += 4;
 
-        final long purse = fr.kodistan.interregne.client.dev.DevOverrides.purse != null ? fr.kodistan.interregne.client.dev.DevOverrides.purse
-                             : minecraft.player == null ? 0 : Wallet.value(new PlayerMainInvWrapper(minecraft.player.getInventory()));
-        final long money = ClientTreasury.of(colony) + purse;
+        final long money = money();
         final long ownInfluence = InterregneHud.influence();
         final boolean priced = gold > 0;
         final List<String> lacks = new ArrayList<>();
@@ -1232,7 +1231,7 @@ public final class ColonyHubScreen extends ParchmentScreen
         }
         else
         {
-            priceButton(graphics, x + pad, ty, settleW, 22, gold, money, influence, ownInfluence, over);
+            priceButton(graphics, x + pad, ty, settleW, 22, "Tout régler", gold, money, influence, ownInfluence, over);
             if (missing == null)
             {
                 addHit(x + pad, ty, settleW, 22, () -> ClientIntendance.settle(colony.getID(), action));
@@ -1266,8 +1265,8 @@ public final class ColonyHubScreen extends ParchmentScreen
      * figure that falls short turns red, written « what you have / what it costs », so the eye goes straight to what
      * is missing; a figure that is covered stays plain. When narrow, « have / » goes first, then the words shorten.
      */
-    private void priceButton(final GuiGraphics graphics, final int x, int y, final int width, final int height, final long gold, final long money,
-      final long influence, final long ownInfluence, final boolean hover)
+    private void priceButton(final GuiGraphics graphics, final int x, int y, final int width, final int height, final String fullVerb, final long gold,
+      final long money, final long influence, final long ownInfluence, final boolean hover)
     {
         final boolean goldOk = money >= gold;
         final boolean influenceOk = ownInfluence >= influence;
@@ -1284,7 +1283,7 @@ public final class ColonyHubScreen extends ParchmentScreen
         final int verbColor = payable ? Palette.GREEN_TEXT : Palette.MUTED;
 
         boolean showHave = !payable;
-        String verb = "Tout régler";
+        String verb = fullVerb;
         List<Component> parts = priceParts(gold, money, goldOk, influence, ownInfluence, influenceOk, showHave);
         // The verb is drawn bold: measure it bold, or the button overflows by a pixel per letter
         while (font.width(Component.literal(verb).withStyle(ChatFormatting.BOLD)) + (verb.isEmpty() ? 0 : 12) + priceWidth(parts) > width - 12)
@@ -1293,7 +1292,7 @@ public final class ColonyHubScreen extends ParchmentScreen
             {
                 showHave = false;
             }
-            else if (verb.equals("Tout régler"))
+            else if (verb.startsWith("Tout "))
             {
                 verb = "Régler";
             }
@@ -1348,30 +1347,66 @@ public final class ColonyHubScreen extends ParchmentScreen
     }
 
     /**
-     * A row's price at its right edge: the coin and the figure.
+     * What can pay the Intendance: the colony treasury, then the Couronnes on the player.
      */
-    private int rowPrice(final GuiGraphics graphics, final int right, int y, final int cost)
+    private long money()
     {
-        final String value = Wallet.format(cost);
-        final int w = 12 + font.width(value);
-        Ui.coinTight(graphics, right - w, y + 6, 10);
-        graphics.drawString(font, Component.literal(value).withStyle(ChatFormatting.BOLD), right - font.width(value) - 1, y + 7, Palette.INK, false);
-        return w;
+        final long purse = fr.kodistan.interregne.client.dev.DevOverrides.purse != null ? fr.kodistan.interregne.client.dev.DevOverrides.purse
+                             : minecraft.player == null ? 0 : Wallet.value(new PlayerMainInvWrapper(minecraft.player.getInventory()));
+        return ClientTreasury.of(colony) + purse;
+    }
+
+    /**
+     * A row's own pay button at its right edge, its price inside like the card's: settles that row alone.
+     *
+     * @return its width.
+     */
+    private int rowPay(final GuiGraphics graphics, final int mouseX, final int mouseY, final int right, final int y, final int width, final int cost,
+      final String what, final Runnable pay)
+    {
+        final long influence = IntendanceDesk.influenceFor(cost);
+        final long money = money();
+        final long ownInfluence = InterregneHud.influence();
+        final int x = right - width;
+        final boolean over = Ui.inside(mouseX, mouseY, x, y, width, 18);
+        priceButton(graphics, x, y, width, 18, "Régler", cost, money, influence, ownInfluence, over);
+        final boolean payable = money >= cost && ownInfluence >= influence;
+        if (payable)
+        {
+            addHit(x, y, width, 18, pay);
+        }
+        if (over)
+        {
+            hint = payable ? "Régler seulement " + what + "." : "Il te manque de quoi régler " + what + ".";
+        }
+        return width;
+    }
+
+    /**
+     * One width for every pay button of a list, the widest price's, so they line up in a column.
+     */
+    private int payWidth(final java.util.stream.IntStream costs)
+    {
+        final int widest = costs.map(cost -> priceWidth(priceParts(cost, 0, true, IntendanceDesk.influenceFor(cost), 0, true, false))).max().orElse(0);
+        return Math.min(font.width(Component.literal("Régler").withStyle(ChatFormatting.BOLD)) + 12 + widest + 14, 150);
     }
 
     private int renderCareRows(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width,
       final List<IntendanceQuotePayload.Care> care)
     {
+        final int payW = payWidth(care.stream().mapToInt(IntendanceQuotePayload.Care::cost));
         for (final IntendanceQuotePayload.Care row : care)
         {
             final ICitizenDataView citizen = colony.getCitizen(row.citizen());
             final boolean over = citizen != null && Ui.inside(mouseX, mouseY, x, y, width, ROW_H);
             Ui.card(graphics, x, y, width, ROW_H, false, over, false);
             Icon.of(row.sick() ? new ItemStack(Items.POTION) : new ItemStack(Items.BREAD)).draw(graphics, x + 3, y + 4, 16);
-            final int priceW = rowPrice(graphics, x + width - 6, y + 1, row.cost());
+            // Its own button first, so a click on it pays rather than opening the sheet
+            final int priceW = rowPay(graphics, mouseX, mouseY, x + width - 3, y + 3, payW, row.cost(), (row.sick() ? "les soins de " : "le repas de ") + row.name(),
+              () -> ClientIntendance.settle(colony.getID(), row.sick() ? IntendanceActionPayload.CURE : IntendanceActionPayload.FEED, row.citizen()));
             final int textW = width - 23 - priceW - 12;
             graphics.drawString(font, fit(row.name(), textW), x + 23, y + 4, Palette.INK, false);
-            graphics.drawString(font, fit(row.sick() ? "malade : l'Intendance le soigne" : "affamé : l'Intendance le nourrit", textW), x + 23, y + 14, Palette.MUTED, false);
+            graphics.drawString(font, fit(row.sick() ? "malade, à soigner" : "affamé, à nourrir", textW), x + 23, y + 14, Palette.MUTED, false);
             if (citizen != null)
             {
                 addHit(x, y, width, ROW_H, () -> CitizenScreen.open(citizen, this));
@@ -1384,6 +1419,7 @@ public final class ColonyHubScreen extends ParchmentScreen
     private int renderSupplyRows(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width,
       final List<IntendanceQuotePayload.Supply> supplies)
     {
+        final int payW = payWidth(supplies.stream().filter(row -> !row.rare()).mapToInt(IntendanceQuotePayload.Supply::cost));
         for (final IntendanceQuotePayload.Supply row : supplies)
         {
             Ui.card(graphics, x, y, width, ROW_H, false, false, false);
@@ -1399,7 +1435,8 @@ public final class ColonyHubScreen extends ParchmentScreen
             }
             else
             {
-                rightW = rowPrice(graphics, x + width - 6, y + 1, row.cost());
+                rightW = rowPay(graphics, mouseX, mouseY, x + width - 3, y + 3, payW, row.cost(), "cette fourniture",
+                  () -> ClientIntendance.settle(colony.getID(), IntendanceActionPayload.SUPPLY, row.key()));
             }
             final int textW = width - 23 - rightW - 12;
             graphics.drawString(font, fit(row.stack().getCount() + " × " + row.stack().getHoverName().getString(), textW), x + 23, y + 4, Palette.INK, false);

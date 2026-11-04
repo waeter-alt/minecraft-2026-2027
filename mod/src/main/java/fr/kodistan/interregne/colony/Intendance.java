@@ -134,17 +134,51 @@ public final class Intendance
      *
      * @return false when the hut is gone or full, so nothing was delivered.
      */
+    public static boolean fits(final Purchase purchase)
+    {
+        final IItemHandler hut = inventory(purchase.building());
+        return hut != null && ItemHandlerHelper.insertItemStacked(hut, purchase.stack().copy(), true).isEmpty();
+    }
+
     public static boolean deliver(final IColony colony, final Purchase purchase)
     {
         final IItemHandler hut = inventory(purchase.building());
-        if (hut == null || !ItemHandlerHelper.insertItemStacked(hut, purchase.stack().copy(), true).isEmpty())
+        if (hut == null || !open(colony.getRequestManager(), purchase) || !ItemHandlerHelper.insertItemStacked(hut, purchase.stack().copy(), true).isEmpty())
         {
             return false;
         }
         ItemHandlerHelper.insertItemStacked(hut, purchase.stack().copy(), false);
-        colony.getRequestManager().overruleRequest(purchase.token(), purchase.stack().copy());
-        FIRST_SEEN.remove(purchase.token());
+        close(colony.getRequestManager(), purchase);
         return true;
+    }
+
+    /**
+     * Whether the request is still waiting: closing one request can close others with it (a parent and its parts), so
+     * a list read a moment ago may name requests that are gone.
+     */
+    private static boolean open(final IRequestManager manager, final Purchase purchase)
+    {
+        try
+        {
+            return manager.getRequestForToken(purchase.token()) != null;
+        }
+        catch (final IllegalArgumentException e)
+        {
+            return false;
+        }
+    }
+
+    private static void close(final IRequestManager manager, final Purchase purchase)
+    {
+        try
+        {
+            manager.overruleRequest(purchase.token(), purchase.stack().copy());
+        }
+        catch (final IllegalArgumentException e)
+        {
+            // Closed meanwhile along with another request: the goods are in the hut all the same
+        }
+        FIRST_SEEN.remove(purchase.token());
     }
 
     private Intendance()
@@ -272,6 +306,11 @@ public final class Intendance
         {
             return false;
         }
+        if (!open(manager, purchase))
+        {
+            // Closed along with another request this very pass: nothing to buy
+            return true;
+        }
         if (treasury.balance(colony) < purchase.cost())
         {
             return false;
@@ -284,8 +323,7 @@ public final class Intendance
         }
         treasury.spend(colony, purchase.cost());
         ItemHandlerHelper.insertItemStacked(hut, purchase.stack().copy(), false);
-        manager.overruleRequest(purchase.token(), purchase.stack().copy());
-        FIRST_SEEN.remove(purchase.token());
+        close(manager, purchase);
 
         colony.getMessagePlayerEntities().forEach(player -> {
             player.sendSystemMessage(Component.literal("⚖ Intendance : " + purchase.stack().getCount() + " × ")

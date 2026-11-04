@@ -130,11 +130,11 @@ public final class UiScenarios
                 targets.add(new Target("hub-" + page, () -> ColonyHubScreen.openDev(colony.getTownHall(), page, 0)));
                 continue;
             }
-            for (final String state : List.of("payable", "short", "empty", "list", "loading"))
+            for (final String state : List.of("payable", "short", "empty", "list", "care", "list-short", "loading"))
             {
                 targets.add(new Target("intendance-" + state, () -> {
                     intendance(state, colony.getID());
-                    ColonyHubScreen.openDev(colony.getTownHall(), "intendance", state.equals("list") ? 2 : 0);
+                    ColonyHubScreen.openDev(colony.getTownHall(), "intendance", state.startsWith("list") ? 2 : state.equals("care") ? 1 : 0);
                 }));
             }
         }
@@ -144,8 +144,8 @@ public final class UiScenarios
     {
         switch (state)
         {
-            case "payable", "list" -> money(fullQuote(id), 12_500, 340, 90);
-            case "short" -> money(fullQuote(id), 180, 25, 3);
+            case "payable", "list", "care" -> money(fullQuote(id), 12_500, 340, 90);
+            case "short", "list-short" -> money(fullQuote(id), 180, 25, 3);
             case "empty" -> money(new IntendanceQuotePayload(id, List.of(), 0, 0, List.of(), 0, 0), 12_500, 0, 90);
             default -> DevOverrides.quoteLoading = true;
         }
@@ -168,11 +168,11 @@ public final class UiScenarios
           new IntendanceQuotePayload.Care(4, "Bertrand Lefèvre", false, 35),
           new IntendanceQuotePayload.Care(5, "Isabeau Chastelain", false, 35));
         final List<IntendanceQuotePayload.Supply> supplies = List.of(
-          new IntendanceQuotePayload.Supply(new ItemStack(Items.OAK_PLANKS, 64), Component.literal("Bûcheron"), 96),
-          new IntendanceQuotePayload.Supply(new ItemStack(Items.COBBLESTONE, 32), Component.literal("Tailleur de pierre"), 40),
-          new IntendanceQuotePayload.Supply(new ItemStack(Items.WHEAT_SEEDS, 16), Component.literal("Fermier"), 12),
-          new IntendanceQuotePayload.Supply(new ItemStack(Items.IRON_INGOT, 8), Component.literal("Forgeron"), 240),
-          new IntendanceQuotePayload.Supply(new ItemStack(Items.DIAMOND, 2), Component.literal("Forgeron"), -1));
+          new IntendanceQuotePayload.Supply(new ItemStack(Items.OAK_PLANKS, 64), Component.literal("Bûcheron"), 96, 171),
+          new IntendanceQuotePayload.Supply(new ItemStack(Items.COBBLESTONE, 32), Component.literal("Tailleur de pierre"), 40, 172),
+          new IntendanceQuotePayload.Supply(new ItemStack(Items.WHEAT_SEEDS, 16), Component.literal("Fermier"), 12, 173),
+          new IntendanceQuotePayload.Supply(new ItemStack(Items.IRON_INGOT, 8), Component.literal("Forgeron"), 240, 174),
+          new IntendanceQuotePayload.Supply(new ItemStack(Items.DIAMOND, 2), Component.literal("Forgeron"), -1, 175));
         return new IntendanceQuotePayload(id, care, 345, 12, supplies, 1388, 28);
     }
 

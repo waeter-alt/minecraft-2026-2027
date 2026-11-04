@@ -34,14 +34,16 @@ public record IntendanceQuotePayload(int colony, List<Care> care, long careGold,
     }
 
     /**
-     * An item a worker waits on and nobody in the colony provides; cost -1 when the Intendance never sells it.
+     * An item a worker waits on and nobody in the colony provides; cost -1 when the Intendance never sells it. The key
+     * names its request, to settle this row alone.
      */
-    public record Supply(ItemStack stack, Component forWhom, int cost)
+    public record Supply(ItemStack stack, Component forWhom, int cost, int key)
     {
         static final StreamCodec<RegistryFriendlyByteBuf, Supply> CODEC = StreamCodec.composite(
           ItemStack.OPTIONAL_STREAM_CODEC, Supply::stack,
           ComponentSerialization.TRUSTED_STREAM_CODEC, Supply::forWhom,
           ByteBufCodecs.INT, Supply::cost,
+          ByteBufCodecs.INT, Supply::key,
           Supply::new);
 
         public boolean rare()

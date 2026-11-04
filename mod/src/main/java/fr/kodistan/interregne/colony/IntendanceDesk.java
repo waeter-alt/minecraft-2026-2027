@@ -49,12 +49,26 @@ public final class IntendanceDesk
         }
         switch (payload.action())
         {
+            case IntendanceActionPayload.CURE, IntendanceActionPayload.FEED -> settleCitizen(player, colony, payload.target(),
+              payload.action() == IntendanceActionPayload.CURE);
+            case IntendanceActionPayload.SUPPLY -> settleSupply(player, colony, payload.target());
+            default -> settle(player, colony, payload.action());
+        }
+        PacketDistributor.sendToPlayer(player, quote(colony));
+    }
+
+    /**
+     * Settle a whole card for this player (no membership check: the caller does it).
+     */
+    public static void settle(final ServerPlayer player, final IColony colony, final int action)
+    {
+        switch (action)
+        {
             case IntendanceActionPayload.SETTLE_GRIEVANCES -> settleGrievances(player, colony);
             case IntendanceActionPayload.SETTLE_SUPPLIES -> settleSupplies(player, colony);
             default -> {
             }
         }
-        PacketDistributor.sendToPlayer(player, quote(colony));
     }
 
     public static IntendanceQuotePayload quote(final IColony colony)
@@ -69,8 +83,9 @@ public final class IntendanceDesk
         final Intendance.Supplies supplies = Intendance.supplies(colony);
         final IRequestManager manager = colony.getRequestManager();
         final List<IntendanceQuotePayload.Supply> rows = new ArrayList<>();
-        supplies.buyable().forEach(purchase -> rows.add(new IntendanceQuotePayload.Supply(purchase.stack(), whoAsks(manager, purchase), (int) rowCost(purchase))));
-        supplies.rare().forEach(purchase -> rows.add(new IntendanceQuotePayload.Supply(purchase.stack(), whoAsks(manager, purchase), -1)));
+        supplies.buyable().forEach(purchase -> rows.add(new IntendanceQuotePayload.Supply(purchase.stack(), whoAsks(manager, purchase), (int) rowCost(purchase),
+          key(purchase))));
+        supplies.rare().forEach(purchase -> rows.add(new IntendanceQuotePayload.Supply(purchase.stack(), whoAsks(manager, purchase), -1, key(purchase))));
         final long supplyGold = supplyCost(supplies);
         return new IntendanceQuotePayload(colony.getID(), care, careGold, influenceFor(careGold), rows, supplyGold, influenceFor(supplyGold));
     }
@@ -79,6 +94,61 @@ public final class IntendanceDesk
     {
         final IRequest<?> request = manager.getRequestForToken(purchase.token());
         return request == null ? Component.literal("?") : request.getRequester().getRequesterDisplayName(manager, request);
+    }
+
+    private static int key(final Intendance.Purchase purchase)
+    {
+        return purchase.token().getIdentifier().hashCode();
+    }
+
+    /**
+     * One row of the grievances list: cure this sick citizen, or feed this hungry one, at its row price.
+     */
+    public static void settleCitizen(final ServerPlayer player, final IColony colony, final int id, final boolean cure)
+    {
+        final ICitizenData citizen = colony.getCitizenManager().getCivilian(id);
+        if (citizen == null || (cure ? !citizen.getCitizenDiseaseHandler().isSick() : citizen.getSaturation() >= CitizenConstants.LOW_SATURATION))
+        {
+            return;
+        }
+        final long gold = cure ? Config.INTENDANCE_CURE_COST.get() : Config.INTENDANCE_MEAL_COST.get();
+        if (!charge(player, colony, gold))
+        {
+            return;
+        }
+        if (cure)
+        {
+            citizen.getCitizenDiseaseHandler().cure();
+        }
+        else
+        {
+            citizen.setSaturation(FULL_SATURATION);
+        }
+        colony.getCitizenManager().markDirty();
+        report(colony, player, citizen.getName() + (cure ? " soigné" : " nourri"), gold);
+    }
+
+    /**
+     * One row of the supplies list, by its key, at its row price.
+     */
+    public static void settleSupply(final ServerPlayer player, final IColony colony, final int key)
+    {
+        final Intendance.Purchase purchase = Intendance.supplies(colony).buyable().stream().filter(p -> key(p) == key).findFirst().orElse(null);
+        if (purchase == null)
+        {
+            return;
+        }
+        final long gold = rowCost(purchase);
+        if (!Intendance.fits(purchase))
+        {
+            player.sendSystemMessage(Component.literal("L'atelier est plein : vide-le avant cette livraison.").withStyle(ChatFormatting.GRAY));
+            return;
+        }
+        if (!canPay(player, colony, gold) || !Intendance.deliver(colony, purchase) || !charge(player, colony, gold))
+        {
+            return;
+        }
+        report(colony, player, purchase.stack().getCount() + " × " + purchase.stack().getHoverName().getString() + " livrés", gold);
     }
 
     private static long rowCost(final Intendance.Purchase purchase)
@@ -129,23 +199,40 @@ public final class IntendanceDesk
         report(colony, player, String.join(", ", done), gold);
     }
 
+    /**
+     * Everything listed, in one payment: the player must afford the whole list, then pays only for what was delivered
+     * (a full hut keeps its row for later; a request closed along with another one costs nothing).
+     */
     private static void settleSupplies(final ServerPlayer player, final IColony colony)
     {
         final Intendance.Supplies supplies = Intendance.supplies(colony);
-        final long gold = supplyCost(supplies);
-        if (supplies.buyable().isEmpty() || !charge(player, colony, gold))
+        if (supplies.buyable().isEmpty() || !canPay(player, colony, supplyCost(supplies)))
         {
             return;
         }
         int delivered = 0;
+        int full = 0;
+        long gold = 0;
         for (final Intendance.Purchase purchase : supplies.buyable())
         {
-            delivered += Intendance.deliver(colony, purchase) ? 1 : 0;
+            if (!Intendance.fits(purchase))
+            {
+                full++;
+            }
+            else if (Intendance.deliver(colony, purchase))
+            {
+                delivered++;
+                gold += rowCost(purchase);
+            }
         }
-        report(colony, player, delivered + (delivered == 1 ? " fourniture livrée" : " fournitures livrées"), gold);
-        if (delivered < supplies.buyable().size())
+        if (gold > 0 && charge(player, colony, gold))
         {
-            player.sendSystemMessage(Component.literal("Certains ateliers sont pleins : vide-les, le reste sera livré au prochain règlement.")
+            report(colony, player, delivered + (delivered == 1 ? " fourniture livrée" : " fournitures livrées"), gold);
+        }
+        if (full > 0)
+        {
+            player.sendSystemMessage(Component.literal(full + (full == 1 ? " atelier est plein" : " ateliers sont pleins")
+                                                         + " : vide-les, le reste sera livré au prochain règlement, sans rien payer d'ici là.")
                                        .withStyle(ChatFormatting.GRAY));
         }
     }
@@ -155,10 +242,8 @@ public final class IntendanceDesk
      */
     private static boolean charge(final ServerPlayer player, final IColony colony, final long gold)
     {
-        final long influence = influenceFor(gold);
-        if (Influence.get(player.server, player.getUUID()) < influence)
+        if (!canPay(player, colony, gold))
         {
-            player.sendSystemMessage(Component.literal("Il te faut " + influence + " Influence pour régler cela.").withStyle(ChatFormatting.RED));
             return false;
         }
         if (TreasuryPayment.pay(player, colony, gold) == null)
@@ -167,7 +252,27 @@ public final class IntendanceDesk
                                        .withStyle(ChatFormatting.RED));
             return false;
         }
-        Influence.add(player.server, player.getUUID(), -influence, "Intendance");
+        Influence.add(player.server, player.getUUID(), -influenceFor(gold), "Intendance");
+        return true;
+    }
+
+    /**
+     * Whether the player could pay this now, with the reason in the chat when not.
+     */
+    private static boolean canPay(final ServerPlayer player, final IColony colony, final long gold)
+    {
+        final long influence = influenceFor(gold);
+        if (Influence.get(player.server, player.getUUID()) < influence)
+        {
+            player.sendSystemMessage(Component.literal("Il te faut " + influence + " Influence pour régler cela.").withStyle(ChatFormatting.RED));
+            return false;
+        }
+        if (TreasuryPayment.available(player, colony) < gold)
+        {
+            player.sendSystemMessage(Component.literal("Trésor et bourse réunis n'y suffisent pas : il faut " + Wallet.format(gold) + " Couronnes.")
+                                       .withStyle(ChatFormatting.RED));
+            return false;
+        }
         return true;
     }
 
