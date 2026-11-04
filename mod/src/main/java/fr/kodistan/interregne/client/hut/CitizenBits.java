@@ -5,7 +5,11 @@ import com.minecolonies.api.colony.IColonyView;
 import com.minecolonies.api.colony.requestsystem.request.IRequest;
 import com.minecolonies.api.colony.requestsystem.request.RequestState;
 import com.minecolonies.api.colony.requestsystem.requestable.IDeliverable;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
+import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
 import com.minecolonies.api.entity.citizen.VisibleCitizenStatus;
+import fr.kodistan.interregne.InterregneMod;
 import com.minecolonies.api.util.InventoryUtils;
 import com.minecolonies.core.client.gui.WindowInteraction;
 import com.minecolonies.core.network.messages.server.colony.UpdateRequestStateMessage;
@@ -26,7 +30,12 @@ import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.items.wrapper.InvWrapper;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Predicate;
@@ -44,8 +53,87 @@ public final class CitizenBits
     {
     }
 
+    @Nullable
+    private static Map<String, JsonArray> jobNames;
+
     private CitizenBits()
     {
+    }
+
+    /**
+     * Our French name for a job (assets/interregne/job_names.json), in the citizen's gender; MineColonies' own
+     * translation for a job we do not know. Takes the job's translation key.
+     */
+    public static String jobName(final String jobKey, final boolean female)
+    {
+        final JsonArray names = jobNames().get(jobKey.substring(jobKey.lastIndexOf('.') + 1));
+        if (names != null && names.size() == 2)
+        {
+            return names.get(female ? 1 : 0).getAsString();
+        }
+        return Component.translatable(jobKey).getString();
+    }
+
+    private static synchronized Map<String, JsonArray> jobNames()
+    {
+        if (jobNames == null)
+        {
+            jobNames = new HashMap<>();
+            try (Reader reader = new InputStreamReader(CitizenBits.class.getResourceAsStream("/assets/" + InterregneMod.MODID + "/job_names.json"), StandardCharsets.UTF_8))
+            {
+                JsonParser.parseReader(reader).getAsJsonObject().entrySet().stream().filter(e -> e.getValue().isJsonArray())
+                  .forEach(e -> jobNames.put(e.getKey(), e.getValue().getAsJsonArray()));
+            }
+            catch (final Exception e)
+            {
+                InterregneMod.LOGGER.warn("L'Interregne: job names unreadable", e);
+            }
+        }
+        return jobNames;
+    }
+
+    /**
+     * The citizen's entity when it is loaded nearby. By entity id first; a citizen just hired from the tavern can carry
+     * a stale one, so then by citizen id in the colony.
+     */
+    @Nullable
+    public static LivingEntity entity(final ICitizenDataView citizen)
+    {
+        final Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null)
+        {
+            return null;
+        }
+        final Entity byId = minecraft.level.getEntity(citizen.getEntityId());
+        if (byId instanceof AbstractEntityCitizen found && found.getCivilianID() == citizen.getId() && found.getCitizenColonyHandler().getColonyId() == citizen.getColonyId())
+        {
+            return found;
+        }
+        for (final Entity entity : minecraft.level.entitiesForRendering())
+        {
+            if (entity instanceof AbstractEntityCitizen found && found.getCivilianID() == citizen.getId() && found.getCitizenColonyHandler().getColonyId() == citizen.getColonyId())
+            {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Draw an entity in our screens without the name floating over its head.
+     */
+    private static void withoutName(final LivingEntity living, final Runnable draw)
+    {
+        final boolean shown = living.isCustomNameVisible();
+        living.setCustomNameVisible(false);
+        try
+        {
+            draw.run();
+        }
+        finally
+        {
+            living.setCustomNameVisible(shown);
+        }
     }
 
     /**
@@ -54,14 +142,13 @@ public final class CitizenBits
      */
     public static void face(final GuiGraphics graphics, final ICitizenDataView citizen, final int x, final int y, final int size)
     {
-        final Minecraft minecraft = Minecraft.getInstance();
-        final Entity entity = minecraft.level == null ? null : minecraft.level.getEntity(citizen.getEntityId());
-        if (entity instanceof LivingEntity living)
+        final LivingEntity living = entity(citizen);
+        if (living != null)
         {
             graphics.fill(x, y, x + size, y + size, Palette.PAPER_DARK);
             // Box centre at head height; the "mouse" at the centre makes the head look straight ahead
-            InventoryScreen.renderEntityInInventoryFollowsMouse(graphics, x, y, x + size, y + size, size * 26 / 16, living.getBbHeight() * 0.38F,
-              x + size / 2F, y + size / 2F, living);
+            withoutName(living, () -> InventoryScreen.renderEntityInInventoryFollowsMouse(graphics, x, y, x + size, y + size, size * 26 / 16,
+              living.getBbHeight() * 0.38F, x + size / 2F, y + size / 2F, living));
             return;
         }
         Icon.of(Items.PLAYER_HEAD).draw(graphics, x, y, size);
@@ -73,12 +160,11 @@ public final class CitizenBits
     public static void body(final GuiGraphics graphics, final ICitizenDataView citizen, final int x1, final int y1, final int x2, final int y2,
       final int mouseX, final int mouseY)
     {
-        final Minecraft minecraft = Minecraft.getInstance();
-        final Entity entity = minecraft.level == null ? null : minecraft.level.getEntity(citizen.getEntityId());
-        if (entity instanceof LivingEntity living)
+        final LivingEntity living = entity(citizen);
+        if (living != null)
         {
             final int scale = (int) ((y2 - y1) * 0.8F / Math.max(0.5F, living.getBbHeight()));
-            InventoryScreen.renderEntityInInventoryFollowsMouse(graphics, x1, y1, x2, y2, scale, 0.0625F, mouseX, mouseY, living);
+            withoutName(living, () -> InventoryScreen.renderEntityInInventoryFollowsMouse(graphics, x1, y1, x2, y2, scale, 0.0625F, mouseX, mouseY, living));
             return;
         }
         final int size = Math.min(x2 - x1, y2 - y1) / 2;
@@ -93,7 +179,7 @@ public final class CitizenBits
         final VisibleCitizenStatus status = citizen.getVisibleStatus();
         if (status == null || status == VisibleCitizenStatus.WORKING)
         {
-            return "travaille";
+            return citizen.getJob() == null || citizen.getJob().isEmpty() ? "se promène" : "travaille";
         }
         if (status == VisibleCitizenStatus.SLEEP)
         {

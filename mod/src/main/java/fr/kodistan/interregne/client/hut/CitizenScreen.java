@@ -49,8 +49,6 @@ public final class CitizenScreen extends ParchmentScreen
     private static final ResourceLocation FOOD_EMPTY = ResourceLocation.withDefaultNamespace("hud/food_empty");
 
     private static final String SKILL_KEY = "com.minecolonies.coremod.gui.citizen.skills.";
-    private static final String MODIFIER_KEY = "com.minecolonies.coremod.gui.townhall.happiness.";
-    private static final String MODIFIER_DESC_KEY = "com.minecolonies.coremod.gui.townhall.happiness.desc.";
 
     private enum Page
     {
@@ -210,7 +208,11 @@ public final class CitizenScreen extends ParchmentScreen
         y = y0 + h - 6 - (talk ? 2 : 1) * (Ui.NAV_ROW + 1);
         graphics.fill(x + 2, y - 3, x + width - 2, y - 2, Palette.RULE);
         Ui.navItem(graphics, font, x, y, width, Icon.module("inventory"), "Inventaire", false, Ui.inside(mouseX, mouseY, x, y, width, Ui.NAV_ROW));
-        hits.add(new Hit(x, y, width, Ui.NAV_ROW, () -> new OpenInventoryMessage(colony, citizen.getName(), citizen.getEntityId()).sendToServer()));
+        hits.add(new Hit(x, y, width, Ui.NAV_ROW, () ->
+        {
+            final net.minecraft.world.entity.LivingEntity entity = CitizenBits.entity(citizen);
+            new OpenInventoryMessage(colony, citizen.getName(), entity != null ? entity.getId() : citizen.getEntityId()).sendToServer();
+        }));
         if (talk)
         {
             y += Ui.NAV_ROW + 1;
@@ -231,7 +233,7 @@ public final class CitizenScreen extends ParchmentScreen
         final int rx = x + bodyW + 8;
         final int rw = width - bodyW - 8;
         final IBuildingView work = citizen.getWorkBuilding() == null ? null : colony.getBuilding(citizen.getWorkBuilding());
-        final String job = citizen.getJob() == null || citizen.getJob().isEmpty() ? null : Component.translatable(citizen.getJob()).getString();
+        final String job = citizen.getJob() == null || citizen.getJob().isEmpty() ? null : CitizenBits.jobName(citizen.getJob(), citizen.isFemale());
         if (job == null && citizen.isChild())
         {
             y = line(graphics, rx, y, rw, "Enfant", Palette.INK);
@@ -242,7 +244,9 @@ public final class CitizenScreen extends ParchmentScreen
         }
         else
         {
-            y = link(graphics, mouseX, mouseY, rx, y, rw, job + " · ", buildingName(work), () -> openBuilding(work));
+            graphics.drawString(font, Component.literal(job).withStyle(ChatFormatting.BOLD), rx, y, Palette.INK, false);
+            y += 12;
+            y = link(graphics, mouseX, mouseY, rx, y, rw, "Travaille à : ", buildingName(work), () -> openBuilding(work));
         }
         final IBuildingView home = citizen.getHomeBuilding() == null ? null : colony.getBuilding(citizen.getHomeBuilding());
         if (home == null)
@@ -390,6 +394,13 @@ public final class CitizenScreen extends ParchmentScreen
 
     // --- Happiness ---
 
+    /**
+     * One factor of happiness, as the page shows it.
+     */
+    private record Factor(HappinessFactors.Reading reading, double factor, double weight)
+    {
+    }
+
     private int renderHappiness(final GuiGraphics graphics, final int x, int y, final int width)
     {
         final double happiness = citizen.getHappiness();
@@ -397,52 +408,89 @@ public final class CitizenScreen extends ParchmentScreen
         final String title = happiness < 4 ? "Malheureux" : happiness < 7 ? "Mitigé" : "Heureux";
         Ui.banner(graphics, font, x, y, width, mood, title, format(happiness) + " / 10");
         y += 20;
-        Ui.label(graphics, font, "CE QUI COMPTE POUR LUI", x, y);
-        y += 12;
-        boolean any = false;
-        for (final String name : citizen.getHappinessHandler().getModifiers())
+
+        final List<Factor> bad = new ArrayList<>();
+        final List<Factor> good = new ArrayList<>();
+        for (final String id : citizen.getHappinessHandler().getModifiers())
         {
-            final IHappinessModifier modifier = citizen.getHappinessHandler().getModifier(name);
+            final IHappinessModifier modifier = citizen.getHappinessHandler().getModifier(id);
             final double factor = modifier.getFactor(null);
             if (factor == 1.0)
             {
                 continue;
             }
-            any = true;
-            final String effect;
-            final int color;
-            final String icon;
-            if (factor > 1.0)
-            {
-                effect = "le rend heureux";
-                color = Palette.GREEN;
-                icon = "happy_icon";
-            }
-            else if (factor > 0.75)
-            {
-                effect = "le contrarie un peu";
-                color = Palette.AMBER_TEXT;
-                icon = "unsatisfied_icon";
-            }
-            else
-            {
-                effect = "le rend malheureux";
-                color = Palette.RED;
-                icon = "unhappy_icon";
-            }
-            Icon.texture(ResourceLocation.fromNamespaceAndPath("minecolonies", "textures/gui/" + icon + ".png"), 16).draw(graphics, x, y, 10);
-            final Component label = Component.translatable(MODIFIER_KEY + name).withStyle(ChatFormatting.BOLD);
-            graphics.drawString(font, label, x + 14, y + 1, Palette.INK, false);
-            graphics.drawString(font, " · " + effect, x + 14 + font.width(label), y + 1, color, false);
-            y += 11;
-            y = Ui.wrapped(graphics, font, Component.translatable(MODIFIER_DESC_KEY + name), x + 14, y, width - 14, Palette.MUTED, 9) + 4;
+            final Factor entry = new Factor(HappinessFactors.read(id, factor > 1.0, citizen, colony), factor, modifier.getWeight());
+            (factor > 1.0 ? good : bad).add(entry);
         }
-        if (!any)
+        // Worst first: what weighs most and pulls hardest
+        bad.sort((a, b) -> Double.compare(a.weight() * (a.factor() - 1), b.weight() * (b.factor() - 1)));
+        good.sort((a, b) -> Double.compare(b.weight() * (b.factor() - 1), a.weight() * (a.factor() - 1)));
+
+        if (bad.isEmpty() && good.isEmpty())
         {
-            graphics.drawString(font, "Rien ne pèse sur lui en ce moment.", x, y, Palette.MUTED, false);
+            graphics.drawString(font, "Rien ne pèse sur son humeur en ce moment.", x, y, Palette.MUTED, false);
+            return y + 12;
+        }
+        if (!bad.isEmpty())
+        {
+            Ui.label(graphics, font, "CE QUI LE REND MALHEUREUX", x, y);
             y += 12;
+            for (final Factor factor : bad)
+            {
+                y = factorCard(graphics, x, y, width, factor, false);
+            }
+            y += 4;
+        }
+        if (!good.isEmpty())
+        {
+            Ui.label(graphics, font, "CE QUI LE REND HEUREUX", x, y);
+            y += 12;
+            for (final Factor factor : good)
+            {
+                y = factorCard(graphics, x, y, width, factor, true);
+            }
         }
         return y;
+    }
+
+    /**
+     * A card: coloured edge, the factor's name and how much it weighs, why, and what to do about it.
+     */
+    private int factorCard(final GuiGraphics graphics, final int x, final int y, final int width, final Factor factor, final boolean good)
+    {
+        final HappinessFactors.Reading reading = factor.reading();
+        final int textX = x + 20;
+        final int textW = width - 26;
+        final List<net.minecraft.util.FormattedCharSequence> why = font.split(Component.literal(reading.why()), textW);
+        final List<net.minecraft.util.FormattedCharSequence> fix = reading.fix() == null ? List.of() : font.split(Component.literal("→ " + reading.fix()), textW);
+        final int height = 16 + why.size() * 9 + fix.size() * 9;
+
+        final int soft = good ? Palette.GREEN_SOFT : factor.factor() > 0.75 ? Palette.AMBER_SOFT : Palette.RED_SOFT;
+        final int strong = good ? Palette.GREEN : factor.factor() > 0.75 ? Palette.AMBER : Palette.RED;
+        Ui.plate(graphics, x, y, x + width, y + height, Palette.PAPER_LIGHT, Palette.RULE, Palette.PAPER_LIGHT);
+        graphics.fill(x + 1, y + 1, x + 4, y + height - 1, strong);
+        final String icon = good ? "happy_icon" : factor.factor() > 0.75 ? "unsatisfied_icon" : "unhappy_icon";
+        Icon.texture(ResourceLocation.fromNamespaceAndPath("minecolonies", "textures/gui/" + icon + ".png"), 16).draw(graphics, x + 7, y + 4, 10);
+        graphics.drawString(font, Component.literal(reading.name()).withStyle(ChatFormatting.BOLD), textX, y + 5, Palette.INK, false);
+
+        // How much this factor counts in the mood, from its weight
+        final String impact = factor.weight() >= 3 ? "compte beaucoup" : factor.weight() >= 2 ? "compte" : "compte peu";
+        final int impactW = font.width(impact) + 8;
+        Ui.chip(graphics, font, x + width - impactW - 4, y + 3, impact, soft, good ? Palette.GREEN : factor.factor() > 0.75 ? Palette.AMBER_TEXT : Palette.RED,
+          false, false);
+
+        int ty = y + 16;
+        for (final net.minecraft.util.FormattedCharSequence line : why)
+        {
+            graphics.drawString(font, line, textX, ty, Palette.INK, false);
+            ty += 9;
+        }
+        for (final net.minecraft.util.FormattedCharSequence line : fix)
+        {
+            graphics.drawString(font, line, textX, ty, Palette.LEATHER, false);
+            ty += 9;
+        }
+        return y + height + 3;
     }
 
     // --- Requests ---

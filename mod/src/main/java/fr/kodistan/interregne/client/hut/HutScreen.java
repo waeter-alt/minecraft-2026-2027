@@ -77,7 +77,7 @@ public final class HutScreen extends ParchmentScreen
     {
     }
 
-    private record Worker(ICitizenDataView citizen, String job)
+    private record Worker(ICitizenDataView citizen, String jobKey)
     {
     }
 
@@ -450,7 +450,8 @@ public final class HutScreen extends ParchmentScreen
             CitizenBits.face(graphics, citizen, x + 4, y + 3, 16);
             graphics.drawString(font, name, x + 24, y + 3, Palette.INK, false);
             // Sickness already has its chip: the line does not repeat it
-            final String line = citizen.isSick() ? worker.job() : worker.job() + " · " + CitizenBits.activity(citizen);
+            final String job = CitizenBits.jobName(worker.jobKey(), citizen.isFemale());
+            final String line = citizen.isSick() ? job : job + " · " + CitizenBits.activity(citizen);
             graphics.drawString(font, fit(line, width - 28), x + 24, y + 12, Palette.MUTED, false);
 
             int chipX = inline ? x + width - 4 - chipsW + 3 : x + 24;
@@ -555,13 +556,13 @@ public final class HutScreen extends ParchmentScreen
         final IColonyView colony = building.getColony();
         for (final WorkerBuildingModuleView module : building.getModuleViews(WorkerBuildingModuleView.class))
         {
-            final String job = Component.translatable(module.getJobEntry().getTranslationKey()).getString();
+            final String jobKey = module.getJobEntry().getTranslationKey();
             for (final int id : module.getAssignedCitizens())
             {
                 final ICitizenDataView citizen = colony.getCitizen(id);
                 if (citizen != null)
                 {
-                    workers.add(new Worker(citizen, job));
+                    workers.add(new Worker(citizen, jobKey));
                 }
             }
         }
