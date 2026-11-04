@@ -1,5 +1,7 @@
 package fr.kodistan.interregne.client.ui;
 
+import fr.kodistan.interregne.economy.Wallet;
+import fr.kodistan.interregne.client.hud.InterregneHud;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -55,6 +57,67 @@ public abstract class ParchmentScreen extends Screen
         super.render(graphics, mouseX, mouseY, partialTick);
         renderFrame(graphics, mouseX, mouseY);
         renderContent(graphics, mouseX, mouseY);
+        if (walletW > 0 && Ui.inside(mouseX, mouseY, walletX, y0 + 3, walletW, 15))
+        {
+            graphics.renderTooltip(font, font.split(Component.literal(walletHint()), 220), mouseX, mouseY);
+        }
+    }
+
+    /** Where the header's Influence and gold tag sits, for its tooltip; 0 wide when not shown. */
+    private int walletX;
+    private int walletW;
+
+    /**
+     * Whether the header shows the player's Influence and gold (most windows do; one with a header of its own does not).
+     */
+    protected boolean showWallet()
+    {
+        return true;
+    }
+
+    private static String walletHint()
+    {
+        return "Influence : " + Wallet.format(InterregneHud.influence()) + ".\nOr : " + Wallet.format(walletGold()) + " couronnes, dont "
+          + Wallet.format(InterregneHud.carried()) + " sur toi, " + Wallet.format(InterregneHud.bank()) + " à la Banque impériale et "
+          + Wallet.format(InterregneHud.regional()) + " au trésor régional.";
+    }
+
+    private static long walletGold()
+    {
+        return InterregneHud.carried() + InterregneHud.bank() + InterregneHud.regional();
+    }
+
+    /**
+     * Draws the « ★ 12  ● 1 388 » tag right-aligned at this x, in full or compact figures to leave the title room.
+     *
+     * @return the tag's left edge.
+     */
+    private int drawWallet(final GuiGraphics graphics, final int right, final int titleRoom, final int ink)
+    {
+        String influence = Wallet.format(InterregneHud.influence());
+        String gold = Wallet.format(walletGold());
+        if (tagWidth(influence, gold) > Math.max(0, right - x0 - 8 - titleRoom))
+        {
+            influence = InterregneHud.compact(InterregneHud.influence());
+            gold = InterregneHud.compact(walletGold());
+        }
+        final int width = tagWidth(influence, gold);
+        int x = right - width;
+        walletX = x;
+        walletW = width;
+        Ui.influence(graphics, x, y0 + 6, 9);
+        x += 11;
+        graphics.drawString(font, influence, x, y0 + 7, ink, false);
+        x += font.width(influence) + 7;
+        Ui.coinTight(graphics, x, y0 + 6, 9);
+        x += 11;
+        graphics.drawString(font, gold, x, y0 + 7, ink, false);
+        return walletX;
+    }
+
+    private int tagWidth(final String influence, final String gold)
+    {
+        return 11 + font.width(influence) + 7 + 11 + font.width(gold);
     }
 
     /**
@@ -72,12 +135,29 @@ public abstract class ParchmentScreen extends Screen
         }
         int titleX = x0 + 8;
         final String crumb = crumb();
-        if (crumb != null)
+        final int crumbW = crumb == null ? 0 : font.width(crumb + " › ");
+        final Component title = shownTitle();
+        // The wallet keeps clear of the ✕ and leaves the title at least its own width or 80 pixels
+        final int titleEnd = showWallet()
+          ? drawWallet(graphics, x0 + w - 19, crumbW + Math.min(font.width(title), 80), ink) - 8
+          : x0 + w - 17;
+        if (!showWallet())
+        {
+            walletW = 0;
+        }
+        if (crumb != null && titleEnd - titleX - crumbW >= 40)
         {
             graphics.drawString(font, crumb + " › ", titleX, y0 + 7, muted, false);
-            titleX += font.width(crumb + " › ");
+            titleX += crumbW;
         }
-        graphics.drawString(font, shownTitle(), titleX, y0 + 7, ink, false);
+        if (font.width(title) <= titleEnd - titleX)
+        {
+            graphics.drawString(font, title, titleX, y0 + 7, ink, false);
+        }
+        else
+        {
+            graphics.drawString(font, Ui.fit(font, title.getString(), titleEnd - titleX), titleX, y0 + 7, ink, false);
+        }
         graphics.drawString(font, "✕", x0 + w - 13, y0 + 6, overClose(mouseX, mouseY) ? Palette.RED : muted, false);
         graphics.fill(x0 + 4, y0 + 19, x0 + w - 4, y0 + 20, Palette.RULE);
     }

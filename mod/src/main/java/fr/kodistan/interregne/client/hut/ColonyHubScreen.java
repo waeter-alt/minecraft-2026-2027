@@ -218,6 +218,13 @@ public final class ColonyHubScreen extends ParchmentScreen
      * banner, its name, and the town hall's level in its colour.
      */
     @Override
+    protected boolean showWallet()
+    {
+        // Its own header has no room for it, and its desk already shows the purse
+        return false;
+    }
+
+    @Override
     protected void renderFrame(final GuiGraphics graphics, final int mouseX, final int mouseY)
     {
         levelAura(graphics);

@@ -219,7 +219,30 @@ public final class InterregneHud
     /**
      * Short amounts for the small papers: 950, 5,7k, 12k, 1,2M.
      */
-    private static String compact(final long value)
+    /** Couronnes carried in the main inventory. */
+    public static long carried()
+    {
+        final Minecraft minecraft = Minecraft.getInstance();
+        if (fr.kodistan.interregne.client.dev.DevOverrides.purse != null)
+        {
+            return fr.kodistan.interregne.client.dev.DevOverrides.purse;
+        }
+        return minecraft.player == null ? 0 : Wallet.value(new PlayerMainInvWrapper(minecraft.player.getInventory()));
+    }
+
+    /** The player's Imperial Bank balance, as last heard from the server. */
+    public static long bank()
+    {
+        return bank;
+    }
+
+    /** The player's colony's regional treasury, as last heard from the server. */
+    public static long regional()
+    {
+        return regional;
+    }
+
+    public static String compact(final long value)
     {
         if (value < 1_000)
         {
