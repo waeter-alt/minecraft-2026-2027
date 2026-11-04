@@ -60,6 +60,7 @@
     "client.WindowAssignCitizenAccessor",
     "client.SettingsModuleWindowAccessor",
     "client.ModuleViewWindowMixin",
-    "client.WindowInteractionAccessor"
+    "client.WindowInteractionAccessor",
+    "client.CameraMixin"
   ]
 }

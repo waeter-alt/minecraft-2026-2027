@@ -427,7 +427,7 @@ public final class ColonyHubScreen extends ParchmentScreen
             case BUILDINGS -> renderBuildings(graphics, mouseX, my, x, y, width);
             case CITIZENS -> renderCitizens(graphics, mouseX, my, x, y, width);
             case INTENDANCE -> renderIntendance(graphics, mouseX, my, x, y, width);
-            case WALLS -> renderSoon(graphics, x, y, width, "Murailles", "Les murailles de la colonie arrivent bientôt.");
+            case WALLS -> renderWalls(graphics, mouseX, my, x, y, width);
         };
         graphics.disableScissor();
         contentHeight = y + scroll - top;
@@ -693,6 +693,33 @@ public final class ColonyHubScreen extends ParchmentScreen
     {
         y += Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, title, "en préparation");
         return Ui.wrapped(graphics, font, Component.literal(text), x + 2, y + 20, width - 4, Palette.MUTED, 10) + 4;
+    }
+
+    /**
+     * The walls: none yet, and the button that opens the aerial planner.
+     */
+    private int renderWalls(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
+    {
+        y += Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, "Murailles", "aucune muraille");
+        y = Ui.wrapped(graphics, font, Component.literal("Tracez l'enceinte de la colonie vue du ciel : posez des points au sol, la muraille "
+          + "suit le relief entre eux. Elle peut rester ouverte, et une tour se dresse sur chaque point."), x + 2, y + 20, width - 4, Palette.MUTED, 10) + 6;
+        final int buttonW = Math.min(width, Math.max(140, font.width("Tracer la muraille") + 24));
+        seatButton(graphics, mouseX, mouseY, x, y, buttonW, "Tracer la muraille", Ui.ButtonStyle.PRIMARY, true,
+          () -> minecraft.setScreen(new fr.kodistan.interregne.client.walls.WallPlannerScreen(townHall)));
+        return y + Ui.BUTTON_H + 6;
+    }
+
+    /**
+     * Reopens the hub on its « Murailles » page, coming back from the planner.
+     */
+    public static void openWalls(final IBuildingView townHall)
+    {
+        if (townHall instanceof ITownHallView view)
+        {
+            final ColonyHubScreen screen = new ColonyHubScreen(view);
+            screen.page = Page.WALLS;
+            Minecraft.getInstance().setScreen(screen);
+        }
     }
 
     private void show(final Page target)
