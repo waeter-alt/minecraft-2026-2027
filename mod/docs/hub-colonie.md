@@ -24,8 +24,14 @@ La clarté d'abord : la même page parchemin que les huttes (menu à gauche, car
 
 ## Ce que le hub ajoute
 
-- **Vue d'ensemble** : l'état de la colonie en une ligne (vert, ambre ou rouge), puis des tuiles : citoyens, bonheur moyen, doléances, demandes, chantiers. Et un accès à la fiche de l'hôtel de ville pour l'améliorer.
+- **Vue d'ensemble** : l'état de la colonie en une ligne (vert, ambre ou rouge), puis la carte d'amélioration de l'hôtel de ville (sur trois colonnes, ou empilée quand c'est étroit), puis des tuiles : citoyens, bonheur moyen, doléances (ouvre les citoyens), Intendance (ce qu'elle réglerait), bâtiments, chantiers, mercenaires.
 - **Bâtiments** : chaque bâtiment avec son icône, son niveau en couleurs et son état. Les problèmes sont en tête ; un clic ouvre sa fiche.
 - **Citoyens** : chaque citoyen avec son visage, son métier et ses pastilles. Les problèmes sont en tête ; un clic ouvre sa fiche.
-- **Demandes** : toutes les demandes ouvertes de la colonie, avec le bâtiment qui attend.
+- **Intendance** (remplace « Demandes », 2026-11-04) :
+  - Deux cartes : Doléances (soigner les malades, nourrir les affamés) et Fournitures des travailleurs (ce que personne dans la colonie ne fournit).
+  - Chaque carte a un bouton « Tout régler » avec son prix en pièces et en Influence, et « Voir la liste » pour régler ligne par ligne.
+  - Le prix est payé par le trésor de la colonie puis la bourse du joueur, plus l'Influence du joueur. C'est volontairement plus cher que de construire le bon bâtiment (`colony/IntendanceDesk`).
+  - Le serveur envoie exactement les lignes qu'il réglera. L'achat automatique d'origine est désactivé par défaut.
+- **Murailles** : onglet réservé, en préparation.
+- **Colonne de gauche** : les pages en haut, les outils (Carte, Statistiques, Réglages, Permissions, Alliances, Apparence) en bas. Les outils passent en grille d'icônes quand la hauteur manque, puis la colonne défile à la molette.
 - Depuis le hub, Échap dans une fiche revient au hub, et la fiche affiche « Colonie › » devant son titre.

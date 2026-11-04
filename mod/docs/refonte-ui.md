@@ -1,6 +1,6 @@
 # Refonte complète des interfaces MineColonies — plan
 
-Validé avec l'utilisateur le 2026-11-03. Rien n'est codé : **on démarre par la phase 0** dans une nouvelle session.
+Validé avec l'utilisateur le 2026-11-03. **État au 2026-11-04 au soir** : les phases 0 à 2 sont faites et l'utilisateur considère la refonte « en grande partie terminée ». Il reste les écrans rares (phase 3) et ceux listés plus bas dans l'ancien style.
 
 ## Objectif (mots de l'utilisateur)
 
@@ -33,10 +33,13 @@ Le catalogue de la baguette et la galerie de styles ont été jugés « PARFAIT 
 
 1. Un écran répond à une seule question (« comment va ce bâtiment ? », « que veut ce citoyen ? »). Le détail s'ouvre à la demande.
 2. Les mêmes choses sont toujours au même endroit : fermer (✕) en haut à droite, action principale en bas à droite, Échap revient en arrière, jamais de cul-de-sac.
-3. Une icône s'accompagne d'un mot, et un nombre d'une unité (Couronnes, caisses, secondes…).
+3. Une icône s'accompagne d'un mot, et un nombre d'une unité (Couronnes, caisses, secondes…). **Exception : un prix dans un bouton**, où l'icône seule suffit (voir 8).
 4. Couleurs d'état uniques : vert = OK, ambre = en attente, rouge = bloquant.
 5. Pas de surcharge : la hiérarchie se fait par la taille et le gras, pas par plus de cadres.
 6. Les coûts sont exprimés dans notre économie : Couronnes et caisses régionales (`CrateRows.forCrates`), pas les listes de matériaux de MineColonies.
+7. **Responsive, sans exception** (exigence ferme de l'utilisateur, 2026-11-04) : aucun texte coupé, aucun chevauchement, l'action principale jamais cachée derrière un défilement, à toutes les tailles d'interface. Chaque texte reçoit une largeur (`fit` pour une ligne, `Ui.wrapped` pour une phrase). Quand la place manque, la mise en page change de forme au lieu de rétrécir : colonne d'icônes, cartes empilées, tuiles sur deux colonnes, boutons sous leur titre. Vérifier mentalement à environ 380 et 560 px de large.
+8. **Le prix d'une action est dans son bouton** : « Tout régler [pièce] 230 [étoile] 23 », icônes et chiffres, sans nommer les unités. Payable : bouton vert. Pas payable : bouton grisé, comme toute action indisponible, et seul le chiffre qui manque passe en rouge sous la forme « ce que tu as / ce que ça coûte » ; le survol dit exactement ce qui manque. Rien à faire : bouton grisé avec un libellé neutre. C'est le schéma courant des jeux vidéo ; un bouton entièrement rouge a été refusé.
+9. **Un menu ne se contredit jamais** : une ligne apparaît seulement si l'action de l'écran la traite vraiment. Ce que la colonie gère déjà elle-même n'est pas montré.
 
 ## Approche technique : hybride
 
@@ -126,6 +129,35 @@ Pas faits : les ordres de travail (seulement pour le constructeur, retiré), la 
 - `AppearanceScreen` : couleur (pastilles), drapeau, style des bâtiments, allure et noms des citoyens. Le verrou Patreon est retiré : tout est ouvert à qui dirige la colonie ;
 - réglages des gardes : la tâche se règle dans `SettingsScreen`, avec dessous le bouton qui donne le sceptre (poste ou points de patrouille) ou la mine patrouillée ;
 - nos blocs refaits sur une même hiérarchie (`CounterScreen`) : une carte « héros » en cuir avec le chiffre qui compte (solde, trésor, bourse, réserve, dîme due), puis l'action principale en large bouton vert, puis les autres mouvements, un panneau chacun, avec le résultat affiché pendant la saisie (frais compris). Le trône montre la dîme caisse par caisse (payload structuré).
+
+**Fait ensuite, fin du 2026-11-04** :
+- **Passe responsive** sur toutes les fenêtres :
+  - colonne de gauche réduite à une rangée d'icônes (avec leur nom au survol) sous 470 px de large ;
+  - colonne de droite d'un bâtiment plus étroite quand la fenêtre l'est ;
+  - cartes de l'hôtel de ville sur trois colonnes, ou empilées quand c'est étroit ;
+  - tuiles sur deux colonnes ;
+  - 32 textes libres bornés en largeur ;
+  - les bannières passent à la ligne au lieu de couper leur phrase ;
+  - le catalogue passe à une colonne ;
+  - les champs de saisie sont dessinés en cuir (`ParchmentField`).
+- **Colonne de gauche du hub** : elle tient à toutes les hauteurs. Les outils passent en grille d'icônes quand la liste ne tient pas. En dernier recours, la colonne défile ligne par ligne à la molette, y compris sur les pages ouvertes dans le cadre du hub.
+- **Bouton d'amélioration** : un libellé court (« Caisses manquantes », « Pas assez d'or », « Améliorer ») remplace la phrase longue quand elle ne tient pas. Le texte gris des boutons indisponibles n'a plus d'ombre.
+- **Entrepôt** : il s'ouvre sur son stock (recherche, « Tout ranger », prendre une unité ou une pile). Les onglets des coursiers, les demandes et la production sont retirés. « Tout le stock » reste un outil des autres bâtiments.
+- **Carte** : la carte de la colonie est un outil de la colonne de gauche de chaque bâtiment.
+- **Retirés** : le panneau flottant des doléances et le halo des citoyens.
+- **Portraits** : ils sont dessinés debout, même pour un citoyen couché ou malade.
+- **Réglages de l'hôtel de ville** : ils sont nommés en français, y compris ceux que MineColonies ne traduit pas.
+- **En-têtes** : l'en-tête de chaque bâtiment et de l'hôtel de ville montre l'Influence et l'or du joueur (sur lui, en banque, trésor régional), avec le détail au survol.
+- **Vitesse de travail** : la ligne d'un bâtiment inclut en rouge le ralentissement dû à la faim et à la maladie des ouvriers. Les pastilles Affamé, Famine et Malade expliquent le remède au survol.
+- **Hub : onglet Intendance** (à la place de « Demandes ») :
+  - Deux cartes : **Doléances** (les malades à soigner, les affamés à nourrir) et **Fournitures des travailleurs** (ce que personne dans la colonie ne peut fournir).
+  - Chaque carte a son gros bouton « Tout régler » avec le prix dedans (principe 8) et « Voir la liste ». La liste dépliée donne une ligne par élément, avec son prix et son propre bouton « Régler ».
+  - Les lignes viennent du serveur : ce sont exactement celles qui seront réglées (principe 9). Un objet rare que l'Intendance ne vend pas porte la pastille « À fournir ».
+  - Tuiles de la vue d'ensemble : la tuile « Intendance » compte ces lignes ; la tuile « Doléances » ouvre les citoyens.
+- **Hub : onglet Murailles** : il est réservé, en préparation (gros chantier à venir).
+- **Outils de développement** :
+  - `UiShot` capture chaque écran du mod à plusieurs tailles et liste les textes coupés ou qui se chevauchent ;
+  - tests en trois niveaux : JUnit, GameTests et scénarios de colonie accélérés.
 
 Restent dans l'ancien style : les réglages de type bloc et recette ; la caserne (espions, bannière de ralliement) ; la grille d'artisanat (`DOCraftingWindow`) ; la recherche ; le journal des quêtes ; le choix du style (`WindowSwitchPack`) et l'éditeur de drapeau (`WindowBannerPicker`), ouverts depuis la page Apparence ; le renommage d'un bâtiment.
 
