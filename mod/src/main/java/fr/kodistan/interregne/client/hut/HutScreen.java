@@ -721,8 +721,6 @@ public final class HutScreen extends ParchmentScreen
         {
             y = Ui.crateLine(graphics, font, x, y, row);
         }
-        Icon.of(Items.CLOCK).draw(graphics, x, y - 1, 10);
-        graphics.drawString(font, BuildCosts.formatSeconds(offer.seconds()) + " de chantier", x + 12, y + 1, Palette.INK, false);
 
         sideButton(graphics, mouseX, mouseY, x, secondaryY, width, secondary, Ui.ButtonStyle.SECONDARY, true, this::openBuildWindow);
         // Green when it can be done now, grey with the reason otherwise

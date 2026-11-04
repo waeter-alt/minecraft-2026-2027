@@ -563,8 +563,8 @@ public final class ColonyHubScreen extends ParchmentScreen
         final int tint = townHall.isBuilding() || !site && !max ? level + 1 : level;
         final UpgradeOffer offer = site || max ? null : UpgradeOffer.of(townHall);
         final int band = 18;
-        final int pad = 10;
-        final int height = offer == null ? 84 : Math.max(108, band + pad + 14 + 13 * (2 + offer.crates().size()) + pad);
+        final int pad = 8;
+        final int height = offer == null ? 84 : Math.max(84, band + pad + 13 + 11 * (1 + offer.crates().size()) + pad);
 
         graphics.fill(x, y, x + width, y + height, Palette.levelSoft(tint));
         graphics.renderOutline(x, y, width, height, Palette.levelEdge(tint));
@@ -584,9 +584,10 @@ public final class ColonyHubScreen extends ParchmentScreen
 
         // Three columns with room between them: what it opens, what it costs, the buttons
         final int bodyY = y + band + pad;
-        final int gap = 14;
-        final int buttonW = Math.min(118, (width - 2 * pad - 2 * gap) / 3);
-        final int textW = (width - 2 * pad - 2 * gap - buttonW) / 2;
+        final int gap = 12;
+        final int buttonW = 112;
+        // The price column gets the room: crate names are long
+        final int textW = (width - 2 * pad - 2 * gap - buttonW) / 3;
         final int c1 = x + pad;
         final int c2 = c1 + textW + gap;
         final int c3 = x + width - pad - buttonW;
@@ -632,7 +633,7 @@ public final class ColonyHubScreen extends ParchmentScreen
         // What the next level opens: every building may rise as high as the town hall
         final int target = offer.target();
         Ui.label(graphics, font, "DÉBLOQUE", c1, bodyY);
-        int ly = Ui.wrapped(graphics, font, Component.literal("+ Bâtiments jusqu'au niveau " + target), c1, bodyY + 14, textW, Palette.GREEN, 10);
+        int ly = Ui.wrapped(graphics, font, Component.literal("+ Bâtiments jusqu'au niveau " + target), c1, bodyY + 13, textW, Palette.GREEN, 10);
         if (target == ColonyMaps.UNLOCK_LEVEL)
         {
             Ui.wrapped(graphics, font, Component.literal("+ Carte de la colonie"), c1, ly + 3, textW, Palette.GREEN, 10);
@@ -640,13 +641,11 @@ public final class ColonyHubScreen extends ParchmentScreen
         graphics.fill(c2 - gap / 2, bodyY, c2 - gap / 2 + 1, y + height - pad, ruleColor);
 
         Ui.label(graphics, font, "PRIX", c2, bodyY);
-        int py = Ui.priceLine(graphics, font, c2, bodyY + 14, offer.price(), offer.affordable()) + 2;
+        int py = Ui.priceLine(graphics, font, c2, bodyY + 13, offer.price(), offer.affordable());
         for (final CrateRows.Row row : offer.crates())
         {
-            py = Ui.crateLine(graphics, font, c2, py, row) + 2;
+            py = Ui.crateLine(graphics, font, c2, py, row);
         }
-        Icon.of(Items.CLOCK).draw(graphics, c2, py - 1, 10);
-        graphics.drawString(font, BuildCosts.formatSeconds(offer.seconds()) + " de chantier", c2 + 12, py + 1, Palette.INK, false);
         graphics.fill(c3 - gap / 2, bodyY, c3 - gap / 2 + 1, y + height - pad, ruleColor);
 
         seatButton(graphics, mouseX, mouseY, c3, secondaryY, buttonW, "Réparer, démolir…", Ui.ButtonStyle.SECONDARY, true, this::openBuildWindow);
@@ -684,20 +683,20 @@ public final class ColonyHubScreen extends ParchmentScreen
         {
             final Tile tile = tiles.get(i);
             final int tx = x + i * (tileW + 4);
-            final boolean over = Ui.inside(mouseX, mouseY, tx, y, tileW, 34);
-            Ui.card(graphics, tx, y, tileW, 34, false, over, false);
-            graphics.fill(tx + 1, y + 1, tx + 3, y + 33, switch (tile.state())
+            final boolean over = Ui.inside(mouseX, mouseY, tx, y, tileW, 30);
+            Ui.card(graphics, tx, y, tileW, 30, false, over, false);
+            graphics.fill(tx + 1, y + 1, tx + 3, y + 29, switch (tile.state())
             {
                 case OK -> Palette.GREEN;
                 case WAIT -> Palette.AMBER;
                 case BAD -> Palette.RED;
             });
             tile.icon().draw(graphics, tx + 6, y + 4, 12);
-            graphics.drawString(font, fit(tile.label(), tileW - 24), tx + 21, y + 6, Palette.MUTED, false);
-            graphics.drawString(font, Component.literal(tile.value()).withStyle(ChatFormatting.BOLD), tx + 7, y + 21, Palette.INK, false);
-            addHit(tx, y, tileW, 34, tile.action());
+            graphics.drawString(font, fit(tile.label(), tileW - 24), tx + 21, y + 5, Palette.MUTED, false);
+            graphics.drawString(font, Component.literal(tile.value()).withStyle(ChatFormatting.BOLD), tx + 7, y + 18, Palette.INK, false);
+            addHit(tx, y, tileW, 30, tile.action());
         }
-        return y + 34;
+        return y + 30;
     }
 
     // --- Buildings ---

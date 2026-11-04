@@ -52,14 +52,14 @@ record UpgradeOffer(int level, int target, @Nullable String refusal, boolean fre
     }
 
     /**
-     * The main button's label: the action when it can be done, otherwise what is missing.
+     * The main button's label: the action and how long its site lasts when it can be done, otherwise what is missing.
      */
     String action()
     {
         return refusal != null ? "Hôtel de ville niv. " + target + " requis"
                  : !affordable ? "Pas assez de Couronnes"
                      : !cratesReady ? "Il manque des caisses"
-                         : level == 0 ? "Construire" : "Améliorer";
+                         : (level == 0 ? "Construire" : "Améliorer") + " (" + BuildCosts.formatSeconds(seconds) + ")";
     }
 
     void buy(final IBuildingView building)
