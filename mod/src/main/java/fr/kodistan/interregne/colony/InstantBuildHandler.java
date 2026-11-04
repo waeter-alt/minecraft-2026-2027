@@ -78,6 +78,12 @@ public class InstantBuildHandler extends CreativeStructureHandler
         {
             return true;
         }
+        // A rack, chest or hut block already in place stays as it is: its contents differ from the plan's, so Structurize
+        // would break it and put a fresh one, spilling what it held on the ground (every warehouse upgrade did)
+        if (block1 == block2 && state1.hasBlockEntity())
+        {
+            return true;
+        }
         return super.shouldBlocksBeConsideredEqual(state1, state2);
     }
 
