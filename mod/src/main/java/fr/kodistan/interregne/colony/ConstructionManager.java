@@ -1,11 +1,13 @@
 package fr.kodistan.interregne.colony;
 
+import com.minecolonies.api.colony.buildings.IBuilding;
 import fr.kodistan.interregne.InterregneMod;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +29,35 @@ public final class ConstructionManager
     {
         site.start();
         SITES.add(site);
+        resync(site);
+    }
+
+    /**
+     * The level our site on this building is heading for, or null when none runs there. MineColonies reads it as the
+     * building's work order, so its views know a site is running (« Chantier », progress in the hut window).
+     */
+    @Nullable
+    public static Integer siteLevel(final IBuilding building)
+    {
+        for (final Site site : SITES)
+        {
+            if (site.building() == building)
+            {
+                return site.targetLevel();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Sends the building's view again, so clients see the site start or end.
+     */
+    private static void resync(final Site site)
+    {
+        if (site.building() != null)
+        {
+            site.building().markDirty();
+        }
     }
 
     @SubscribeEvent
@@ -48,6 +79,7 @@ public final class ConstructionManager
             if (done)
             {
                 SITES.remove(site);
+                resync(site);
             }
         }
     }

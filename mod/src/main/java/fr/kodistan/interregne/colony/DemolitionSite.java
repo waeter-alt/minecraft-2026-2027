@@ -93,6 +93,19 @@ public final class DemolitionSite implements Site
     }
 
     @Override
+    @Nullable
+    public IBuilding building()
+    {
+        return building;
+    }
+
+    @Override
+    public int targetLevel()
+    {
+        return order.getTargetLevel();
+    }
+
+    @Override
     public void start()
     {
         final BlockPos center = BlockPos.containing(area.getCenter());

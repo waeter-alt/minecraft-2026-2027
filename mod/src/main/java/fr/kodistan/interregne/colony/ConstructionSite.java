@@ -147,6 +147,19 @@ public final class ConstructionSite implements Site
      * Opening of the show: clear the ground of players, turn them toward the site, and announce it.
      */
     @Override
+    @Nullable
+    public IBuilding building()
+    {
+        return building;
+    }
+
+    @Override
+    public int targetLevel()
+    {
+        return order.getTargetLevel();
+    }
+
+    @Override
     public void start()
     {
         for (final ServerPlayer player : level.players())
