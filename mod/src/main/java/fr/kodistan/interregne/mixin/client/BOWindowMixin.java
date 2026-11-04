@@ -1,7 +1,14 @@
 package fr.kodistan.interregne.mixin.client;
 
 import com.ldtteam.blockui.views.BOWindow;
+import com.minecolonies.api.colony.IColonyManager;
+import com.minecolonies.api.colony.IColonyView;
+import com.minecolonies.core.client.gui.WindowClipBoard;
 import com.minecolonies.core.client.gui.WindowHutMinPlaceholder;
+import com.minecolonies.core.client.gui.WindowRequestDetail;
+import fr.kodistan.interregne.client.hut.ClipboardScreen;
+import fr.kodistan.interregne.client.hut.RequestScreen;
+import net.minecraft.client.Minecraft;
 import com.minecolonies.core.client.gui.huts.WindowHutWorkerModulePlaceholder;
 import com.minecolonies.core.client.gui.townhall.WindowMainPage;
 import fr.kodistan.interregne.client.hut.ColonyHubScreen;
@@ -16,7 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * The hut window with workers opens our hut screen instead, wherever it is opened from: the hut block, a module's
  * « main » tab, the way back from the stock window; so do huts without workers. The town hall opens the colony hub,
- * and the citizen window our citizen screen.
+ * the citizen window our citizen screen, the request detail and the clipboard our own.
  */
 @Mixin(value = BOWindow.class, remap = false)
 public abstract class BOWindowMixin
@@ -39,6 +46,21 @@ public abstract class BOWindowMixin
         {
             ci.cancel();
             CitizenScreen.open(((MainWindowCitizen) (Object) this).getCitizen(), null);
+        }
+        else if (type == WindowRequestDetail.class && HutScreen.enabled())
+        {
+            final WindowRequestDetailAccessor detail = (WindowRequestDetailAccessor) this;
+            final IColonyView colony = IColonyManager.getInstance().getColonyView(detail.interregne$colonyId(), Minecraft.getInstance().level.dimension());
+            if (colony != null)
+            {
+                ci.cancel();
+                RequestScreen.openFrom(detail.interregne$request(), colony, detail.interregne$previous());
+            }
+        }
+        else if (type == WindowClipBoard.class && HutScreen.enabled())
+        {
+            ci.cancel();
+            ClipboardScreen.open(((WindowClipBoardAccessor) this).interregne$colony());
         }
     }
 }

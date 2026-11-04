@@ -376,7 +376,7 @@ public final class HutScreen extends ParchmentScreen
             y = renderWorkers(graphics, mouseX, my, x, y, width, workers);
         }
         y = renderProduction(graphics, x, y, width);
-        y = renderRequests(graphics, x, y, width, requests);
+        y = renderRequests(graphics, mouseX, my, x, y, width, requests);
         graphics.disableScissor();
 
         contentHeight = y + scroll - top;
@@ -541,7 +541,8 @@ public final class HutScreen extends ParchmentScreen
         return y + 12;
     }
 
-    private int renderRequests(final GuiGraphics graphics, final int x, int y, final int width, final List<IRequest<?>> requests)
+    private int renderRequests(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width,
+      final List<IRequest<?>> requests)
     {
         y = Ui.separator(graphics, x, y - 4, width);
         Icon.module("requests").draw(graphics, x, y - 3, 12);
@@ -555,6 +556,11 @@ public final class HutScreen extends ParchmentScreen
         }
         for (final IRequest<?> request : requests)
         {
+            if (Ui.inside(mouseX, mouseY, x - 2, y - 1, width + 4, REQUEST_H - 1))
+            {
+                graphics.fill(x - 2, y - 1, x + width + 2, y + REQUEST_H - 2, Palette.CARD_HOVER);
+            }
+            addHit(x - 2, y - 1, width + 4, REQUEST_H - 1, () -> RequestScreen.open(request, building.getColony(), null, this));
             final List<ItemStack> stacks = request.getDisplayStacks();
             final ItemStack stack = stacks.isEmpty() ? new ItemStack(Items.PAPER) : stacks.get(0);
             Icon.of(stack).draw(graphics, x + 1, y, 16);

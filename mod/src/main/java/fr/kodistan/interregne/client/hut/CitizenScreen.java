@@ -535,7 +535,7 @@ public final class CitizenScreen extends ParchmentScreen
         final boolean creative = minecraft.player.isCreative();
         for (final IRequest<?> request : requests)
         {
-            Ui.card(graphics, x, y, width, 22, false, false, false);
+            Ui.card(graphics, x, y, width, 22, false, Ui.inside(mouseX, mouseY, x, y, width, 22), false);
             final List<ItemStack> stacks = request.getDisplayStacks();
             final ItemStack stack = stacks.isEmpty() ? new ItemStack(Items.PAPER) : stacks.get(0);
             Icon.of(stack).draw(graphics, x + 3, y + 3, 16);
@@ -567,6 +567,8 @@ public final class CitizenScreen extends ParchmentScreen
             {
                 hint = "Tu n'as pas cet objet sur toi.";
             }
+            // The rest of the card opens the request in full; the button above wins, being added first
+            addHit(x, y, width, 22, () -> RequestScreen.open(request, colony, citizen, this));
             y += 24;
         }
         return y;

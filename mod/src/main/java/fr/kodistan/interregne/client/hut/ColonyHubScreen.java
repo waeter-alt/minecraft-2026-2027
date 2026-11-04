@@ -884,7 +884,7 @@ public final class ColonyHubScreen extends ParchmentScreen
             graphics.drawString(font, fit(request.getShortDisplayString().getString(), textW), x + 23, y + 3, Palette.INK, false);
             graphics.drawString(font, fit("pour " + nameOf(open.building()), textW), x + 23, y + 12, Palette.MUTED, false);
             graphics.drawString(font, "›", x + width - 9, y + 7, Palette.MUTED, false);
-            addHit(x, y, width, 22, () -> HutScreen.openWith(open.building(), this));
+            addHit(x, y, width, 22, () -> RequestScreen.open(request, colony, null, this));
             y += 24;
         }
         return y;

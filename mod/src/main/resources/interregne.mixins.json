@@ -47,6 +47,8 @@
     "client.AbstractWindowModuleBuildingAccessor",
     "client.BOWindowMixin",
     "client.BossHealthOverlayAccessor",
-    "client.LivingEntityRendererMixin"
+    "client.LivingEntityRendererMixin",
+    "client.WindowRequestDetailAccessor",
+    "client.WindowClipBoardAccessor"
   ]
 }
