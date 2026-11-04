@@ -92,6 +92,8 @@ Les modules génériques d'abord, car ils couvrent la plupart des huttes :
 - tâches : layouttasklist, layoutworkorders, layoutrequeststree, layoutselectrequest ;
 - statistiques : layoutstatsmodule.
 
+**Réglages faits le 2026-11-04** (`client/hut/SettingsScreen`) : une carte par réglage, avec son nom, ce qu'il fait et le contrôle à droite. Oui/Non pour les interrupteurs, tous les choix côte à côte quand ils tiennent (sinon un bouton ⟳ qui passe au suivant), − / + pour les nombres (Maj : par 10). Un réglage indisponible est grisé et le survol dit pourquoi. Les bâtiments qui ont un réglage d'un autre type (bloc, recette, tâche de garde) gardent la page d'origine pour l'instant.
+
 Puis les cas particuliers : layoutbuilderres, layoutenchanter, layoutexpeditionlog, layoutfarmfields, layoutplantationfields, layoutgraveyard, layoutguardlist, layoutminermodule, layouttool, layoutuniversity, layoutwarehouseoptions.
 
 Déjà modifiés par nos mixins (à intégrer, pas à casser) :

@@ -4,6 +4,10 @@ import com.ldtteam.blockui.views.BOWindow;
 import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.IColonyView;
 import com.minecolonies.core.client.gui.WindowClipBoard;
+import com.minecolonies.core.client.gui.modules.SettingsModuleWindow;
+import fr.kodistan.interregne.client.hut.SettingsScreen;
+import fr.kodistan.interregne.client.ui.ParchmentScreen;
+import net.minecraft.client.gui.screens.Screen;
 import com.minecolonies.core.client.gui.WindowAssignCitizen;
 import com.minecolonies.core.client.gui.WindowHireWorker;
 import fr.kodistan.interregne.client.hut.HireScreen;
@@ -27,7 +31,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * The hut window with workers opens our hut screen instead, wherever it is opened from: the hut block, a module's
  * « main » tab, the way back from the stock window; so do huts without workers. The town hall opens the colony hub,
- * the citizen window our citizen screen, the request detail, the clipboard, hiring and housing our own.
+ * the citizen window our citizen screen, the request detail, the clipboard, hiring, housing and settings our own.
  */
 @Mixin(value = BOWindow.class, remap = false)
 public abstract class BOWindowMixin
@@ -70,6 +74,15 @@ public abstract class BOWindowMixin
         {
             ci.cancel();
             HousingScreen.open(((WindowAssignCitizenAccessor) this).interregne$building(), null);
+        }
+        else if (type == SettingsModuleWindow.class && HutScreen.enabled()
+                   && SettingsScreen.supports(((SettingsModuleWindowAccessor) this).interregne$module()))
+        {
+            ci.cancel();
+            final SettingsModuleWindowAccessor settings = (SettingsModuleWindowAccessor) this;
+            // From one of our screens (the hut window), Escape goes back to it
+            final Screen current = Minecraft.getInstance().screen;
+            SettingsScreen.open(settings.interregne$building(), settings.interregne$module(), current instanceof ParchmentScreen ? current : null);
         }
         else if (type == WindowClipBoard.class && HutScreen.enabled())
         {

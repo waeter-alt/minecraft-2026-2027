@@ -51,6 +51,7 @@
     "client.WindowRequestDetailAccessor",
     "client.WindowClipBoardAccessor",
     "client.WindowHireWorkerAccessor",
-    "client.WindowAssignCitizenAccessor"
+    "client.WindowAssignCitizenAccessor",
+    "client.SettingsModuleWindowAccessor"
   ]
 }
