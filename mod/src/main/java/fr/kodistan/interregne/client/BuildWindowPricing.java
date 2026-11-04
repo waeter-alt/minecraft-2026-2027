@@ -90,6 +90,8 @@ public final class BuildWindowPricing
 
         // No builders any more: the builder picker is meaningless
         window.findPaneOfTypeByID(DROPDOWN_BUILDER_ID, DropDownList.class).hide();
+        // No hut blocks any more either: picking the hut back up as a block is meaningless
+        window.findPaneOfTypeByID(BUTTON_PICKUP_BUILDING, Button.class).hide();
 
         final Button build = window.findPaneOfTypeByID(BUTTON_BUILD, Button.class);
         if (build.isVisible())

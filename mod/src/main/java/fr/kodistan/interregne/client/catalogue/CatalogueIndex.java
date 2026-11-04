@@ -131,6 +131,7 @@ public final class CatalogueIndex
 
     private static final Map<String, CompletableFuture<List<Entry>>> CACHE = new ConcurrentHashMap<>();
     private static Map<String, JsonObject> names;
+    private static Map<String, JsonObject> info;
     private static boolean preloading;
 
     private CatalogueIndex()
@@ -243,7 +244,8 @@ public final class CatalogueIndex
         }
         byBuilding.forEach((id, variants) -> {
             final AbstractBlockHut<?> hut = huts.get(id);
-            entries.add(new Entry(NEEDS.getOrDefault(id, Need.CRAFT), hut, id, hutName(hut), new ItemStack(hut), hutFolders.get(id), List.copyOf(variants), 0, null));
+            entries.add(new Entry(NEEDS.getOrDefault(id, Need.CRAFT), hut, id, buildingName(id, hutName(hut)), new ItemStack(hut), hutFolders.get(id),
+              List.copyOf(variants), 0, buildingDesc(id)));
         });
         entries.sort(Comparator.comparing((Entry e) -> e.hut() == null).thenComparing(Entry::folder).thenComparing(Entry::name));
         return List.copyOf(entries);
@@ -329,6 +331,43 @@ public final class CatalogueIndex
         return Need.DECORATION;
     }
 
+    /**
+     * Our name for a building, when MineColonies' is unclear or wrong; the fallback otherwise.
+     */
+    public static String buildingName(final String buildingId, final String fallback)
+    {
+        final JsonObject entry = info().get(buildingId);
+        return entry != null && entry.has("name") ? entry.get("name").getAsString() : fallback;
+    }
+
+    /**
+     * What the building is for, in plain French (assets/interregne/building_info.json), or null.
+     */
+    @Nullable
+    public static String buildingDesc(final String buildingId)
+    {
+        final JsonObject entry = info().get(buildingId);
+        return entry != null && entry.has("desc") ? entry.get("desc").getAsString() : null;
+    }
+
+    private static synchronized Map<String, JsonObject> info()
+    {
+        if (info == null)
+        {
+            info = new HashMap<>();
+            try (Reader reader = new InputStreamReader(CatalogueIndex.class.getResourceAsStream("/assets/" + InterregneMod.MODID + "/building_info.json"), StandardCharsets.UTF_8))
+            {
+                JsonParser.parseReader(reader).getAsJsonObject().entrySet().stream().filter(e -> e.getValue().isJsonObject())
+                  .forEach(e -> info.put(e.getKey(), e.getValue().getAsJsonObject()));
+            }
+            catch (final Exception e)
+            {
+                InterregneMod.LOGGER.warn("L'Interregne: building info unreadable", e);
+            }
+        }
+        return info;
+    }
+
     private static synchronized Map<String, JsonObject> names()
     {
         if (names == null)
@@ -412,7 +451,7 @@ public final class CatalogueIndex
             case "rabbithutch" -> rate(Items.RABBIT, perMinute);
             case "fisherman" -> rate(Items.COD, perMinute);
             case "farmer" -> Component.literal("La culture choisie : " + perMinute + " par minute au niveau 1, plus à chaque niveau.");
-            case "cook" -> Component.literal("Cuisine sans combustible et remplit l'entrepôt de plats.");
+            case "cook" -> Component.literal("Cuit sans combustible et remplit l'entrepôt de plats.");
             case "lumberjack" -> Component.literal("Plante des arbres autour de lui, qui poussent vite.");
             case "plantation" -> Component.literal("Récolte les champs de plantation posés à côté : bambou, canne à sucre, cactus…");
             default -> null;

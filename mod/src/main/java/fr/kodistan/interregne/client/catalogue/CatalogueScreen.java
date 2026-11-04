@@ -311,7 +311,11 @@ public final class CatalogueScreen extends ParchmentScreen
             graphics.drawString(font, line, x, y, Palette.INK, false);
             y += 10;
         }
-        if (selected.hut() != null)
+        if (selected.hut() != null && selected.about() != null)
+        {
+            y = Ui.wrapped(graphics, font, Component.literal(selected.about()), x, y, width, Palette.MUTED, 9);
+        }
+        else if (selected.hut() != null)
         {
             // The hut's first description line is often just its name again, already shown in bold above
             final List<MutableComponent> desc = selected.hut().getDesc().stream()
