@@ -217,7 +217,7 @@ public final class Ui
         if (!enabled)
         {
             plate(graphics, x, y, x + width, y + height, Palette.PAPER_DARK, Palette.EDGE, Palette.PAPER_DARK);
-            graphics.drawCenteredString(font, label, x + width / 2, textY, Palette.MUTED);
+            graphics.drawString(font, label, x + (width - font.width(label)) / 2, textY, Palette.MUTED, false);
             return;
         }
         switch (style)

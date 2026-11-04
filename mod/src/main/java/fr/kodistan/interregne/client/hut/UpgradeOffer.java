@@ -62,6 +62,22 @@ record UpgradeOffer(int level, int target, @Nullable String refusal, boolean fre
                          : (level == 0 ? "Construire" : "Améliorer") + " (" + BuildCosts.formatSeconds(seconds) + ")";
     }
 
+    /**
+     * The main button's label for a button this wide: the full sentence when it fits, a shorter one otherwise.
+     */
+    String action(final net.minecraft.client.gui.Font font, final int room)
+    {
+        final String full = action();
+        if (font.width(full) <= room)
+        {
+            return full;
+        }
+        return refusal != null ? "Hôtel niv. " + target + " requis"
+                 : !affordable ? "Pas assez d'or"
+                     : !cratesReady ? "Caisses manquantes"
+                         : level == 0 ? "Construire" : "Améliorer";
+    }
+
     void buy(final IBuildingView building)
     {
         new BuildRequestMessage(building, BuildRequestMessage.Mode.BUILD, BlockPos.ZERO).sendToServer();

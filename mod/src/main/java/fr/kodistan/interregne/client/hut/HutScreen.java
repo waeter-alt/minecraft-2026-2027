@@ -906,7 +906,7 @@ public final class HutScreen extends ParchmentScreen
 
         sideButton(graphics, mouseX, mouseY, x, secondaryY, width, secondary, Ui.ButtonStyle.SECONDARY, true, this::openBuildWindow);
         // Green when it can be done now, grey with the reason otherwise
-        sideButton(graphics, mouseX, mouseY, x, buttonY, width, offer.action(), Ui.ButtonStyle.PRIMARY, offer.canBuy(), () ->
+        sideButton(graphics, mouseX, mouseY, x, buttonY, width, offer.action(font, width - 6), Ui.ButtonStyle.PRIMARY, offer.canBuy(), () ->
         {
             offer.buy(building);
             onClose();

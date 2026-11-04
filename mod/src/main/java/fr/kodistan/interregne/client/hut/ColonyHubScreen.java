@@ -51,6 +51,7 @@ public final class ColonyHubScreen extends ParchmentScreen
      * The seat's header: a leather band holding the colony's banner, its name and the town hall's level.
      */
     private static final int HDR = 38;
+    private static final int SEPARATOR = 6;
 
     /**
      * The rune band around the window, in the town hall's level colour.
@@ -70,7 +71,9 @@ public final class ColonyHubScreen extends ParchmentScreen
         OVERVIEW("Vue d'ensemble", Icon.module("main")),
         BUILDINGS("Bâtiments", Icon.of(Items.BRICKS)),
         CITIZENS("Citoyens", Icon.module("workers")),
-        REQUESTS("Demandes", Icon.module("requests"));
+        REQUESTS("Demandes", Icon.module("requests")),
+        INTENDANCE("Intendance", Icon.of(Items.GOLD_INGOT)),
+        WALLS("Murailles", Icon.of(Items.STONE_BRICK_WALL));
 
         private final String label;
         private final Icon icon;
@@ -113,6 +116,7 @@ public final class ColonyHubScreen extends ParchmentScreen
     private String notice;
     private long noticeUntil;
     private int scroll;
+    private int navScroll;
     private int contentHeight;
 
     private ColonyHubScreen(final ITownHallView townHall)
@@ -361,6 +365,9 @@ public final class ColonyHubScreen extends ParchmentScreen
             case BUILDINGS -> renderBuildings(graphics, mouseX, my, x, y, width);
             case CITIZENS -> renderCitizens(graphics, mouseX, my, x, y, width);
             case REQUESTS -> renderRequests(graphics, mouseX, my, x, y, width);
+            case INTENDANCE -> renderSoon(graphics, x, y, width, "Intendance",
+              "Les services de l'Intendance impériale arrivent bientôt : régler en Couronnes ce que réclame ta colonie.");
+            case WALLS -> renderSoon(graphics, x, y, width, "Murailles", "Les murailles de la colonie arrivent bientôt.");
         };
         graphics.disableScissor();
         contentHeight = y + scroll - top;
@@ -515,49 +522,112 @@ public final class ColonyHubScreen extends ParchmentScreen
         scroll = 0;
     }
 
+    /**
+     * The left column: the colony's pages on top, its tools at the bottom. When both do not fit the window's height, the
+     * tools become a grid of icons right under the pages; if even that is too tall, the column scrolls by whole rows.
+     */
     private void renderNav(final GuiGraphics graphics, final int mouseX, final int mouseY)
     {
         final int x = x0 + 5;
         final int width = navW() - 8;
         graphics.fill(x0 + navW(), y0 + HDR + 5, x0 + navW() + 1, y0 + h - 4, Palette.RULE);
-        int y = y0 + HDR + 7;
+        final int top = y0 + HDR + 7;
+        final int bottom = y0 + h - 6;
+        final int room = bottom - top;
+        final int step = Ui.NAV_ROW + 1;
+        final List<Tool> tools = tools();
+
+        final int pagesH = Page.values().length * step;
+        final int perRow = Math.max(1, (width + 1) / step);
+        final boolean grid = !Ui.rail(navW()) && pagesH + SEPARATOR + tools.size() * step > room;
+        final int toolsH = (grid ? (tools.size() + perRow - 1) / perRow : tools.size()) * step;
+        final int total = pagesH + SEPARATOR + toolsH;
+        final int maxScroll = Math.max(0, total - room);
+        navScroll = Math.max(0, Math.min(navScroll, (maxScroll + step - 1) / step * step));
+
+        int y = top - navScroll;
         for (final Page p : Page.values())
         {
-            final boolean lit = litTool == null && p == page;
-            Ui.navItem(graphics, font, x, y, width, p.icon, p.label, lit, !lit && Ui.inside(mouseX, mouseY, x, y, width, Ui.NAV_ROW));
-            hits.add(new Hit(x, y, width, Ui.NAV_ROW, () -> {
-                show(p);
-                if (minecraft.screen != this)
-                {
-                    minecraft.setScreen(this);
-                }
-            }));
-            y += Ui.NAV_ROW + 1;
+            if (y >= top && y + Ui.NAV_ROW <= bottom)
+            {
+                final boolean lit = litTool == null && p == page;
+                Ui.navItem(graphics, font, x, y, width, p.icon, p.label, lit, !lit && Ui.inside(mouseX, mouseY, x, y, width, Ui.NAV_ROW));
+                hits.add(new Hit(x, y, width, Ui.NAV_ROW, () -> {
+                    show(p);
+                    if (minecraft.screen != this)
+                    {
+                        minecraft.setScreen(this);
+                    }
+                }));
+            }
+            y += step;
         }
 
-        final List<Tool> tools = tools();
-        y = y0 + h - 6 - tools.size() * (Ui.NAV_ROW + 1);
-        graphics.fill(x + 2, y - 3, x + width - 2, y - 2, Palette.RULE);
-        for (final Tool tool : tools)
+        // Anchored at the bottom when everything fits, right under the pages otherwise
+        y = maxScroll == 0 ? bottom - toolsH : y + SEPARATOR;
+        if (y - 3 >= top && y - 2 <= bottom)
         {
+            graphics.fill(x + 2, y - 3, x + width - 2, y - 2, Palette.RULE);
+        }
+        for (int i = 0; i < tools.size(); i++)
+        {
+            final Tool tool = tools.get(i);
+            final int tx = grid ? x + (i % perRow) * step : x;
+            final int ty = grid ? y + (i / perRow) * step : y + i * step;
+            final int tw = grid ? Ui.NAV_ROW : width;
+            if (ty < top || ty + Ui.NAV_ROW > bottom)
+            {
+                continue;
+            }
             final boolean lit = tool.label().equals(litTool);
-            final boolean over = !lit && Ui.inside(mouseX, mouseY, x, y, width, Ui.NAV_ROW);
-            Ui.navItem(graphics, font, x, y, width, tool.icon(), tool.label(), lit, over);
+            final boolean over = !lit && Ui.inside(mouseX, mouseY, tx, ty, tw, Ui.NAV_ROW);
+            // A narrow item (grid cell or rail) shows the icon alone and names itself on hover
+            Ui.navItem(graphics, font, tx, ty, tw, tool.icon(), tool.label(), lit, over);
             if (tool.locked())
             {
                 final String lock = "niv. " + ColonyMaps.UNLOCK_LEVEL;
-                if (!Ui.rail(navW()))
+                if (tw >= 40)
                 {
-                    graphics.drawString(font, lock, x + width - 3 - font.width(lock), y + 5, Palette.MUTED, false);
+                    graphics.drawString(font, lock, tx + tw - 3 - font.width(lock), ty + 5, Palette.MUTED, false);
                 }
                 if (over)
                 {
                     hint = "La carte se débloque au niveau " + ColonyMaps.UNLOCK_LEVEL + " de l'hôtel de ville";
                 }
             }
-            hits.add(new Hit(x, y, width, Ui.NAV_ROW, tool.action()));
-            y += Ui.NAV_ROW + 1;
+            hits.add(new Hit(tx, ty, tw, Ui.NAV_ROW, tool.action()));
         }
+
+        if (maxScroll > 0)
+        {
+            // A thin bar on the column's edge says there is more above or below
+            final int thumb = Math.max(10, room * room / total);
+            final int thumbY = top + (room - thumb) * Math.min(navScroll, maxScroll) / maxScroll;
+            graphics.fill(x0 + navW() - 2, top, x0 + navW() - 1, bottom, Palette.PAPER_DARK);
+            graphics.fill(x0 + navW() - 2, thumbY, x0 + navW() - 1, thumbY + thumb, Palette.RULE);
+        }
+    }
+
+    /**
+     * The wheel over the left column scrolls it, by whole rows; used by the pages shown in the hub's frame too.
+     */
+    boolean navScrolled(final double mouseX, final double mouseY, final double amount)
+    {
+        if (mouseX < x0 || mouseX >= x0 + navW() || mouseY < y0 + HDR || mouseY >= y0 + h)
+        {
+            return false;
+        }
+        navScroll = Math.max(0, navScroll - (int) Math.signum(amount) * (Ui.NAV_ROW + 1));
+        return true;
+    }
+
+    /**
+     * A page still to come: what it will hold, in a sentence.
+     */
+    private int renderSoon(final GuiGraphics graphics, final int x, final int y, final int width, final String title, final String text)
+    {
+        Ui.banner(graphics, font, x, y, width, Ui.State.WAIT, title, "en préparation");
+        return Ui.wrapped(graphics, font, Component.literal(text), x + 2, y + 20, width - 4, Palette.MUTED, 10) + 4;
     }
 
     private void show(final Page target)
@@ -772,7 +842,7 @@ public final class ColonyHubScreen extends ParchmentScreen
             seatButton(graphics, mouseX, mouseY, c1, buttonY, buttonW, "Réparer, démolir…", Ui.ButtonStyle.SECONDARY, true, this::openBuildWindow);
         }
         // Green when it can be done now, grey with the reason otherwise
-        seatButton(graphics, mouseX, mouseY, c3, buttonY, buttonW, offer.action(), Ui.ButtonStyle.PRIMARY, offer.canBuy(), () ->
+        seatButton(graphics, mouseX, mouseY, c3, buttonY, buttonW, offer.action(font, buttonW - 6), Ui.ButtonStyle.PRIMARY, offer.canBuy(), () ->
         {
             offer.buy(townHall);
             onClose();
@@ -1038,6 +1108,10 @@ public final class ColonyHubScreen extends ParchmentScreen
     @Override
     public boolean mouseScrolled(final double mouseX, final double mouseY, final double scrollX, final double scrollY)
     {
+        if (navScrolled(mouseX, mouseY, scrollY))
+        {
+            return true;
+        }
         scroll -= (int) (scrollY * 12);
         return true;
     }

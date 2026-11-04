@@ -169,4 +169,11 @@ public abstract class ModuleScreen extends PageScreen
             HutNav.nav(graphics, font, x0, y0, w, h, building, hut, navCurrent, mouseX, mouseY, this::addHit);
         }
     }
+
+    @Override
+    public boolean mouseScrolled(final double mouseX, final double mouseY, final double scrollX, final double scrollY)
+    {
+        // Over the hub's left column, the wheel scrolls the column rather than the page
+        return hub != null && hub.navScrolled(mouseX, mouseY, scrollY) || super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
 }
