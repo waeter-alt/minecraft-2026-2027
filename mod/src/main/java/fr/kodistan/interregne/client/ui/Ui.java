@@ -1,5 +1,6 @@
 package fr.kodistan.interregne.client.ui;
 
+import fr.kodistan.interregne.client.dev.LayoutProbe;
 import fr.kodistan.interregne.InterregneMod;
 import fr.kodistan.interregne.client.CrateRows;
 import fr.kodistan.interregne.client.hud.InterregneHud;
@@ -79,7 +80,13 @@ public final class Ui
      */
     public static String fit(final Font font, final String text, final int width)
     {
-        return font.width(text) <= width ? text : font.plainSubstrByWidth(text, width - font.width("…")) + "…";
+        if (font.width(text) <= width)
+        {
+            return text;
+        }
+        final String shown = font.plainSubstrByWidth(text, width - font.width("…")) + "…";
+        LayoutProbe.cut(shown);
+        return shown;
     }
 
     /**

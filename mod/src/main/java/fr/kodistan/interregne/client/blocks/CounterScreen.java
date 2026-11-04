@@ -1,5 +1,7 @@
 package fr.kodistan.interregne.client.blocks;
 
+import net.minecraft.util.FormattedCharSequence;
+import java.util.List;
 import fr.kodistan.interregne.client.ui.Icon;
 import fr.kodistan.interregne.client.ui.PageScreen;
 import fr.kodistan.interregne.client.ui.Palette;
@@ -67,6 +69,9 @@ public abstract class CounterScreen extends PageScreen
         addField(0, 0, 76, "Montant").setFilter(text -> text.matches("[0-9 ]*"));
     }
 
+    /** How much the last hero card grew to fit its wrapped line. */
+    private int heroExtra;
+
     /**
      * The hero card: an icon (a coin when none), what the figure is in small capitals, the figure in bold gold, and
      * one line saying what it means. Returns the y below it.
@@ -74,7 +79,10 @@ public abstract class CounterScreen extends PageScreen
     protected int hero(final GuiGraphics graphics, final int x, final int y, final int width, @Nullable final ItemStack icon, final String label,
       final String value, final String line)
     {
-        Ui.plate(graphics, x, y, x + width, y + HERO_H, Palette.LEATHER, Palette.EDGE, Palette.LEATHER_LIGHT);
+        // A long line wraps and the card grows rather than cutting it
+        final List<FormattedCharSequence> lines = font.split(Component.literal(line), width - 50);
+        heroExtra = Math.max(0, lines.size() - 1) * 10;
+        Ui.plate(graphics, x, y, x + width, y + HERO_H + heroExtra, Palette.LEATHER, Palette.EDGE, Palette.LEATHER_LIGHT);
         if (icon == null)
         {
             Ui.coin(graphics, x + 9, y + 9, 24);
@@ -85,8 +93,13 @@ public abstract class CounterScreen extends PageScreen
         }
         graphics.drawString(font, label, x + 42, y + 7, HERO_MUTED, false);
         graphics.drawString(font, Component.literal(value).withStyle(ChatFormatting.BOLD), x + 42, y + 18, Palette.GOLD_TEXT, true);
-        graphics.drawString(font, fit(line, width - 50), x + 42, y + 30, HERO_MUTED, false);
-        return y + HERO_H + 6;
+        int ly = y + 30;
+        for (final FormattedCharSequence part : lines)
+        {
+            graphics.drawString(font, part, x + 42, ly, HERO_MUTED, false);
+            ly += 10;
+        }
+        return y + HERO_H + heroExtra + 6;
     }
 
     /**
@@ -96,7 +109,7 @@ public abstract class CounterScreen extends PageScreen
     {
         final int gx = x + 42;
         final int gw = width - 50;
-        final int gy = y + HERO_H - 4;
+        final int gy = y + HERO_H + heroExtra - 4;
         graphics.fill(gx, gy, gx + gw, gy + 2, Palette.LEATHER_LIGHT);
         final int filled = max <= 0 ? 0 : (int) Math.min(gw, gw * value / max);
         graphics.fill(gx, gy, gx + filled, gy + 2, value >= max ? Palette.AMBER : Palette.GREEN_LIGHT);

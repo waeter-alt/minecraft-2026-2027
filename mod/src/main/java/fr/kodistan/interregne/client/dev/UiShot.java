@@ -13,6 +13,8 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RenderGuiEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 import org.lwjgl.glfw.GLFW;
 
 import java.io.IOException;
@@ -73,6 +75,19 @@ public final class UiShot
     private static int savedHeight;
     private static int savedScale;
     private static IColonyView colony;
+    private static int problems;
+
+    @SubscribeEvent
+    public static void onScreenRender(final ScreenEvent.Render.Pre event)
+    {
+        LayoutProbe.layer(1);
+    }
+
+    @SubscribeEvent
+    public static void onHudRender(final RenderGuiEvent.Pre event)
+    {
+        LayoutProbe.layer(0);
+    }
 
     private UiShot()
     {
@@ -155,6 +170,7 @@ public final class UiShot
         jobs.clear();
         sizes.clear();
         jobIndex = 0;
+        problems = 0;
         colony = null;
         world = props.getProperty("world", "").trim();
         screen = props.getProperty("screen", "hub:intendance").trim();
@@ -264,6 +280,11 @@ public final class UiShot
             mc.resizeDisplay();
             return;
         }
+        if (ticks == settle + 1)
+        {
+            LayoutProbe.start();
+            return;
+        }
         if (ticks < settle + 3)
         {
             return;
@@ -277,6 +298,11 @@ public final class UiShot
         final boolean exact = window.getWidth() == job.size().width() && window.getHeight() == job.size().height() && (int) window.getGuiScale() == job.size().scale();
         final String screenName = mc.screen == null ? "none" : mc.screen.getClass().getSimpleName();
         report.add(name + "  [" + screenName + "]" + (exact ? "" : "  (asked " + job.size().width() + "x" + job.size().height() + "@" + job.size().scale() + ")"));
+        for (final String problem : LayoutProbe.stop())
+        {
+            report.add("    ! " + problem);
+            problems++;
+        }
         jobIndex++;
         ticks = 0;
         phase = Phase.APPLY;
@@ -289,6 +315,8 @@ public final class UiShot
         GLFW.glfwSetWindowSize(mc.getWindow().getWindow(), savedWidth, savedHeight);
         mc.options.guiScale().set(savedScale);
         mc.resizeDisplay();
+        LayoutProbe.stop();
+        report.add(0, "Layout problems: " + problems + " (lines starting with !)");
         try
         {
             Files.write(dir().resolve("done.txt"), report, StandardCharsets.UTF_8);

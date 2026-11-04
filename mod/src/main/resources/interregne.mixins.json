@@ -39,6 +39,7 @@
   },
   "client": [
     "client.MouseHandlerMixin",
+    "client.GuiGraphicsProbeMixin",
     "client.AbstractBlockHutMixin",
     "client.AbstractWindowModuleBuildingMixin",
     "client.WindowFieldMixin",

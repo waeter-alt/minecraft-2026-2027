@@ -1,5 +1,6 @@
 package fr.kodistan.interregne.client.hut;
 
+import net.minecraft.util.FormattedCharSequence;
 import com.ldtteam.structurize.client.gui.WindowSwitchPack;
 import com.ldtteam.structurize.storage.StructurePacks;
 import com.minecolonies.api.colony.IColonyView;
@@ -155,11 +156,19 @@ public final class AppearanceScreen extends ModuleScreen
     private int line(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width, final String name, final String text,
       final String action, final boolean allowed, @Nullable final String why, final Runnable run)
     {
-        Ui.card(graphics, x, y, width, 26, false, false, false);
+        // The explanation wraps beside the button and the card grows
+        final List<FormattedCharSequence> lines = font.split(Component.literal(text), width - buttonWidth(action) - 20);
+        final int height = 15 + lines.size() * 10 + 1;
+        Ui.card(graphics, x, y, width, height, false, false, false);
         graphics.drawString(font, Component.literal(name).withStyle(ChatFormatting.BOLD), x + 6, y + 4, Palette.INK, false);
-        graphics.drawString(font, fit(text, width - buttonWidth(action) - 20), x + 6, y + 15, Palette.MUTED, false);
-        button(graphics, mouseX, mouseY, x + width - 6 - buttonWidth(action), y + 6, action, Ui.ButtonStyle.PRIMARY, allowed, why, run);
-        return y + 29;
+        int ly = y + 15;
+        for (final FormattedCharSequence part : lines)
+        {
+            graphics.drawString(font, part, x + 6, ly, Palette.MUTED, false);
+            ly += 10;
+        }
+        button(graphics, mouseX, mouseY, x + width - 6 - buttonWidth(action), y + (height - 14) / 2, action, Ui.ButtonStyle.PRIMARY, allowed, why, run);
+        return y + height + 3;
     }
 
     /**
