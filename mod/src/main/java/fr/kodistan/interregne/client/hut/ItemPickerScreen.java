@@ -29,6 +29,7 @@ public final class ItemPickerScreen extends ModuleScreen
     private static final int CELL = 20;
 
     private final String unit;
+    private String confirm = "Ajouter";
     private final BiConsumer<ItemStack, Integer> picked;
     private final List<ItemStack> all = new ArrayList<>();
     @Nullable
@@ -65,6 +66,17 @@ public final class ItemPickerScreen extends ModuleScreen
     public static void open(final String title, final IBuildingView building, final Screen parent, final String unit, final BiConsumer<ItemStack, Integer> picked)
     {
         Minecraft.getInstance().setScreen(new ItemPickerScreen(title, building, parent, unit, picked));
+    }
+
+    /**
+     * The same, with its own word on the confirm button.
+     */
+    public static void open(final String title, final IBuildingView building, final Screen parent, final String unit, final String confirm,
+      final BiConsumer<ItemStack, Integer> picked)
+    {
+        final ItemPickerScreen screen = new ItemPickerScreen(title, building, parent, unit, picked);
+        screen.confirm = confirm;
+        Minecraft.getInstance().setScreen(screen);
     }
 
     @Override
@@ -105,7 +117,6 @@ public final class ItemPickerScreen extends ModuleScreen
             addSlot(x + 3, y + 3, 16, chosen, mouseY);
             graphics.drawString(font, Component.literal(fit(chosen.getHoverName().getString(), width - 220)).withStyle(ChatFormatting.BOLD), x + 24, y + 7, Palette.INK, false);
         }
-        final String confirm = "Ajouter";
         final int confirmX = x + width - 4 - buttonWidth(confirm);
         button(graphics, mouseX, mouseY, confirmX, y + 4, confirm, Ui.ButtonStyle.PRIMARY, chosen != null, chosen == null ? "Choisis d'abord un objet." : null, () -> {
             picked.accept(chosen.copy(), quantity);

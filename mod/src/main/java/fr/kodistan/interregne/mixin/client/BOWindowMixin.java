@@ -5,6 +5,9 @@ import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.IColonyView;
 import com.minecolonies.core.client.gui.WindowClipBoard;
 import com.minecolonies.core.client.gui.WindowInteraction;
+import com.minecolonies.core.client.gui.WindowPostBox;
+import com.minecolonies.core.network.messages.server.colony.building.postbox.PostBoxRequestMessage;
+import fr.kodistan.interregne.client.hut.ItemPickerScreen;
 import com.minecolonies.api.colony.IVisitorViewData;
 import com.minecolonies.core.client.gui.modules.SettingsModuleWindow;
 import fr.kodistan.interregne.client.hut.SettingsScreen;
@@ -104,6 +107,14 @@ public abstract class BOWindowMixin
         {
             ci.cancel();
             ClipboardScreen.open(((WindowClipBoardAccessor) this).interregne$colony());
+        }
+        else if (type == WindowPostBox.class && HutScreen.enabled())
+        {
+            // The postbox is an order form: pick an item and a quantity, the couriers bring it here
+            ci.cancel();
+            final var postbox = ((WindowPostBoxAccessor) this).interregne$building();
+            ItemPickerScreen.open("Commander", postbox, null, "objets", "Commander",
+              (stack, quantity) -> new PostBoxRequestMessage(postbox, stack, quantity, false).sendToServer());
         }
     }
 }

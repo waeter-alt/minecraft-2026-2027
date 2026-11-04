@@ -7,12 +7,9 @@ import com.minecolonies.api.colony.buildings.views.IBuildingView;
 import com.minecolonies.api.colony.buildings.workerbuildings.ITownHallView;
 import com.minecolonies.api.colony.requestsystem.request.IRequest;
 import com.minecolonies.api.entity.citizen.VisibleCitizenStatus;
-import com.minecolonies.api.util.constant.TranslationConstants;
 import com.minecolonies.core.client.gui.WindowBuildBuilding;
-import com.minecolonies.core.client.gui.WindowHutAllInventory;
 import com.minecolonies.core.client.gui.WindowHutNameEntry;
 import com.ldtteam.blockui.views.BOWindow;
-import com.minecolonies.core.client.gui.WindowInfo;
 import com.minecolonies.core.client.gui.huts.WindowHutLiving;
 import com.minecolonies.core.client.gui.huts.WindowHutWorkerModulePlaceholder;
 import com.minecolonies.core.colony.buildings.views.LivingBuildingView;
@@ -296,12 +293,10 @@ public final class HutScreen extends ParchmentScreen
     {
         final List<Tool> tools = new ArrayList<>();
         tools.add(new Tool("Coffre", Icon.of(Items.CHEST), () -> new OpenInventoryMessage(building).sendToServer()));
-        // Its back button reopens the hut window, which opens this screen again
-        tools.add(new Tool("Tout le stock", Icon.module("inventory"), () -> new WindowHutAllInventory(building, building.getWindow()).open()));
-        final String key = TranslationConstants.PARTIAL_INFO_TEXT + building.getBuildingType().getTranslationKey().replace("com.minecolonies.building.", "") + ".0";
-        if (I18n.exists(key))
+        tools.add(new Tool("Tout le stock", Icon.module("inventory"), () -> StockScreen.open(building, this)));
+        if (I18n.exists(HelpScreen.prefix(building) + "0"))
         {
-            tools.add(new Tool("Aide", Icon.of(Items.BOOK), () -> new WindowInfo(building).open()));
+            tools.add(new Tool("Aide", Icon.of(Items.BOOK), () -> HelpScreen.open(building, this)));
         }
         final ITownHallView townHall = building.getColony().getTownHall();
         if (!(parent instanceof ColonyHubScreen) && townHall != null && townHall != building)
