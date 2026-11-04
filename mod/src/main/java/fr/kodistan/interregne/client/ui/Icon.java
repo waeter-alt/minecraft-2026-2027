@@ -7,13 +7,14 @@ import net.minecraft.world.level.ItemLike;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * An icon that means something: a game item, or a pixel-art texture such as MineColonies' module icons.
+ * An icon that means something: a game item, or a pixel-art texture such as MineColonies' module icons, whole or one
+ * cell of a sheet.
  */
-public record Icon(@Nullable ItemStack item, @Nullable ResourceLocation texture, int textureSize)
+public record Icon(@Nullable ItemStack item, @Nullable ResourceLocation texture, int u, int v, int cell, int sheetWidth, int sheetHeight)
 {
     public static Icon of(final ItemStack item)
     {
-        return new Icon(item, null, 0);
+        return new Icon(item, null, 0, 0, 0, 0, 0);
     }
 
     public static Icon of(final ItemLike item)
@@ -26,7 +27,15 @@ public record Icon(@Nullable ItemStack item, @Nullable ResourceLocation texture,
      */
     public static Icon texture(final ResourceLocation texture, final int size)
     {
-        return new Icon(null, texture, size);
+        return new Icon(null, texture, 0, 0, size, size, size);
+    }
+
+    /**
+     * One square cell of a sheet of icons.
+     */
+    public static Icon cell(final ResourceLocation sheet, final int sheetWidth, final int sheetHeight, final int u, final int v, final int size)
+    {
+        return new Icon(null, sheet, u, v, size, sheetWidth, sheetHeight);
     }
 
     /**
@@ -35,6 +44,11 @@ public record Icon(@Nullable ItemStack item, @Nullable ResourceLocation texture,
     public static Icon module(final String name)
     {
         return texture(ResourceLocation.fromNamespaceAndPath("minecolonies", "textures/gui/modules/" + name + ".png"), 20);
+    }
+
+    public boolean isItem()
+    {
+        return item != null;
     }
 
     /**
@@ -57,7 +71,7 @@ public record Icon(@Nullable ItemStack item, @Nullable ResourceLocation texture,
         }
         else if (texture != null)
         {
-            graphics.blit(texture, x, y, size, size, 0, 0, textureSize, textureSize, textureSize, textureSize);
+            graphics.blit(texture, x, y, size, size, u, v, cell, cell, sheetWidth, sheetHeight);
         }
     }
 }

@@ -9,6 +9,7 @@ import com.ldtteam.structurize.storage.StructurePacks;
 import com.minecolonies.api.blocks.AbstractBlockHut;
 import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.InterregneMod;
+import fr.kodistan.interregne.client.ui.Icon;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -100,7 +101,7 @@ public final class CatalogueIndex
     /**
      * One card: a building (all its variants in this style, at their lowest level) or one decoration.
      */
-    public record Entry(Need need, @Nullable AbstractBlockHut<?> hut, String buildingId, String name, ItemStack icon, String folder,
+    public record Entry(Need need, @Nullable AbstractBlockHut<?> hut, String buildingId, String name, Icon icon, String folder,
                         List<Ref> variants, long blocks, @Nullable String about)
     {
         /**
@@ -111,6 +112,11 @@ public final class CatalogueIndex
             return hut != null ? "hut:" + buildingId : "deco:" + name;
         }
     }
+
+    /**
+     * Size of one picture in the decoration icon sheets.
+     */
+    private static final int DECO_CELL = 32;
 
     private static final Map<String, Need> NEEDS = new HashMap<>();
     private static final Map<String, Integer> RANKS = new HashMap<>();
@@ -137,6 +143,7 @@ public final class CatalogueIndex
     private static final Map<String, CompletableFuture<List<Entry>>> CACHE = new ConcurrentHashMap<>();
     private static Map<String, JsonObject> names;
     private static Map<String, JsonObject> info;
+    private static JsonObject decoIcons;
     private static boolean preloading;
 
     private CatalogueIndex()
@@ -230,6 +237,8 @@ public final class CatalogueIndex
         final Map<String, AbstractBlockHut<?>> huts = new HashMap<>();
         final Map<String, String> hutFolders = new HashMap<>();
         final List<Entry> entries = new ArrayList<>();
+        int missing = 0;
+        String firstMissing = "";
         for (final Blueprint blueprint : lowest.values())
         {
             final Ref ref = new Ref(pack, blueprint.getFilePath().resolve(blueprint.getFileName() + ".blueprint"));
@@ -249,19 +258,29 @@ public final class CatalogueIndex
             }
             final String base = blueprint.getFileName().replaceAll("\\d+$", "").toLowerCase(Locale.ROOT);
             final JsonObject named = names().get(base);
-            final String name = named != null ? named.get("name").getAsString() : pretty(base);
-            final ItemStack icon = named != null ? item(named.get("icon").getAsString()) : ItemStack.EMPTY;
+            final JsonObject piece = decoPiece(pack, folder + "/" + base);
+            if (piece == null && missing++ == 0)
+            {
+                firstMissing = folder + "/" + base;
+            }
+            final String name = piece != null ? piece.get("name").getAsString() : named != null ? named.get("name").getAsString() : pretty(base);
+            final ItemStack item = named != null ? item(named.get("icon").getAsString()) : ItemStack.EMPTY;
             final String anchorId = anchor == null ? "" : BuiltInRegistries.BLOCK.getKey(anchor).getPath();
             final Need need = anchorId.contains("plantationfield") ? Need.PLANTATION : needOfFolder(folder);
             final long blocks = blueprint.getBlockInfoAsList().stream().filter(info -> !info.getState().isAir()).count();
-            entries.add(new Entry(need, null, "", name, icon.isEmpty() ? need.icon() : icon, folder, List.of(ref), blocks, aboutDeco(need, anchorId, name)));
+            final Icon icon = piece != null ? decoIcon(pack, piece) : Icon.of(item.isEmpty() ? need.icon() : item);
+            entries.add(new Entry(need, null, "", name, icon, folder, List.of(ref), blocks, aboutDeco(need, anchorId, name)));
         }
         byBuilding.forEach((id, variants) -> {
             final AbstractBlockHut<?> hut = huts.get(id);
-            entries.add(new Entry(NEEDS.getOrDefault(id, Need.CRAFT), hut, id, buildingName(id, hutName(hut)), new ItemStack(hut), hutFolders.get(id),
+            entries.add(new Entry(NEEDS.getOrDefault(id, Need.CRAFT), hut, id, buildingName(id, hutName(hut)), Icon.of(hut), hutFolders.get(id),
               List.copyOf(variants), 0, buildingDesc(id)));
         });
         entries.sort(Comparator.comparing((Entry e) -> e.hut() == null).thenComparing(Entry::folder).thenComparing(Entry::name));
+        if (missing > 0)
+        {
+            InterregneMod.LOGGER.warn("L'Interregne: {} decorations of {} have no icon in deco_icons.json (rerun tools/deco_icons/gen.py), e.g. {}", missing, pack, firstMissing);
+        }
         return List.copyOf(entries);
     }
 
@@ -427,6 +446,52 @@ public final class CatalogueIndex
             }
         }
         return names;
+    }
+
+    /**
+     * This decoration's own name and icon in this style (assets/interregne/deco_icons.json, made by tools/deco_icons/gen.py), or null.
+     */
+    @Nullable
+    private static JsonObject decoPiece(final String pack, final String key)
+    {
+        final JsonObject style = decoIcons().getAsJsonObject(pack);
+        if (style == null || !style.getAsJsonObject("pieces").has(key))
+        {
+            return null;
+        }
+        return style.getAsJsonObject("pieces").getAsJsonObject(key);
+    }
+
+    private static Icon decoIcon(final String pack, final JsonObject piece)
+    {
+        if (piece.has("item"))
+        {
+            final Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(piece.get("item").getAsString()));
+            return Icon.of(item == Items.AIR ? Items.PAPER : item);
+        }
+        final JsonObject style = decoIcons().getAsJsonObject(pack);
+        final int width = style.get("width").getAsInt();
+        final int cell = piece.get("cell").getAsInt();
+        final int columns = width / DECO_CELL;
+        final ResourceLocation sheet = ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "textures/gui/deco/" + style.get("atlas").getAsString() + ".png");
+        return Icon.cell(sheet, width, style.get("height").getAsInt(), cell % columns * DECO_CELL, cell / columns * DECO_CELL, DECO_CELL);
+    }
+
+    private static synchronized JsonObject decoIcons()
+    {
+        if (decoIcons == null)
+        {
+            decoIcons = new JsonObject();
+            try (Reader reader = new InputStreamReader(CatalogueIndex.class.getResourceAsStream("/assets/" + InterregneMod.MODID + "/deco_icons.json"), StandardCharsets.UTF_8))
+            {
+                decoIcons = JsonParser.parseReader(reader).getAsJsonObject();
+            }
+            catch (final Exception e)
+            {
+                InterregneMod.LOGGER.warn("L'Interregne: decoration icons unreadable", e);
+            }
+        }
+        return decoIcons;
     }
 
     private static ItemStack item(final String id)

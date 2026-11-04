@@ -297,7 +297,14 @@ public final class CatalogueScreen extends ParchmentScreen
             final int cy = grid.y(i);
             final boolean locked = locked(entry);
             Ui.card(graphics, cx, cy, cardW, CARD_H, entry == selected, inside(mouseX, mouseY, cx, cy, cardW, CARD_H), locked);
-            graphics.renderItem(entry.icon(), cx + 5, cy + 8);
+            if (entry.icon().isItem())
+            {
+                entry.icon().draw(graphics, cx + 5, cy + 8, 16);
+            }
+            else
+            {
+                entry.icon().draw(graphics, cx + 3, cy + 6, 20);
+            }
             graphics.drawString(font, fit(entry.name(), cardW - 30), cx + 25, cy + 6, locked ? Palette.MUTED : Palette.INK, false);
             if (locked)
             {
