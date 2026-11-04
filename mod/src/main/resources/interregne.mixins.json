@@ -21,6 +21,7 @@
     "EntityAIWorkFarmerMixin",
     "EntityAIWorkPlanterMixin",
     "EntityAIWorkBeekeeperMixin",
+    "EntityAIWorkFloristMixin",
     "AbstractCraftingBuildingModuleAccessor",
     "EntityAIWorkFishermanMixin",
     "EventHandlerMixin",

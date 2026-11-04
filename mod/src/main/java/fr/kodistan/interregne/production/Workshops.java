@@ -14,7 +14,10 @@ import fr.kodistan.interregne.mixin.AbstractCraftingBuildingModuleAccessor;
 import fr.kodistan.interregne.region.CrateStores;
 import fr.kodistan.interregne.warehouse.MagicNetwork;
 import net.minecraft.server.level.ServerLevel;
+import com.minecolonies.api.items.ModItems;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.items.IItemHandler;
@@ -28,7 +31,7 @@ import java.util.Map;
  * Crafters work from the start with no orders: every production cycle, each one turns what the warehouse holds in
  * surplus into what it lacks, with the recipes it knows and the player left switched on. It stops once the warehouse
  * holds enough of an item and never digs into the last few of an ingredient. Furnace recipes burn the warehouse's fuel.
- * Real orders from citizens and the player still go through the crafter's own work as before.
+ * The sifter is handed its meshes. Real orders from citizens and the player still go through the crafter's own work as before.
  */
 public final class Workshops
 {
@@ -64,11 +67,17 @@ public final class Workshops
             for (final IToken<?> token : new ArrayList<>(module.getRecipes()))
             {
                 final IRecipeStorage storage = IColonyManager.getInstance().getRecipeManager().getRecipe(token);
-                if (storage != null && !disabled.contains(token) && !storage.getPrimaryOutput().isEmpty())
+                // Loot recipes (the sifter's) have no fixed result but are worth running all the same
+                if (storage != null && !disabled.contains(token) && (!storage.getPrimaryOutput().isEmpty() || storage.getLootTable() != null))
                 {
                     recipes.add(storage);
                 }
             }
+        }
+
+        if (Huts.SIFTER.equals(Huts.id(building)))
+        {
+            supplyMeshes(racks, building.getBuildingLevel());
         }
 
         final String key = colony.getID() + ":" + building.getPosition().asLong();
@@ -85,7 +94,7 @@ public final class Workshops
                 continue;
             }
             final boolean furnace = recipe.getIntermediate() == Blocks.FURNACE;
-            while (budget > 0 && count(racks, recipe.getPrimaryOutput()) < Config.CRAFT_TARGET.get() && spare(racks, recipe))
+            while (budget > 0 && (recipe.getPrimaryOutput().isEmpty() || count(racks, recipe.getPrimaryOutput()) < Config.CRAFT_TARGET.get()) && spare(racks, recipe))
             {
                 if (furnace && !heat(racks, key))
                 {
@@ -117,7 +126,9 @@ public final class Workshops
     {
         for (final ItemStorage input : recipe.getCleanedInput())
         {
-            if (count(racks, input) - input.getAmount() < Config.CRAFT_RESERVE.get())
+            // A tool (the sifter's mesh) comes back after use: having it is enough
+            final boolean tool = recipe.getCraftingTools().stream().anyMatch(stack -> same(input, stack));
+            if (count(racks, input) - input.getAmount() < (tool ? 0 : Config.CRAFT_RESERVE.get()))
             {
                 return false;
             }
@@ -176,6 +187,21 @@ public final class Workshops
             HEAT.merge(key, fuel.getBurnTime(RecipeType.SMELTING), Integer::sum);
         }
         return true;
+    }
+
+    /**
+     * The sifter is handed its meshes: one of each kind its level allows waits in the warehouse, replaced when worn out.
+     */
+    private static void supplyMeshes(final IItemHandler racks, final int level)
+    {
+        final Item[] meshes = {ModItems.sifterMeshString, ModItems.sifterMeshFlint, ModItems.sifterMeshIron, ModItems.sifterMeshDiamond};
+        for (int tier = 0; tier < Math.min(meshes.length, level); tier++)
+        {
+            if (InventoryUtils.getItemCountInItemHandler(racks, meshes[tier]) == 0)
+            {
+                ItemHandlerHelper.insertItemStacked(racks, new ItemStack(meshes[tier]), false);
+            }
+        }
     }
 
     private static int count(final IItemHandler racks, final ItemStack wanted)

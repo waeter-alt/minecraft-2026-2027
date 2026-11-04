@@ -115,6 +115,7 @@ public final class HutProduction
             }
             case Huts.FARMER -> Farms.produce(colony, building);
             case Huts.PLANTATION -> Plantations.produce(colony, building);
+            case Huts.FLORIST -> Florists.produce(building, amount);
             case Huts.BEEKEEPER -> {
                 produce(building, Items.HONEYCOMB, amount, Items.HONEY_BOTTLE, 0.3, null, 0, random);
                 Apiary.placeHives(level, building);
@@ -174,6 +175,10 @@ public final class HutProduction
         else if (id.equals(Huts.BEEKEEPER))
         {
             Apiary.placeHives(level, building);
+        }
+        else if (id.equals(Huts.FLORIST))
+        {
+            Florists.bloom(level, building);
         }
         else if (id.equals(Huts.PLANTATION))
         {

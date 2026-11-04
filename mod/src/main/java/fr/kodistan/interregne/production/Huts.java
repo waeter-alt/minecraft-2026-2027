@@ -26,6 +26,8 @@ public final class Huts
     public static final String COOK       = "cook";
     public static final String PLANTATION = "plantation";
     public static final String BEEKEEPER  = "beekeeper";
+    public static final String FLORIST    = "florist";
+    public static final String SIFTER     = "sifter";
 
     private Huts()
     {
