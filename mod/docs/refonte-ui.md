@@ -113,7 +113,14 @@ Pas faits : les ordres de travail (seulement pour le constructeur, retiré), la 
 - « Tout le stock » (`StockScreen`) : tout ce qui est rangé dans les étagères, triable, et un clic entoure les étagères qui contiennent l'objet ;
 - « Aide » (`HelpScreen`) : toutes les pages à la suite.
 
-Restent dans l'ancien style : les réglages de type bloc, recette et tâche de garde ; la caserne (espions, bannière de ralliement) ; la grille d'artisanat (`DOCraftingWindow`) ; la recherche ; les sous-pages de l'hôtel de ville (permissions, alliances, mercenaires) ; le journal des quêtes ; le placement du camp de départ (`WindowSupplies`).
+**Fait ensuite, le 2026-11-04** :
+- la colonne de gauche d'un bâtiment (`HutNav`) reste en place sur toutes ses pages, et seule la partie droite change ;
+- base `ui/PageScreen` (haut fixe, corps qui défile, champ, contrôles), dont héritent `ModuleScreen` et nos fenêtres ;
+- hôtel de ville : `PermissionsScreen` (joueurs, rangs et droits, blocs libres, journal), `AlliancesScreen`, `MercenaryScreen` (tuile « Mercenaires » de la vue d'ensemble) ;
+- camp de départ : `SuppliesScreen`, un panneau sur le côté qui pilote la fenêtre d'origine sans l'afficher ;
+- nos blocs (`client/blocks`) : banque, banque régionale, trône avec le trésor en onglet, marché, comptoir, choix de culture. Le registre de l'entrepôt devient `hut/TerminalScreen`. Les anciennes fenêtres BlockUI et leurs XML sont supprimées.
+
+Restent dans l'ancien style : les réglages de type bloc, recette et tâche de garde ; la caserne (espions, bannière de ralliement) ; la grille d'artisanat (`DOCraftingWindow`) ; la recherche ; les réglages et statistiques de la colonie ; le journal des quêtes ; le choix du style (`WindowSwitchPack`) ; le renommage d'un bâtiment.
 
 Liste d'origine des cas particuliers : layoutbuilderres, layoutenchanter, layoutexpeditionlog, layoutfarmfields, layoutplantationfields, layoutgraveyard, layoutguardlist, layoutminermodule, layouttool, layoutuniversity, layoutwarehouseoptions.
 

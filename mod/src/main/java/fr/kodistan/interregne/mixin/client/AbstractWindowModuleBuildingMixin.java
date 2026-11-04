@@ -2,9 +2,8 @@ package fr.kodistan.interregne.mixin.client;
 
 import com.minecolonies.api.colony.buildings.views.IBuildingView;
 import com.minecolonies.core.client.gui.AbstractWindowModuleBuilding;
-import fr.kodistan.interregne.client.WindowWarehouseTerminal;
+import fr.kodistan.interregne.client.hut.TerminalScreen;
 import fr.kodistan.interregne.warehouse.MagicNetwork;
-import com.ldtteam.blockui.views.BOWindow;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -28,7 +27,7 @@ public abstract class AbstractWindowModuleBuildingMixin
         if (MagicNetwork.enabled() && building.getBuildingType().getRegistryName().getPath().equals("warehouse"))
         {
             ci.cancel();
-            new WindowWarehouseTerminal(building, (BOWindow) (Object) this).open();
+            TerminalScreen.open(building, null);
         }
     }
 }

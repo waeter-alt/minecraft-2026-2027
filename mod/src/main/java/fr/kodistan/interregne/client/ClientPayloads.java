@@ -2,6 +2,7 @@ package fr.kodistan.interregne.client;
 
 import fr.kodistan.interregne.client.blocks.BankScreen;
 import fr.kodistan.interregne.client.blocks.ComptoirScreen;
+import fr.kodistan.interregne.client.blocks.CropChoiceScreen;
 import fr.kodistan.interregne.client.blocks.MarketScreen;
 import fr.kodistan.interregne.client.blocks.RegionalBankScreen;
 import fr.kodistan.interregne.client.blocks.ThroneScreen;
@@ -25,7 +26,7 @@ public final class ClientPayloads
 {
     public static void openFarmCrop(final OpenFarmCropPayload payload)
     {
-        WindowCropChoice.openForFarm(payload);
+        CropChoiceScreen.openForFarm(payload);
     }
 
     public static void syncWallet(final WalletSyncPayload payload)

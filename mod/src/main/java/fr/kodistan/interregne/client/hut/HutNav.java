@@ -8,6 +8,7 @@ import com.minecolonies.core.network.messages.server.colony.OpenInventoryMessage
 import fr.kodistan.interregne.client.ui.Icon;
 import fr.kodistan.interregne.client.ui.Palette;
 import fr.kodistan.interregne.client.ui.Ui;
+import fr.kodistan.interregne.warehouse.MagicNetwork;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -102,7 +103,18 @@ public final class HutNav
     {
         final List<Tool> tools = new ArrayList<>();
         tools.add(new Tool("Coffre", Icon.of(Items.CHEST), () -> new OpenInventoryMessage(building).sendToServer()));
-        tools.add(new Tool("Tout le stock", Icon.module("inventory"), () -> StockScreen.open(building, hut)));
+        // In a warehouse with the magic network, the register takes and stores as well as it lists
+        final boolean register = MagicNetwork.enabled() && building.getBuildingType().getRegistryName().getPath().equals("warehouse");
+        tools.add(new Tool("Tout le stock", Icon.module("inventory"), () -> {
+            if (register)
+            {
+                TerminalScreen.open(building, hut);
+            }
+            else
+            {
+                StockScreen.open(building, hut);
+            }
+        }));
         if (I18n.exists(HelpScreen.prefix(building) + "0"))
         {
             tools.add(new Tool("Aide", Icon.of(Items.BOOK), () -> HelpScreen.open(building, hut)));
