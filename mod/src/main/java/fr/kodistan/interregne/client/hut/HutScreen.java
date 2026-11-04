@@ -41,6 +41,12 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
+import com.minecolonies.api.crafting.ItemStorage;
+import fr.kodistan.interregne.network.TerminalDepositPayload;
+import fr.kodistan.interregne.network.TerminalWithdrawPayload;
+import fr.kodistan.interregne.warehouse.MagicNetwork;
+import net.minecraft.client.gui.components.EditBox;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -86,6 +92,14 @@ public final class HutScreen extends ParchmentScreen
      */
     @Nullable
     private String hint;
+
+    /**
+     * A warehouse's stock, its search field, and when it is next counted.
+     */
+    private final List<ItemStorage> stock = new ArrayList<>();
+    @Nullable
+    private EditBox stockSearch;
+    private int stockRefresh;
 
     private HutScreen(final IBuildingView building, @Nullable final Screen parent)
     {
@@ -143,6 +157,26 @@ public final class HutScreen extends ParchmentScreen
         return building.getBuildingType().getRegistryName().getPath();
     }
 
+    public static boolean isWarehouse(final IBuildingView building)
+    {
+        return idOf(building).equals("warehouse");
+    }
+
+    @Override
+    protected void init()
+    {
+        super.init();
+        if (isWarehouse(building))
+        {
+            final String typed = stockSearch == null ? "" : stockSearch.getValue();
+            stockSearch = new EditBox(font, 0, 0, 110, 12, Component.literal("Rechercher…"));
+            stockSearch.setHint(Component.literal("Rechercher…"));
+            stockSearch.setValue(typed);
+            stockSearch.setResponder(text -> scroll = 0);
+            addWidget(stockSearch);
+        }
+    }
+
     @Override
     public void tick()
     {
@@ -151,6 +185,12 @@ public final class HutScreen extends ParchmentScreen
         if (fresh != null)
         {
             building = fresh;
+        }
+        if (isWarehouse(building) && stockRefresh-- <= 0)
+        {
+            stockRefresh = 20;
+            stock.clear();
+            stock.addAll(TerminalScreen.stockOf(building));
         }
     }
 
@@ -263,6 +303,11 @@ public final class HutScreen extends ParchmentScreen
         final boolean overMain = Ui.inside(mouseX, mouseY, x, top, width, bottom - top);
         final int my = overMain ? mouseY : Integer.MIN_VALUE;
 
+        if (isWarehouse(building))
+        {
+            renderStock(graphics, mouseX, mouseY, x, top, width, bottom);
+            return;
+        }
         graphics.enableScissor(x, top, x + width, bottom);
         int y = top - scroll;
         final List<Worker> workers = workers();
@@ -304,6 +349,108 @@ public final class HutScreen extends ParchmentScreen
             graphics.fill(x + width + 2, top, x + width + 4, bottom, Palette.PAPER_DARK);
             graphics.fill(x + width + 2, thumbY, x + width + 4, thumbY + thumb, Palette.RULE);
         }
+    }
+
+    /**
+     * A warehouse's middle column: everything in its racks, searchable; with the magic network, storing all that is
+     * carried in one click and taking one item or a stack from each line.
+     */
+    private void renderStock(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int top, final int width, final int bottom)
+    {
+        final boolean magic = MagicNetwork.enabled();
+        int total = 0;
+        for (final ItemStorage storage : stock)
+        {
+            total += storage.getAmount();
+        }
+        int tx = x;
+        if (magic)
+        {
+            final String deposit = "Tout ranger";
+            final int bw = font.width(deposit) + 10;
+            final boolean over = Ui.inside(mouseX, mouseY, x, top, bw, 14);
+            Ui.button(graphics, font, x, top, bw, 14, deposit, Ui.ButtonStyle.PRIMARY, true, over);
+            hits.add(new Hit(x, top, bw, 14, () -> {
+                PacketDistributor.sendToServer(new TerminalDepositPayload(building.getID()));
+                stockRefresh = 5;
+            }));
+            if (over)
+            {
+                hint = "Range tout ce que tu portes, sauf ta barre d'action.";
+            }
+            tx += bw + 6;
+        }
+        graphics.drawString(font, Component.literal(Ui.fit(font, total + " objets · " + stock.size() + " sortes", width - (tx - x) - 118)).withStyle(ChatFormatting.BOLD),
+          tx, top + 3, Palette.INK, false);
+        if (stockSearch != null)
+        {
+            stockSearch.setX(x + width - 110);
+            stockSearch.setY(top + 1);
+            stockSearch.render(graphics, mouseX, mouseY, 0);
+        }
+
+        final int listTop = top + 19;
+        scroll = Math.max(0, Math.min(scroll, contentHeight - (bottom - listTop)));
+        final int my = Ui.inside(mouseX, mouseY, x, listTop, width, bottom - listTop) ? mouseY : Integer.MIN_VALUE;
+        final String query = stockSearch == null ? "" : stockSearch.getValue().trim().toLowerCase(Locale.ROOT);
+        graphics.enableScissor(x, listTop, x + width, bottom);
+        int y = listTop - scroll;
+        int shown = 0;
+        for (final ItemStorage storage : stock)
+        {
+            final ItemStack icon = storage.getItemStack().copyWithCount(1);
+            final String name = icon.getHoverName().getString();
+            if (!query.isEmpty() && !name.toLowerCase(Locale.ROOT).contains(query))
+            {
+                continue;
+            }
+            shown++;
+            Ui.card(graphics, x, y, width, 20, false, false, false);
+            Icon.of(icon).draw(graphics, x + 2, y + 2, 16);
+            if (Ui.inside(mouseX, my, x + 2, y + 2, 16, 16))
+            {
+                slots.add(new Ui.Slot(x + 2, y + 2, 16, icon));
+            }
+            final String count = storage.getAmount() >= 10_000 ? storage.getAmount() / 1000 + "k" : String.valueOf(storage.getAmount());
+            graphics.drawString(font, Component.literal(count).withStyle(ChatFormatting.BOLD), x + 22, y + 6, Palette.INK, false);
+            graphics.drawString(font, Ui.fit(font, name, width - (magic ? 150 : 64)), x + 56, y + 6, Palette.INK, false);
+            if (magic)
+            {
+                int bx = x + width - 4 - (font.width("Une pile") + 10);
+                stockButton(graphics, mouseX, my, bx, y + 3, "Une pile", () -> take(storage, 64));
+                bx -= font.width("Un") + 10 + 3;
+                stockButton(graphics, mouseX, my, bx, y + 3, "Un", () -> take(storage, 1));
+            }
+            y += 22;
+        }
+        if (shown == 0)
+        {
+            graphics.drawString(font, stock.isEmpty() ? "L'entrepôt est vide." : "Rien ne correspond.", x + 2, y + 2, Palette.MUTED, false);
+            y += 14;
+        }
+        graphics.disableScissor();
+        contentHeight = y + scroll - listTop;
+        if (contentHeight > bottom - listTop)
+        {
+            final int track = bottom - listTop;
+            final int thumb = Math.max(12, track * track / contentHeight);
+            final int thumbY = listTop + (track - thumb) * scroll / Math.max(1, contentHeight - track);
+            graphics.fill(x + width + 2, listTop, x + width + 4, bottom, Palette.PAPER_DARK);
+            graphics.fill(x + width + 2, thumbY, x + width + 4, thumbY + thumb, Palette.RULE);
+        }
+    }
+
+    private void stockButton(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final String label, final Runnable action)
+    {
+        final int bw = font.width(label) + 10;
+        Ui.button(graphics, font, x, y, bw, 14, label, Ui.ButtonStyle.SECONDARY, true, Ui.inside(mouseX, mouseY, x, y, bw, 14));
+        addHit(x, y, bw, 14, action);
+    }
+
+    private void take(final ItemStorage storage, final int amount)
+    {
+        PacketDistributor.sendToServer(new TerminalWithdrawPayload(building.getID(), storage.getItemStack().copyWithCount(1), amount));
+        stockRefresh = 5;
     }
 
     /**

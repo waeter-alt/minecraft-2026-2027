@@ -69,6 +69,16 @@ public final class TerminalScreen extends ModuleScreen
      */
     private void count()
     {
+        stock.clear();
+        stock.addAll(stockOf(building));
+    }
+
+    /**
+     * A warehouse's racks as this client sees them, merged by item, by name.
+     */
+    static List<ItemStorage> stockOf(final IBuildingView building)
+    {
+        final List<ItemStorage> stock = new ArrayList<>();
         final Map<ItemStorage, Integer> counted = new HashMap<>();
         final List<BlockPos> racks = new ArrayList<>(building.getContainerList());
         racks.add(building.getID());
@@ -79,13 +89,13 @@ public final class TerminalScreen extends ModuleScreen
                 rack.getAllContent().forEach((storage, amount) -> counted.merge(storage, amount, Integer::sum));
             }
         }
-        stock.clear();
         counted.forEach((storage, amount) -> {
             final ItemStorage entry = new ItemStorage(storage.getItemStack().copy());
             entry.setAmount(amount);
             stock.add(entry);
         });
         stock.sort(Comparator.comparing(storage -> storage.getItemStack().getHoverName().getString()));
+        return stock;
     }
 
     private void take(final ItemStorage storage, final int amount)

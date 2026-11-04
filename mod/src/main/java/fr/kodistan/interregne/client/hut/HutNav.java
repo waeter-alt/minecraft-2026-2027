@@ -3,12 +3,13 @@ package fr.kodistan.interregne.client.hut;
 import com.minecolonies.api.colony.buildings.modules.IBuildingModuleView;
 import com.minecolonies.api.colony.buildings.views.IBuildingView;
 import com.minecolonies.api.colony.buildings.workerbuildings.ITownHallView;
+import com.minecolonies.core.colony.buildings.moduleviews.CourierAssignmentModuleView;
+import com.minecolonies.core.colony.buildings.moduleviews.WarehouseRequestTaskModuleView;
 import com.minecolonies.core.client.gui.WindowHutNameEntry;
 import com.minecolonies.core.network.messages.server.colony.OpenInventoryMessage;
 import fr.kodistan.interregne.client.ui.Icon;
 import fr.kodistan.interregne.client.ui.Palette;
 import fr.kodistan.interregne.client.ui.Ui;
-import fr.kodistan.interregne.warehouse.MagicNetwork;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -87,7 +88,7 @@ public final class HutNav
         final List<IBuildingModuleView> pages = new ArrayList<>();
         for (final IBuildingModuleView view : building.getAllModuleViews())
         {
-            if (view.isPageVisible())
+            if (view.isPageVisible() && !(view instanceof CourierAssignmentModuleView) && !(view instanceof WarehouseRequestTaskModuleView))
             {
                 pages.add(view);
             }
@@ -104,17 +105,10 @@ public final class HutNav
         final List<Tool> tools = new ArrayList<>();
         tools.add(new Tool("Coffre", Icon.of(Items.CHEST), () -> new OpenInventoryMessage(building).sendToServer()));
         // In a warehouse with the magic network, the register takes and stores as well as it lists
-        final boolean register = MagicNetwork.enabled() && building.getBuildingType().getRegistryName().getPath().equals("warehouse");
-        tools.add(new Tool("Tout le stock", Icon.module("inventory"), () -> {
-            if (register)
-            {
-                TerminalScreen.open(building, hut);
-            }
-            else
-            {
-                StockScreen.open(building, hut);
-            }
-        }));
+        if (!HutScreen.isWarehouse(building))
+        {
+            tools.add(new Tool("Tout le stock", Icon.module("inventory"), () -> StockScreen.open(building, hut)));
+        }
         if (I18n.exists(HelpScreen.prefix(building) + "0"))
         {
             tools.add(new Tool("Aide", Icon.of(Items.BOOK), () -> HelpScreen.open(building, hut)));

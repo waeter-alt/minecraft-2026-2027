@@ -161,7 +161,6 @@ public final class InterregneHud
         drawLine(graphics, font, right, goldY, textWidth, COIN_ICON, COIN_ICON_SIZE, LEATHER, LEATHER_EDGE, LEATHER_LIGHT,
           goldText, GOLD, goldDelta, goldChangedAt);
 
-        Grievances.render(graphics, font, right, goldY + PILL - 3 + TAB + 4);
         graphics.pose().popPose();
     }
 
