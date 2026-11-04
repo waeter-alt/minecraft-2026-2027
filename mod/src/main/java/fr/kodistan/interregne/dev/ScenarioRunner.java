@@ -37,7 +37,8 @@ import java.util.function.Supplier;
 public final class ScenarioRunner
 {
     private static final Map<String, Supplier<Scenario>> SCENARIOS = Map.of(
-      "restaurant", RestaurantScenario::new);
+      "restaurant", () -> new RestaurantScenario(false),
+      "restaurant-healthy", () -> new RestaurantScenario(true));
 
     /** Colonies load their buildings a little after the world: wait this long before touching them. */
     private static final int WARMUP_TICKS = 200;

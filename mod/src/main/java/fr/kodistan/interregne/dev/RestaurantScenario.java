@@ -28,11 +28,19 @@ public class RestaurantScenario implements Scenario
     /** Saturation the villagers start with: hungry enough to go and eat. */
     private static final double START_SATURATION = 2;
 
+    /** Cure everyone first, to judge the restaurant alone, without the sickness that keeps villagers from eating. */
+    private final boolean healthy;
+
     private IBuilding restaurant;
     private int startRaw;
     private double startSaturation;
     private int maxCookedInKitchen;
     private int maxMenu;
+
+    public RestaurantScenario(final boolean healthy)
+    {
+        this.healthy = healthy;
+    }
 
     @Override
     public List<String> setup(final IColony colony, final ServerLevel level)
@@ -79,6 +87,16 @@ public class RestaurantScenario implements Scenario
             citizen.setSaturation(START_SATURATION);
         }
         startSaturation = START_SATURATION;
+        final long sick = colony.getCitizenManager().getCitizens().stream().filter(c -> c.getCitizenDiseaseHandler().isSick()).count();
+        if (healthy)
+        {
+            colony.getCitizenManager().getCitizens().forEach(c -> c.getCitizenDiseaseHandler().cure());
+            lines.add("cured the " + sick + " sick villagers");
+        }
+        else
+        {
+            lines.add(sick + " villagers sick at the start");
+        }
         lines.add(colony.getCitizenManager().getCitizens().size() + " villagers set to saturation " + START_SATURATION);
         return lines;
     }
@@ -101,8 +119,25 @@ public class RestaurantScenario implements Scenario
           + " | kitchen raw " + count(kitchen, RestaurantScenario::isRaw) + " cooked " + cooked
           + " | cook pockets cooked " + cookPockets
           + " | warehouse raw " + count(racks, RestaurantScenario::isRaw) + " cooked " + count(racks, RestaurantScenario::isCooked)
+          + " | sick " + colony.getCitizenManager().getCitizens().stream().filter(c -> c.getCitizenDiseaseHandler().isSick()).count()
           + " | villagers " + String.format("avg sat %.1f", averageSaturation(colony)) + " hungry " + hungry(colony) + "/" + colony.getCitizenManager().getCitizens().size()
-          + " | time " + level.getDayTime() % 24000;
+          + " | time " + level.getDayTime() % 24000
+          + "\n      cook " + restaurant.getAllAssignedCitizen().stream().map(this::describe).reduce("", String::concat)
+          + "\n      hungry " + colony.getCitizenManager().getCitizens().stream()
+                                   .filter(c -> c.getSaturation() < CitizenConstants.LOW_SATURATION).map(this::describe).reduce("", String::concat);
+    }
+
+    /** Where a citizen is and what its two AIs are doing, to see where eating gets stuck. */
+    private String describe(final ICitizenData citizen)
+    {
+        final String job = citizen.getJob() == null || citizen.getJob().getWorkerAI() == null ? "-"
+          : String.valueOf(((com.minecolonies.core.entity.ai.workers.AbstractAISkeleton<?>) citizen.getJob().getWorkerAI()).getState());
+        return citizen.getEntity().map(entity -> " [" + citizen.getName().split(" ")[0]
+          + " ai=" + (entity instanceof com.minecolonies.core.entity.citizen.EntityCitizen ec ? ec.getCitizenAI().getState() : "?")
+          + " job=" + job
+          + " status=" + (citizen.getStatus() == null ? "-" : citizen.getStatus().getTranslationKey().replaceAll(".*\\.", ""))
+          + " d=" + entity.blockPosition().distManhattan(restaurant.getPosition())
+          + String.format(" sat=%.1f", citizen.getSaturation()) + "]").orElse(" [" + citizen.getName().split(" ")[0] + " no entity]");
     }
 
     @Override
