@@ -35,12 +35,29 @@ public final class Palette
     public static final int RED_SOFT    = 0xFFF0CFC4;
 
     /**
+     * Sickness: a pale, sickly green, never used for anything good.
+     */
+    public static final int SICK_SOFT = 0xFFD3D98E;
+    public static final int SICK_TEXT = 0xFF5B6216;
+
+    /**
      * Building level colours, the same as the construction site bars: 1 white, 2 green, 3 blue, 4 purple, 5 gold.
      * Index 0 is a building not built yet.
      */
     private static final int[] LEVEL_FILL = {0xFFB8A888, 0xFFF4F1EA, 0xFF4CA83A, 0xFF3A7BD5, 0xFF9B4DCA, 0xFFE8B021};
     private static final int[] LEVEL_EDGE = {0xFF7A6A4E, 0xFF8E8778, 0xFF2B6620, 0xFF1F4C8C, 0xFF5E2A80, 0xFF8A6410};
     private static final int[] LEVEL_TEXT = {0xFF3A2A18, 0xFF3A3A3A, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFF3A2A08};
+
+    /**
+     * Pale tints of the level colours, for a whole panel's background: about a tenth of the colour over white, like
+     * the "50" shades of design palettes, so dark ink stays readable on them.
+     */
+    private static final int[] LEVEL_SOFT = {0xFFEDE3CC, 0xFFFAF8F3, 0xFFE6F3E0, 0xFFE3EDFA, 0xFFF1E6F8, 0xFFFBF1D3};
+
+    public static int levelSoft(final int level)
+    {
+        return LEVEL_SOFT[clampLevel(level)];
+    }
 
     private Palette()
     {

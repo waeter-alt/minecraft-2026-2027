@@ -13,6 +13,7 @@ import com.minecolonies.core.client.gui.WindowHireWorker;
 import com.minecolonies.core.client.gui.WindowHutAllInventory;
 import com.minecolonies.core.client.gui.WindowHutNameEntry;
 import com.minecolonies.core.client.gui.WindowInfo;
+import com.minecolonies.core.client.gui.WindowInteraction;
 import com.minecolonies.core.colony.buildings.moduleviews.WorkerBuildingModuleView;
 import com.minecolonies.core.network.messages.server.colony.OpenInventoryMessage;
 import com.minecolonies.core.network.messages.server.colony.building.BuildRequestMessage;
@@ -39,9 +40,10 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
@@ -76,6 +78,10 @@ public final class HutScreen extends ParchmentScreen
     {
     }
 
+    private record Chip(String text, int soft, int ink, @Nullable Runnable action)
+    {
+    }
+
     private record Banner(Ui.State state, String title, String text, @Nullable String action, @Nullable Runnable onAction)
     {
     }
@@ -85,6 +91,12 @@ public final class HutScreen extends ParchmentScreen
     private final List<Ui.Slot> slots = new ArrayList<>();
     private int scroll;
     private int contentHeight;
+
+    /**
+     * A line of help for what the mouse is over, drawn as a tooltip.
+     */
+    @Nullable
+    private String hint;
 
     private HutScreen(final IBuildingView building)
     {
@@ -133,6 +145,7 @@ public final class HutScreen extends ParchmentScreen
     {
         hits.clear();
         slots.clear();
+        hint = null;
         renderHeader(graphics, mouseX, mouseY);
         renderNav(graphics, mouseX, mouseY);
         renderMain(graphics, mouseX, mouseY);
@@ -143,6 +156,10 @@ public final class HutScreen extends ParchmentScreen
             {
                 graphics.renderTooltip(font, slot.stack(), mouseX, mouseY);
             }
+        }
+        if (hint != null)
+        {
+            graphics.renderTooltip(font, Component.literal(hint), mouseX, mouseY);
         }
     }
 
@@ -325,8 +342,7 @@ public final class HutScreen extends ParchmentScreen
             final int aw = font.width(banner.action()) + 6;
             final int ax = x + width - aw - 2;
             final boolean over = Ui.inside(mouseX, my, ax, y + 1, aw, 12);
-            graphics.fill(ax, y + 2, ax + aw, y + 12, over ? Palette.CARD_HOVER : Palette.PAPER_LIGHT);
-            graphics.drawString(font, banner.action(), ax + 3, y + 3, Palette.INK, false);
+            Ui.solidButton(graphics, font, ax, y + 1, aw, 12, banner.action(), banner.state(), over);
             addHit(ax, y + 1, aw, 12, banner.onAction());
         }
         y += 20;
@@ -404,11 +420,11 @@ public final class HutScreen extends ParchmentScreen
         {
             final ICitizenDataView citizen = worker.citizen();
             final Component name = Component.literal(citizen.getName()).withStyle(ChatFormatting.BOLD);
-            final List<Map.Entry<String, Ui.State>> chips = chips(citizen);
+            final List<Chip> chips = chips(citizen);
             int chipsW = 0;
-            for (final Map.Entry<String, Ui.State> chip : chips)
+            for (final Chip chip : chips)
             {
-                chipsW += font.width(chip.getKey()) + 11;
+                chipsW += font.width(chip.text()) + 11;
             }
             // Chips beside the name when they fit, on their own line below otherwise
             final boolean inline = font.width(name) + chipsW + 30 <= width;
@@ -416,13 +432,26 @@ public final class HutScreen extends ParchmentScreen
             Ui.card(graphics, x, y, width, cardH, false, false, false);
             drawFace(graphics, citizen, x + 4, y + 3);
             graphics.drawString(font, name, x + 24, y + 3, Palette.INK, false);
-            graphics.drawString(font, fit(worker.job() + " · " + activity(citizen), width - 28), x + 24, y + 12, Palette.MUTED, false);
+            // Sickness already has its chip: the line does not repeat it
+            final String line = citizen.isSick() ? worker.job() : worker.job() + " · " + activity(citizen);
+            graphics.drawString(font, fit(line, width - 28), x + 24, y + 12, Palette.MUTED, false);
 
             int chipX = inline ? x + width - 4 - chipsW + 3 : x + 24;
             final int chipY = inline ? y + 2 : y + 22;
-            for (final Map.Entry<String, Ui.State> chip : chips)
+            for (final Chip chip : chips)
             {
-                chipX += Ui.chip(graphics, font, chipX, chipY, chip.getKey(), chip.getValue()) + 3;
+                final int chipW = font.width(chip.text()) + 8;
+                final boolean over = chip.action() != null && Ui.inside(mouseX, mouseY, chipX, chipY, chipW, 11);
+                Ui.chip(graphics, font, chipX, chipY, chip.text(), chip.soft(), chip.ink(), chip.action() != null, over);
+                if (chip.action() != null)
+                {
+                    addHit(chipX, chipY, chipW, 11, chip.action());
+                    if (over)
+                    {
+                        hint = "Cliquez pour régler le problème de " + citizen.getName();
+                    }
+                }
+                chipX += chipW + 3;
             }
             y += cardH + 2;
         }
@@ -435,16 +464,17 @@ public final class HutScreen extends ParchmentScreen
     }
 
     /**
-     * The worker's face, cut from their skin when they are loaded nearby; a head otherwise.
+     * The worker's head: the citizen model itself, drawn large and cropped, so it works whatever the skin layout. A
+     * plain head when the citizen is not loaded nearby.
      */
     private void drawFace(final GuiGraphics graphics, final ICitizenDataView citizen, final int x, final int y)
     {
         final Entity entity = minecraft.level == null ? null : minecraft.level.getEntity(citizen.getEntityId());
-        if (entity != null)
+        if (entity instanceof LivingEntity living)
         {
-            final ResourceLocation skin = minecraft.getEntityRenderDispatcher().getRenderer(entity).getTextureLocation(entity);
-            graphics.blit(skin, x, y, 16, 16, 8, 8, 8, 8, 64, 64);
-            graphics.blit(skin, x, y, 16, 16, 40, 8, 8, 8, 64, 64);
+            graphics.fill(x, y, x + 16, y + 16, Palette.PAPER_DARK);
+            // Box centre at head height; the "mouse" at the centre makes the head look straight ahead
+            InventoryScreen.renderEntityInInventoryFollowsMouse(graphics, x, y, x + 16, y + 16, 26, living.getBbHeight() * 0.38F, x + 8, y + 8, living);
             return;
         }
         Icon.of(Items.PLAYER_HEAD).draw(graphics, x, y, 16);
@@ -488,26 +518,32 @@ public final class HutScreen extends ParchmentScreen
         return Component.translatable(status.getTranslationKey()).getString().toLowerCase(Locale.FRANCE);
     }
 
-    private static List<Map.Entry<String, Ui.State>> chips(final ICitizenDataView citizen)
+    /**
+     * The worker's problems and mood as chips, each kind in its own colour. Sickness and grievances open the citizen's
+     * dialogue, where they are settled.
+     */
+    private List<Chip> chips(final ICitizenDataView citizen)
     {
-        final List<Map.Entry<String, Ui.State>> chips = new ArrayList<>();
+        final List<Chip> chips = new ArrayList<>();
+        final Runnable settle = () -> new WindowInteraction(citizen).open();
         if (citizen.isSick())
         {
-            chips.add(Map.entry("Malade", Ui.State.BAD));
+            chips.add(new Chip("Malade", Palette.SICK_SOFT, Palette.SICK_TEXT, settle));
         }
-        final int grievances = Grievances.count(citizen);
-        if (grievances > 0)
+        // Sickness is itself a grievance: count only the others
+        final int others = Grievances.count(citizen) - (citizen.isSick() ? 1 : 0);
+        if (others > 0)
         {
-            chips.add(Map.entry(grievances == 1 ? "1 doléance" : grievances + " doléances", Ui.State.WAIT));
+            chips.add(new Chip(others == 1 ? "1 doléance" : others + " doléances", Palette.AMBER_SOFT, Palette.AMBER_TEXT, settle));
         }
         final double happiness = citizen.getHappiness();
         if (happiness < 4)
         {
-            chips.add(Map.entry("Malheureux", Ui.State.BAD));
+            chips.add(new Chip("Malheureux", Palette.RED_SOFT, Palette.RED, null));
         }
         else if (happiness >= 7)
         {
-            chips.add(Map.entry("Content", Ui.State.OK));
+            chips.add(new Chip("Content", Palette.GREEN_SOFT, Palette.GREEN, null));
         }
         return chips;
     }
@@ -668,6 +704,11 @@ public final class HutScreen extends ParchmentScreen
         final int width = SIDE_W - 14;
         int y = y0 + 26;
         final int level = building.getBuildingLevel();
+        // The whole panel is tinted with the level it is about: the next one, or the current one when there is none
+        final boolean site = building.isRepairing() || building.isDeconstructing();
+        final int tint = site || level >= building.getBuildingMaxLevel() ? level : level + 1;
+        graphics.fill(left, y0 + 20, x0 + w - 3, y0 + h - 3, Palette.levelSoft(tint));
+        graphics.fill(left, y0 + 20, left + 2, y0 + h - 3, Palette.levelEdge(tint));
         final int buttonY = actionY();
 
         if (building.isBuilding() || building.isRepairing() || building.isDeconstructing())
@@ -729,26 +770,26 @@ public final class HutScreen extends ParchmentScreen
         Ui.label(graphics, font, "PRIX", x, y);
         y += 11;
         y = Ui.priceLine(graphics, font, x, y, free ? "Gratuit (créatif)" : cost + " Couronnes", affordable);
+        boolean crates = true;
         for (final CrateRows.Row row : CrateRows.forBuilding(building, true))
         {
             y = Ui.crateLine(graphics, font, x, y, row);
+            crates &= row.available();
         }
         Icon.of(Items.CLOCK).draw(graphics, x, y - 1, 10);
         graphics.drawString(font, BuildCosts.formatSeconds(BuildCosts.secondsForLevel(target)) + " de chantier", x + 12, y + 1, Palette.INK, false);
 
         sideButton(graphics, mouseX, mouseY, x, secondaryY, width, secondary, Ui.ButtonStyle.SECONDARY, true, this::openBuildWindow);
-        final String action = refusal != null ? "Hôtel de ville niv. " + target + " requis" : level == 0 ? "Construire" : "Améliorer";
-        final boolean enabled = refusal == null && affordable;
-        Ui.levelButton(graphics, font, x, buttonY, width, Ui.BUTTON_H, fit(action, width - 6), target, enabled,
-          Ui.inside(mouseX, mouseY, x, buttonY, width, Ui.BUTTON_H));
-        if (enabled)
+        // Green when it can be done now, grey with the reason otherwise
+        final String action = refusal != null ? "Hôtel de ville niv. " + target + " requis"
+                                : !affordable ? "Pas assez de Couronnes"
+                                    : !crates ? "Il manque des caisses"
+                                        : level == 0 ? "Construire" : "Améliorer";
+        sideButton(graphics, mouseX, mouseY, x, buttonY, width, action, Ui.ButtonStyle.PRIMARY, refusal == null && affordable && crates, () ->
         {
-            hits.add(new Hit(x, buttonY, width, Ui.BUTTON_H, () ->
-            {
-                new BuildRequestMessage(building, BuildRequestMessage.Mode.BUILD, BlockPos.ZERO).sendToServer();
-                onClose();
-            }));
-        }
+            new BuildRequestMessage(building, BuildRequestMessage.Mode.BUILD, BlockPos.ZERO).sendToServer();
+            onClose();
+        });
     }
 
     private void sideButton(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width, final String label,

@@ -270,6 +270,35 @@ public final class Ui
         return width;
     }
 
+    /**
+     * A chip in its own colours; a clickable one has an edge, darker on hover.
+     */
+    public static void chip(final GuiGraphics graphics, final Font font, final int x, final int y, final String text, final int soft, final int ink,
+      final boolean clickable, final boolean hover)
+    {
+        final int width = font.width(text) + 8;
+        plate(graphics, x, y, x + width, y + 11, soft, clickable ? ink : soft, soft);
+        if (hover)
+        {
+            graphics.renderOutline(x + 1, y + 1, width - 2, 9, ink);
+        }
+        graphics.drawString(font, text, x + 4, y + 2, ink, false);
+    }
+
+    /**
+     * A small filled button in a state's strong colour, white text: the action that fixes that state.
+     */
+    public static void solidButton(final GuiGraphics graphics, final Font font, final int x, final int y, final int width, final int height,
+      final String label, final State state, final boolean hover)
+    {
+        plate(graphics, x, y, x + width, y + height, state.strong, Palette.EDGE, state.strong);
+        if (hover)
+        {
+            graphics.renderOutline(x + 1, y + 1, width - 2, height - 2, Palette.WHITE);
+        }
+        graphics.drawString(font, label, x + (width - font.width(label)) / 2, y + (height - 8) / 2, Palette.WHITE, false);
+    }
+
     public static void progressBar(final GuiGraphics graphics, final int x, final int y, final int width, final int height, final float fraction,
       final State state)
     {
