@@ -334,7 +334,12 @@ public final class WallLayout
         }
 
         // Each tower's floor sits at the walkway's height where it stands, its roof well above the wall
+        // A single point has no centerline yet: its tower keeps its own heights
         towers.replaceAll(tower -> {
+            if (crest.length == 0)
+            {
+                return tower;
+            }
             final int walk = crest[Math.min(tower.index(), crest.length - 1)];
             return new Tower(tower.x(), tower.z(), tower.size(), tower.bottom(), Math.max(tower.top(), walk + level.towerExtra()), walk, tower.status(), tower.index());
         });
