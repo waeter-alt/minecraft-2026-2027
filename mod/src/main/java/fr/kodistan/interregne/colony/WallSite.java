@@ -74,6 +74,11 @@ public final class WallSite implements Site
      */
     private final BlockPos inside;
     /**
+     * Who ordered the site: they see its bar wherever they watch from (the aerial view is far from their body).
+     */
+    @Nullable
+    private final ServerPlayer watcher;
+    /**
      * Every column the wall stands on.
      */
     private final java.util.Set<Long> columns = new java.util.HashSet<>();
@@ -84,15 +89,10 @@ public final class WallSite implements Site
     private final boolean demolition;
 
     private WallSite(final ServerLevel level, final List<WallBlocks.Step> steps, final int seconds, final int wallLevel, @Nullable final ItemStack banner,
-      final BlockPos inside, final Runnable onDone)
-    {
-        this(level, steps, seconds, wallLevel, banner, inside, onDone, false);
-    }
-
-    private WallSite(final ServerLevel level, final List<WallBlocks.Step> steps, final int seconds, final int wallLevel, @Nullable final ItemStack banner,
-      final BlockPos inside, final Runnable onDone, final boolean demolition)
+      final BlockPos inside, @Nullable final ServerPlayer watcher, final Runnable onDone, final boolean demolition)
     {
         this.demolition = demolition;
+        this.watcher = watcher;
         this.level = level;
         this.inside = inside;
         for (final WallBlocks.Step step : steps)
@@ -124,17 +124,18 @@ public final class WallSite implements Site
      * Starts the site; onDone runs once every block is in place.
      */
     public static void launch(final ServerLevel level, final List<WallBlocks.Step> steps, final int seconds, final int wallLevel,
-      @Nullable final ItemStack banner, final BlockPos inside, final Runnable onDone)
+      @Nullable final ItemStack banner, final BlockPos inside, @Nullable final ServerPlayer watcher, final Runnable onDone)
     {
-        ConstructionManager.start(new WallSite(level, steps, seconds, wallLevel, banner, inside, onDone));
+        ConstructionManager.start(new WallSite(level, steps, seconds, wallLevel, banner, inside, watcher, onDone, false));
     }
 
     /**
      * Tears these blocks down in a few seconds, each broken with its particles and sound; onDone runs once all are gone.
      */
-    public static void demolish(final ServerLevel level, final List<WallBlocks.Step> steps, final int seconds, final Runnable onDone)
+    public static void demolish(final ServerLevel level, final List<WallBlocks.Step> steps, final int seconds, @Nullable final ServerPlayer watcher,
+      final Runnable onDone)
     {
-        ConstructionManager.start(new WallSite(level, steps, seconds, 1, null, BlockPos.ZERO, onDone, true));
+        ConstructionManager.start(new WallSite(level, steps, seconds, 1, null, BlockPos.ZERO, watcher, onDone, true));
     }
 
     @Override
@@ -359,7 +360,24 @@ public final class WallSite implements Site
         }
         if (refreshViewers)
         {
-            SiteEffects.showToNearby(bossBar, level, area.inflate(32));
+            // Nearby players, and always the one who ordered it
+            final net.minecraft.world.phys.Vec3 center = area.getCenter();
+            final double reach = Math.max(area.getXsize(), area.getZsize()) / 2 + 96;
+            for (final ServerPlayer player : level.players())
+            {
+                if (player == watcher || player.distanceToSqr(center.x, player.getY(), center.z) <= reach * reach)
+                {
+                    bossBar.addPlayer(player);
+                }
+                else
+                {
+                    bossBar.removePlayer(player);
+                }
+            }
+            if (watcher != null && watcher.level() != level)
+            {
+                bossBar.removePlayer(watcher);
+            }
         }
     }
 

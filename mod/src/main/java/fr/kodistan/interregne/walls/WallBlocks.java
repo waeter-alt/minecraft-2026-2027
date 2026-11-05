@@ -41,7 +41,7 @@ public final class WallBlocks
         Blocks.SPRUCE_PLANKS.defaultBlockState(), Blocks.SPRUCE_FENCE.defaultBlockState()),
       new Style(Blocks.COBBLESTONE.defaultBlockState(), Blocks.MOSSY_COBBLESTONE.defaultBlockState(), Blocks.COBBLESTONE_WALL.defaultBlockState(),
         Blocks.COBBLESTONE.defaultBlockState(), Blocks.STONE.defaultBlockState(), Blocks.COBBLESTONE_WALL.defaultBlockState(), Blocks.COBBLESTONE.defaultBlockState(),
-        Blocks.GRAVEL.defaultBlockState(), Blocks.IRON_BARS.defaultBlockState()),
+        Blocks.ANDESITE.defaultBlockState(), Blocks.IRON_BARS.defaultBlockState()),
       new Style(Blocks.STONE_BRICKS.defaultBlockState(), Blocks.CHISELED_STONE_BRICKS.defaultBlockState(), Blocks.STONE_BRICK_WALL.defaultBlockState(),
         Blocks.STONE_BRICKS.defaultBlockState(), Blocks.SMOOTH_STONE.defaultBlockState(), Blocks.STONE_BRICK_WALL.defaultBlockState(), Blocks.STONE_BRICKS.defaultBlockState(),
         Blocks.POLISHED_ANDESITE.defaultBlockState(), Blocks.IRON_BARS.defaultBlockState()),
@@ -61,7 +61,7 @@ public final class WallBlocks
      */
     public static boolean isWallBlock(final BlockState state)
     {
-        if (state.is(Blocks.LANTERN) || state.is(Blocks.WHITE_WALL_BANNER) || state.is(Blocks.LADDER) || state.is(Blocks.STONE_BRICK_STAIRS)
+        if (state.is(Blocks.LANTERN) || state.is(Blocks.WHITE_WALL_BANNER) || state.is(Blocks.LADDER) || state.is(Blocks.GRAVEL) || state.is(Blocks.STONE_BRICK_STAIRS)
               || state.is(Blocks.DEEPSLATE_BRICK_STAIRS) || state.is(Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS))
         {
             return true;
@@ -153,6 +153,11 @@ public final class WallBlocks
         }
         steps.addAll(overrides.values());
         steps.sort(Comparator.comparingInt(Step::order).thenComparingInt(step -> step.state().isAir() ? 0 : 1).thenComparingInt(step -> step.pos().getY()));
+        // Ladders go up last, once every block they hang on stands: set earlier, a later neighbour update would knock them off
+        final List<Step> ladders = new ArrayList<>();
+        steps.removeIf(step -> step.state().is(Blocks.LADDER) && ladders.add(step));
+        ladders.sort(Comparator.comparingInt(step -> step.pos().getY()));
+        steps.addAll(ladders);
         return steps;
     }
 

@@ -26,9 +26,10 @@ public final class WallRegistry extends SavedData
      *
      * @param ground the terrain under its footprint before it was built, by cell (see {@link #cell})
      * @param placed every block position it set, as BlockPos longs
+     * @param spent  Couronnes paid for it in all (building, retouches, upgrades); -1 for a wall saved before this was kept
      */
     public record Wall(List<WallTrace.Point> points, List<WallTrace.Point> gates, boolean closed, int level, Map<Long, Terrain.Probe> ground,
-                       long[] placed)
+                       long[] placed, long spent)
     {
     }
 
@@ -93,7 +94,8 @@ public final class WallRegistry extends SavedData
                 ground.put(cells[i], new Terrain.Probe((grounds[i] & 0xFFFFF) - 4096, false, water, true));
             }
             registry.walls.put(key, new Wall(points(entry.getIntArray("x"), entry.getIntArray("z")), points(entry.getIntArray("gx"), entry.getIntArray("gz")),
-              entry.getBoolean("closed"), Math.max(1, entry.getInt("level")), ground, entry.getLongArray("placed")));
+              entry.getBoolean("closed"), Math.max(1, entry.getInt("level")), ground, entry.getLongArray("placed"),
+              entry.contains("spent") ? entry.getLong("spent") : -1));
         }
         return registry;
     }
@@ -124,6 +126,7 @@ public final class WallRegistry extends SavedData
             wall.putLongArray("cells", cells);
             wall.putIntArray("grounds", grounds);
             wall.putLongArray("placed", value.placed());
+            wall.putLong("spent", value.spent());
             all.put(entry.getKey(), wall);
         }
         tag.put("walls", all);

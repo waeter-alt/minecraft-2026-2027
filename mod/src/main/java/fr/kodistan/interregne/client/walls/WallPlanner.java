@@ -53,6 +53,18 @@ public final class WallPlanner
     @Nullable
     private static WallTrace.Point cursor;
     private static boolean cursorClosing;
+    /**
+     * The colony's limits, as unit edges {x, z, dir}: dir 0 runs from (x, z) to (x + 1, z), dir 1 from (x, z) to (x, z + 1).
+     */
+    private static java.util.List<int[]> border = java.util.List.of();
+
+    /**
+     * Shows the colony's limits on the ground.
+     */
+    static void border(final java.util.List<int[]> edges)
+    {
+        border = edges;
+    }
 
     private WallPlanner()
     {
@@ -76,6 +88,7 @@ public final class WallPlanner
         active = false;
         ghost = null;
         cursor = null;
+        border = java.util.List.of();
         PROBES.clear();
     }
 
@@ -259,7 +272,7 @@ public final class WallPlanner
 
     private static void drawGhost(final RenderLevelStageEvent event)
     {
-        if (ghost == null && cursor == null)
+        if (ghost == null && cursor == null && border.isEmpty())
         {
             return;
         }
@@ -271,6 +284,7 @@ public final class WallPlanner
         final MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
         final VertexConsumer out = buffers.getBuffer(RenderType.debugQuads());
 
+        drawBorder(out, matrix);
         if (ghost != null)
         {
             final Map<Long, WallLayout.Column> byCell = new HashMap<>();
@@ -285,8 +299,7 @@ public final class WallPlanner
             }
             for (final WallLayout.Tower tower : ghost.towers())
             {
-                box(out, matrix, tower.x(), tower.bottom(), tower.z(), tower.x() + tower.size(), tower.top() + 1, tower.z() + tower.size(),
-                  color(tower.status(), true));
+                tower(out, matrix, tower, color(tower.status(), true));
             }
             for (final WallLayout.Gate gate : ghost.gates())
             {
@@ -302,6 +315,92 @@ public final class WallPlanner
         }
         buffers.endBatch(RenderType.debugQuads());
         pose.popPose();
+    }
+
+    private static final float[] BORDER = {0.62f, 1.0f, 0.86f, 0.55f};
+    private static final float BORDER_HEIGHT = 2.5f;
+
+    /**
+     * The colony's limits: a low glowing curtain standing on the ground, fading upward, unlike anything the wall uses.
+     */
+    private static void drawBorder(final VertexConsumer out, final Matrix4f m)
+    {
+        for (final int[] edge : border)
+        {
+            final int x = edge[0];
+            final int z = edge[1];
+            final boolean alongX = edge[2] == 0;
+            final Terrain.Probe a = probe(x, z);
+            final Terrain.Probe b = alongX ? probe(x, z - 1) : probe(x - 1, z);
+            if (!a.loaded() && !b.loaded())
+            {
+                continue;
+            }
+            final float y0 = Math.max(a.loaded() ? a.ground() : Integer.MIN_VALUE, b.loaded() ? b.ground() : Integer.MIN_VALUE) + 1.02f;
+            final float y1 = y0 + BORDER_HEIGHT;
+            final float x1 = alongX ? x + 1 : x;
+            final float z1 = alongX ? z : z + 1;
+            out.addVertex(m, x, y0, z).setColor(BORDER[0], BORDER[1], BORDER[2], BORDER[3]);
+            out.addVertex(m, x1, y0, z1).setColor(BORDER[0], BORDER[1], BORDER[2], BORDER[3]);
+            out.addVertex(m, x1, y1, z1).setColor(BORDER[0], BORDER[1], BORDER[2], 0f);
+            out.addVertex(m, x, y1, z).setColor(BORDER[0], BORDER[1], BORDER[2], 0f);
+            // A bright line along the foot, readable from high up
+            final float w = 0.12f;
+            if (alongX)
+            {
+                quad(out, m, BORDER, x, y0 + 0.01f, z - w, x, y0 + 0.01f, z + w, x1, y0 + 0.01f, z + w, x1, y0 + 0.01f, z - w);
+            }
+            else
+            {
+                quad(out, m, BORDER, x - w, y0 + 0.01f, z, x - w, y0 + 0.01f, z1, x + w, y0 + 0.01f, z1, x + w, y0 + 0.01f, z);
+            }
+        }
+    }
+
+    /**
+     * A round tower as it will stand: its cells, outer sides only, and merlons on every other block of its rim.
+     */
+    private static void tower(final VertexConsumer out, final Matrix4f m, final WallLayout.Tower tower, final float[] color)
+    {
+        final float y0 = tower.bottom();
+        final float y1 = tower.top() + 1;
+        for (int dx = 0; dx < tower.size(); dx++)
+        {
+            for (int dz = 0; dz < tower.size(); dz++)
+            {
+                final int x = tower.x() + dx;
+                final int z = tower.z() + dz;
+                if (!tower.covers(x, z))
+                {
+                    continue;
+                }
+                quad(out, m, color, x, y1, z, x, y1, z + 1, x + 1, y1, z + 1, x + 1, y1, z);
+                final boolean north = !tower.covers(x, z - 1);
+                final boolean south = !tower.covers(x, z + 1);
+                final boolean west = !tower.covers(x - 1, z);
+                final boolean east = !tower.covers(x + 1, z);
+                if (north)
+                {
+                    wall(out, m, color, y0, y1, x, z, x + 1, z);
+                }
+                if (south)
+                {
+                    wall(out, m, color, y0, y1, x + 1, z + 1, x, z + 1);
+                }
+                if (west)
+                {
+                    wall(out, m, color, y0, y1, x, z + 1, x, z);
+                }
+                if (east)
+                {
+                    wall(out, m, color, y0, y1, x + 1, z, x + 1, z + 1);
+                }
+                if ((north || south || west || east) && ((x + z) & 1) == 0)
+                {
+                    box(out, m, x, y1, z, x + 1, y1 + 1, z + 1, color);
+                }
+            }
+        }
     }
 
     private static final float[] GATE = {1.0f, 0.80f, 0.25f, 0.50f};

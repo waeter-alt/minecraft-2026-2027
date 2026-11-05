@@ -26,6 +26,22 @@ public final class WallLevels
         {
             return rank <= 0 ? 0 : perGate << (rank - 1);
         }
+
+        /**
+         * The least a retouch of the trace costs at this level, whatever it changes: a tower's price.
+         */
+        public int retouchPrice()
+        {
+            return perTower;
+        }
+    }
+
+    /**
+     * What retouching a wall at this level costs: what the new trace adds, and never less than the retouch price.
+     */
+    public static long editCost(final long after, final long before, final Level level)
+    {
+        return Math.max(after - before, level.retouchPrice());
     }
 
     /**

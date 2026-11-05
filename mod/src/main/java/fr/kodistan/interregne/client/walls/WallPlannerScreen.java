@@ -109,6 +109,11 @@ public final class WallPlannerScreen extends Screen
      */
     @Nullable
     private Boolean helpOpen;
+    /**
+     * The information panel folded into a small tab.
+     */
+    private boolean panelHidden;
+    private int borderAge = Integer.MAX_VALUE / 2;
 
     private double rightTravel;
     private boolean rightDown;
@@ -417,10 +422,16 @@ public final class WallPlannerScreen extends Screen
         steer(seconds);
         aim(mouseX, mouseY);
 
+        if (++borderAge > 40)
+        {
+            borderAge = 0;
+            WallPlanner.border(colonyBorder());
+        }
         buttons.clear();
-        renderPanel(graphics);
+        renderPanel(graphics, mouseX, mouseY);
         renderDemolish(graphics, mouseX, mouseY);
         renderActions(graphics, mouseX, mouseY);
+        final int barBottom = renderSiteBar(graphics);
         final String hint = trace.isEmpty() ? "Cliquez au sol pour poser le premier point de la muraille"
                               : gateMode && gates.isEmpty() ? "Cliquez sur un pan droit de la muraille pour poser sa porte (offerte)"
                                   : gateMode && gateSpot == null && gateHover != null && gates.size() < WallLevels.MAX_GATES
@@ -440,10 +451,11 @@ public final class WallPlannerScreen extends Screen
             final int hw = textW + 16;
             final int hx = Math.max(left, Math.min((width - hw) / 2, width - PAD - hw));
             final int hh = 8 + lines.size() * 10;
-            Ui.plate(graphics, hx, PAD, hx + hw, PAD + hh, Palette.PAPER_LIGHT, Palette.EDGE, Palette.PAPER_LIGHT);
+            final int hy = barBottom > 0 ? barBottom + 4 : PAD;
+            Ui.plate(graphics, hx, hy, hx + hw, hy + hh, Palette.PAPER_LIGHT, Palette.EDGE, Palette.PAPER_LIGHT);
             for (int i = 0; i < lines.size(); i++)
             {
-                graphics.drawString(font, lines.get(i), hx + 8, PAD + 5 + i * 10, Palette.INK, false);
+                graphics.drawString(font, lines.get(i), hx + 8, hy + 5 + i * 10, Palette.INK, false);
             }
         }
     }
@@ -680,12 +692,124 @@ public final class WallPlannerScreen extends Screen
 
     // --- Panel ---
 
-    private void renderPanel(final GuiGraphics graphics)
+    private static int translucent(final int color)
     {
-        final int panelW = Math.min(196, width - 2 * PAD);
+        return (color & 0x00FFFFFF) | 0xD0000000;
+    }
+
+    /**
+     * The colony's limits around the town hall, as the unit edges between a claimed chunk and one that is not.
+     */
+    private java.util.List<int[]> colonyBorder()
+    {
+        final java.util.List<int[]> edges = new ArrayList<>();
+        final int cx = townHall.getPosition().getX() >> 4;
+        final int cz = townHall.getPosition().getZ() >> 4;
+        final int reach = (int) (RANGE / 16) + 3;
+        final java.util.Map<Long, Boolean> claimed = new java.util.HashMap<>();
+        final java.util.function.BiPredicate<Integer, Integer> in = (x, z) -> claimed.computeIfAbsent(WallRegistryCell.of(x, z), k -> inColony(x * 16 + 8, z * 16 + 8));
+        for (int x = cx - reach; x <= cx + reach; x++)
+        {
+            for (int z = cz - reach; z <= cz + reach; z++)
+            {
+                if (!in.test(x, z))
+                {
+                    continue;
+                }
+                for (int i = 0; i < 16; i++)
+                {
+                    if (!in.test(x, z - 1))
+                    {
+                        edges.add(new int[] {x * 16 + i, z * 16, 0});
+                    }
+                    if (!in.test(x, z + 1))
+                    {
+                        edges.add(new int[] {x * 16 + i, z * 16 + 16, 0});
+                    }
+                    if (!in.test(x - 1, z))
+                    {
+                        edges.add(new int[] {x * 16, z * 16 + i, 1});
+                    }
+                    if (!in.test(x + 1, z))
+                    {
+                        edges.add(new int[] {x * 16 + 16, z * 16 + i, 1});
+                    }
+                }
+            }
+        }
+        return edges;
+    }
+
+    private static final class WallRegistryCell
+    {
+        static long of(final int x, final int z)
+        {
+            return ((long) x << 32) | (z & 0xFFFFFFFFL);
+        }
+    }
+
+    /**
+     * The bar of the wall's site (building, retouch, upgrade, demolition), drawn beside the panel since the aerial view
+     * hides the usual HUD. Returns its bottom, or 0 when there is none.
+     */
+    private int renderSiteBar(final GuiGraphics graphics)
+    {
+        final java.util.Map<java.util.UUID, net.minecraft.client.gui.components.LerpingBossEvent> events =
+          ((fr.kodistan.interregne.mixin.client.BossHealthOverlayAccessor) minecraft.gui.getBossOverlay()).interregne$events();
+        net.minecraft.client.gui.components.LerpingBossEvent bar = null;
+        for (final net.minecraft.client.gui.components.LerpingBossEvent event : events.values())
+        {
+            if (bar == null || event.getName().getString().toLowerCase(java.util.Locale.ROOT).contains("muraille"))
+            {
+                bar = event;
+            }
+        }
+        if (bar == null)
+        {
+            return 0;
+        }
+        final int left = panelX1 + 8;
+        final int right = width - PAD;
+        final int w = Math.min(220, right - left);
+        if (w < 60)
+        {
+            return 0;
+        }
+        final int x = Math.max(left, Math.min((width - w) / 2, right - w));
+        final int y = PAD;
+        final int h = 24;
+        Ui.plate(graphics, x, y, x + w, y + h, translucent(Palette.PAPER_LIGHT), Palette.EDGE, translucent(Palette.PAPER_LIGHT));
+        graphics.drawString(font, Ui.fit(font, bar.getName().getString(), w - 16), x + 8, y + 5, Palette.INK, false);
+        final int bx = x + 8;
+        final int by = y + 16;
+        final int bw = w - 16;
+        graphics.fill(bx, by, bx + bw, by + 3, Palette.PAPER_DARK);
+        graphics.fill(bx, by, bx + Math.round(bw * Math.max(0, Math.min(1, bar.getProgress()))), by + 3, Palette.GREEN_LIGHT);
+        return y + h;
+    }
+
+    private void renderPanel(final GuiGraphics graphics, final int mouseX, final int mouseY)
+    {
+        if (panelHidden)
+        {
+            // Folded into a tab: a click brings the panel back
+            final String label = "Infos ▸";
+            final int w = font.width(label) + 14;
+            final int h = Ui.BUTTON_H + 2;
+            final boolean over = Ui.inside(mouseX, mouseY, PAD, PAD, w, h);
+            Ui.plate(graphics, PAD, PAD, PAD + w, PAD + h, over ? Palette.PAPER_LIGHT : translucent(Palette.PANEL), Palette.EDGE, translucent(Palette.PAPER_LIGHT));
+            graphics.drawString(font, label, PAD + 7, PAD + (h - 8) / 2, Palette.INK, false);
+            buttons.add(new Button(PAD, PAD, w, h, () -> panelHidden = false));
+            panelX1 = PAD + w;
+            panelY1 = PAD + h;
+            return;
+        }
+        final int panelW = Math.min(168, width - 2 * PAD);
         final int x = PAD;
         final int y = PAD;
-        final int inner = panelW - 16;
+        final int pad = 10;
+        final int row = 12;
+        final int inner = panelW - 2 * pad;
         final List<String[]> help = gateMode ? List.of(
           new String[] {"Clic sur un pan", "poser une porte"},
           new String[] {"Glisser une porte", "la déplacer"},
@@ -705,56 +829,66 @@ public final class WallPlannerScreen extends Screen
           new String[] {"Clic droit glissé", "pivoter"},
           new String[] {"Maj", "angle libre"});
         final int blocked = layout == null ? 0 : layout.blocked();
-        final boolean showHelp = helpOpen == null ? width >= 500 && this.height >= 300 : helpOpen;
+        final boolean showHelp = helpOpen != null && helpOpen;
         final int helpLines = showHelp ? help.size() : 1;
-        final int height = 16 + LINE + 4 + LINE * 3 + (blocked > 0 ? LINE * 2 : 0) + 11 + helpLines * LINE + 4;
+        final int height = pad + 10 + row + 8 + row * 3 + (blocked > 0 ? row * 2 : 0) + 5 + 1 + 7 + helpLines * row + pad - 4;
         panelX1 = x + panelW;
         panelY1 = y + height;
-        Ui.plate(graphics, x, y, x + panelW, y + height, Palette.PANEL, Palette.EDGE, Palette.PAPER_LIGHT);
-        int ty = y + 8;
-        graphics.drawString(font, Ui.fitBold(font, building() ? "Muraille en chantier" : gateMode ? "Portes de la muraille" : upgrade ? "Amélioration de la muraille"
-          : existing != null ? "Retouche de la muraille" : "Tracé de la muraille", inner), x + 8, ty, Palette.INK, false);
-        ty += LINE;
-        graphics.drawString(font, Ui.fit(font, levelLine(inner), inner), x + 8, ty, Palette.MUTED, false);
-        ty += LINE + 4;
+        Ui.plate(graphics, x, y, x + panelW, y + height, translucent(Palette.PANEL), Palette.EDGE, translucent(Palette.PAPER_LIGHT));
+        // Fold button, top right
+        final int fold = 11;
+        final int fx = x + panelW - pad - fold + 3;
+        final int fy = y + pad - 2;
+        final boolean overFold = Ui.inside(mouseX, mouseY, fx - 2, fy - 2, fold + 4, fold + 4);
+        graphics.fill(fx, fy, fx + fold, fy + fold, overFold ? 0x40000000 : 0x18000000);
+        graphics.fill(fx + 3, fy + 5, fx + fold - 3, fy + 6, Palette.INK);
+        buttons.add(new Button(fx - 2, fy - 2, fold + 4, fold + 4, () -> panelHidden = true));
+        int ty = y + pad;
+        graphics.drawString(font, Ui.fitBold(font, building() ? "Muraille en chantier" : gateMode ? "Portes de la muraille" : upgrade ? "Amélioration"
+          : existing != null ? "Retouche" : "Tracé de la muraille", inner - fold - 4), x + pad, ty, Palette.INK, false);
+        ty += 10 + 2;
+        graphics.drawString(font, Ui.fit(font, levelLine(inner), inner), x + pad, ty, Palette.MUTED, false);
+        ty += row + 8;
         final int length = layout == null ? 0 : layout.length();
         final int towers = layout == null ? 0 : layout.towers().size();
-        ty = stat(graphics, x + 8, ty, inner, "Longueur", length + (length > 1 ? " blocs" : " bloc"));
-        ty = stat(graphics, x + 8, ty, inner, "Tours", Integer.toString(towers));
+        ty = stat(graphics, x + pad, ty, inner, "Longueur", length + (length > 1 ? " blocs" : " bloc"), row);
+        ty = stat(graphics, x + pad, ty, inner, "Tours", Integer.toString(towers), row);
         final int next = gates.size();
-        ty = stat(graphics, x + 8, ty, inner, "Portes", gates.size() + " / " + WallLevels.MAX_GATES + (next >= WallLevels.MAX_GATES ? ""
-          : " · suiv. " + (level.gatePrice(next) == 0 ? "offerte" : Integer.toString(level.gatePrice(next)))));
+        ty = stat(graphics, x + pad, ty, inner, "Portes", gates.size() + " / " + WallLevels.MAX_GATES + (next >= WallLevels.MAX_GATES ? ""
+          : " · +" + (level.gatePrice(next) == 0 ? "0" : Integer.toString(level.gatePrice(next)))), row);
         if (blocked > 0)
         {
-            graphics.drawString(font, Ui.fit(font, blocked + " blocs gênés", inner), x + 8, ty, Palette.RED, false);
-            ty += LINE;
-            int lx = x + 8;
+            graphics.drawString(font, Ui.fit(font, blocked + " blocs gênés", inner), x + pad, ty, Palette.RED, false);
+            ty += row;
+            int lx = x + pad;
             graphics.fill(lx, ty, lx + 7, ty + 7, 0xFFE0473A);
             lx += 10;
             graphics.drawString(font, "obstacle", lx, ty, Palette.MUTED, false);
             lx += font.width("obstacle") + 10;
             graphics.fill(lx, ty, lx + 7, ty + 7, 0xFFF0A030);
-            graphics.drawString(font, Ui.fit(font, "hors zone", x + 8 + inner - lx - 10), lx + 10, ty, Palette.MUTED, false);
-            ty += LINE;
+            graphics.drawString(font, Ui.fit(font, "hors zone", x + pad + inner - lx - 10), lx + 10, ty, Palette.MUTED, false);
+            ty += row;
         }
-        ty = Ui.separator(graphics, x + 8, ty - 4, inner);
+        ty += 5;
+        graphics.fill(x + pad, ty, x + pad + inner, ty + 1, 0x30000000);
+        ty += 1 + 7;
         if (!showHelp)
         {
-            graphics.drawString(font, "H", x + 8, ty, Palette.INK, false);
-            graphics.drawString(font, Ui.fit(font, "afficher les commandes", inner - 14), x + 22, ty, Palette.MUTED, false);
+            graphics.drawString(font, "H", x + pad, ty, Palette.INK, false);
+            graphics.drawString(font, Ui.fit(font, "commandes", inner - 14), x + pad + 12, ty, Palette.MUTED, false);
             return;
         }
         int keyW = 0;
-        for (final String[] row : help)
+        for (final String[] line : help)
         {
-            keyW = Math.max(keyW, font.width(row[0]));
+            keyW = Math.max(keyW, font.width(line[0]));
         }
-        keyW = Math.min(keyW + 8, inner * 3 / 5);
-        for (final String[] row : help)
+        keyW = Math.min(keyW + 10, inner * 3 / 5);
+        for (final String[] line : help)
         {
-            graphics.drawString(font, Ui.fit(font, row[0], keyW - 4), x + 8, ty, Palette.INK, false);
-            graphics.drawString(font, Ui.fit(font, row[1], inner - keyW), x + 8 + keyW, ty, Palette.MUTED, false);
-            ty += LINE;
+            graphics.drawString(font, Ui.fit(font, line[0], keyW - 6), x + pad, ty, Palette.INK, false);
+            graphics.drawString(font, Ui.fit(font, line[1], inner - keyW), x + pad + keyW, ty, Palette.MUTED, false);
+            ty += row;
         }
     }
 
@@ -785,20 +919,31 @@ public final class WallPlannerScreen extends Screen
             return;
         }
         final boolean armed = Util.getMillis() - demolishArmedAt < 4000;
-        final String label = armed ? "Confirmer la démolition" : "Démolir la muraille";
-        final int w = Math.min(panelX1 - PAD, font.width(label) + 16);
+        final String label = armed ? "Confirmer" : "Démolir la muraille";
+        final boolean creative = minecraft.player != null && minecraft.player.isCreative();
+        final long refund = creative ? 0 : existing.refund();
+        final String back = refund > 0 ? "+" + compact(refund) : null;
+        final int w = Math.min(width - 2 * PAD, font.width(label) + 16 + (back == null ? 0 : 8 + 12 + font.width(back)));
         final int h = Ui.BUTTON_H + 2;
         final int x = PAD;
         final int y = panelY1 + 4;
         final boolean over = Ui.inside(mouseX, mouseY, x, y, w, h);
+        final int ty = y + (h - 8) / 2;
         if (armed)
         {
             Ui.plate(graphics, x, y, x + w, y + h, 0xFFB03A2E, Palette.EDGE, 0xFFD2574A);
-            graphics.drawCenteredString(font, Ui.fit(font, label, w - 8), x + w / 2, y + (h - 8) / 2, 0xFFFFFFFF);
         }
         else
         {
-            Ui.button(graphics, font, x, y, w, h, Ui.fit(font, label, w - 8), Ui.ButtonStyle.DANGER, true, over);
+            Ui.button(graphics, font, x, y, w, h, "", Ui.ButtonStyle.DANGER, true, over);
+        }
+        graphics.drawString(font, label, x + 8, ty, armed ? 0xFFFFFFFF : Palette.RED, false);
+        if (back != null)
+        {
+            // What comes back to the treasury, inside the button
+            final int cx = x + 8 + font.width(label) + 8;
+            Ui.coin(graphics, cx, ty - 1, 10);
+            graphics.drawString(font, back, cx + 12, ty, armed ? 0xFFFFFFFF : Palette.GREEN, false);
         }
         buttons.add(new Button(x, y, w, h, () -> {
             if (Util.getMillis() - demolishArmedAt < 4000)
@@ -814,17 +959,18 @@ public final class WallPlannerScreen extends Screen
         }));
         if (over)
         {
-            graphics.renderTooltip(font, font.split(Component.literal(armed ? "Cliquez encore : toute la muraille et ses portes tombent en quelques secondes. Rien n'est remboursé."
-              : "Abat toute la muraille et ses portes d'un coup. Un second clic confirme."), 200), mouseX, mouseY);
+            final String refunded = refund > 0 ? " Ses " + refund + " Couronnes reviennent au trésor régional." : "";
+            graphics.renderTooltip(font, font.split(Component.literal(armed ? "Cliquez encore : toute la muraille et ses portes tombent en quelques secondes." + refunded
+              : "Abat toute la muraille et ses portes d'un coup." + refunded + " Un second clic confirme."), 200), mouseX, mouseY);
         }
     }
 
-    private int stat(final GuiGraphics graphics, final int x, final int y, final int width, final String label, final String value)
+    private int stat(final GuiGraphics graphics, final int x, final int y, final int width, final String label, final String value, final int row)
     {
         graphics.drawString(font, label, x, y, Palette.MUTED, false);
         final String shown = Ui.fit(font, value, width - font.width(label) - 6);
         graphics.drawString(font, shown, x + width - font.width(shown), y, Palette.INK, false);
-        return y + LINE;
+        return y + row;
     }
 
     private String keys()
@@ -849,7 +995,8 @@ public final class WallPlannerScreen extends Screen
         // Main action: the price inside; green when it can be built, grey with the reason otherwise
         final boolean creative = minecraft.player != null && minecraft.player.isCreative();
         final boolean editing = existing != null;
-        final int cost = layout == null || creative ? 0 : upgrade || !editing ? layout.cost(level) : Math.max(0, layout.cost(level) - originalCost);
+        final int cost = layout == null || creative ? 0 : upgrade || !editing ? layout.cost(level)
+                                                                 : (int) WallLevels.editCost(layout.cost(level), originalCost, level);
         final long money = ClientTreasury.of(colony) + (minecraft.player == null ? 0 : Wallet.value(new PlayerMainInvWrapper(minecraft.player.getInventory())));
         final fr.kodistan.interregne.network.WallSyncPayload live = ClientWalls.of(colony);
         final String refusal = live != null && live.building() || Util.getMillis() - sentAt < 2500 ? "Chantier en cours"
@@ -950,11 +1097,11 @@ public final class WallPlannerScreen extends Screen
                                  : "Finir le tracé".equals(refusal) ? "Cliquez sur le premier point pour fermer l'enceinte, ou sur la dernière tour pour la laisser ouverte."
                                      : "Obstacles en rouge".equals(refusal) ? "Le tracé traverse un bâtiment, sort de la colonie, ou une porte ne tient plus sur un pan droit : corrigez les parties rouges."
                                      : "Placer une porte".equals(refusal) ? "Une muraille a besoin d'au moins une porte, posée sur un pan droit. La première est offerte."
-                                     : "Aucun changement".equals(refusal) ? "Glissez une tour, ajoutez ou retirez une porte (G), ou effacez pour retracer : seul ce qui s'ajoute se paie."
+                                     : "Aucun changement".equals(refusal) ? "Glissez une tour, ajoutez ou retirez une porte (G), ou effacez pour retracer. Toute retouche se paie : au moins " + level.retouchPrice() + " Couronnes."
                                      : "Chantier en cours".equals(refusal) ? "La muraille se construit : attendez la fin du chantier pour la retoucher."
                                      : refusal != null && refusal.startsWith("Hôtel") ? "Une muraille ne dépasse pas le niveau de l'hôtel de ville : améliorez-le d'abord."
                                          : ready && upgrade ? "Rebâtit toute la muraille au niveau " + target() + " (" + level.name() + ", " + level.height() + " blocs de haut) sur ce tracé. Chantier : " + seconds() + " s."
-                                         : ready && editing ? "Retouche la muraille : seul ce qui s'ajoute est payé, les pans retirés sont démontés. Chantier : " + seconds() + " s."
+                                         : ready && editing ? "Retouche la muraille : ce que le tracé ajoute, au moins " + level.retouchPrice() + " Couronnes. Seuls les pans touchés sont rebâtis, les pans retirés démontés."
                                          : ready ? "Paie la muraille (trésor régional d'abord) et lance le chantier : " + seconds() + " s." : null;
             if (tip != null)
             {
@@ -1183,7 +1330,7 @@ public final class WallPlannerScreen extends Screen
         }
         if (keyCode == GLFW.GLFW_KEY_H)
         {
-            final boolean shown = helpOpen == null ? width >= 500 && height >= 300 : helpOpen;
+            final boolean shown = helpOpen != null && helpOpen;
             helpOpen = !shown;
             return true;
         }

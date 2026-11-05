@@ -166,8 +166,9 @@ public final class Walls
         long cost = layout.cost(look);
         if (difference && old != null)
         {
+            // Any retouch is paid: what the new trace adds, and never less than the retouch price
             final WallLayout before = WallLayout.of(old.points(), old.closed(), old.gates(), look, reader, claim);
-            cost = Math.max(0, cost - before.cost(look));
+            cost = WallLevels.editCost(cost, before.cost(look), look);
         }
         if (player.isCreative())
         {
@@ -193,6 +194,9 @@ public final class Walls
                 placed.add(step.pos().asLong());
             }
         }
+        // Only what changes is rebuilt: a block already standing as it should is left alone
+        final int planned = steps.size();
+        steps.removeIf(step -> already(level, step));
         if (old != null)
         {
             // What the new wall no longer covers comes down first, never below the ground it stood on
@@ -210,13 +214,16 @@ public final class Walls
             steps.addAll(0, removals);
         }
 
-        final int seconds = seconds(layout);
+        // A retouch that changes a stretch takes the time of that stretch
+        final int seconds = old == null || planned == 0 ? seconds(layout)
+                              : Math.max(5, (int) Math.ceil(seconds(layout) * Math.min(1.0, steps.size() / (double) planned)));
+        final long before = old == null ? 0 : old.spent() >= 0 ? old.spent() : valueOf(old, reader, claim);
         final WallRegistry.Wall wall = new WallRegistry.Wall(List.copyOf(points), List.copyOf(gates), closed, wallLevel, ground,
-          placed.stream().mapToLong(Long::longValue).toArray());
+          placed.stream().mapToLong(Long::longValue).toArray(), before + cost);
         final WallRegistry registry = WallRegistry.get(player.server);
         BUILDING.add(key);
         sync(player.server, key, wall, true);
-        WallSite.launch(level, steps, seconds, wallLevel, bannerOf(colony), colony.getCenter(), () -> {
+        WallSite.launch(level, steps, seconds, wallLevel, bannerOf(colony), colony.getCenter(), player, () -> {
             BUILDING.remove(key);
             registry.put(colony, wall);
             sync(player.server, key, wall, false);
@@ -224,6 +231,56 @@ public final class Walls
         final String what = old == null ? "Chantier de la muraille lancé" : wallLevel > old.level() ? "Muraille en route vers le niveau " + wallLevel
                               : "Retouche de la muraille lancée";
         player.sendSystemMessage(Component.literal(what + " : " + seconds + " s.").withStyle(ChatFormatting.GOLD));
+    }
+
+    /**
+     * Whether this block already stands as the step wants it (same block, same facing): it need not be set again.
+     */
+    private static boolean already(final ServerLevel level, final WallBlocks.Step step)
+    {
+        final net.minecraft.world.level.block.state.BlockState current = level.getBlockState(step.pos());
+        final net.minecraft.world.level.block.state.BlockState wanted = step.state();
+        if (wanted.isAir())
+        {
+            return current.isAir();
+        }
+        if (!current.is(wanted.getBlock()))
+        {
+            return false;
+        }
+        for (final net.minecraft.world.level.block.state.properties.Property<?> property : wanted.getProperties())
+        {
+            if (property.getName().equals("facing") && current.hasProperty(property) && !current.getValue(property).equals(wanted.getValue(property)))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * What a wall saved before its spending was kept is worth: its price at its level today.
+     */
+    private static long valueOf(final WallRegistry.Wall wall, final WallLayout.Ground reader, final WallLayout.Claim claim)
+    {
+        final WallLevels.Level look = WallLevels.of(wall.level());
+        return WallLayout.of(wall.points(), wall.closed(), wall.gates(), look, reader, claim).cost(look);
+    }
+
+    /**
+     * What tearing this wall down gives back: everything paid for it.
+     */
+    private static long refundOf(final ServerLevel level, final IColony colony, final WallRegistry.Wall wall)
+    {
+        if (wall.spent() >= 0)
+        {
+            return wall.spent();
+        }
+        final WallLayout.Ground reader = (x, z) -> {
+            final Terrain.Probe known = wall.ground().get(WallRegistry.cell(x, z));
+            return known != null ? known : Terrain.probe(level, x, z);
+        };
+        return valueOf(wall, reader, (x, z) -> true);
     }
 
     /**
@@ -241,7 +298,8 @@ public final class Walls
 
     /**
      * Tears the colony's whole wall down, gates and all, in a few seconds: every block it placed above the ground it
-     * stood on is broken, the highest first; piles in water become water again. Nothing is refunded.
+     * stood on is broken, the highest first; piles in water become water again. Everything paid for it goes back to the
+     * regional treasury.
      */
     public static void onDemolish(final fr.kodistan.interregne.network.WallDemolishPayload payload, final IPayloadContext context)
     {
@@ -300,13 +358,19 @@ public final class Walls
         }
         steps.sort(Comparator.comparingInt((WallBlocks.Step step) -> step.pos().getY()).reversed());
         final int seconds = Math.max(2, Math.min(6, steps.size() / 1500 + 2));
+        final long refund = player.isCreative() ? 0 : refundOf(player.serverLevel(), colony, old);
         BUILDING.add(key);
         sync(player.server, key, old, true);
-        WallSite.demolish(player.serverLevel(), steps, seconds, () -> {
+        WallSite.demolish(player.serverLevel(), steps, seconds, player, () -> {
             BUILDING.remove(key);
             registry.remove(colony);
+            if (refund > 0)
+            {
+                RegionalTreasury.get(player.server).credit(colony, refund);
+                player.sendSystemMessage(Component.literal("Remboursé : " + Wallet.couronnes(refund, null) + " au trésor régional.").withStyle(ChatFormatting.GRAY));
+            }
             // An empty wall tells the clients it is gone
-            PacketDistributor.sendToAllPlayers(new WallSyncPayload(key, List.of(), List.of(), false, 0, false));
+            PacketDistributor.sendToAllPlayers(new WallSyncPayload(key, List.of(), List.of(), false, 0, false, 0));
         });
         player.sendSystemMessage(Component.literal("La muraille tombe.").withStyle(ChatFormatting.GOLD));
     }
@@ -318,12 +382,55 @@ public final class Walls
 
     private static WallSyncPayload payloadOf(final String key, final WallRegistry.Wall wall, final boolean building)
     {
-        return new WallSyncPayload(key, WallTrace.flat(wall.points()), WallTrace.flat(wall.gates()), wall.closed(), wall.level(), building);
+        return new WallSyncPayload(key, WallTrace.flat(wall.points()), WallTrace.flat(wall.gates()), wall.closed(), wall.level(), building,
+          Math.max(0, wall.spent()));
     }
 
     private static void sync(final MinecraftServer server, final String key, final WallRegistry.Wall wall, final boolean building)
     {
         PacketDistributor.sendToAllPlayers(payloadOf(key, wall, building));
+    }
+
+    /**
+     * Chunks claimed around a town hall: MineColonies' 4, 30 % further, so a wall has room inside the colony.
+     */
+    public static final int COLONY_RADIUS = 5;
+
+    /**
+     * Chunks added on top of every building's MineColonies claim (1 at levels 1-3, 2 at 4-5): the border
+     * leaves room to trace a wall between the houses and the limit. Applied by AbstractBuildingMixin.
+     */
+    public static final int BUILDING_CLAIM_BONUS = 2;
+
+    /**
+     * New colonies claim COLONY_RADIUS chunks around their town hall; existing ones are widened to it.
+     */
+    @SubscribeEvent
+    public static void onServerStarted(final net.neoforged.neoforge.event.server.ServerStartedEvent event)
+    {
+        final com.minecolonies.api.configuration.ServerConfiguration config =
+          (com.minecolonies.api.configuration.ServerConfiguration) com.minecolonies.core.MineColonies.getConfig().getServer();
+        if (config.initialColonySize.get() < COLONY_RADIUS)
+        {
+            config.initialColonySize.set(COLONY_RADIUS);
+        }
+        for (final IColony colony : IColonyManager.getInstance().getAllColonies())
+        {
+            final ServerLevel level = event.getServer().getLevel(colony.getDimension());
+            if (level == null || !(colony instanceof com.minecolonies.core.colony.Colony real))
+            {
+                continue;
+            }
+            final BlockPos center = colony.getCenter();
+            if (!(colony.isCoordInColony(level, center.offset(COLONY_RADIUS * 16, 0, 0)) && colony.isCoordInColony(level, center.offset(-COLONY_RADIUS * 16, 0, 0))))
+            {
+                com.minecolonies.core.util.ChunkDataHelper.staticClaimInRange(real, true, center, COLONY_RADIUS, level, false);
+                InterregneMod.LOGGER.info("Colony {} widened to {} chunks around its town hall", colony.getID(), COLONY_RADIUS);
+            }
+            // The border hugged the buildings (MineColonies claims 1-2 chunks around each): re-apply the roomier
+            // claims of AbstractBuildingMixin so an existing colony gains its wall room without a level-up.
+            com.minecolonies.core.util.BackUpHelper.reclaimChunks(real);
+        }
     }
 
     @SubscribeEvent
