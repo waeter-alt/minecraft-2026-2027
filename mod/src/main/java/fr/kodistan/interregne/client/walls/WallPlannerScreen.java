@@ -1005,11 +1005,13 @@ public final class WallPlannerScreen extends Screen
                                      : upgrade && townHall.getBuildingLevel() < target() ? "Hôtel de ville niv. " + target() + " requis"
                                          : layout != null && layout.blocked() > 0 ? "Obstacles en rouge"
                                              : gates.isEmpty() ? "Placer une porte"
-                                                 : editing && !upgrade && shapeKey().equals(originalKey) ? "Aucun changement"
-                                                     : null;
+                                                 : null;
+        // An unchanged trace is not useless: it is the repair of a wall whose ladders were knocked off or whose
+        // blocks (the gravel of the early levels) fell away. The server rebuilds only what is missing.
+        final boolean repair = editing && !upgrade && shapeKey().equals(originalKey);
         final boolean affordable = money >= cost;
         final boolean ready = trace.points().size() >= 2 && trace.done() && refusal == null && affordable;
-        final String build = refusal != null ? refusal : upgrade ? "Améliorer · niv. " + target() : editing ? "Modifier" : "Bâtir";
+        final String build = refusal != null ? refusal : upgrade ? "Améliorer · niv. " + target() : repair ? "Réparer" : editing ? "Modifier" : "Bâtir";
         final String price = creative ? "gratuit" : affordable ? Integer.toString(cost) : compact(money) + "/" + compact(cost);
         final boolean showPrice = refusal == null;
         final int buildW = font.width(build) + 14 + (showPrice ? 10 + 12 + font.width(price) : 0);
@@ -1097,9 +1099,9 @@ public final class WallPlannerScreen extends Screen
                                  : "Finir le tracé".equals(refusal) ? "Cliquez sur le premier point pour fermer l'enceinte, ou sur la dernière tour pour la laisser ouverte."
                                      : "Obstacles en rouge".equals(refusal) ? "Le tracé traverse un bâtiment, sort de la colonie, ou une porte ne tient plus sur un pan droit : corrigez les parties rouges."
                                      : "Placer une porte".equals(refusal) ? "Une muraille a besoin d'au moins une porte, posée sur un pan droit. La première est offerte."
-                                     : "Aucun changement".equals(refusal) ? "Glissez une tour, ajoutez ou retirez une porte (G), ou effacez pour retracer. Toute retouche se paie : au moins " + level.retouchPrice() + " Couronnes."
                                      : "Chantier en cours".equals(refusal) ? "La muraille se construit : attendez la fin du chantier pour la retoucher."
                                      : refusal != null && refusal.startsWith("Hôtel") ? "Une muraille ne dépasse pas le niveau de l'hôtel de ville : améliorez-le d'abord."
+                                         : ready && repair ? "Rebouche ce qui manque (échelles décrochées, blocs tombés) : seuls les blocs absents sont reposés, au prix plancher d'une retouche (" + level.retouchPrice() + " Couronnes)."
                                          : ready && upgrade ? "Rebâtit toute la muraille au niveau " + target() + " (" + level.name() + ", " + level.height() + " blocs de haut) sur ce tracé. Chantier : " + seconds() + " s."
                                          : ready && editing ? "Retouche la muraille : ce que le tracé ajoute, au moins " + level.retouchPrice() + " Couronnes. Seuls les pans touchés sont rebâtis, les pans retirés démontés."
                                          : ready ? "Paie la muraille (trésor régional d'abord) et lance le chantier : " + seconds() + " s." : null;

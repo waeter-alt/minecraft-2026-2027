@@ -209,7 +209,13 @@ public final class WallSite implements Site
             level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
             return;
         }
-        final BlockState state = Block.updateFromNeighbourShapes(step.state(), level, pos);
+        BlockState state = Block.updateFromNeighbourShapes(step.state(), level, pos);
+        if (state.isAir() && !step.state().isAir())
+        {
+            // A ladder, lantern or banner set while its support is still flying in (or simply not yet placed) would
+            // be silently turned to air by the neighbour-shape update: place what was designed, as designed.
+            state = step.state();
+        }
         level.setBlock(pos, state, Block.UPDATE_ALL);
         if (banner != null && level.getBlockEntity(pos) instanceof BannerBlockEntity entity)
         {
@@ -338,7 +344,8 @@ public final class WallSite implements Site
                 final BlockState current = level.getBlockState(pos);
                 if (current.isAir() || !current.getFluidState().isEmpty())
                 {
-                    level.setBlock(pos, Block.updateFromNeighbourShapes(flight.state(), level, pos), Block.UPDATE_ALL);
+                    final BlockState landed = Block.updateFromNeighbourShapes(flight.state(), level, pos);
+                    level.setBlock(pos, landed.isAir() ? flight.state() : landed, Block.UPDATE_ALL);
                     if (!landAll)
                     {
                         level.sendParticles(ParticleTypes.ENCHANTED_HIT, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 6, 0.4, 0.4, 0.4, 0.1);
