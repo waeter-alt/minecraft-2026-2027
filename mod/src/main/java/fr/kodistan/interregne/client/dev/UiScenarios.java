@@ -124,6 +124,10 @@ public final class UiScenarios
                     targets.add(new Target("wallbuild-upsite", 300, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.upgradeDemo(colony.getTownHall(), true)));
                     targets.add(new Target("wallbuild-updone", 900, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.reopenDemo(colony.getTownHall())));
                     targets.add(new Target("wallbuild-uphub", 40, () -> ColonyHubScreen.openDev(colony.getTownHall(), "walls", 0)));
+                    // Level 3 (stairs by the gate), seen from close on two sides
+                    targets.add(new Target("wallbuild-up3", 950, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.upgradeDemo(colony.getTownHall(), true)));
+                    targets.add(new Target("wallbuild-close", 60, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.closeUpDemo(colony.getTownHall(), 0)));
+                    targets.add(new Target("wallbuild-close2", 60, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.closeUpDemo(colony.getTownHall(), 135)));
                     // Then the planner with « Démolir », and the wall torn down
                     targets.add(new Target("wallbuild-planner", 40, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.reopenDemo(colony.getTownHall())));
                     targets.add(new Target("wallbuild-demolish", 30, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.demolishDemo(colony.getTownHall())));

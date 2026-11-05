@@ -184,7 +184,7 @@ public final class Walls
             player.sendSystemMessage(Component.literal("Payé : " + payment.describe() + ".").withStyle(ChatFormatting.GRAY));
         }
 
-        final List<WallBlocks.Step> steps = new ArrayList<>(WallBlocks.of(level, layout, wallLevel, reader));
+        final List<WallBlocks.Step> steps = new ArrayList<>(WallBlocks.of(level, layout, wallLevel, reader, colony.getCenter()));
         final Set<Long> placed = new HashSet<>();
         for (final WallBlocks.Step step : steps)
         {

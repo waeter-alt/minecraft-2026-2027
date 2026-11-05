@@ -324,6 +324,21 @@ public final class WallPlannerScreen extends Screen
 
     @Nullable
     private static BlockPos demoFocus;
+    /**
+     * Dev captures only: the camera brought close and turned, to look at the wall's details.
+     */
+    private double closeYaw = Double.NaN;
+
+    /**
+     * Dev captures only: the last demo wall seen from close, turned by this many degrees.
+     */
+    public static void closeUpDemo(final IBuildingView townHall, final double yaw)
+    {
+        final WallPlannerScreen screen = new WallPlannerScreen(townHall);
+        screen.focus = demoFocus;
+        screen.closeYaw = yaw;
+        net.minecraft.client.Minecraft.getInstance().setScreen(screen);
+    }
     @Nullable
     private BlockPos focus;
 
@@ -338,6 +353,12 @@ public final class WallPlannerScreen extends Screen
             hiddenGui = minecraft.options.hideGui;
             minecraft.options.hideGui = true;
             lastFrame = Util.getMillis();
+            if (!Double.isNaN(closeYaw))
+            {
+                WallPlanner.zoom(0.6);
+                WallPlanner.rotate(closeYaw, -25);
+                helpOpen = false;
+            }
         }
         seeThrough();
     }
@@ -537,7 +558,7 @@ public final class WallPlannerScreen extends Screen
             }
             layout = points.isEmpty() ? null : WallLayout.of(points, closed, gates, level, WallPlanner::probe, this::inColony);
         }
-        WallPlanner.show(layout, candidate != null ? candidate : grab, closing || finishing || grab != null, null);
+        WallPlanner.show(Double.isNaN(closeYaw) ? layout : null, candidate != null ? candidate : grab, closing || finishing || grab != null, null);
     }
 
     /**
@@ -677,7 +698,7 @@ public final class WallPlannerScreen extends Screen
           new String[] {"Clic dernière tour", "finir ouverte"},
           new String[] {"Clic droit", "annuler"},
           new String[] {"Glisser une tour", "la déplacer"},
-          new String[] {"Double clic", "ajouter une tour"},
+          new String[] {"Double clic", "nouvelle tour"},
           new String[] {"G", "portes"},
           new String[] {keys(), "se déplacer"},
           new String[] {"Molette", "zoom"},
@@ -742,7 +763,7 @@ public final class WallPlannerScreen extends Screen
      */
     private String levelLine(final int width)
     {
-        final String head = "Niv. " + target() + " · " + level.name();
+        final String head = (upgrade ? "Niv. " + levelNumber + " → " + target() : "Niv. " + target()) + " · " + level.name();
         for (final String tail : new String[] {" · " + level.height() + " blocs de haut", " · " + level.height() + " de haut", ""})
         {
             if (font.width(head + tail) <= width)
@@ -895,7 +916,7 @@ public final class WallPlannerScreen extends Screen
 
         if (existing != null && !building() && levelNumber < WallLevels.MAX)
         {
-            final String label = upgrade ? "Niv. " + (levelNumber + 1) + " ✔" : "Niv. " + (levelNumber + 1);
+            final String label = upgrade ? "◀ Retouche" : "Améliorer…";
             final int upW = font.width(label) + 16;
             final int ux = right - upW;
             if (upgrade)
@@ -911,7 +932,7 @@ public final class WallPlannerScreen extends Screen
             right = ux - 6;
         }
 
-        if (!trace.isEmpty() && !building())
+        if (!trace.isEmpty() && !building() && !upgrade)
         {
             final String clear = "Effacer";
             final int clearW = font.width(clear) + 16;

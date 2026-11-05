@@ -37,10 +37,26 @@ public final class WallLayout
     }
 
     /**
-     * A square tower; x and z are its north-west corner.
+     * A round tower inside the size x size square whose north-west corner is (x, z). walk is the y of its floor at the
+     * level of the wall's walkway, top the y of its roof.
      */
-    public record Tower(int x, int z, int size, int bottom, int top, Status status, int index)
+    public record Tower(int x, int z, int size, int bottom, int top, int walk, Status status, int index)
     {
+        public boolean covers(final int cx, final int cz)
+        {
+            final int dx = cx - x;
+            final int dz = cz - z;
+            return dx >= 0 && dz >= 0 && dx < size && dz < size && round(dx + 0.5 - size / 2.0, dz + 0.5 - size / 2.0, size);
+        }
+    }
+
+    /**
+     * Whether a cell at this offset from a tower's centre is inside its round footprint.
+     */
+    static boolean round(final double ox, final double oz, final int size)
+    {
+        final double r = size / 2.0;
+        return ox * ox + oz * oz <= r * r + 0.5;
     }
 
     /**
@@ -233,10 +249,15 @@ public final class WallLayout
             int high = Integer.MIN_VALUE;
             int roof = Integer.MAX_VALUE;
             Status status = Status.OK;
-            for (int dx = -half; dx < level.towerSize() - half; dx++)
+            // Centred on the wall's axis, which runs half a block past the trace's cells
+            for (int dx = 1 - half; dx <= level.towerSize() - half; dx++)
             {
-                for (int dz = -half; dz < level.towerSize() - half; dz++)
+                for (int dz = 1 - half; dz <= level.towerSize() - half; dz++)
                 {
+                    if (!round(dx - 0.5, dz - 0.5, level.towerSize()))
+                    {
+                        continue;
+                    }
                     final int x = point.x() + dx;
                     final int z = point.z() + dz;
                     towerCells.add(key(x, z));
@@ -260,8 +281,8 @@ public final class WallLayout
                 low = roof;
                 high = roof;
             }
-            towers.add(new Tower(point.x() - half, point.z() - half, level.towerSize(), low + 1, high + level.height() + level.towerExtra(), status,
-              Math.max(0, center.indexOf(point))));
+            towers.add(new Tower(point.x() + 1 - half, point.z() + 1 - half, level.towerSize(), low + 1, high + level.height() + level.towerExtra(), high + level.height(),
+              status, Math.max(0, center.indexOf(point))));
         }
 
         // The crest follows the ground along the centerline, averaged over a few blocks.
@@ -312,6 +333,12 @@ public final class WallLayout
             crest[i] = Math.round(sum / (float) count) + level.height();
         }
 
+        // Each tower's floor sits at the walkway's height where it stands, its roof well above the wall
+        towers.replaceAll(tower -> {
+            final int walk = crest[Math.min(tower.index(), crest.length - 1)];
+            return new Tower(tower.x(), tower.z(), tower.size(), tower.bottom(), Math.max(tower.top(), walk + level.towerExtra()), walk, tower.status(), tower.index());
+        });
+
         // Gates next: their footprint is taken out of the wall too
         final int depth = level.thickness() / 2 + 1;
         final List<Gate> gates = new ArrayList<>();
@@ -356,7 +383,9 @@ public final class WallLayout
 
         final Map<Long, Column> columns = new LinkedHashMap<>();
         int length = 0;
-        final int before = (level.thickness() - 1) / 2;
+        final int[] segmentOf = segments(points, closed, center.size());
+        final double halfWidth = level.thickness() / 2.0;
+        final int reach = (int) Math.ceil(halfWidth) + 1;
         for (int i = 0; i < center.size(); i++)
         {
             final WallTrace.Point cell = center.get(i);
@@ -364,14 +393,17 @@ public final class WallLayout
             {
                 length++;
             }
-            for (int dx = -before; dx < level.thickness() - before; dx++)
+            final WallTrace.Point a = points.get(segmentOf[i]);
+            final WallTrace.Point b = points.get((segmentOf[i] + 1) % points.size());
+            for (int dx = -reach; dx <= reach; dx++)
             {
-                for (int dz = -before; dz < level.thickness() - before; dz++)
+                for (int dz = -reach; dz <= reach; dz++)
                 {
                     final int x = cell.x() + dx;
                     final int z = cell.z() + dz;
                     final long key = key(x, z);
-                    if (towerCells.contains(key) || gateCells.contains(key) || columns.containsKey(key))
+                    if (towerCells.contains(key) || gateCells.contains(key) || columns.containsKey(key)
+                          || distance(x + 0.5, z + 0.5, a.x() + 1.0, a.z() + 1.0, b.x() + 1.0, b.z() + 1.0) > halfWidth)
                     {
                         continue;
                     }
@@ -427,6 +459,39 @@ public final class WallLayout
     /**
      * Every cell along the segments, in order, without repeating the shared ends.
      */
+    /**
+     * For each centerline cell, the index of the trace segment it lies on.
+     */
+    private static int[] segments(final List<WallTrace.Point> points, final boolean closed, final int size)
+    {
+        final int[] of = new int[size];
+        int k = 0;
+        final int segments = closed ? points.size() : points.size() - 1;
+        for (int s = 0; s < segments && k < size; s++)
+        {
+            final List<WallTrace.Point> line = WallTrace.line(points.get(s), points.get((s + 1) % points.size()));
+            for (int j = k == 0 ? 0 : 1; j < line.size() && k < size; j++)
+            {
+                of[k++] = s;
+            }
+        }
+        return of;
+    }
+
+    /**
+     * Distance from (px, pz) to the segment (ax, az)-(bx, bz).
+     */
+    private static double distance(final double px, final double pz, final double ax, final double az, final double bx, final double bz)
+    {
+        final double dx = bx - ax;
+        final double dz = bz - az;
+        final double length = dx * dx + dz * dz;
+        final double t = length == 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / length));
+        final double ex = px - (ax + t * dx);
+        final double ez = pz - (az + t * dz);
+        return Math.sqrt(ex * ex + ez * ez);
+    }
+
     private static List<WallTrace.Point> centerline(final List<WallTrace.Point> points, final boolean closed)
     {
         final List<WallTrace.Point> cells = new ArrayList<>();

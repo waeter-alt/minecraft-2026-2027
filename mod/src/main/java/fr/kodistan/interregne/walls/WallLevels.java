@@ -39,11 +39,11 @@ public final class WallLevels
     public static final int WIDTH = 6;
 
     private static final Level[] LEVELS = {
-      new Level("Palissade", 4, WIDTH, 8, 2, 2, 20, 60),
-      new Level("Pierre brute", 5, WIDTH, 8, 2, 4, 40, 120),
-      new Level("Briques de pierre", 7, WIDTH, 8, 3, 7, 80, 200),
-      new Level("Ardoise des abîmes", 9, WIDTH, 8, 3, 11, 140, 320),
-      new Level("Pierre noire et or", 11, WIDTH, 8, 4, 16, 220, 500),
+      new Level("Palissade", 4, WIDTH, 8, 5, 2, 20, 60),
+      new Level("Pierre brute", 5, WIDTH, 8, 6, 4, 40, 120),
+      new Level("Briques de pierre", 7, WIDTH, 8, 6, 7, 80, 200),
+      new Level("Ardoise des abîmes", 9, WIDTH, 8, 7, 11, 140, 320),
+      new Level("Pierre noire et or", 11, WIDTH, 8, 8, 16, 220, 500),
     };
 
     public static final int MAX = LEVELS.length;
