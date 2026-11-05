@@ -39,7 +39,9 @@ public final class ScenarioRunner
     private static final Map<String, Supplier<Scenario>> SCENARIOS = Map.of(
       "restaurant", () -> new RestaurantScenario(false),
       "restaurant-healthy", () -> new RestaurantScenario(true),
-      "intendance", IntendanceScenario::new);
+      "intendance", IntendanceScenario::new,
+      "apiary", ApiaryScenario::new,
+      "production", ProductionScenario::new);
 
     /** Colonies load their buildings a little after the world: wait this long before touching them. */
     private static final int WARMUP_TICKS = 200;

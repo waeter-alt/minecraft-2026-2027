@@ -1,5 +1,5 @@
 {
-  "_comment": "Names (only when MineColonies' is unclear or wrong) and plain-French descriptions of every building, for the catalogue and our hut screens. Each description says what the building is FOR in L'Interrègne and how it differs from its look-alikes. Keep each under about 110 characters: the catalogue's detail panel is narrow.",
+  "_comment": "Names (only when MineColonies' is unclear or wrong) and plain-French descriptions of every building, for the catalogue and our hut screens. Each description says what the building is FOR in La Couronne Vacante and how it differs from its look-alikes. Keep each under about 110 characters: the catalogue's detail panel is narrow.",
   "townhall": {"name": "Hôtel de ville", "desc": "Le cœur de la colonie : il la fonde, garde son trésor et règle qui peut y construire."},
   "residence": {"desc": "Loge vos citoyens : chaque lit libre attire un nouvel arrivant. Plus de lits à chaque niveau."},
   "tavern": {"desc": "Loge quelques citoyens et accueille des visiteurs, que vous pouvez recruter contre paiement."},

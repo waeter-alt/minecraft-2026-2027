@@ -22,7 +22,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * L'Interrègne heraldry: our own banner patterns (data-driven, in {@code data/interregne/banner_pattern}) and
+ * La Couronne Vacante heraldry: our own banner patterns (data-driven, in {@code data/interregne/banner_pattern}) and
  * helpers to edit a colony flag on the server.
  * <p>
  * A colony flag is a {@link BannerPatternLayers} whose first layer is {@code minecraft:base} (the field colour),

@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Death in L'Interrègne: players keep armor, hotbar and inventory, but backpacks always fall with their contents,
+ * Death in La Couronne Vacante: players keep armor, hotbar and inventory, but backpacks always fall with their contents,
  * and a player killed by another player also drops every Couronne carried and loses some Influence.
  * <p>
  * Kept items are lifted out of the inventory just before vanilla drops it, stashed in the dead player's

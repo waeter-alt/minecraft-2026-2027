@@ -60,7 +60,7 @@ public final class Crates
     public static final DeferredItem<BlockItem> MARCHE_ITEM = ITEMS.registerSimpleBlockItem("marche_imperial", MARCHE);
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register("regions", () -> CreativeModeTab.builder()
-      .title(Component.literal("L'Interrègne : régions"))
+      .title(Component.literal("La Couronne Vacante : régions"))
       .icon(() -> CRATE_ITEMS.get(Crate.BOIS).get().getDefaultInstance())
       .displayItems((parameters, output) -> {
           CRATE_ITEMS.values().forEach(item -> output.accept(item.get()));

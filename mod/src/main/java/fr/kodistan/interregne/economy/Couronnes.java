@@ -56,7 +56,7 @@ public final class Couronnes
     public static final List<DeferredItem<CoinItem>> TIERS_DESCENDING = List.of(TRESOR_DU_DRAGON, COFFRET, SAC, LINGOT, BOURSE, COURONNE);
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register("interregne", () -> CreativeModeTab.builder()
-      .title(Component.literal("L'Interrègne"))
+      .title(Component.literal("La Couronne Vacante"))
       .icon(() -> COURONNE.get().getDefaultInstance())
       .displayItems((parameters, output) -> {
           TIERS_DESCENDING.reversed().forEach(tier -> output.accept(tier.get()));
