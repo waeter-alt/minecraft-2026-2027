@@ -239,6 +239,78 @@ public final class Walls
         return banner;
     }
 
+    /**
+     * Tears the colony's whole wall down, gates and all, in a few seconds: every block it placed above the ground it
+     * stood on is broken, the highest first; piles in water become water again. Nothing is refunded.
+     */
+    public static void onDemolish(final fr.kodistan.interregne.network.WallDemolishPayload payload, final IPayloadContext context)
+    {
+        if (!(context.player() instanceof ServerPlayer player))
+        {
+            return;
+        }
+        final IColony colony = IColonyManager.getInstance().getColonyByWorld(payload.colony(), player.serverLevel());
+        if (colony == null || !colony.getPermissions().isColonyMember(player))
+        {
+            return;
+        }
+        final String key = RegionalTreasury.keyOf(colony);
+        final WallRegistry registry = WallRegistry.get(player.server);
+        final WallRegistry.Wall old = registry.of(colony);
+        if (old == null || BUILDING.contains(key))
+        {
+            return;
+        }
+        final List<WallBlocks.Step> steps = new ArrayList<>();
+        for (final long packed : old.placed())
+        {
+            final BlockPos pos = BlockPos.of(packed);
+            final Terrain.Probe under = old.ground().get(WallRegistry.cell(pos.getX(), pos.getZ()));
+            if (under == null || pos.getY() > under.ground())
+            {
+                steps.add(new WallBlocks.Step(pos, Blocks.AIR.defaultBlockState(), 0));
+            }
+            else if (under.water())
+            {
+                steps.add(new WallBlocks.Step(pos, Blocks.WATER.defaultBlockState(), 0));
+            }
+        }
+        // Grass grows back where the wall stood: the soil it smothered and the gate floors
+        final java.util.Set<Long> placed = new java.util.HashSet<>();
+        for (final long packed : old.placed())
+        {
+            placed.add(packed);
+        }
+        final java.util.Set<Long> done = new java.util.HashSet<>();
+        for (final long packed : old.placed())
+        {
+            final BlockPos at = BlockPos.of(packed);
+            final long cell = WallRegistry.cell(at.getX(), at.getZ());
+            final Terrain.Probe under = old.ground().get(cell);
+            if (under == null || under.water() || !done.add(cell))
+            {
+                continue;
+            }
+            final BlockPos soil = new BlockPos(at.getX(), under.ground(), at.getZ());
+            final net.minecraft.world.level.block.state.BlockState state = player.serverLevel().getBlockState(soil);
+            if (state.is(Blocks.DIRT) || placed.contains(soil.asLong()))
+            {
+                steps.add(new WallBlocks.Step(soil, Blocks.GRASS_BLOCK.defaultBlockState(), 0));
+            }
+        }
+        steps.sort(Comparator.comparingInt((WallBlocks.Step step) -> step.pos().getY()).reversed());
+        final int seconds = Math.max(2, Math.min(6, steps.size() / 1500 + 2));
+        BUILDING.add(key);
+        sync(player.server, key, old, true);
+        WallSite.demolish(player.serverLevel(), steps, seconds, () -> {
+            BUILDING.remove(key);
+            registry.remove(colony);
+            // An empty wall tells the clients it is gone
+            PacketDistributor.sendToAllPlayers(new WallSyncPayload(key, List.of(), List.of(), false, 0, false));
+        });
+        player.sendSystemMessage(Component.literal("La muraille tombe.").withStyle(ChatFormatting.GOLD));
+    }
+
     private static void refuse(final ServerPlayer player, final String message)
     {
         player.sendSystemMessage(Component.literal(message).withStyle(ChatFormatting.RED));

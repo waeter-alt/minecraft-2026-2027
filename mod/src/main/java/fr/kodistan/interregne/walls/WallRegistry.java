@@ -61,6 +61,12 @@ public final class WallRegistry extends SavedData
         setDirty();
     }
 
+    public void remove(final IColony colony)
+    {
+        walls.remove(RegionalTreasury.keyOf(colony));
+        setDirty();
+    }
+
     private static List<WallTrace.Point> points(final int[] xs, final int[] zs)
     {
         final List<WallTrace.Point> points = new ArrayList<>();

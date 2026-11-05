@@ -78,9 +78,21 @@ public final class WallSite implements Site
      */
     private final java.util.Set<Long> columns = new java.util.HashSet<>();
 
+    /**
+     * Tearing the wall down: every step is a block broken, with its own particles and sound.
+     */
+    private final boolean demolition;
+
     private WallSite(final ServerLevel level, final List<WallBlocks.Step> steps, final int seconds, final int wallLevel, @Nullable final ItemStack banner,
       final BlockPos inside, final Runnable onDone)
     {
+        this(level, steps, seconds, wallLevel, banner, inside, onDone, false);
+    }
+
+    private WallSite(final ServerLevel level, final List<WallBlocks.Step> steps, final int seconds, final int wallLevel, @Nullable final ItemStack banner,
+      final BlockPos inside, final Runnable onDone, final boolean demolition)
+    {
+        this.demolition = demolition;
         this.level = level;
         this.inside = inside;
         for (final WallBlocks.Step step : steps)
@@ -96,7 +108,7 @@ public final class WallSite implements Site
         this.wallLevel = wallLevel;
         this.onDone = onDone;
         this.random = level.getRandom();
-        this.title = Component.literal("⚒ Muraille · niveau " + wallLevel);
+        this.title = Component.literal(demolition ? "⚒ Démolition de la muraille" : "⚒ Muraille · niveau " + wallLevel);
         this.bossBar = new ServerBossEvent(title, BossEvent.BossBarColor.WHITE, BossEvent.BossBarOverlay.PROGRESS);
         this.bossBar.setProgress(0);
         AABB box = null;
@@ -115,6 +127,14 @@ public final class WallSite implements Site
       @Nullable final ItemStack banner, final BlockPos inside, final Runnable onDone)
     {
         ConstructionManager.start(new WallSite(level, steps, seconds, wallLevel, banner, inside, onDone));
+    }
+
+    /**
+     * Tears these blocks down in a few seconds, each broken with its particles and sound; onDone runs once all are gone.
+     */
+    public static void demolish(final ServerLevel level, final List<WallBlocks.Step> steps, final int seconds, final Runnable onDone)
+    {
+        ConstructionManager.start(new WallSite(level, steps, seconds, 1, null, BlockPos.ZERO, onDone, true));
     }
 
     @Override
@@ -179,6 +199,12 @@ public final class WallSite implements Site
         final BlockPos pos = step.pos();
         if (step.state().isAir())
         {
+            if (demolition && !level.getBlockState(pos).isAir())
+            {
+                // Broken, not just removed: the crumbling is the show
+                level.destroyBlock(pos, false);
+                return;
+            }
             level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
             return;
         }

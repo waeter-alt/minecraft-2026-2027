@@ -66,6 +66,10 @@ public final class WallPlannerScreen extends Screen
      * When the last order went to the server: the button waits for its answer.
      */
     private long sentAt;
+    /**
+     * When « Démolir » was first clicked: a second click within a few seconds tears the wall down.
+     */
+    private long demolishArmedAt;
     private int originalCost;
     private String originalKey = "";
     /**
@@ -282,6 +286,18 @@ public final class WallPlannerScreen extends Screen
     }
 
     /**
+     * Dev captures only: the planner on the last demo wall, tearing it down.
+     */
+    public static void demolishDemo(final IBuildingView townHall)
+    {
+        final WallPlannerScreen screen = new WallPlannerScreen(townHall);
+        screen.focus = demoFocus;
+        net.minecraft.client.Minecraft.getInstance().setScreen(screen);
+        PacketDistributor.sendToServer(new fr.kodistan.interregne.network.WallDemolishPayload(screen.colony.getID()));
+        screen.sentAt = Util.getMillis();
+    }
+
+    /**
      * Dev captures only: the planner retracing the colony's built wall, its first tower pulled out by six blocks.
      */
     public static void openEditDemo(final IBuildingView townHall)
@@ -382,6 +398,7 @@ public final class WallPlannerScreen extends Screen
 
         buttons.clear();
         renderPanel(graphics);
+        renderDemolish(graphics, mouseX, mouseY);
         renderActions(graphics, mouseX, mouseY);
         final String hint = trace.isEmpty() ? "Cliquez au sol pour poser le premier point de la muraille"
                               : gateMode && gates.isEmpty() ? "Cliquez sur un pan droit de la muraille pour poser sa porte (offerte)"
@@ -734,6 +751,51 @@ public final class WallPlannerScreen extends Screen
             }
         }
         return head;
+    }
+
+    /**
+     * « Démolir la muraille » under the panel; the first click arms it, the second (within 4 s) tears the whole wall
+     * down, gates included.
+     */
+    private void renderDemolish(final GuiGraphics graphics, final int mouseX, final int mouseY)
+    {
+        if (existing == null || building() || Util.getMillis() - sentAt < 2500)
+        {
+            return;
+        }
+        final boolean armed = Util.getMillis() - demolishArmedAt < 4000;
+        final String label = armed ? "Confirmer la démolition" : "Démolir la muraille";
+        final int w = Math.min(panelX1 - PAD, font.width(label) + 16);
+        final int h = Ui.BUTTON_H + 2;
+        final int x = PAD;
+        final int y = panelY1 + 4;
+        final boolean over = Ui.inside(mouseX, mouseY, x, y, w, h);
+        if (armed)
+        {
+            Ui.plate(graphics, x, y, x + w, y + h, 0xFFB03A2E, Palette.EDGE, 0xFFD2574A);
+            graphics.drawCenteredString(font, Ui.fit(font, label, w - 8), x + w / 2, y + (h - 8) / 2, 0xFFFFFFFF);
+        }
+        else
+        {
+            Ui.button(graphics, font, x, y, w, h, Ui.fit(font, label, w - 8), Ui.ButtonStyle.DANGER, true, over);
+        }
+        buttons.add(new Button(x, y, w, h, () -> {
+            if (Util.getMillis() - demolishArmedAt < 4000)
+            {
+                PacketDistributor.sendToServer(new fr.kodistan.interregne.network.WallDemolishPayload(colony.getID()));
+                demolishArmedAt = 0;
+                sentAt = Util.getMillis();
+            }
+            else
+            {
+                demolishArmedAt = Util.getMillis();
+            }
+        }));
+        if (over)
+        {
+            graphics.renderTooltip(font, font.split(Component.literal(armed ? "Cliquez encore : toute la muraille et ses portes tombent en quelques secondes. Rien n'est remboursé."
+              : "Abat toute la muraille et ses portes d'un coup. Un second clic confirme."), 200), mouseX, mouseY);
+        }
     }
 
     private int stat(final GuiGraphics graphics, final int x, final int y, final int width, final String label, final String value)

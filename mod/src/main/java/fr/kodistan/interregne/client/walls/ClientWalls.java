@@ -21,6 +21,11 @@ public final class ClientWalls
 
     public static void put(final WallSyncPayload payload)
     {
+        if (payload.points().isEmpty())
+        {
+            WALLS.remove(payload.colony());
+            return;
+        }
         WALLS.put(payload.colony(), payload);
     }
 

@@ -124,6 +124,10 @@ public final class UiScenarios
                     targets.add(new Target("wallbuild-upsite", 300, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.upgradeDemo(colony.getTownHall(), true)));
                     targets.add(new Target("wallbuild-updone", 900, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.reopenDemo(colony.getTownHall())));
                     targets.add(new Target("wallbuild-uphub", 40, () -> ColonyHubScreen.openDev(colony.getTownHall(), "walls", 0)));
+                    // Then the planner with « Démolir », and the wall torn down
+                    targets.add(new Target("wallbuild-planner", 40, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.reopenDemo(colony.getTownHall())));
+                    targets.add(new Target("wallbuild-demolish", 30, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.demolishDemo(colony.getTownHall())));
+                    targets.add(new Target("wallbuild-gone", 160, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.reopenDemo(colony.getTownHall())));
                 }
                 case "walledit" -> {
                     // Over a built wall: the planner retracing it unchanged, then with its first tower moved
