@@ -95,19 +95,24 @@ public final class WallBlocks
     {
         final Style style = STYLES[Math.max(1, Math.min(STYLES.length, wallLevel)) - 1];
         final List<Step> steps = new ArrayList<>();
+        final java.util.Set<Long> body = footprint(layout);
         for (final WallLayout.Column column : layout.columns())
         {
             final int order = column.index() * 2;
-            clear(level, steps, column.x(), column.z(), column.bottom(), column.top() + CLEAR_ABOVE, order);
-            piles(level, steps, column.x(), column.z(), style, order);
+            final int x = column.x();
+            final int z = column.z();
+            clear(level, steps, x, z, column.bottom(), column.top() + CLEAR_ABOVE, order);
+            piles(level, steps, x, z, style, order);
+            // The two faces carry the parapet; between them the crest is a walkway
+            final boolean face = !body.contains(WallRegistry.cell(x + 1, z)) || !body.contains(WallRegistry.cell(x - 1, z))
+                                   || !body.contains(WallRegistry.cell(x, z + 1)) || !body.contains(WallRegistry.cell(x, z - 1));
             for (int y = column.bottom(); y <= column.top(); y++)
             {
-                steps.add(new Step(new BlockPos(column.x(), y, column.z()), y == column.top() ? style.cap() : style.body(), order));
+                steps.add(new Step(new BlockPos(x, y, z), y < column.top() ? style.body() : face ? style.cap() : style.floor(), order));
             }
-            // Spikes or merlons on every other block of the crest
-            if (((column.x() + column.z()) & 1) == 0)
+            if (face)
             {
-                steps.add(new Step(new BlockPos(column.x(), column.top() + 1, column.z()), style.spike(), order));
+                steps.add(new Step(new BlockPos(x, column.top() + 1, z), ((x + z) & 1) == 0 ? style.spike() : style.cap(), order));
             }
         }
         for (final WallLayout.Tower tower : layout.towers())
@@ -146,6 +151,39 @@ public final class WallBlocks
         }
         steps.sort(Comparator.comparingInt(Step::order).thenComparingInt(step -> step.state().isAir() ? 0 : 1).thenComparingInt(step -> step.pos().getY()));
         return steps;
+    }
+
+    /**
+     * Every cell the wall stands on: columns, towers and gatehouses.
+     */
+    private static java.util.Set<Long> footprint(final WallLayout layout)
+    {
+        final java.util.Set<Long> cells = new java.util.HashSet<>();
+        for (final WallLayout.Column column : layout.columns())
+        {
+            cells.add(WallRegistry.cell(column.x(), column.z()));
+        }
+        for (final WallLayout.Tower tower : layout.towers())
+        {
+            for (int dx = 0; dx < tower.size(); dx++)
+            {
+                for (int dz = 0; dz < tower.size(); dz++)
+                {
+                    cells.add(WallRegistry.cell(tower.x() + dx, tower.z() + dz));
+                }
+            }
+        }
+        for (final WallLayout.Gate gate : layout.gates())
+        {
+            for (int along = -WallLayout.GATE_HALF; along <= WallLayout.GATE_HALF; along++)
+            {
+                for (int across = -gate.depth(); across <= gate.depth(); across++)
+                {
+                    cells.add(WallRegistry.cell(gate.x() + along * gate.ux() - across * gate.uz(), gate.z() + along * gate.uz() + across * gate.ux()));
+                }
+            }
+        }
+        return cells;
     }
 
     /**

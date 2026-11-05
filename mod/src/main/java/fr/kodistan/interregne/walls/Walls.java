@@ -19,7 +19,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.Blocks;
-import fr.kodistan.interregne.network.WallUpgradePayload;
 import org.jetbrains.annotations.Nullable;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -102,29 +101,17 @@ public final class Walls
         }
         // A new wall is paid in full; a retraced one pays only what it adds
         final WallRegistry.Wall old = WallRegistry.get(player.server).of(colony);
-        final int wallLevel = old == null ? 1 : old.level();
-        apply(player, colony, old, points, gates, payload.closed(), wallLevel, old != null);
-    }
-
-    /**
-     * Raises the colony's wall to its next level: same trace and gates, taller, thicker, in its new look.
-     */
-    public static void onUpgrade(final WallUpgradePayload payload, final IPayloadContext context)
-    {
-        if (!(context.player() instanceof ServerPlayer player))
+        if (old == null)
         {
+            apply(player, colony, null, points, gates, payload.closed(), 1, false);
             return;
         }
-        final IColony colony = IColonyManager.getInstance().getColonyByWorld(payload.colony(), player.serverLevel());
-        if (colony == null || !colony.getPermissions().isColonyMember(player))
+        if (payload.level() <= old.level())
         {
+            apply(player, colony, old, points, gates, payload.closed(), old.level(), true);
             return;
         }
-        final WallRegistry.Wall old = WallRegistry.get(player.server).of(colony);
-        if (old == null || BUILDING.contains(RegionalTreasury.keyOf(colony)))
-        {
-            return;
-        }
+        // An upgrade: the whole wall at the next level, on the trace as it stands in the planner
         final int next = old.level() + 1;
         if (next > WallLevels.MAX)
         {
@@ -137,7 +124,7 @@ public final class Walls
             refuse(player, "Il faut un hôtel de ville de niveau " + next + " pour une muraille de niveau " + next + ".");
             return;
         }
-        apply(player, colony, old, old.points(), old.gates(), old.closed(), next, false);
+        apply(player, colony, old, points, gates, payload.closed(), next, false);
     }
 
     /**
@@ -153,6 +140,7 @@ public final class Walls
         final String key = RegionalTreasury.keyOf(colony);
         final Map<Long, Terrain.Probe> remembered = old == null ? Map.of() : old.ground();
         final Map<Long, Terrain.Probe> ground = new HashMap<>(remembered);
+        final java.util.Set<Long> own = old == null ? java.util.Set.of() : WallLayout.ownCells(old.points(), old.closed());
         final WallLayout.Ground reader = (x, z) -> {
             final long cell = WallRegistry.cell(x, z);
             final Terrain.Probe known = ground.get(cell);
@@ -160,7 +148,7 @@ public final class Walls
             {
                 return known;
             }
-            final Terrain.Probe probe = Terrain.probe(level, x, z);
+            final Terrain.Probe probe = Terrain.probe(level, x, z, own.contains(cell) ? WallBlocks::isWallBlock : null);
             if (probe.loaded() && !probe.blocked())
             {
                 ground.put(cell, probe);
@@ -228,7 +216,7 @@ public final class Walls
         final WallRegistry registry = WallRegistry.get(player.server);
         BUILDING.add(key);
         sync(player.server, key, wall, true);
-        WallSite.launch(level, steps, seconds, wallLevel, bannerOf(colony), () -> {
+        WallSite.launch(level, steps, seconds, wallLevel, bannerOf(colony), colony.getCenter(), () -> {
             BUILDING.remove(key);
             registry.put(colony, wall);
             sync(player.server, key, wall, false);

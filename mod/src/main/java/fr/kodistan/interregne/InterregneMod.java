@@ -100,8 +100,6 @@ public class InterregneMod
           .playToServer(FarmCropPayload.TYPE, FarmCropPayload.STREAM_CODEC, FarmChoice::onChoice)
           .playToServer(fr.kodistan.interregne.network.WallBuildPayload.TYPE, fr.kodistan.interregne.network.WallBuildPayload.STREAM_CODEC,
             fr.kodistan.interregne.walls.Walls::onBuild)
-          .playToServer(fr.kodistan.interregne.network.WallUpgradePayload.TYPE, fr.kodistan.interregne.network.WallUpgradePayload.STREAM_CODEC,
-            fr.kodistan.interregne.walls.Walls::onUpgrade)
           .playToClient(fr.kodistan.interregne.network.WallSyncPayload.TYPE, fr.kodistan.interregne.network.WallSyncPayload.STREAM_CODEC, (payload, context) -> {
               if (FMLEnvironment.dist.isClient())
               {

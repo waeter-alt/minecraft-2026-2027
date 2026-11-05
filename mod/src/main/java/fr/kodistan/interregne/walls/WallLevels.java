@@ -1,7 +1,7 @@
 package fr.kodistan.interregne.walls;
 
 /**
- * What a colony wall looks like and costs at each level. Each level is a real step: taller, thicker, bigger towers.
+ * What a colony wall looks like and costs at each level. Each level is a real step: taller, bigger towers, a new look. The width never changes (6 blocks), so an upgrade never runs into what stands beside the wall.
  */
 public final class WallLevels
 {
@@ -33,12 +33,17 @@ public final class WallLevels
      */
     public static final int MAX_GATES = 5;
 
+    /**
+     * Blocks across the wall, the same at every level.
+     */
+    public static final int WIDTH = 6;
+
     private static final Level[] LEVELS = {
-      new Level("Palissade", 4, 1, 3, 2, 2, 20, 60),
-      new Level("Pierre brute", 5, 1, 3, 2, 4, 40, 120),
-      new Level("Briques de pierre", 7, 2, 5, 3, 7, 80, 200),
-      new Level("Ardoise des abîmes", 9, 3, 5, 3, 11, 140, 320),
-      new Level("Pierre noire et or", 11, 3, 7, 4, 16, 220, 500),
+      new Level("Palissade", 4, WIDTH, 8, 2, 2, 20, 60),
+      new Level("Pierre brute", 5, WIDTH, 8, 2, 4, 40, 120),
+      new Level("Briques de pierre", 7, WIDTH, 8, 3, 7, 80, 200),
+      new Level("Ardoise des abîmes", 9, WIDTH, 8, 3, 11, 140, 320),
+      new Level("Pierre noire et or", 11, WIDTH, 8, 4, 16, 220, 500),
     };
 
     public static final int MAX = LEVELS.length;

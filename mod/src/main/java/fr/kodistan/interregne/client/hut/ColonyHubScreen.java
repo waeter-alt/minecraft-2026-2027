@@ -733,8 +733,8 @@ public final class ColonyHubScreen extends ParchmentScreen
         if (!max)
         {
             final fr.kodistan.interregne.walls.WallLevels.Level look = fr.kodistan.interregne.walls.WallLevels.of(next);
-            y = Ui.wrapped(graphics, font, Component.literal("Niveau " + next + " · " + look.name() + " : " + look.height() + " blocs de haut, "
-              + look.thickness() + " d'épaisseur. Le tracé et les portes restent ; la muraille est rebâtie dans son nouvel aspect."), x + 2, y, width - 4, Palette.MUTED, 10) + 6;
+            y = Ui.wrapped(graphics, font, Component.literal("Niveau " + next + " · " + look.name() + " : " + look.height() + " blocs de haut. "
+              + "La muraille garde sa largeur, son tracé et ses portes ; elle est rebâtie dans son nouvel aspect."), x + 2, y, width - 4, Palette.MUTED, 10) + 6;
         }
         final boolean creative = minecraft.player != null && minecraft.player.isCreative();
         final long cost = max || creative ? 0 : wallCost(wall, next);
@@ -780,14 +780,13 @@ public final class ColonyHubScreen extends ParchmentScreen
         }
         if (payable)
         {
-            final int colonyId = colony.getID();
-            addHit(x, y, upW, h, () -> net.neoforged.neoforge.network.PacketDistributor.sendToServer(new fr.kodistan.interregne.network.WallUpgradePayload(colonyId)));
+            addHit(x, y, upW, h, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.openUpgrade(townHall));
         }
         if (overUp)
         {
             hint = refusal != null && refusal.startsWith("Hôtel") ? "Une muraille ne dépasse pas le niveau de l'hôtel de ville : améliorez-le d'abord."
                      : refusal == null && money < cost ? "Il manque " + Wallet.format(cost - money) + " Couronnes (trésor régional et bourse comptés)."
-                         : refusal == null ? "Rebâtit toute la muraille au niveau " + next + ", plus haute et plus solide. Trésor régional d'abord, puis la bourse." : null;
+                         : refusal == null ? "Ouvre la vue aérienne sur la muraille au niveau " + next + " : vérifiez-la, puis améliorez-la de là-haut. Trésor régional d'abord, puis la bourse." : null;
         }
 
         final int rx = side ? x + upW + 6 : x;

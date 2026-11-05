@@ -241,7 +241,7 @@ public final class WallLayout
                     final int z = point.z() + dz;
                     towerCells.add(key(x, z));
                     final Terrain.Probe probe = ground.at(x, z);
-                    final Status cell = statusOf(probe, claim, x, z);
+                    final Status cell = statusOf(probe, ground, claim, x, z);
                     if (cell == Status.OK)
                     {
                         low = Math.min(low, probe.ground());
@@ -340,7 +340,7 @@ public final class WallLayout
                     final int z = point.z() + along * u[1] + across * u[0];
                     gateCells.add(key(x, z));
                     final Terrain.Probe probe = ground.at(x, z);
-                    status = worse(status, statusOf(probe, claim, x, z));
+                    status = worse(status, statusOf(probe, ground, claim, x, z));
                     if (Math.abs(along) <= PASSAGE_HALF && probe.loaded() && !probe.blocked())
                     {
                         floor = Math.min(floor, probe.ground());
@@ -376,7 +376,7 @@ public final class WallLayout
                         continue;
                     }
                     final Terrain.Probe probe = ground.at(x, z);
-                    final Status status = statusOf(probe, claim, x, z);
+                    final Status status = statusOf(probe, ground, claim, x, z);
                     if (status != Status.OK)
                     {
                         // Where it cannot stand, show the slice of wall that would cut through, at the crest
@@ -443,13 +443,59 @@ public final class WallLayout
         return cells;
     }
 
-    private static Status statusOf(final Terrain.Probe probe, final Claim claim, final int x, final int z)
+    /**
+     * Blocks kept clear between the wall and any building, so villagers can still walk round their huts.
+     */
+    public static final int MARGIN = 2;
+
+    /**
+     * The cells around a trace where its own wall may stand: the ground there is read through the wall's blocks, the
+     * same way in the planner and on the server.
+     */
+    public static java.util.Set<Long> ownCells(final List<WallTrace.Point> points, final boolean closed)
+    {
+        final java.util.Set<Long> cells = new java.util.HashSet<>();
+        final int reach = GATE_HALF + 3;
+        for (int i = 0; i < points.size(); i++)
+        {
+            if (i + 1 < points.size() || closed && points.size() > 2)
+            {
+                for (final WallTrace.Point cell : WallTrace.line(points.get(i), points.get((i + 1) % points.size())))
+                {
+                    for (int dx = -reach; dx <= reach; dx++)
+                    {
+                        for (int dz = -reach; dz <= reach; dz++)
+                        {
+                            cells.add(key(cell.x() + dx, cell.z() + dz));
+                        }
+                    }
+                }
+            }
+        }
+        return cells;
+    }
+
+    private static Status statusOf(final Terrain.Probe probe, final Ground ground, final Claim claim, final int x, final int z)
     {
         if (!probe.loaded() || !claim.contains(x, z))
         {
             return Status.OUTSIDE;
         }
-        return probe.blocked() ? Status.BLOCKED : Status.OK;
+        if (probe.blocked())
+        {
+            return Status.BLOCKED;
+        }
+        for (int dx = -MARGIN; dx <= MARGIN; dx++)
+        {
+            for (int dz = -MARGIN; dz <= MARGIN; dz++)
+            {
+                if ((dx != 0 || dz != 0) && ground.at(x + dx, z + dz).blocked() && ground.at(x + dx, z + dz).loaded())
+                {
+                    return Status.BLOCKED;
+                }
+            }
+        }
+        return Status.OK;
     }
 
     private static Status worse(final Status a, final Status b)

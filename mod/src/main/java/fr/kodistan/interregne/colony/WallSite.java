@@ -69,10 +69,27 @@ public final class WallSite implements Site
     @Nullable
     private WallBlocks.Step last;
 
+    /**
+     * Where the colony lies: a villager caught in the wall is set down on this side of it.
+     */
+    private final BlockPos inside;
+    /**
+     * Every column the wall stands on.
+     */
+    private final java.util.Set<Long> columns = new java.util.HashSet<>();
+
     private WallSite(final ServerLevel level, final List<WallBlocks.Step> steps, final int seconds, final int wallLevel, @Nullable final ItemStack banner,
-      final Runnable onDone)
+      final BlockPos inside, final Runnable onDone)
     {
         this.level = level;
+        this.inside = inside;
+        for (final WallBlocks.Step step : steps)
+        {
+            if (!step.state().isAir())
+            {
+                columns.add(fr.kodistan.interregne.walls.WallRegistry.cell(step.pos().getX(), step.pos().getZ()));
+            }
+        }
         this.banner = banner;
         this.steps = steps;
         this.durationTicks = Math.max(20, seconds * 20);
@@ -95,9 +112,9 @@ public final class WallSite implements Site
      * Starts the site; onDone runs once every block is in place.
      */
     public static void launch(final ServerLevel level, final List<WallBlocks.Step> steps, final int seconds, final int wallLevel,
-      @Nullable final ItemStack banner, final Runnable onDone)
+      @Nullable final ItemStack banner, final BlockPos inside, final Runnable onDone)
     {
-        ConstructionManager.start(new WallSite(level, steps, seconds, wallLevel, banner, onDone));
+        ConstructionManager.start(new WallSite(level, steps, seconds, wallLevel, banner, inside, onDone));
     }
 
     @Override
@@ -176,6 +193,7 @@ public final class WallSite implements Site
         last = step;
         solid++;
         liftPlayersAt(pos);
+        moveCreaturesInside(pos);
         if (!animate)
         {
             return;
@@ -187,6 +205,38 @@ public final class WallSite implements Site
         if (solid % FLY_EVERY == 0 && flights.size() < MAX_FLYING && state.isCollisionShapeFullBlock(level, pos) && !(state.getBlock() instanceof FallingBlock))
         {
             launch(pos, state);
+        }
+    }
+
+    /**
+     * A villager (or any creature) standing where a block just went is set down just inside the wall, on the colony's
+     * side, never pushed out of it.
+     */
+    private void moveCreaturesInside(final BlockPos pos)
+    {
+        for (final net.minecraft.world.entity.LivingEntity entity : level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, new AABB(pos),
+          entity -> !(entity instanceof ServerPlayer)))
+        {
+            double dx = inside.getX() + 0.5 - entity.getX();
+            double dz = inside.getZ() + 0.5 - entity.getZ();
+            final double length = Math.max(0.001, Math.sqrt(dx * dx + dz * dz));
+            dx /= length;
+            dz /= length;
+            for (int step = 1; step <= 24; step++)
+            {
+                final int x = (int) Math.floor(entity.getX() + dx * step);
+                final int z = (int) Math.floor(entity.getZ() + dz * step);
+                if (!columns.contains(fr.kodistan.interregne.walls.WallRegistry.cell(x, z)))
+                {
+                    final int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+                    entity.teleportTo(x + 0.5, y, z + 0.5);
+                    if (entity instanceof net.minecraft.world.entity.Mob mob)
+                    {
+                        mob.getNavigation().stop();
+                    }
+                    break;
+                }
+            }
         }
     }
 

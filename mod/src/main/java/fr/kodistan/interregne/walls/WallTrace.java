@@ -118,6 +118,15 @@ public final class WallTrace
         }
     }
 
+    /**
+     * A new tower on the trace, before the point at this index.
+     */
+    public void insert(final int index, final Point point)
+    {
+        points.add(Math.max(0, Math.min(points.size(), index)), point);
+        version++;
+    }
+
     public void clear()
     {
         points.clear();
