@@ -30,6 +30,7 @@
     "ItemStackHandlerMixin",
     "ItemStackMixin",
     "NewBobberEntityMixin",
+    "RaidManagerAccessor",
     "ResearchManagerMixin",
     "SurvivalHandlerMixin",
     "WorkManagerMixin",
