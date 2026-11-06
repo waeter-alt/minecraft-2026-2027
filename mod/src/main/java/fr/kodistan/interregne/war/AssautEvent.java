@@ -27,7 +27,8 @@ import java.util.List;
  */
 public class AssautEvent implements IColonyRaidEvent, INBTSerializable<CompoundTag>
 {
-    private static final ResourceLocation TYPE_ID = ResourceLocation.fromNamespaceAndPath("interregne", "assaut");
+    /** MineColonies reloads events as "minecolonies:" + saved path (EventManager.readFromNBT), so the type lives in its namespace. */
+    public static final ResourceLocation TYPE_ID = ResourceLocation.fromNamespaceAndPath("minecolonies", "assaut");
 
     private final IColony    colony;
     private final int        id;
@@ -39,6 +40,20 @@ public class AssautEvent implements IColonyRaidEvent, INBTSerializable<CompoundT
     {
         this.colony = colony;
         this.id = colony.getEventManager().getAndTakeNextEventID();
+    }
+
+    /** Reload path: an assault never survives a restart (its troops are discarded), so it comes back already DONE. */
+    private AssautEvent(final IColony colony, final int id)
+    {
+        this.colony = colony;
+        this.id = id;
+        this.status = EventStatus.DONE;
+    }
+
+    /** Deserializer for MineColonies' event registry: without it, a world saved mid-assault fails to load its colony. */
+    public static AssautEvent loadFinished(final IColony colony, final CompoundTag tag, final HolderLookup.Provider provider)
+    {
+        return new AssautEvent(colony, tag.getInt("id"));
     }
 
     @Override
@@ -165,7 +180,7 @@ public class AssautEvent implements IColonyRaidEvent, INBTSerializable<CompoundT
     @Override
     public void deserializeNBT(final HolderLookup.Provider provider, @NotNull final CompoundTag tag)
     {
-        // Never actually loaded: the event type is not in MineColonies' registry (see class javadoc).
+        // Loading goes through loadFinished (registered in WarEntities): a reloaded assault is simply over.
     }
 
     @Override

@@ -1,6 +1,8 @@
 package fr.kodistan.interregne.war;
 
+import com.minecolonies.api.colony.colonyEvents.registry.ColonyEventTypeRegistryEntry;
 import com.minecolonies.api.entity.mobs.AbstractEntityMinecoloniesRaider;
+import com.minecolonies.apiimp.CommonMinecoloniesAPIImpl;
 import fr.kodistan.interregne.InterregneMod;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
@@ -28,6 +30,13 @@ public final class WarEntities
              .clientTrackingRange(64)
              .build("legionnaire"));
 
+    /** The assault's colony event type: MineColonies saves running events and crashes the colony load on an unknown type. */
+    public static final DeferredRegister<ColonyEventTypeRegistryEntry> EVENT_TYPES =
+      DeferredRegister.create(CommonMinecoloniesAPIImpl.COLONY_EVENT_TYPES, AssautEvent.TYPE_ID.getNamespace());
+
+    public static final Supplier<ColonyEventTypeRegistryEntry> ASSAUT_EVENT = EVENT_TYPES.register(AssautEvent.TYPE_ID.getPath(),
+      () -> new ColonyEventTypeRegistryEntry(AssautEvent::loadFinished, AssautEvent.TYPE_ID));
+
     /** Same attributes as MineColonies' raiders; per-assault scaling happens at spawn (setMobAttributes). */
     @SubscribeEvent
     public static void createEntityAttributes(final EntityAttributeCreationEvent event)
@@ -38,6 +47,7 @@ public final class WarEntities
     public static void register(final IEventBus modEventBus)
     {
         ENTITIES.register(modEventBus);
+        EVENT_TYPES.register(modEventBus);
     }
 
     private WarEntities()
