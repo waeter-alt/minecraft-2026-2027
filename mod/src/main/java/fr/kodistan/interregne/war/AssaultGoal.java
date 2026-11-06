@@ -1,13 +1,11 @@
 package fr.kodistan.interregne.war;
 
 import com.minecolonies.api.colony.buildings.IBuilding;
-import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
 import com.minecolonies.core.entity.pathfinding.navigation.EntityNavigationUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.goal.Goal;
-import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -31,9 +29,9 @@ public class AssaultGoal extends Goal
     private final EntLegionnaire troop;
 
     private BlockPos hut;
+    private BlockPos marching;
     private List<BlockPos> breakable = List.of();
     private int batterTick;
-    private int provokeTick;
 
     public AssaultGoal(final EntLegionnaire troop)
     {
@@ -58,6 +56,7 @@ public class AssaultGoal extends Goal
     public void start()
     {
         hut = null;
+        marching = null;
         breakable = List.of();
     }
 
@@ -70,11 +69,6 @@ public class AssaultGoal extends Goal
     @Override
     public void tick()
     {
-        if (--provokeTick <= 0)
-        {
-            provokeTick = TICKS_SECOND;
-            provoke();
-        }
         if (troop.getThreatTable().getTargetMob() != null)
         {
             return;
@@ -112,11 +106,19 @@ public class AssaultGoal extends Goal
           .findFirst().orElse(null);
         if (next == null)
         {
-            // Nothing in arm's reach yet: march to the assigned building itself.
+            // Nothing in arm's reach yet: march to the assigned building itself. A correct path already in
+            // flight is left alone — re-requesting every tick floods the pathfinder queue and the troop
+            // never actually leaves.
+            if (!troop.getNavigation().isDone() && marching != null && marching.equals(hut))
+            {
+                return;
+            }
+            marching = hut;
             EntityNavigationUtils.walkToPos(troop, hut, REACH, false,
               troop.blockPosition().distManhattan(hut) > 50 ? 1.8D : 1.1D);
             return;
         }
+        marching = null;
         // Face the spot being wrecked so the blows read as aimed.
         troop.getLookControl().setLookAt(next.getX() + 0.5D, next.getY() + 0.5D, next.getZ() + 0.5D);
 
@@ -142,23 +144,6 @@ public class AssaultGoal extends Goal
         if (hut != null && troop.level() instanceof ServerLevel level)
         {
             level.destroyBlockProgress(troop.getId(), hut, -1);
-        }
-    }
-
-    /** Pokes the nearest citizen into the troop's threat table; the raider combat AI does the rest. */
-    private void provoke()
-    {
-        if (troop.getThreatTable().getTargetMob() != null)
-        {
-            return;
-        }
-        final AbstractEntityCitizen foe = troop.level().getNearestEntity(AbstractEntityCitizen.class,
-          TargetingConditions.forCombat().range(20.0D), null,
-          troop.getX(), troop.getY(), troop.getZ(), troop.getBoundingBox().inflate(20.0D));
-        if (foe != null)
-        {
-            // Citizens of the colony under assault fight back; anyone in the way counts.
-            troop.getThreatTable().addThreat(foe, 10);
         }
     }
 }
