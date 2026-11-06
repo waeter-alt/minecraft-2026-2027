@@ -32,6 +32,7 @@
     "NewBobberEntityMixin",
     "RaidManagerAccessor",
     "RaidManagerMixin",
+    "RaiderWalkAiMixin",
     "ResearchManagerMixin",
     "SurvivalHandlerMixin",
     "WorkManagerMixin",

@@ -16,6 +16,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
@@ -28,8 +29,10 @@ import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -62,6 +65,9 @@ public final class WarAssaults
         final List<Integer>  troopIds   = new ArrayList<>();
         final List<BlockPos> targets    = new ArrayList<>();
         final Map<BlockPos, Integer> structure = new HashMap<>();
+        final Map<BlockPos, Integer> spTotal   = new HashMap<>();
+        final Map<Integer, BlockPos> byTroop   = new HashMap<>();
+        int cursor;
         int destroyed;
         long loot;
         boolean engaged;
@@ -196,8 +202,10 @@ public final class WarAssaults
         }
         for (final IBuilding building : buildings)
         {
+            final int sp = SP_BASE + SP_LEVEL * building.getBuildingLevel();
             assault.targets.add(building.getID());
-            assault.structure.put(building.getID(), SP_BASE + SP_LEVEL * building.getBuildingLevel());
+            assault.structure.put(building.getID(), sp);
+            assault.spTotal.put(building.getID(), sp);
         }
     }
 
@@ -221,6 +229,70 @@ public final class WarAssaults
         }
         final int cursor = TARGET_CURSOR.merge(defender.getID(), 1, Integer::sum);
         return assault.targets.get(cursor % assault.targets.size());
+    }
+
+    /**
+     * The troop's own building: sticky per troop, handed out round-robin (targets already held by a living troop
+     * are skipped). The march ({@link AssaultGoal}) and the battering point at this same structure, so a pillager
+     * charging a building is destroying THAT building. Re-rolls when the assignment falls out of the target list
+     * (destroyed).
+     */
+    public static BlockPos assignedTarget(final EntLegionnaire troop)
+    {
+        final Assault assault = BY_DEFENDER.get(colonyOf(troop));
+        if (assault == null || assault.targets.isEmpty())
+        {
+            return null;
+        }
+        final BlockPos held = assault.byTroop.get(troop.getId());
+        if (held != null && assault.targets.contains(held))
+        {
+            return held;
+        }
+        assault.byTroop.remove(troop.getId());
+
+        final Set<BlockPos> taken = new HashSet<>();
+        if (assault.defender.getWorld() instanceof ServerLevel level)
+        {
+            for (final Map.Entry<Integer, BlockPos> entry : assault.byTroop.entrySet())
+            {
+                if (level.getEntity(entry.getKey()) instanceof LivingEntity living && living.isAlive())
+                {
+                    taken.add(entry.getValue());
+                }
+            }
+        }
+        BlockPos next = null;
+        for (int i = 0; i < assault.targets.size(); i++)
+        {
+            final BlockPos candidate = assault.targets.get((assault.cursor + i) % assault.targets.size());
+            if (!taken.contains(candidate))
+            {
+                next = candidate;
+                assault.cursor += i + 1;
+                break;
+            }
+        }
+        if (next == null)
+        {
+            // More troops than surviving buildings: share them round-robin instead.
+            next = assault.targets.get(assault.cursor++ % assault.targets.size());
+        }
+        assault.byTroop.put(troop.getId(), next);
+        return next;
+    }
+
+    /** Mining-crack stage (0-9) of the building under battering: how close each blow leaves it to collapse. */
+    static int crackStage(final EntLegionnaire troop, final BlockPos hut)
+    {
+        final Assault assault = BY_DEFENDER.get(colonyOf(troop));
+        if (assault == null)
+        {
+            return 0;
+        }
+        final int left = assault.structure.getOrDefault(hut, 1);
+        final int total = Math.max(1, assault.spTotal.getOrDefault(hut, left));
+        return Mth.clamp((int) Math.round(9.0D * (1.0D - (double) left / total)), 0, 9);
     }
 
     /** One battering hit on the building the troop is standing at. */
@@ -273,7 +345,13 @@ public final class WarAssaults
               + swept + " blocs) — butin " + loot + " couronnes.");
         }
         assault.structure.remove(hut);
+        assault.spTotal.remove(hut);
         assault.targets.remove(hut);
+        assault.byTroop.values().removeIf(hut::equals);
+        for (final int id : assault.troopIds)
+        {
+            level.destroyBlockProgress(id, hut, -1);
+        }
     }
 
     /** Man-made only: terrain, water and plants are never touched (the user's war rule). */
@@ -319,6 +397,14 @@ public final class WarAssaults
             return;
         }
         assault.troopIds.remove(Integer.valueOf(troop.getId()));
+        assault.byTroop.remove(troop.getId());
+        if (assault.defender.getWorld() instanceof ServerLevel level)
+        {
+            for (final BlockPos pos : assault.targets)
+            {
+                level.destroyBlockProgress(troop.getId(), pos, -1);
+            }
+        }
         if (assault.troopIds.isEmpty() && !assault.over)
         {
             assault.over = true;
@@ -412,6 +498,16 @@ public final class WarAssaults
         int troops = 0;
         for (final Assault assault : BY_DEFENDER.values())
         {
+            if (assault.defender.getWorld() instanceof ServerLevel level)
+            {
+                for (final int id : assault.troopIds)
+                {
+                    for (final BlockPos pos : assault.targets)
+                    {
+                        level.destroyBlockProgress(id, pos, -1);
+                    }
+                }
+            }
             for (final int id : assault.troopIds)
             {
                 if (assault.defender.getWorld() instanceof ServerLevel level

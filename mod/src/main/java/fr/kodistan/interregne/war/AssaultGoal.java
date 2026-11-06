@@ -2,10 +2,9 @@ package fr.kodistan.interregne.war;
 
 import com.minecolonies.api.colony.buildings.IBuilding;
 import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
-import com.minecolonies.api.util.Tuple;
+import com.minecolonies.core.entity.pathfinding.navigation.EntityNavigationUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
@@ -18,10 +17,9 @@ import java.util.List;
 import static com.minecolonies.api.util.constant.Constants.TICKS_SECOND;
 
 /**
- * The légionnaire's battering. MineColonies' stock RaiderWalkAI (live thanks to {@link AssautEvent}) marches the
- * troop into buildings and the combat state machine fights the defenders; this goal adds what stock raiders
- * never do: provoke a nearby citizen, then batter the structure of the building the troop stands at, one block
- * per blow, until {@link WarAssaults} declares it destroyed. It yields whenever a threat target exists.
+ * The légionnaire's battering. Each troop is handed ONE building ({@link WarAssaults#assignedTarget}): it walks
+ * there and batters exactly that structure, one block per blow, roof first, until {@link WarAssaults} declares it
+ * destroyed — the charge and the demolition read as the same act. It yields whenever a threat target exists.
  */
 public class AssaultGoal extends Goal
 {
@@ -29,8 +27,6 @@ public class AssaultGoal extends Goal
     private static final int BATTER_EVERY = TICKS_SECOND / 2;
     /** Battering distance to the structure block being hit. */
     private static final int REACH = 5;
-    /** Only batter buildings whose hut is this close: troops don't dismantle from across the street. */
-    private static final double BUILDING_RANGE_SQR = 10.0D * 10.0D;
 
     private final EntLegionnaire troop;
 
@@ -84,15 +80,21 @@ public class AssaultGoal extends Goal
             return;
         }
 
-        final IBuilding building = buildingAtHand();
-        if (building == null)
+        final BlockPos assigned = WarAssaults.assignedTarget(troop);
+        if (assigned == null)
         {
             return;
         }
-        if (hut == null || !hut.equals(building.getID()))
+        if (hut == null || !hut.equals(assigned))
         {
-            hut = building.getID();
+            clearCracks();
+            hut = assigned;
             breakable = List.of();
+        }
+        final IBuilding building = troop.getColony().getBuildingManager().getBuilding(hut);
+        if (building == null)
+        {
+            return;
         }
 
         if (breakable.isEmpty())
@@ -110,8 +112,9 @@ public class AssaultGoal extends Goal
           .findFirst().orElse(null);
         if (next == null)
         {
-            // The next blocks are out of reach: the stock walk AI keeps moving the troop around inside.
-            batterTick = Math.max(batterTick, TICKS_SECOND);
+            // Nothing in arm's reach yet: march to the assigned building itself.
+            EntityNavigationUtils.walkToPos(troop, hut, REACH, false,
+              troop.blockPosition().distManhattan(hut) > 50 ? 1.8D : 1.1D);
             return;
         }
         // Face the spot being wrecked so the blows read as aimed.
@@ -123,34 +126,23 @@ public class AssaultGoal extends Goal
             final ServerLevel level = (ServerLevel) troop.level();
             final BlockState state = level.getBlockState(next);
             troop.swing(InteractionHand.MAIN_HAND);
-            // Vanilla dig sound + crack particles for the blow.
+            // Vanilla dig sound + crack particles for the blow, and a mining-crack overlay building up
+            // on the structure as it weakens.
             level.levelEvent(2001, next, Block.getId(state));
+            level.destroyBlockProgress(troop.getId(), hut, WarAssaults.crackStage(troop, hut));
             level.destroyBlock(next, false);
             breakable.remove(0);
             WarAssaults.onHit(troop, hut);
         }
     }
 
-    /** The nearest colony building within arm's reach, the battering candidate. */
-    private IBuilding buildingAtHand()
+    /** Drops the troop's mining-crack overlay, e.g. when its target changes. */
+    private void clearCracks()
     {
-        if (troop.getColony() == null)
+        if (hut != null && troop.level() instanceof ServerLevel level)
         {
-            return null;
+            level.destroyBlockProgress(troop.getId(), hut, -1);
         }
-        IBuilding best = null;
-        double bestDist = BUILDING_RANGE_SQR;
-        for (final IBuilding building : troop.getColony().getBuildingManager().getBuildings().values())
-        {
-            final double dist = Mth.lengthSquared(
-              building.getID().getX() - troop.getX(), building.getID().getY() - troop.getY(), building.getID().getZ() - troop.getZ());
-            if (dist < bestDist)
-            {
-                bestDist = dist;
-                best = building;
-            }
-        }
-        return best;
     }
 
     /** Pokes the nearest citizen into the troop's threat table; the raider combat AI does the rest. */
