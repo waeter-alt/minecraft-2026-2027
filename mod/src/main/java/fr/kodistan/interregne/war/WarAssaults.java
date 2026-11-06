@@ -51,6 +51,9 @@ public final class WarAssaults
 
     private static final Map<Integer, Assault> BY_DEFENDER = new HashMap<>();
 
+    /** Round-robin cursor per colony: each call to pickTarget hands out the next surviving building. */
+    private static final Map<Integer, Integer> TARGET_CURSOR = new HashMap<>();
+
     private static final class Assault
     {
         final IColony        defender;
@@ -204,6 +207,22 @@ public final class WarAssaults
         return assault != null && assault.engaged;
     }
 
+    /**
+     * The next march target for the stock raider walk (called from RaidManagerMixin). Round-robin over the
+     * surviving targets: no more piling on the warehouse, no more re-picking destroyed ruins. Null when no
+     * assault is running, so the vanilla random pick applies.
+     */
+    public static BlockPos pickTarget(final IColony defender)
+    {
+        final Assault assault = defender == null ? null : BY_DEFENDER.get(defender.getID());
+        if (assault == null || assault.targets.isEmpty())
+        {
+            return null;
+        }
+        final int cursor = TARGET_CURSOR.merge(defender.getID(), 1, Integer::sum);
+        return assault.targets.get(cursor % assault.targets.size());
+    }
+
     /** One battering hit on the building the troop is standing at. */
     static void onHit(final EntLegionnaire troop, final BlockPos hut)
     {
@@ -247,6 +266,9 @@ public final class WarAssaults
             RegionalTreasury.get(level.getServer()).credit(assault.attacker, loot);
             assault.destroyed++;
             assault.loot += loot;
+            // One deep crash reads "building coming down" from anywhere in the colony.
+            level.playSound(null, hut, net.minecraft.world.level.block.SoundType.STONE.getBreakSound(),
+              net.minecraft.sounds.SoundSource.HOSTILE, 3.0F, 0.6F);
             announce(assault, "§c" + building.getBuildingType().getTranslationKey().toLowerCase() + "§r détruit ("
               + swept + " blocs) — butin " + loot + " couronnes.");
         }
@@ -328,6 +350,7 @@ public final class WarAssaults
     public static void onServerStopped(final ServerStoppedEvent event)
     {
         BY_DEFENDER.clear();
+        TARGET_CURSOR.clear();
     }
 
     /**

@@ -9,6 +9,8 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -112,12 +114,18 @@ public class AssaultGoal extends Goal
             batterTick = Math.max(batterTick, TICKS_SECOND);
             return;
         }
+        // Face the spot being wrecked so the blows read as aimed.
+        troop.getLookControl().setLookAt(next.getX() + 0.5D, next.getY() + 0.5D, next.getZ() + 0.5D);
 
         if (--batterTick <= 0)
         {
             batterTick = BATTER_EVERY;
+            final ServerLevel level = (ServerLevel) troop.level();
+            final BlockState state = level.getBlockState(next);
             troop.swing(InteractionHand.MAIN_HAND);
-            ((ServerLevel) troop.level()).destroyBlock(next, false);
+            // Vanilla dig sound + crack particles for the blow.
+            level.levelEvent(2001, next, Block.getId(state));
+            level.destroyBlock(next, false);
             breakable.remove(0);
             WarAssaults.onHit(troop, hut);
         }
