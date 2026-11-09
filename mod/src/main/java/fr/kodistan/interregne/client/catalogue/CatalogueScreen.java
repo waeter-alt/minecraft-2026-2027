@@ -83,6 +83,14 @@ public final class CatalogueScreen extends ParchmentScreen
         net.minecraft.client.Minecraft.getInstance().setScreen(new CatalogueScreen(buildTool, anchor));
     }
 
+    /**
+     * Opens the style gallery directly, skipping the catalogue click, for the UiShot dev capture tool.
+     */
+    public static void openStyleGalleryForUiShot(final WindowExtendedBuildTool buildTool, final BlockPos anchor)
+    {
+        net.minecraft.client.Minecraft.getInstance().setScreen(new StyleScreen(new CatalogueScreen(buildTool, anchor)));
+    }
+
     @Override
     protected void init()
     {

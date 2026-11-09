@@ -104,6 +104,10 @@ public final class UiScenarios
                     final BlockPos pos = Minecraft.getInstance().player.blockPosition();
                     CatalogueScreen.open(new WindowExtendedBuildTool(pos, 0, Minecraft.getInstance().level.registryAccess()), pos);
                 }));
+                case "style" -> targets.add(new Target("style", 60, () -> {
+                    final BlockPos pos = Minecraft.getInstance().player.blockPosition();
+                    CatalogueScreen.openStyleGalleryForUiShot(new WindowExtendedBuildTool(pos, 0, Minecraft.getInstance().level.registryAccess()), pos);
+                }));
                 case "walls" -> {
                     // The aerial wall planner: the camera needs a moment to settle and the terrain to be read
                     targets.add(new Target("walls-closed", 80, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.openDemo(colony.getTownHall(), true)));
