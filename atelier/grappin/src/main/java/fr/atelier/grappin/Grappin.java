@@ -7,7 +7,8 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -17,7 +18,6 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -30,6 +30,7 @@ public class Grappin {
     public static final DeferredRegister.Blocks BLOCS = DeferredRegister.createBlocks(MODID);
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
     public static final DeferredRegister<EntityType<?>> ENTITES = DeferredRegister.create(Registries.ENTITY_TYPE, MODID);
+    public static final DeferredRegister<CreativeModeTab> ONGLETS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
     /** Les blocs ou le crochet tient : le point d'ancrage, et tout ce qu'on ajoute au tag grappin:ancrages. */
     public static final TagKey<Block> ANCRAGES = TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(MODID, "ancrages"));
@@ -50,20 +51,21 @@ public class Grappin {
                     .updateInterval(1)
                     .build("crochet"));
 
+    /** Onglet creatif dedie aux objets de donjon (le grappin et son point d'ancrage ; la place des futurs objets : voile, amulette...). */
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> ONGLET = ONGLETS.register("donjon", () -> CreativeModeTab.builder()
+            .title(Component.translatable("itemGroup.grappin.donjon"))
+            .icon(() -> GRAPPIN.get().getDefaultInstance())
+            .displayItems((parametres, sortie) -> {
+                sortie.accept(GRAPPIN.get());
+                sortie.accept(ANCRAGE_ITEM.get());
+            })
+            .build());
+
     public Grappin(IEventBus modBus, ModContainer container) {
         BLOCS.register(modBus);
         ITEMS.register(modBus);
         ENTITES.register(modBus);
+        ONGLETS.register(modBus);
         container.registerConfig(ModConfig.Type.COMMON, Reglages.SPEC);
-        modBus.addListener(this::ongletCreatif);
-    }
-
-    private void ongletCreatif(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            event.accept(GRAPPIN);
-        }
-        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
-            event.accept(ANCRAGE_ITEM);
-        }
     }
 }
