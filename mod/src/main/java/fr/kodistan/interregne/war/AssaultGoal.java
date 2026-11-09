@@ -194,18 +194,23 @@ public class AssaultGoal extends Goal
                 // Matches the wall's own material when there's a real block there to hit.
                 level.levelEvent(2001, anchor, Block.getId(state));
             }
-            // Always visible regardless of what's actually at the anchor (a door opening is often air, where
-            // levelEvent 2001 alone renders nothing) — a dusty impact the player reads as "under attack" at a
-            // glance, every half second, not just at the final collapse.
-            level.sendParticles(ParticleTypes.CRIT, anchor.getX() + 0.5D, anchor.getY() + 0.5D, anchor.getZ() + 0.5D,
-              12, 0.3D, 0.3D, 0.3D, 0.15D);
-            level.sendParticles(ParticleTypes.LARGE_SMOKE, anchor.getX() + 0.5D, anchor.getY() + 0.5D, anchor.getZ() + 0.5D,
-              5, 0.25D, 0.25D, 0.25D, 0.02D);
-            level.playSound(null, anchor, SoundEvents.ZOMBIE_ATTACK_WOODEN_DOOR, SoundSource.HOSTILE,
-              2.0F, 0.8F + level.random.nextFloat() * 0.3F);
             // The crack overlay now lives on the whole building (WarAssaults.onHit → updateCracks), not this one
             // troop's hut-keyed spot — the hut itself is excluded there, it's meant to survive regardless.
-            WarAssaults.onHit(troop, hut);
+            // onHit tells us whether THIS blow is the one allowed to show effects for the building right now —
+            // several troops battering the same building land hits far faster than one ever would, so only one
+            // of them gets to add particles/sound per short window (WarAssaults.EFFECT_COOLDOWN_TICKS); a lone
+            // attacker's own rhythm is well under that window, so it never notices the cap.
+            if (WarAssaults.onHit(troop, hut))
+            {
+                // A dusty impact the player reads as "under attack" at a glance, every half second, not just at
+                // the final collapse.
+                level.sendParticles(ParticleTypes.CRIT, anchor.getX() + 0.5D, anchor.getY() + 0.5D, anchor.getZ() + 0.5D,
+                  12, 0.3D, 0.3D, 0.3D, 0.15D);
+                level.sendParticles(ParticleTypes.LARGE_SMOKE, anchor.getX() + 0.5D, anchor.getY() + 0.5D, anchor.getZ() + 0.5D,
+                  5, 0.25D, 0.25D, 0.25D, 0.02D);
+                level.playSound(null, anchor, SoundEvents.ZOMBIE_ATTACK_WOODEN_DOOR, SoundSource.HOSTILE,
+                  2.0F, 0.8F + level.random.nextFloat() * 0.3F);
+            }
         }
     }
 

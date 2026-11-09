@@ -38,14 +38,18 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -74,7 +78,37 @@ public final class WarAssaults
     /** Health-bar visibility radius, matching the convention used by the other site boss bars. */
     private static final double BAR_VIEW_DISTANCE_SQ = 48.0D * 48.0D;
 
+    /** Crack overlay is capped to this many blocks regardless of the building's size — a 300-block manor and a
+      * 20-block hut cost the same to animate; past this count the sample just gets sparser, not slower. */
+    private static final int MAX_CRACK_BLOCKS = 32;
+
+    /** Final collapse is swept this many blocks per server tick instead of in one go, so a big building falling
+      * doesn't stall the tick (and every client's frame) in a single instant. */
+    private static final int SWEEP_BLOCKS_PER_TICK = 8;
+
+    /** Minimum ticks between full hit-effect bursts (bar, particles, crack overlay) on the same building — the
+      * cost of a siege was scaling with the number of attacking troops, not with the building; this bounds it per
+      * building instead, regardless of how many troops are landing blows on it at once. Comfortably under a single
+      * troop's own battering rhythm (see {@link AssaultGoal#BATTER_EVERY}), so a lone attacker never notices it. */
+    private static final int EFFECT_COOLDOWN_TICKS = 4;
+
     private static final Map<Integer, Assault> BY_DEFENDER = new HashMap<>();
+
+    /** Paced final sweeps in progress, drained a few blocks per tick by {@link #onServerTick}. */
+    private static final List<SweepJob> PENDING_SWEEPS = new ArrayList<>();
+
+    /** A building's collapse, already decided (loot paid, marked ruined) — only the world edit itself is paced. */
+    private static final class SweepJob
+    {
+        final ServerLevel   level;
+        final Deque<BlockPos> remaining;
+
+        SweepJob(final ServerLevel level, final List<BlockPos> blocks)
+        {
+            this.level = level;
+            this.remaining = new ArrayDeque<>(blocks);
+        }
+    }
 
     /** Round-robin cursor per colony: each call to pickTarget hands out the next surviving building. */
     private static final Map<Integer, Integer> TARGET_CURSOR = new HashMap<>();
@@ -91,6 +125,12 @@ public final class WarAssaults
         final Map<BlockPos, Integer> spTotal   = new HashMap<>();
         final Map<Integer, BlockPos> byTroop   = new HashMap<>();
         final Map<BlockPos, ServerBossEvent> bars = new HashMap<>();
+        // Computed once, on first use, from the live world — nothing removes any of a building's blocks before
+        // its final sweep, so re-scanning the whole volume on every single blow (the previous behaviour) bought
+        // nothing but cost: it's the same list every time, just paid for again and again.
+        final Map<BlockPos, List<BlockPos>> footprints    = new HashMap<>();
+        final Map<BlockPos, List<BlockPos>> crackSamples  = new HashMap<>();
+        final Map<BlockPos, Long>           lastEffectTick = new HashMap<>();
         int cursor;
         int destroyed;
         long loot;
@@ -325,29 +365,54 @@ public final class WarAssaults
         return Mth.clamp((int) Math.round(9.0D * (1.0D - (double) left / total)), 0, 9);
     }
 
-    /** One battering hit on the building the troop is standing at. */
-    static void onHit(final EntLegionnaire troop, final BlockPos hut)
+    /** One battering hit on the building the troop is standing at. Structure points always drop, immediately — only
+      * the visual refresh (bar, particles, crack overlay) is rate-limited per building, below. Returns whether this
+      * call actually showed effects, so {@link AssaultGoal} knows whether to add its own blow particles/sound on
+      * top: those are the other half of the per-hit cost and would otherwise defeat the point of the cap. */
+    static boolean onHit(final EntLegionnaire troop, final BlockPos hut)
     {
         final Assault assault = BY_DEFENDER.get(colonyOf(troop));
         if (assault == null || !assault.structure.containsKey(hut))
         {
-            return;
+            return false;
         }
         final int left = assault.structure.merge(hut, -1, Integer::sum);
-        updateBar(assault, hut, left);
+        boolean showEffects = false;
         if (assault.defender.getWorld() instanceof ServerLevel level)
         {
-            final IBuilding building = assault.defender.getBuildingManager().getBuilding(hut);
-            if (building != null)
+            showEffects = effectsDue(assault, level, hut);
+            if (showEffects)
             {
-                damageEffects(level, building);
-                updateCracks(level, building, hut, crackStage(troop, hut));
+                updateBar(assault, hut, left);
+                final IBuilding building = assault.defender.getBuildingManager().getBuilding(hut);
+                if (building != null)
+                {
+                    damageEffects(level, building);
+                    updateCracks(assault, level, building, hut, crackStage(troop, hut));
+                }
             }
         }
         if (left <= 0)
         {
             destroyBuilding(assault, hut);
         }
+        return showEffects;
+    }
+
+    /** One troop battering alone still gets a full effect on every blow (cooldown well under its own rhythm): the
+      * cap only kicks in once several troops land hits on the same building faster than a single one would, which
+      * is exactly the case — more attackers — where thinning the effects out is free (nobody can tell five
+      * overlapping blow-bursts from one slightly bigger one in the middle of a siege). */
+    private static boolean effectsDue(final Assault assault, final ServerLevel level, final BlockPos hut)
+    {
+        final long now = level.getGameTime();
+        final Long last = assault.lastEffectTick.get(hut);
+        if (last != null && now - last < EFFECT_COOLDOWN_TICKS)
+        {
+            return false;
+        }
+        assault.lastEffectTick.put(hut, now);
+        return true;
     }
 
     /** Every currently-standing designed block of a building's footprint, excluding the (invincible) hut itself —
@@ -381,21 +446,48 @@ public final class WarAssaults
         return -(Math.abs(pos.hashCode()) + 2);
     }
 
+    /** This hut's full footprint, scanned from the live world once and cached on the assault from then on. */
+    private static List<BlockPos> cachedFootprint(final Assault assault, final ServerLevel level, final IBuilding building, final BlockPos hut)
+    {
+        return assault.footprints.computeIfAbsent(hut, h -> footprintBlocks(level, building, hut));
+    }
+
+    /** Up to {@link #MAX_CRACK_BLOCKS} positions spread evenly across the footprint — enough to read as "the whole
+      * building is cracking" without paying for every single block of a large structure. Cached alongside the full
+      * footprint, same lifetime. */
+    private static List<BlockPos> crackSample(final Assault assault, final ServerLevel level, final IBuilding building, final BlockPos hut)
+    {
+        return assault.crackSamples.computeIfAbsent(hut, h ->
+        {
+            final List<BlockPos> full = cachedFootprint(assault, level, building, hut);
+            if (full.size() <= MAX_CRACK_BLOCKS)
+            {
+                return full;
+            }
+            final List<BlockPos> sample = new ArrayList<>(MAX_CRACK_BLOCKS);
+            for (int i = 0; i < MAX_CRACK_BLOCKS; i++)
+            {
+                sample.add(full.get(i * full.size() / MAX_CRACK_BLOCKS));
+            }
+            return sample;
+        });
+    }
+
     /** Crack overlay across the whole building, intensity matching its remaining structure points — every standing
       * block visibly deteriorates together, not just the one spot being hit. The hut itself is excluded by
       * {@link #footprintBlocks}: it's the one block in the footprint meant to survive regardless, so it never cracks. */
-    private static void updateCracks(final ServerLevel level, final IBuilding building, final BlockPos hut, final int stage)
+    private static void updateCracks(final Assault assault, final ServerLevel level, final IBuilding building, final BlockPos hut, final int stage)
     {
-        for (final BlockPos pos : footprintBlocks(level, building, hut))
+        for (final BlockPos pos : crackSample(assault, level, building, hut))
         {
             level.destroyBlockProgress(breakerIdFor(pos), pos, stage);
         }
     }
 
     /** Drops every crack overlay this building is currently showing. */
-    private static void clearCracks(final ServerLevel level, final IBuilding building, final BlockPos hut)
+    private static void clearCracks(final Assault assault, final ServerLevel level, final IBuilding building, final BlockPos hut)
     {
-        for (final BlockPos pos : footprintBlocks(level, building, hut))
+        for (final BlockPos pos : crackSample(assault, level, building, hut))
         {
             level.destroyBlockProgress(breakerIdFor(pos), pos, -1);
         }
@@ -472,30 +564,25 @@ public final class WarAssaults
             // Every block is about to either vanish or become a ruin block with no fight left in it: wipe their
             // crack overlays before the sweep, not after — a block destroyBlock() already turned to air drops its
             // overlay client-side on its own, but a surviving ruin block wouldn't otherwise.
-            clearCracks(level, building, hut);
-            final Tuple<BlockPos, BlockPos> corners = building.getCorners();
-            final BlockPos min = new BlockPos(Math.min(corners.getA().getX(), corners.getB().getX()),
-              Math.min(corners.getA().getY(), corners.getB().getY()),
-              Math.min(corners.getA().getZ(), corners.getB().getZ()));
-            final BlockPos max = new BlockPos(Math.max(corners.getA().getX(), corners.getB().getX()),
-              Math.max(corners.getA().getY(), corners.getB().getY()),
-              Math.max(corners.getA().getZ(), corners.getB().getZ()));
-            int swept = 0;
-            for (BlockPos cursor : BlockPos.betweenClosed(min, max))
+            clearCracks(assault, level, building, hut);
+            final int minY = Math.min(building.getCorners().getA().getY(), building.getCorners().getB().getY());
+            // The foundation row stays standing, and roughly a third of the rest survives by chance — a ruin the
+            // player can still read as "that building", not a bare swept plot. Decided up front, against the
+            // cached footprint (nothing's moved since it was scanned): the actual block removal only happens a
+            // few at a time, below, so a big building falling never stalls a single tick.
+            final List<BlockPos> toSweep = new ArrayList<>();
+            for (final BlockPos pos : cachedFootprint(assault, level, building, hut))
             {
-                if (cursor.equals(hut) || !isDesignedBlock(level.getBlockState(cursor)))
+                if (pos.getY() != minY && level.random.nextFloat() >= RUIN_SURVIVAL_CHANCE)
                 {
-                    continue;
+                    toSweep.add(pos);
                 }
-                // The foundation row stays standing, and roughly a third of the rest survives by chance — a
-                // ruin the player can still read as "that building", not a bare swept plot.
-                if (cursor.getY() == min.getY() || level.random.nextFloat() < RUIN_SURVIVAL_CHANCE)
-                {
-                    continue;
-                }
-                level.destroyBlock(cursor, false);
-                swept++;
             }
+            if (!toSweep.isEmpty())
+            {
+                PENDING_SWEEPS.add(new SweepJob(level, toSweep));
+            }
+            final int swept = toSweep.size();
             final long loot = LOOT_PER_LEVEL * Math.max(1, building.getBuildingLevel());
             RegionalTreasury.get(level.getServer()).credit(assault.attacker, loot);
             assault.destroyed++;
@@ -513,6 +600,9 @@ public final class WarAssaults
         assault.spTotal.remove(hut);
         assault.targets.remove(hut);
         assault.byTroop.values().removeIf(hut::equals);
+        assault.footprints.remove(hut);
+        assault.crackSamples.remove(hut);
+        assault.lastEffectTick.remove(hut);
     }
 
     /** Man-made only: terrain, water and plants are never touched (the user's war rule). */
@@ -699,6 +789,30 @@ public final class WarAssaults
         return STRIKES.get(defender.getID());
     }
 
+    /** Drains the pending collapse sweeps a few blocks at a time, so a building falling never costs more than
+      * {@link #SWEEP_BLOCKS_PER_TICK} block edits in any single tick. */
+    @SubscribeEvent
+    public static void onServerTick(final ServerTickEvent.Post event)
+    {
+        if (PENDING_SWEEPS.isEmpty())
+        {
+            return;
+        }
+        final Iterator<SweepJob> jobs = PENDING_SWEEPS.iterator();
+        while (jobs.hasNext())
+        {
+            final SweepJob job = jobs.next();
+            for (int i = 0; i < SWEEP_BLOCKS_PER_TICK && !job.remaining.isEmpty(); i++)
+            {
+                job.level.destroyBlock(job.remaining.poll(), false);
+            }
+            if (job.remaining.isEmpty())
+            {
+                jobs.remove();
+            }
+        }
+    }
+
     /** Closes the assault when its last troop falls. */
     @SubscribeEvent
     public static void onDeath(final LivingDeathEvent event)
@@ -727,7 +841,7 @@ public final class WarAssaults
                     final IBuilding building = assault.defender.getBuildingManager().getBuilding(pos);
                     if (building != null)
                     {
-                        clearCracks(level, building, pos);
+                        clearCracks(assault, level, building, pos);
                     }
                     removeBar(assault, pos);
                 }
@@ -760,6 +874,7 @@ public final class WarAssaults
     {
         BY_DEFENDER.clear();
         TARGET_CURSOR.clear();
+        PENDING_SWEEPS.clear();
     }
 
     /**
@@ -916,7 +1031,7 @@ public final class WarAssaults
                     final IBuilding building = assault.defender.getBuildingManager().getBuilding(pos);
                     if (building != null)
                     {
-                        clearCracks(level, building, pos);
+                        clearCracks(assault, level, building, pos);
                     }
                     removeBar(assault, pos);
                 }
