@@ -1,0 +1,4 @@
+# Toute PR doit être approuvée par le owner du projet avant merge.
+# (Nécessite d'activer "Require review from Code Owners" dans la
+# protection de branche sur GitHub — voir CLAUDE.md.)
+* @waeter-alt
