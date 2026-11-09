@@ -304,3 +304,4 @@ Liste de chaque fichier généré par Claude (marque [claude-build]).
 | scripts/fiche_donjon_temple.py | 2026-11-09 | Écrit docs/donjon_temple.md |
 | docs/donjon_temple.md | 2026-11-09 | Fiche du donjon : pose, grappin 2.4, parcours, solutions, ancrages, salles cachées, écarts |
 | exports/temple.nbt, temple_cibles.json, temple_vide.npz | 2026-11-09 | Structure, points à atteindre, masque des volumes creux (pour le vérificateur) |
+| scripts/donjon_temple_decor.py, donjon_temple_decor2.py, donjon_temple_decor3.py | 2026-11-09 | Passe de décoration du temple (murs, sols, plafonds, pilastres, mobilier, végétation, aile du boss), exécutée par donjon_temple.py |

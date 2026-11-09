@@ -1,7 +1,7 @@
 <!-- [claude-build] fiche du donjon n°2, ecrite par scripts/fiche_donjon_temple.py -->
 # Donjon n°2 « Le Temple des Mille Racines »
 
-Monde « Donjon 2 » (superflat, sol à Y-61), Minecraft 1.21.1 + NeoForge + mod **Grappin 2.4.0** (obligatoire chez chaque joueur). Structure `temple` 130 × 100 × 130, posée en 150 -61 -65 (x 150 à 279, z -65 à 64). Générateur : `scripts/donjon_temple.py`, contrôle : `scripts/verif_donjon_temple.py`, plan de conception : `donjon_temple_plan.md`.
+Monde « Donjon 2 » (superflat, sol à Y-61), Minecraft 1.21.1 + NeoForge + mod **Grappin 2.4.0** (obligatoire chez chaque joueur). Structure `temple` 130 × 100 × 216, posée en 150 -61 -65 (x 150 à 279, z -65 à 150). Générateur : `scripts/donjon_temple.py`, contrôle : `scripts/verif_donjon_temple.py`, plan de conception : `donjon_temple_plan.md`.
 
 Style jungle, comme la Gorge suspendue : briques de pierre moussues et fissurées, roche en plaques, mousse, lianes à baies lumineuses, racines et troncs de jungle. On **descend** un temple enseveli : Parvis à ciel ouvert tout en haut, trois ailes et un sanctuaire à l'étage 1, puis les salles du bas jusqu'au Gardien.
 
@@ -34,8 +34,8 @@ Style jungle, comme la Gorge suspendue : briques de pierre moussues et fissurée
 | 8 | Le Couloir des Pièges | Passerelle au-dessus d'une fosse : 2 stalactites, 2 tronçons qui cèdent, 3 plaques empoisonnées, brèche de 9 blocs à franchir à l'ancrage P1. Chute : retour au début. | 3 min |
 | 9 | Le Grand Gouffre Intérieur | Caverne : 6 ancrages en arc (A1 à A6) au-dessus de la fosse, jusqu'à la corniche d'en face. Chute : retour à la corniche d'arrivée. | 4 min |
 | 10 | La Crypte des Racines | On plonge dans la fosse d'eau, on prend la Clé de racine sur l'îlot, on remonte avec 3 ancrages (K1 à K3), puis retour en arrière jusqu'à la salle 7. | 3 min |
-| 11 | L'Antichambre | Porte à clé de la salle 7 (serrure en pierre magnétique), couloir de statues, escalier vers le Gardien. | 1 min |
-| 12 | La Salle du Gardien | Grande salle à colonnes de troncs, estrade à l'ouest : vide, le boss viendra plus tard. | 1 min |
+| 11 | L'Antichambre | Porte à clé de la salle 7 (serrure en pierre magnétique), couloir de statues, long couloir droit vers l'aile du boss. | 1 min |
+| 12 | La Salle du Gardien (aile du boss) | Hall de 63 × 63 au-dessus d'un gouffre de lave : 9 plateformes suspendues, atteintes au grappin ; sortie fermée. Vide, le boss viendra plus tard. | 1 min (hors combat) |
 | | **Total** | sans les salles cachées ni les combats complets | **≈ 31 min** |
 
 Estimations calculées (marche 4,3 blocs/s, sprint 5,6, balancier réussi 10 à 15 s, chute 30 à 45 s perdues, énigme 1 à 3 min) : **pas encore confirmées par une vraie partie**. Ordre imposé : 1 → 2 → (3, 4, 5 dans l'ordre voulu) → 6 → 7 → 8 → 9 → 10 → retour à 7 → 11 → 12.
@@ -73,6 +73,44 @@ Coordonnées du monde.
 | K1 | Crypte (remontée) | 265 -19 48 |
 | K2 | Crypte (remontée) | 260 -15 45 |
 | K3 | Crypte (remontée) | 256 -10 41 |
+| V1 | Salle du boss (chaîne de la voûte) | 181 -13 82 |
+| V2 | Salle du boss (chaîne de la voûte) | 199 -9 81 |
+| V3 | Salle du boss (chaîne de la voûte) | 209 -11 81 |
+| V4 | Salle du boss (chaîne de la voûte) | 183 -9 92 |
+| V5 | Salle du boss (chaîne de la voûte) | 205 -9 95 |
+| V6 | Salle du boss (chaîne de la voûte) | 175 -3 97 |
+| V7 | Salle du boss (chaîne de la voûte) | 189 -3 100 |
+| V8 | Salle du boss (chaîne de la voûte) | 197 -1 100 |
+| V9 | Salle du boss (chaîne de la voûte) | 216 -1 101 |
+| V10 | Salle du boss (chaîne de la voûte) | 211 3 110 |
+| V11 | Salle du boss (chaîne de la voûte) | 179 1 113 |
+| V12 | Salle du boss (chaîne de la voûte) | 200 11 116 |
+| V13 | Salle du boss (chaîne de la voûte) | 206 1 121 |
+| V14 | Salle du boss (chaîne de la voûte) | 217 3 120 |
+| V15 | Salle du boss (chaîne de la voûte) | 179 11 123 |
+| V16 | Salle du boss (chaîne de la voûte) | 206 11 124 |
+
+## La salle du boss (section 12)
+
+Hall de 63 × 63 blocs (x 166 à 228, z 69 à 131), du fond du gouffre (Y -55) à une voûte en berceau qui culmine à Y 31. On y arrive par un long couloir droit au niveau 40 (celui de l'antichambre), qui débouche sur la plateforme de départ. Le fond du gouffre est une nappe de lave **confinée** (Y 6 à 7), à 32 blocs sous le départ. Sept piliers géants contre les parois, certains cassés ; chaînes et lanternes pendues à la voûte.
+
+| Plateforme | Emprise (monde) | Dessus (Y monde) | Cases | Position du boss (monde) |
+|---|---|---|---|---|
+| Départ (D) | 186..208 × 69..81 | -21 | 279 | — (départ, retour après une chute) |
+| P1 | 168..177 × 89..98 | -15 | 92 | 172 -14 93 |
+| P2 | 190..197 × 91..98 | -11 | 59 | 193 -10 94 |
+| P3 | 212..223 × 88..99 | -13 | 94 | 217 -12 93 |
+| P4 | 180..185 × 105..110 | -5 | 32 | 182 -4 107 |
+| P5 | 200..209 × 107..117 | -3 | 80 | 204 -2 112 |
+| P6 | 216..222 × 109..114 | 1 | 38 | 219 2 111 |
+| P7 | 170..179 × 117..126 | -1 | 75 | 174 0 121 |
+| P8 | 186..195 × 123..131 | 9 | 84 | 190 10 127 |
+| P9 | 208..218 × 125..131 | -1 | 60 | 213 0 128 |
+
+Toutes les plateformes sont à au moins 6 blocs les unes des autres (aucun saut, même en sprint) ; le vérificateur confirme que chacune est rejoignable au grappin depuis au moins 2 autres. Les positions du boss sont au centre de chaque plateforme, dégagées sur au moins 5 blocs de haut. Aucun mob n'est posé.
+
+- **Chute** : une zone (x 166 à 228, y -51 à -31, z 69 à 131) couvre tout le gouffre, au-dessus de la lave et sous la plus basse plateforme. Un joueur qui y entre est téléporté sur la plateforme de départ, tourné vers la salle, avec 3 s de chute lente (pas de dégâts), son crochet supprimé (fonction `atelier:temple_decrocher`, repéré par l'identifiant du joueur) ; les objets qui tombent sont supprimés ; seuls les joueurs sont concernés.
+- **Sortie** : porte de barreaux 189 10 134 à 191 13 134, dans le mur sud derrière la plateforme la plus haute (P8), puis un court couloir et une petite salle vide. `/function atelier:temple_ouvrir_sortie_boss` l'ouvre (à relier à la mort du boss) ; `/function atelier:temple_fermer_sortie_boss` la ferme ; `temple_reset` la ferme aussi.
 
 ## Salles cachées (8, vides : ni coffre, ni mob, ni spawner)
 
@@ -96,12 +134,23 @@ Mécanismes cachés : salle 2 (levier derrière les lianes du vestibule, mur oue
 `scripts/verif_donjon_temple.py` simule la marche, les sauts, les échelles, la nage et le grappin (réglage réaliste : rayon de corde 14 ; généreux : 38) et vérifie, porte par porte :
 - tout ce qui doit être atteignable l'est (grappin réaliste) ;
 - rien de ce qui est derrière une porte fermée (G6, G7, salles cachées 2, 3 et 8) n'est atteignable, même en généreux ;
-- sans grappin, on n'atteint que le Parvis, le vestibule, les ailes des Serpents et des Miroirs, l'entrée du Puits et les salles cachées 1 et 4.
+- sans grappin, on n'atteint que le Parvis, le vestibule, les ailes des Serpents et des Miroirs, l'entrée du Puits et les salles cachées 1 et 4 ;
+- dans l'aile du boss, sans grappin, aucune plateforme n'est atteignable depuis le départ, et la sortie est inaccessible tant que la porte est fermée (même au grappin) ;
 Le résultat actuel est **OK** à chaque étape. Ce que le vérificateur ne couvre pas : la logique des blocs de commande (énigmes, balises), à tester en jeu.
+
+## Décoration (2026-11-09) : temple de jungle abandonné
+
+Une seule direction artistique partout : un temple de jungle que la forêt a repris. Briques de pierre moussues et fissurées, cobble moussu, mousse, briques de boue dans l'aile des Serpents ; aucune autre famille de blocs (pas d'ardoise, de pierre noire, de prismarine, de cuivre ni de lumière d'âme). Une passe dédiée (`scripts/donjon_temple_decor*.py`, lancée par le générateur) habille tout sans jamais gêner un passage, un mécanisme, un ancrage ni la position du boss (cases réservées autour de chacun).
+- **Murs** : plinthe, bandeaux sculptés tous les 10 blocs, nervures verticales, patchs de pierre moussue, fissurée ou en cobble (30 000 blocs repeints).
+- **Sols** : bordures sculptées, damiers, médaillons et losanges, mousse qui envahit et briques fissurées par les racines ; serpent de boue qui traverse l'aile des Serpents.
+- **Végétation envahissante** : lianes sur les parois, les totems et les statues (≈ 940 blocs de lianes), grosses racines et touffes de feuilles qui percent les voûtes, buissons et azalées dans les angles, herbes hautes, fougères, fleurs, champignons, pétales, tapis de mousse, spore blossom ; deux grands arbres de jungle ont poussé dans la cour du Parvis.
+- **Ruines** : poutres de jungle cassées, lustres rouillés (chaîne, parfois sa lanterne), pilastres à moitié effondrés, gravats mousseux, statues de gardiens et 13 totems de jungle (visages en citrouille sculptée), braseros éteints ou à lanterne, toiles et ossements.
+- **Aile du boss** : voûte de nervures de pierre moussue avec lianes pendantes et lanternes survivantes, racines géantes en grappes, contreforts rongés, plateformes de pierre moussue envahies d'herbe, de buissons et de mousse avec racines, lianes et feuillage dessous, stalagmites de roche moussue dans la lave, arche d'entrée envahie de lianes.
 
 ## Écarts par rapport au plan et à la demande
 
-- **Colline** : pas de massif plein ; le temple est une coque (maçonnerie + roche, 4 blocs) autour des salles, pour garder le fichier léger (190 000 blocs). L'extérieur ressemble à un affleurement, pas à une colline.
+- **Colline** : pas de massif plein ; le temple est une coque (maçonnerie + roche, 4 blocs) autour des salles, pour garder le fichier léger (320 000 blocs). L'extérieur ressemble à un affleurement, pas à une colline.
+- **Aile du boss** : ajoutée au sud de l'antichambre (gabarit passé de 130 × 100 × 130 à 130 × 100 × 216) : la salle basse prévue au plan ne pouvait pas contenir un gouffre de 30 blocs ni 50 blocs de haut. L'escalier de descente vers le Gardien est remplacé par un couloir droit.
 - **Accès au Parvis** : par `/tp` (comme le n°1) ; pas de chemin à pied depuis le sol extérieur. Dans le serveur, l'entrée sera la Porte des Profondeurs de la citadelle.
 - **Ailes** : ouvertes (arches), non scellées ; ce sont les socles du sanctuaire qui imposent de les réussir.
 - **Idoles** : remplacées par des drapeaux de commande et des balises lumineuses dans le vestibule (pas d'objet à transporter).

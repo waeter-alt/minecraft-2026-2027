@@ -24,9 +24,11 @@ for b in f["blocks"]:
     x, y, z = (int(v) for v in b["pos"])
     NOMS[x, y, z] = int(b["state"])
 PASSE = {"air", "light", "water", "cave_vines", "cave_vines_plant", "hanging_roots", "vine", "moss_carpet", "fern", "cobweb", "candle", "lever",
-         "stone_button", "stone_pressure_plate", "ladder", "brown_carpet", "white_carpet", "skeleton_skull", "chain", "spruce_trapdoor"}
+         "stone_button", "stone_pressure_plate", "ladder", "brown_carpet", "white_carpet", "skeleton_skull", "chain", "spruce_trapdoor",
+         "short_grass", "tall_grass", "poppy", "dandelion", "azure_bluet", "lily_of_the_valley", "brown_mushroom", "red_mushroom", "pink_petals", "glow_lichen",
+         "spore_blossom", "wall_torch", "soul_wall_torch", "pointed_dripstone", "flowering_azalea"}
 GRIMPE = {"ladder", "vine", "cave_vines", "cave_vines_plant", "water"}
-pas_i = np.array([n in PASSE for n in pal])
+pas_i = np.array([n in PASSE or n.endswith(("_carpet", "_wall_banner")) for n in pal])
 grimpe_i = np.array([n in GRIMPE for n in pal])
 eau_i = np.array([n == "water" for n in pal])
 _m = np.load(RACINE / "exports/temple_vide.npz")
@@ -86,6 +88,7 @@ def parcours(ouvertes, grappin=True, R=14.0):
             d2 = np.linalg.norm(centres - ca, axis=1)
             m = np.nonzero((d2 <= R) & (pts[:, 1] <= a[1] + (2 if R > 20 else -1)))[0]
             portees[a] = [tuple(v) for v in pts[m[vue(passe, ca, centres[m])]]]
+        parcours.vus, parcours.portees = vus, portees
     sautables = [(dx, dz) for dx in range(-3, 4) for dz in range(-3, 4) if 4 <= dx * dx + dz * dz <= 13]
     vu = set()
     file = deque()
@@ -168,7 +171,7 @@ CIB = conf["cibles"]
 
 def rayon(c):
     """Distance max entre la cible et une case ou l'on peut se tenir (serree pour les plaques : il faut vraiment pouvoir y marcher)."""
-    if c.startswith(("plaque", "dalle", "bouton_H8")):
+    if c.startswith(("plaque", "dalle", "bouton_H8")) or (c[0] == "B" and c[1:].isdigit()):
         return 1.6
     if c.startswith(("L", "bouton", "socle")):
         return 3.0
@@ -183,7 +186,8 @@ ETAPES = [
     (["H2", "H3"], ["H2", "H3"]),
     (["H2", "H3", "G6"], ["S7", "S7sud", "serrure", "S8", "S8fin", "S9", "S9fin", "S10", "S10cle", "plaque_cle", "H6", "H7", "bouton_H8"]),
     (["H2", "H3", "G6", "H8"], ["H8"]),
-    (["H2", "H3", "G6", "H8", "G7"], ["S11", "S12"]),
+    (["H2", "H3", "G6", "H8", "G7"], ["S11", "S12"] + [f"B{i}" for i in range(1, 10)]),
+    (["H2", "H3", "G6", "H8", "G7", "SORTIE"], ["sortie"]),
 ]
 ok = True
 deja = []
@@ -203,6 +207,35 @@ sans = [c for c in CIB if atteint(vu, CIB[c], rayon(c))]
 permis = {"S1", "S2"} | set(WINGS) - {"H1"} | {"H1"}
 print("sans grappin, portes fermees :", sorted(sans), "->", "OK" if set(sans) <= permis else f"ECHEC (en trop : {sorted(set(sans) - permis)})")
 ok &= set(sans) <= permis
+# aile du boss sans grappin : une fois la porte G7 ouverte, aucune plateforme ni la sortie ne doit etre atteignable
+TOUT = ["H2", "H3", "G6", "H8", "G7"]
+vu0, _ = parcours(TOUT, False)
+boss_sans = [c for c in CIB if (c[0] == "B" and c[1:].isdigit() or c == "sortie") and atteint(vu0, CIB[c], rayon(c))]
+print("aile du boss sans grappin :", boss_sans or "rien", "->", "OK" if not boss_sans else "ECHEC")
+ok &= not boss_sans
+# chaque plateforme doit etre rejoignable depuis au moins 2 autres, en un balancement
+vuR, ancR = parcours(TOUT, True, 14.0)
+PL = conf["plateformes"]
+
+
+def plat_de(cases):
+    res = set()
+    for (x, y, z) in cases:
+        for n_, d in PL.items():
+            x0, x1, z0, z1 = d["bbox"]
+            if y == d["dessus"] + 1 and x0 <= x <= x1 and z0 <= z <= z1:
+                res.add(n_)
+    return res
+
+
+voisins = {n_: set() for n_ in PL}
+for a_ in ANC:
+    depart, arrivee = plat_de(parcours.vus[a_]), plat_de(parcours.portees[a_])
+    for u in depart:
+        voisins[u] |= arrivee - {u}
+for n_, v in voisins.items():
+    print("plateforme", n_, "(dessus", PL[n_]["dessus"], ") -> peut rejoindre", sorted(v), "-> OK" if len(v) >= 2 else "-> ECHEC (moins de 2 voisines)")
+    ok &= len(v) >= 2
 manque_sans = [c for c in WINGS if c not in sans]
 print("ailes : cibles non atteintes sans grappin :", manque_sans)
 for nom_ in ("chaine_p", "chaine_g"):

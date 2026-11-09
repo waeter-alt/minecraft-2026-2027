@@ -56,8 +56,8 @@ SECT = [
     ("8", "Le Couloir des Pièges", "Passerelle au-dessus d'une fosse : 2 stalactites, 2 tronçons qui cèdent, 3 plaques empoisonnées, brèche de 9 blocs à franchir à l'ancrage P1. Chute : retour au début.", "3 min"),
     ("9", "Le Grand Gouffre Intérieur", "Caverne : 6 ancrages en arc (A1 à A6) au-dessus de la fosse, jusqu'à la corniche d'en face. Chute : retour à la corniche d'arrivée.", "4 min"),
     ("10", "La Crypte des Racines", "On plonge dans la fosse d'eau, on prend la Clé de racine sur l'îlot, on remonte avec 3 ancrages (K1 à K3), puis retour en arrière jusqu'à la salle 7.", "3 min"),
-    ("11", "L'Antichambre", "Porte à clé de la salle 7 (serrure en pierre magnétique), couloir de statues, escalier vers le Gardien.", "1 min"),
-    ("12", "La Salle du Gardien", "Grande salle à colonnes de troncs, estrade à l'ouest : vide, le boss viendra plus tard.", "1 min"),
+    ("11", "L'Antichambre", "Porte à clé de la salle 7 (serrure en pierre magnétique), couloir de statues, long couloir droit vers l'aile du boss.", "1 min"),
+    ("12", "La Salle du Gardien (aile du boss)", "Hall de 63 × 63 au-dessus d'un gouffre de lave : 9 plateformes suspendues, atteintes au grappin ; sortie fermée. Vide, le boss viendra plus tard.", "1 min (hors combat)"),
 ]
 for s in SECT:
     a("| " + " | ".join(s) + " |")
@@ -83,10 +83,31 @@ a("## Points d'ancrage")
 a("")
 a("| Nom | Où | Coordonnées |")
 a("|---|---|---|")
-OU = {"T": "Puits (tutoriel)", "Z": "Puits (ascension)", "Hc": "Puits (caché, vers la salle cachée 5)", "P": "Couloir des pièges (brèche)", "A": "Gouffre", "Hg": "Gouffre (isolé, vers la salle cachée 7)", "K": "Crypte (remontée)"}
+OU = {"T": "Puits (tutoriel)", "Z": "Puits (ascension)", "Hc": "Puits (caché, vers la salle cachée 5)", "P": "Couloir des pièges (brèche)", "A": "Gouffre", "Hg": "Gouffre (isolé, vers la salle cachée 7)", "K": "Crypte (remontée)", "V": "Salle du boss (chaîne de la voûte)"}
 for n_, x, y, z in conf["ancrages"]:
     cle = n_ if n_ in OU else n_[0]
     a(f"| {n_} | {OU.get(cle, '')} | {w((x, y, z))} |")
+a("")
+PL = conf["plateformes"]
+a("## La salle du boss (section 12)")
+a("")
+a(f"Hall de 63 × 63 blocs (x {16 + OX} à {78 + OX}, z {134 + OZ} à {196 + OZ}), du fond du gouffre (Y {6 + OY}) à une voûte en berceau qui culmine à Y {92 + OY}. "
+  "On y arrive par un long couloir droit au niveau 40 (celui de l'antichambre), qui débouche sur la plateforme de départ. Le fond du gouffre est une nappe de lave **confinée** (Y 6 à 7), à 32 blocs sous le départ. Sept piliers géants contre les parois, certains cassés ; chaînes et lanternes pendues à la voûte.")
+a("")
+a("| Plateforme | Emprise (monde) | Dessus (Y monde) | Cases | Position du boss (monde) |")
+a("|---|---|---|---|---|")
+for n_, d in PL.items():
+    x0, x1, z0, z1 = d["bbox"]
+    boss = w(d["boss"]) if d["boss"] else "— (départ, retour après une chute)"
+    a(f"| {n_ if n_ != 'D' else 'Départ (D)'} | {w((x0, d['dessus'], z0)).split()[0]}..{w((x1, d['dessus'], z1)).split()[0]} × {w((x0, d['dessus'], z0)).split()[2]}..{w((x1, d['dessus'], z1)).split()[2]} | {d['dessus'] + OY} | {d['cases']} | {boss} |")
+a("")
+a("Toutes les plateformes sont à au moins 6 blocs les unes des autres (aucun saut, même en sprint) ; le vérificateur confirme que chacune est rejoignable au grappin depuis au moins 2 autres. Les positions du boss sont au centre de chaque plateforme, dégagées sur au moins 5 blocs de haut. Aucun mob n'est posé.")
+a("")
+(zx, zy, zz), (zdx, zdy, zdz) = conf["zone_chute"]
+a(f"- **Chute** : une zone (x {zx + OX} à {zx + zdx + OX}, y {zy + OY} à {zy + zdy + OY}, z {zz + OZ} à {zz + zdz + OZ}) couvre tout le gouffre, au-dessus de la lave et sous la plus basse plateforme. "
+  "Un joueur qui y entre est téléporté sur la plateforme de départ, tourné vers la salle, avec 3 s de chute lente (pas de dégâts), son crochet supprimé (fonction `atelier:temple_decrocher`, repéré par l'identifiant du joueur) ; les objets qui tombent sont supprimés ; seuls les joueurs sont concernés.")
+a(f"- **Sortie** : porte de barreaux {w((39, 71, 199))} à {w((41, 74, 199))}, dans le mur sud derrière la plateforme la plus haute (P8), puis un court couloir et une petite salle vide. "
+  "`/function atelier:temple_ouvrir_sortie_boss` l'ouvre (à relier à la mort du boss) ; `/function atelier:temple_fermer_sortie_boss` la ferme ; `temple_reset` la ferme aussi.")
 a("")
 a("## Salles cachées (8, vides : ni coffre, ni mob, ni spawner)")
 a("")
@@ -106,12 +127,27 @@ a("")
 a("`scripts/verif_donjon_temple.py` simule la marche, les sauts, les échelles, la nage et le grappin (réglage réaliste : rayon de corde 14 ; généreux : 38) et vérifie, porte par porte :")
 a("- tout ce qui doit être atteignable l'est (grappin réaliste) ;")
 a("- rien de ce qui est derrière une porte fermée (G6, G7, salles cachées 2, 3 et 8) n'est atteignable, même en généreux ;")
-a("- sans grappin, on n'atteint que le Parvis, le vestibule, les ailes des Serpents et des Miroirs, l'entrée du Puits et les salles cachées 1 et 4.")
+a("- sans grappin, on n'atteint que le Parvis, le vestibule, les ailes des Serpents et des Miroirs, l'entrée du Puits et les salles cachées 1 et 4 ;")
+a("- dans l'aile du boss, sans grappin, aucune plateforme n'est atteignable depuis le départ, et la sortie est inaccessible tant que la porte est fermée (même au grappin) ;")
 a("Le résultat actuel est **OK** à chaque étape. Ce que le vérificateur ne couvre pas : la logique des blocs de commande (énigmes, balises), à tester en jeu.")
+a("")
+a("## Décoration (2026-11-09) : temple de jungle abandonné")
+a("")
+a("Une seule direction artistique partout : un temple de jungle que la forêt a repris. Briques de pierre moussues et fissurées, cobble moussu, mousse, briques de boue dans l'aile des Serpents ; "
+  "aucune autre famille de blocs (pas d'ardoise, de pierre noire, de prismarine, de cuivre ni de lumière d'âme). Une passe dédiée (`scripts/donjon_temple_decor*.py`, lancée par le générateur) habille "
+  "tout sans jamais gêner un passage, un mécanisme, un ancrage ni la position du boss (cases réservées autour de chacun).")
+a("- **Murs** : plinthe, bandeaux sculptés tous les 10 blocs, nervures verticales, patchs de pierre moussue, fissurée ou en cobble (30 000 blocs repeints).")
+a("- **Sols** : bordures sculptées, damiers, médaillons et losanges, mousse qui envahit et briques fissurées par les racines ; serpent de boue qui traverse l'aile des Serpents.")
+a("- **Végétation envahissante** : lianes sur les parois, les totems et les statues (≈ 940 blocs de lianes), grosses racines et touffes de feuilles qui percent les voûtes, buissons et azalées dans les angles, "
+  "herbes hautes, fougères, fleurs, champignons, pétales, tapis de mousse, spore blossom ; deux grands arbres de jungle ont poussé dans la cour du Parvis.")
+a("- **Ruines** : poutres de jungle cassées, lustres rouillés (chaîne, parfois sa lanterne), pilastres à moitié effondrés, gravats mousseux, statues de gardiens et 13 totems de jungle (visages en citrouille sculptée), braseros éteints ou à lanterne, toiles et ossements.")
+a("- **Aile du boss** : voûte de nervures de pierre moussue avec lianes pendantes et lanternes survivantes, racines géantes en grappes, contreforts rongés, plateformes de pierre moussue envahies d'herbe, de buissons et de mousse avec racines, lianes et feuillage dessous, "
+  "stalagmites de roche moussue dans la lave, arche d'entrée envahie de lianes.")
 a("")
 a("## Écarts par rapport au plan et à la demande")
 a("")
-a("- **Colline** : pas de massif plein ; le temple est une coque (maçonnerie + roche, 4 blocs) autour des salles, pour garder le fichier léger (190 000 blocs). L'extérieur ressemble à un affleurement, pas à une colline.")
+a("- **Colline** : pas de massif plein ; le temple est une coque (maçonnerie + roche, 4 blocs) autour des salles, pour garder le fichier léger (320 000 blocs). L'extérieur ressemble à un affleurement, pas à une colline.")
+a("- **Aile du boss** : ajoutée au sud de l'antichambre (gabarit passé de 130 × 100 × 130 à 130 × 100 × 216) : la salle basse prévue au plan ne pouvait pas contenir un gouffre de 30 blocs ni 50 blocs de haut. L'escalier de descente vers le Gardien est remplacé par un couloir droit.")
 a("- **Accès au Parvis** : par `/tp` (comme le n°1) ; pas de chemin à pied depuis le sol extérieur. Dans le serveur, l'entrée sera la Porte des Profondeurs de la citadelle.")
 a("- **Ailes** : ouvertes (arches), non scellées ; ce sont les socles du sanctuaire qui imposent de les réussir.")
 a("- **Idoles** : remplacées par des drapeaux de commande et des balises lumineuses dans le vestibule (pas d'objet à transporter).")
