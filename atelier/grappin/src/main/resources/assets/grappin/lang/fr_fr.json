@@ -1,8 +1,8 @@
 {
   "item.grappin.grappin": "Grappin",
   "item.grappin.grappin.aide1": "Clic droit : lance le crochet (30 blocs) ; il ne tient que sur un point d'ancrage",
-  "item.grappin.grappin.aide2": "Accroché : on se balance ; molette = raccourcir ou allonger la corde",
-  "item.grappin.grappin.aide3": "S'accroupir : lâcher avec un saut ; espace maintenu : rembobiner ; clic droit accroché : lâcher et relancer",
+  "item.grappin.grappin.aide2": "Accroché : clic droit maintenu = traction ; relâché, on reste accroché et on se balance ; molette = longueur de la corde",
+  "item.grappin.grappin.aide3": "Espace ou s'accroupir : lâcher le crochet avec un saut",
   "block.grappin.ancrage": "Point d'ancrage",
   "entity.grappin.crochet": "Crochet de grappin"
 }

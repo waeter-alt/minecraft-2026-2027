@@ -18,6 +18,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -56,6 +57,11 @@ public class Grappin {
         ENTITES.register(modBus);
         container.registerConfig(ModConfig.Type.COMMON, Reglages.SPEC);
         modBus.addListener(this::ongletCreatif);
+        modBus.addListener(this::reseau);
+    }
+
+    private void reseau(RegisterPayloadHandlersEvent event) {
+        event.registrar("1").playToServer(LacherPayload.TYPE, LacherPayload.CODEC, LacherPayload::traiter);
     }
 
     private void ongletCreatif(BuildCreativeModeTabContentsEvent event) {

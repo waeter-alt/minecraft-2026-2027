@@ -1,5 +1,5 @@
-// [claude-build] L'objet grappin : clic droit lance le crochet. Accroche : un nouveau clic droit lache et relance aussitot
-// (enchainement en plein vol). Crochet encore en vol : le clic droit le rappelle.
+// [claude-build] L'objet grappin : clic droit lance le crochet. Tant qu'un crochet est en jeu (en vol ou accroche), le clic droit ne
+// fait plus rien ici : maintenu, il sert de traction (GrappinClient) ; on lache avec ESPACE ou en s'accroupissant.
 package fr.atelier.grappin;
 
 import java.util.List;
@@ -23,13 +23,10 @@ public class GrappinItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player joueur, InteractionHand main) {
         ItemStack pile = joueur.getItemInHand(main);
+        if (!Crochet.crochetsDe(joueur).isEmpty()) {      // vrai des deux cotes : le clic maintenu ne relance rien, et pas de geste de bras
+            return InteractionResultHolder.fail(pile);
+        }
         if (!level.isClientSide) {
-            List<Crochet> lances = Crochet.crochetsDe(joueur);
-            boolean accroche = lances.stream().anyMatch(Crochet::estAccroche);
-            lances.forEach(Crochet::rappeler);
-            if (!lances.isEmpty() && !accroche) {          // crochet encore en vol : on le rappelle, c'est tout
-                return InteractionResultHolder.success(pile);
-            }
             Crochet crochet = new Crochet(level, joueur);
             crochet.shootFromRotation(joueur, joueur.getXRot(), joueur.getYRot(), 0.0F, Reglages.VITESSE_CROCHET.get().floatValue(), 0.0F);
             level.addFreshEntity(crochet);
