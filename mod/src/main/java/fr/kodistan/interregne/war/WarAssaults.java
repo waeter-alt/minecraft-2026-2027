@@ -86,6 +86,12 @@ public final class WarAssaults
       * doesn't stall the tick (and every client's frame) in a single instant. */
     private static final int SWEEP_BLOCKS_PER_TICK = 8;
 
+    /** Minimum ticks between full hit-effect bursts (bar, particles, crack overlay) on the same building — the
+      * cost of a siege was scaling with the number of attacking troops, not with the building; this bounds it per
+      * building instead, regardless of how many troops are landing blows on it at once. Comfortably under a single
+      * troop's own battering rhythm (see {@link AssaultGoal#BATTER_EVERY}), so a lone attacker never notices it. */
+    private static final int EFFECT_COOLDOWN_TICKS = 4;
+
     private static final Map<Integer, Assault> BY_DEFENDER = new HashMap<>();
 
     /** Paced final sweeps in progress, drained a few blocks per tick by {@link #onServerTick}. */
@@ -124,6 +130,7 @@ public final class WarAssaults
         // nothing but cost: it's the same list every time, just paid for again and again.
         final Map<BlockPos, List<BlockPos>> footprints    = new HashMap<>();
         final Map<BlockPos, List<BlockPos>> crackSamples  = new HashMap<>();
+        final Map<BlockPos, Long>           lastEffectTick = new HashMap<>();
         int cursor;
         int destroyed;
         long loot;
@@ -358,29 +365,54 @@ public final class WarAssaults
         return Mth.clamp((int) Math.round(9.0D * (1.0D - (double) left / total)), 0, 9);
     }
 
-    /** One battering hit on the building the troop is standing at. */
-    static void onHit(final EntLegionnaire troop, final BlockPos hut)
+    /** One battering hit on the building the troop is standing at. Structure points always drop, immediately — only
+      * the visual refresh (bar, particles, crack overlay) is rate-limited per building, below. Returns whether this
+      * call actually showed effects, so {@link AssaultGoal} knows whether to add its own blow particles/sound on
+      * top: those are the other half of the per-hit cost and would otherwise defeat the point of the cap. */
+    static boolean onHit(final EntLegionnaire troop, final BlockPos hut)
     {
         final Assault assault = BY_DEFENDER.get(colonyOf(troop));
         if (assault == null || !assault.structure.containsKey(hut))
         {
-            return;
+            return false;
         }
         final int left = assault.structure.merge(hut, -1, Integer::sum);
-        updateBar(assault, hut, left);
+        boolean showEffects = false;
         if (assault.defender.getWorld() instanceof ServerLevel level)
         {
-            final IBuilding building = assault.defender.getBuildingManager().getBuilding(hut);
-            if (building != null)
+            showEffects = effectsDue(assault, level, hut);
+            if (showEffects)
             {
-                damageEffects(level, building);
-                updateCracks(assault, level, building, hut, crackStage(troop, hut));
+                updateBar(assault, hut, left);
+                final IBuilding building = assault.defender.getBuildingManager().getBuilding(hut);
+                if (building != null)
+                {
+                    damageEffects(level, building);
+                    updateCracks(assault, level, building, hut, crackStage(troop, hut));
+                }
             }
         }
         if (left <= 0)
         {
             destroyBuilding(assault, hut);
         }
+        return showEffects;
+    }
+
+    /** One troop battering alone still gets a full effect on every blow (cooldown well under its own rhythm): the
+      * cap only kicks in once several troops land hits on the same building faster than a single one would, which
+      * is exactly the case — more attackers — where thinning the effects out is free (nobody can tell five
+      * overlapping blow-bursts from one slightly bigger one in the middle of a siege). */
+    private static boolean effectsDue(final Assault assault, final ServerLevel level, final BlockPos hut)
+    {
+        final long now = level.getGameTime();
+        final Long last = assault.lastEffectTick.get(hut);
+        if (last != null && now - last < EFFECT_COOLDOWN_TICKS)
+        {
+            return false;
+        }
+        assault.lastEffectTick.put(hut, now);
+        return true;
     }
 
     /** Every currently-standing designed block of a building's footprint, excluding the (invincible) hut itself —
@@ -570,6 +602,7 @@ public final class WarAssaults
         assault.byTroop.values().removeIf(hut::equals);
         assault.footprints.remove(hut);
         assault.crackSamples.remove(hut);
+        assault.lastEffectTick.remove(hut);
     }
 
     /** Man-made only: terrain, water and plants are never touched (the user's war rule). */
