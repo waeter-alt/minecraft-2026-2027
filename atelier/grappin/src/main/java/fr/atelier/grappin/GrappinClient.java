@@ -1,4 +1,5 @@
-// [claude-build] Cote client : le balancier (physique du pendule chaque tick), la molette pour la corde, le dessin du crochet et de la corde.
+// [claude-build] Cote client : le balancier (physique du pendule chaque tick), la traction (clic droit maintenu), ESPACE pour lacher,
+// la molette pour la corde, le dessin du crochet et de la corde.
 package fr.atelier.grappin;
 
 import java.util.List;
@@ -20,6 +21,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class GrappinClient {
     private GrappinClient() {
@@ -39,6 +41,7 @@ public final class GrappinClient {
     public static final class Balancier {
         private static int crochetId = -1;              // crochet auquel on est pendu
         private static double corde = 0;                // longueur de corde fixee a l'accroche
+        private static boolean espaceAvant = false;     // etat d'ESPACE au tick precedent : on ne lache qu'a l'appui, pas en le maintenant
 
         static Crochet crochetAccroche(LocalPlayer joueur) {
             List<Crochet> l = joueur.level().getEntitiesOfClass(Crochet.class, joueur.getBoundingBox().inflate(Reglages.PORTEE.get() + 10),
@@ -53,6 +56,9 @@ public final class GrappinClient {
                 return;
             }
             Crochet c = crochetAccroche(joueur);
+            boolean espace = joueur.input.jumping;
+            boolean appuiEspace = espace && !espaceAvant;
+            espaceAvant = espace;
             if (c == null) {
                 if (crochetId != -1) {                  // on vient de lacher : on garde sa vitesse (reglable) et on saute
                     Vec3 v = joueur.getDeltaMovement().scale(Reglages.CONSERVATION.get());
@@ -69,7 +75,12 @@ public final class GrappinClient {
                 crochetId = c.getId();
                 corde = Math.min(Math.max(d, Reglages.CORDE_MIN.get()), Reglages.PORTEE.get());
             }
-            if (joueur.input.jumping) {                 // treuil : maintenir la touche de saut rembobine la corde, on remonte
+            if (appuiEspace) {                          // ESPACE : lacher (le serveur supprime le crochet, le saut se fait au tick suivant)
+                PacketDistributor.sendToServer(new LacherPayload());
+                return;
+            }
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.options.keyUse.isDown() && mc.screen == null && joueur.isHolding(Grappin.GRAPPIN.get())) {   // traction : clic droit maintenu rembobine la corde
                 corde = Math.max(Reglages.CORDE_MIN.get(), Math.min(corde, d) - Reglages.TREUIL.get());
             }
             if (d < 1.0E-3) {
