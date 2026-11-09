@@ -187,6 +187,10 @@ public final class InstantBuilder
         {
             abstractOrder.onCompleted(colony, null);
         }
+        if (building != null && order.getWorkOrderType() == WorkOrderType.REPAIR)
+        {
+            fr.kodistan.interregne.war.WarAssaults.onRepairCompleted(level, colony, building.getID());
+        }
         if (building != null && order instanceof WorkOrderBuilding && order.getWorkOrderType() != WorkOrderType.REPAIR)
         {
             try

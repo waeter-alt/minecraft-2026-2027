@@ -27,6 +27,7 @@
     "EventHandlerMixin",
     "FarmFieldUpdateSeedMessageMixin",
     "HarvestTransferMixin",
+    "MobAiRegistryMixin",
     "ItemStackHandlerMixin",
     "ItemStackMixin",
     "NewBobberEntityMixin",
