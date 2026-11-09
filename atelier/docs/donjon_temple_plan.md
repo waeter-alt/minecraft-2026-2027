@@ -1,7 +1,7 @@
 <!-- [claude-build] plan du donjon n°2 « Le Temple des Mille Racines » (a valider avant construction) -->
 # Donjon n°2 — « Le Temple des Mille Racines » (plan à valider)
 
-Style : jungle, comme le donjon n°1 (roche en grandes plaques, briques moussues et fissurées, mousse, lichen luisant, lianes à baies lumineuses, troncs et racines de jungle et de palétuvier, champignons lumineux). Concept différent de la Gorge suspendue : ici on **descend** un temple enseveli sous une colline de jungle, par étages de salles et de couloirs, avec embranchements et retours en arrière. Le grappin sert dans trois grandes salles verticales seulement (Grappin 2.4.0 : clic maintenu = traction, relâché = on pend, ESPACE ou Maj = lâcher, molette = corde).
+Style : jungle, comme le donjon n°1 (roche en grandes plaques, briques moussues et fissurées, mousse, lichen luisant, lianes à baies lumineuses, troncs et racines de jungle et de palétuvier, champignons lumineux). Concept différent de la Gorge suspendue : ici on **descend** un temple enseveli sous une colline de jungle, par étages de salles et de couloirs, avec embranchements et retours en arrière. Le grappin sert dans trois grandes salles verticales seulement (Grappin 2.4.1 : clic maintenu = traction, relâché = on pend, ESPACE ou Maj = lâcher, molette = corde).
 
 ## Cadre
 

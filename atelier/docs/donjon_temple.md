@@ -1,7 +1,7 @@
 <!-- [claude-build] fiche du donjon n°2, ecrite par scripts/fiche_donjon_temple.py -->
 # Donjon n°2 « Le Temple des Mille Racines »
 
-Monde « Donjon 2 » (superflat, sol à Y-61), Minecraft 1.21.1 + NeoForge + mod **Grappin 2.4.0** (obligatoire chez chaque joueur). Structure `temple` 130 × 100 × 216, posée en 150 -61 -65 (x 150 à 279, z -65 à 150). Générateur : `scripts/donjon_temple.py`, contrôle : `scripts/verif_donjon_temple.py`, plan de conception : `donjon_temple_plan.md`.
+Monde « Donjon 2 » (superflat, sol à Y-61), Minecraft 1.21.1 + NeoForge 21.1.216 + mod **Grappin 2.4.1** (onglet créatif « Donjons ») (obligatoire chez chaque joueur). Structure `temple` 130 × 100 × 216, posée en 150 -61 -65 (x 150 à 279, z -65 à 150). Générateur : `scripts/donjon_temple.py`, contrôle : `scripts/verif_donjon_temple.py`, plan de conception : `donjon_temple_plan.md`.
 
 Style jungle, comme la Gorge suspendue : briques de pierre moussues et fissurées, roche en plaques, mousse, lianes à baies lumineuses, racines et troncs de jungle. On **descend** un temple enseveli : Parvis à ciel ouvert tout en haut, trois ailes et un sanctuaire à l'étage 1, puis les salles du bas jusqu'au Gardien.
 
@@ -11,7 +11,7 @@ Style jungle, comme la Gorge suspendue : briques de pierre moussues et fissurée
 - Entrée : `/tp @s 215 22 -3 0 0` (le Parvis, au sommet). Le grappin est donné automatiquement à qui arrive au Parvis sans en avoir.
 - Remise à zéro entre deux parties : `/function atelier:temple_reset` (portes fermées, leviers baissés, énigmes et clé remises, pièges et balises réarmés).
 
-## Le grappin (Grappin 2.4.0)
+## Le grappin (Grappin 2.4.1)
 
 - **Clic droit** (rien de lancé) : lance le crochet (30 blocs). Il ne tient que sur les **points d'ancrage** (bloc métallique faiblement lumineux) ; il en attrape un s'il passe à moins de 1,5 bloc.
 - Accroché, **clic droit maintenu** : traction (la corde se rembobine, on est tiré vers l'ancrage). **Clic relâché** : on reste accroché, la corde garde sa longueur, on se balance.

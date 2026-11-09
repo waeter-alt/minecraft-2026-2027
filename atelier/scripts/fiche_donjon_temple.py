@@ -18,7 +18,7 @@ a = L.append
 a("<!-- [claude-build] fiche du donjon n°2, ecrite par scripts/fiche_donjon_temple.py -->")
 a("# Donjon n°2 « Le Temple des Mille Racines »")
 a("")
-a(f"Monde « Donjon 2 » (superflat, sol à Y-61), Minecraft 1.21.1 + NeoForge + mod **Grappin 2.4.0** (obligatoire chez chaque joueur). Structure `temple` "
+a(f"Monde « Donjon 2 » (superflat, sol à Y-61), Minecraft 1.21.1 + NeoForge 21.1.216 + mod **Grappin 2.4.1** (onglet créatif « Donjons ») (obligatoire chez chaque joueur). Structure `temple` "
   f"{conf['taille'][0]} × {conf['taille'][1]} × {conf['taille'][2]}, posée en {OX} {OY} {OZ} (x {OX} à {OX + conf['taille'][0] - 1}, z {OZ} à {OZ + conf['taille'][2] - 1}). "
   "Générateur : `scripts/donjon_temple.py`, contrôle : `scripts/verif_donjon_temple.py`, plan de conception : `donjon_temple_plan.md`.")
 a("")
@@ -32,7 +32,7 @@ a("- Pose (sans mettre en pause ; on peut la relancer pour poser une nouvelle ve
 a(f"- Entrée : `/tp @s {w(conf['entree'])} 0 0` (le Parvis, au sommet). Le grappin est donné automatiquement à qui arrive au Parvis sans en avoir.")
 a("- Remise à zéro entre deux parties : `/function atelier:temple_reset` (portes fermées, leviers baissés, énigmes et clé remises, pièges et balises réarmés).")
 a("")
-a("## Le grappin (Grappin 2.4.0)")
+a("## Le grappin (Grappin 2.4.1)")
 a("")
 a("- **Clic droit** (rien de lancé) : lance le crochet (30 blocs). Il ne tient que sur les **points d'ancrage** (bloc métallique faiblement lumineux) ; il en attrape un s'il passe à moins de 1,5 bloc.")
 a("- Accroché, **clic droit maintenu** : traction (la corde se rembobine, on est tiré vers l'ancrage). **Clic relâché** : on reste accroché, la corde garde sa longueur, on se balance.")
