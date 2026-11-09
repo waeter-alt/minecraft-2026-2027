@@ -1,6 +1,7 @@
 package fr.kodistan.interregne.war;
 
 import com.minecolonies.api.colony.IColony;
+import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.buildings.IBuilding;
 import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
 import com.minecolonies.api.entity.mobs.RaiderMobUtils;
@@ -8,15 +9,27 @@ import com.minecolonies.api.util.BlockPosUtil;
 import net.minecraft.util.Tuple;
 import com.minecolonies.core.entity.citizen.EntityCitizen;
 import fr.kodistan.interregne.InterregneMod;
+import fr.kodistan.interregne.colony.BuildContext;
+import fr.kodistan.interregne.colony.BuildCosts;
 import fr.kodistan.interregne.economy.RegionalTreasury;
+import fr.kodistan.interregne.economy.TreasuryPayment;
+import fr.kodistan.interregne.economy.Wallet;
+import fr.kodistan.interregne.network.WarRebuildPayload;
+import fr.kodistan.interregne.network.WarRuinsSyncPayload;
 import fr.kodistan.interregne.pvp.SafeZones;
 import fr.kodistan.interregne.walls.Terrain;
 import fr.kodistan.interregne.walls.Walls;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.BossEvent;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
@@ -25,6 +38,9 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -52,10 +68,17 @@ public final class WarAssaults
     /** Couronnes paid to the attacker's treasury when a building falls. */
     private static final long LOOT_PER_LEVEL = 25;
 
+    /** Chance a non-foundation block survives the final sweep: a ruin, not a swept plot. */
+    private static final float RUIN_SURVIVAL_CHANCE = 0.3F;
+
+    /** Health-bar visibility radius, matching the convention used by the other site boss bars. */
+    private static final double BAR_VIEW_DISTANCE_SQ = 48.0D * 48.0D;
+
     private static final Map<Integer, Assault> BY_DEFENDER = new HashMap<>();
 
     /** Round-robin cursor per colony: each call to pickTarget hands out the next surviving building. */
     private static final Map<Integer, Integer> TARGET_CURSOR = new HashMap<>();
+
 
     private static final class Assault
     {
@@ -67,6 +90,7 @@ public final class WarAssaults
         final Map<BlockPos, Integer> structure = new HashMap<>();
         final Map<BlockPos, Integer> spTotal   = new HashMap<>();
         final Map<Integer, BlockPos> byTroop   = new HashMap<>();
+        final Map<BlockPos, ServerBossEvent> bars = new HashMap<>();
         int cursor;
         int destroyed;
         long loot;
@@ -117,6 +141,7 @@ public final class WarAssaults
 
         final Assault assault = new Assault(defender, attacker, commander != null ? commander.getUUID() : null);
         BY_DEFENDER.put(defender.getID(), assault);
+        STRIKES.remove(defender.getID());
 
         for (int i = 0; i < count; i++)
         {
@@ -132,6 +157,10 @@ public final class WarAssaults
             troop.setColony(defender);
             troop.setEventID(event.getID());
             level.addFreshEntity(troop);
+            // Glowing outline, trackable from afar through walls: setGlowingTag alone doesn't stick, since
+            // LivingEntity re-syncs that flag every tick from the real GLOWING effect (absent here, it
+            // snapped back off within a tick). The effect itself is what has to be applied.
+            troop.addEffect(new MobEffectInstance(MobEffects.GLOWING, Integer.MAX_VALUE, 0, true, false));
             RaiderMobUtils.setMobAttributes(troop, defender);
             assault.troopIds.add(troop.getId());
         }
@@ -192,7 +221,8 @@ public final class WarAssaults
     {
         final BlockPos spawn = assault.defender.getCenter();
         final List<IBuilding> buildings = new ArrayList<>(assault.defender.getBuildingManager().getBuildings().values());
-        buildings.removeIf(b -> b.getBuildingLevel() <= 0);
+        final WarRuinsData ruins = assault.defender.getWorld() instanceof ServerLevel level ? WarRuinsData.get(level) : null;
+        buildings.removeIf(b -> b.getBuildingLevel() <= 0 || (ruins != null && ruins.isRuined(b.getID())));
         buildings.sort(Comparator.comparingDouble(b -> BlockPosUtil.getDistance(b.getID(), spawn)));
         final IBuilding townHall = buildings.stream().filter(b -> b.getID().equals(assault.defender.getCenter())).findFirst().orElse(null);
         if (townHall != null)
@@ -304,64 +334,25 @@ public final class WarAssaults
             return;
         }
         final int left = assault.structure.merge(hut, -1, Integer::sum);
+        updateBar(assault, hut, left);
+        if (assault.defender.getWorld() instanceof ServerLevel level)
+        {
+            final IBuilding building = assault.defender.getBuildingManager().getBuilding(hut);
+            if (building != null)
+            {
+                damageEffects(level, building);
+                updateCracks(level, building, hut, crackStage(troop, hut));
+            }
+        }
         if (left <= 0)
         {
             destroyBuilding(assault, hut);
         }
     }
 
-    /** Sweeps the structure, pays the loot, moves the troops on to their next target. */
-    private static void destroyBuilding(final Assault assault, final BlockPos hut)
-    {
-        final IBuilding building = assault.defender.getBuildingManager().getBuilding(hut);
-        final ServerLevel level = (ServerLevel) assault.defender.getWorld();
-        if (building != null)
-        {
-            final Tuple<BlockPos, BlockPos> corners = building.getCorners();
-            final BlockPos min = new BlockPos(Math.min(corners.getA().getX(), corners.getB().getX()),
-              Math.min(corners.getA().getY(), corners.getB().getY()),
-              Math.min(corners.getA().getZ(), corners.getB().getZ()));
-            final BlockPos max = new BlockPos(Math.max(corners.getA().getX(), corners.getB().getX()),
-              Math.max(corners.getA().getY(), corners.getB().getY()),
-              Math.max(corners.getA().getZ(), corners.getB().getZ()));
-            int swept = 0;
-            for (BlockPos cursor : BlockPos.betweenClosed(min, max))
-            {
-                final BlockState state = level.getBlockState(cursor);
-                if (!cursor.equals(hut) && isDesignedBlock(state))
-                {
-                    level.destroyBlock(cursor, false);
-                    swept++;
-                }
-            }
-            final long loot = LOOT_PER_LEVEL * Math.max(1, building.getBuildingLevel());
-            RegionalTreasury.get(level.getServer()).credit(assault.attacker, loot);
-            assault.destroyed++;
-            assault.loot += loot;
-            // One deep crash reads "building coming down" from anywhere in the colony.
-            level.playSound(null, hut, net.minecraft.world.level.block.SoundType.STONE.getBreakSound(),
-              net.minecraft.sounds.SoundSource.HOSTILE, 3.0F, 0.6F);
-            announce(assault, "§c" + building.getBuildingType().getTranslationKey().toLowerCase() + "§r détruit ("
-              + swept + " blocs) — butin " + loot + " couronnes.");
-        }
-        assault.structure.remove(hut);
-        assault.spTotal.remove(hut);
-        assault.targets.remove(hut);
-        assault.byTroop.values().removeIf(hut::equals);
-        for (final int id : assault.troopIds)
-        {
-            level.destroyBlockProgress(id, hut, -1);
-        }
-    }
-
-    /** Man-made only: terrain, water and plants are never touched (the user's war rule). */
-    public static boolean isDesignedBlock(final BlockState state)
-    {
-        return !state.isAir() && !state.liquid() && !Terrain.natural(state);
-    }
-
-    /** Breakable blocks of a building, top layer first — the battering order. */
-    static List<BlockPos> breakableBlocks(final ServerLevel level, final IBuilding building, final BlockPos hut)
+    /** Every currently-standing designed block of a building's footprint, excluding the (invincible) hut itself —
+      * what the crack overlay and the final ruin sweep both walk. */
+    private static List<BlockPos> footprintBlocks(final ServerLevel level, final IBuilding building, final BlockPos hut)
     {
         final Tuple<BlockPos, BlockPos> corners = building.getCorners();
         final BlockPos min = new BlockPos(Math.min(corners.getA().getX(), corners.getB().getX()),
@@ -378,9 +369,334 @@ public final class WarAssaults
                 out.add(cursor.immutable());
             }
         }
-        out.sort(Comparator.comparingInt((BlockPos pos) -> pos.getY()).reversed()
-          .thenComparingInt(pos -> Math.abs(pos.getX() - hut.getX()) + Math.abs(pos.getZ() - hut.getZ())));
         return out;
+    }
+
+    /** A stable fake "breaker id" per block position, so each of a building's blocks can carry its own crack overlay
+      * at once — vanilla's destroyBlockProgress lets one breaker id show progress on only one block at a time, and
+      * these overlays aren't tied to any one troop (several could be hitting the same building). Never collides with
+      * a real entity id: those are always non-negative. */
+    private static int breakerIdFor(final BlockPos pos)
+    {
+        return -(Math.abs(pos.hashCode()) + 2);
+    }
+
+    /** Crack overlay across the whole building, intensity matching its remaining structure points — every standing
+      * block visibly deteriorates together, not just the one spot being hit. The hut itself is excluded by
+      * {@link #footprintBlocks}: it's the one block in the footprint meant to survive regardless, so it never cracks. */
+    private static void updateCracks(final ServerLevel level, final IBuilding building, final BlockPos hut, final int stage)
+    {
+        for (final BlockPos pos : footprintBlocks(level, building, hut))
+        {
+            level.destroyBlockProgress(breakerIdFor(pos), pos, stage);
+        }
+    }
+
+    /** Drops every crack overlay this building is currently showing. */
+    private static void clearCracks(final ServerLevel level, final IBuilding building, final BlockPos hut)
+    {
+        for (final BlockPos pos : footprintBlocks(level, building, hut))
+        {
+            level.destroyBlockProgress(breakerIdFor(pos), pos, -1);
+        }
+    }
+
+    /**
+     * A building under siege reads as such from anywhere in the colony: a random explosion puff and smoke
+     * somewhere across its footprint on every hit — the same "something's happening here" language already used
+     * for the construction/demolition sites' own ambient effects, not just a single point on one wall.
+     */
+    private static void damageEffects(final ServerLevel level, final IBuilding building)
+    {
+        final Tuple<BlockPos, BlockPos> corners = building.getCorners();
+        final double minX = Math.min(corners.getA().getX(), corners.getB().getX());
+        final double maxX = Math.max(corners.getA().getX(), corners.getB().getX()) + 1.0D;
+        final double minY = Math.min(corners.getA().getY(), corners.getB().getY());
+        final double maxY = Math.max(corners.getA().getY(), corners.getB().getY()) + 1.0D;
+        final double minZ = Math.min(corners.getA().getZ(), corners.getB().getZ());
+        final double maxZ = Math.max(corners.getA().getZ(), corners.getB().getZ()) + 1.0D;
+        final double x = Mth.lerp(level.random.nextDouble(), minX, maxX);
+        final double y = Mth.lerp(level.random.nextDouble(), minY, maxY);
+        final double z = Mth.lerp(level.random.nextDouble(), minZ, maxZ);
+        level.sendParticles(ParticleTypes.EXPLOSION, x, y, z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+        level.sendParticles(ParticleTypes.LARGE_SMOKE, x, y + 0.3D, z, 6, 0.3D, 0.3D, 0.3D, 0.02D);
+        level.playSound(null, x, y, z, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(),
+          net.minecraft.sounds.SoundSource.HOSTILE, 1.0F, 1.1F + level.random.nextFloat() * 0.3F);
+    }
+
+    /** Shows (and keeps in sync) the building's health bar, visible to nearby players only. */
+    private static void updateBar(final Assault assault, final BlockPos hut, final int left)
+    {
+        if (!(assault.defender.getWorld() instanceof ServerLevel level))
+        {
+            return;
+        }
+        final int total = Math.max(1, assault.spTotal.getOrDefault(hut, left));
+        final ServerBossEvent bar = assault.bars.computeIfAbsent(hut, h ->
+        {
+            final IBuilding b = assault.defender.getBuildingManager().getBuilding(h);
+            final Component name = b != null ? Component.translatableEscape(b.getBuildingDisplayName()) : Component.literal("bâtiment");
+            return new ServerBossEvent(name, BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10);
+        });
+        bar.setProgress(Mth.clamp((float) left / total, 0.0F, 1.0F));
+        for (final ServerPlayer player : level.players())
+        {
+            if (player.distanceToSqr(hut.getX() + 0.5D, hut.getY() + 0.5D, hut.getZ() + 0.5D) <= BAR_VIEW_DISTANCE_SQ)
+            {
+                bar.addPlayer(player);
+            }
+            else
+            {
+                bar.removePlayer(player);
+            }
+        }
+    }
+
+    /** Drops the building's health bar for everyone watching it. */
+    private static void removeBar(final Assault assault, final BlockPos hut)
+    {
+        final ServerBossEvent bar = assault.bars.remove(hut);
+        if (bar != null)
+        {
+            bar.removeAllPlayers();
+        }
+    }
+
+    /** Sweeps the structure, pays the loot, moves the troops on to their next target. */
+    private static void destroyBuilding(final Assault assault, final BlockPos hut)
+    {
+        final IBuilding building = assault.defender.getBuildingManager().getBuilding(hut);
+        final ServerLevel level = (ServerLevel) assault.defender.getWorld();
+        if (building != null)
+        {
+            // Every block is about to either vanish or become a ruin block with no fight left in it: wipe their
+            // crack overlays before the sweep, not after — a block destroyBlock() already turned to air drops its
+            // overlay client-side on its own, but a surviving ruin block wouldn't otherwise.
+            clearCracks(level, building, hut);
+            final Tuple<BlockPos, BlockPos> corners = building.getCorners();
+            final BlockPos min = new BlockPos(Math.min(corners.getA().getX(), corners.getB().getX()),
+              Math.min(corners.getA().getY(), corners.getB().getY()),
+              Math.min(corners.getA().getZ(), corners.getB().getZ()));
+            final BlockPos max = new BlockPos(Math.max(corners.getA().getX(), corners.getB().getX()),
+              Math.max(corners.getA().getY(), corners.getB().getY()),
+              Math.max(corners.getA().getZ(), corners.getB().getZ()));
+            int swept = 0;
+            for (BlockPos cursor : BlockPos.betweenClosed(min, max))
+            {
+                if (cursor.equals(hut) || !isDesignedBlock(level.getBlockState(cursor)))
+                {
+                    continue;
+                }
+                // The foundation row stays standing, and roughly a third of the rest survives by chance — a
+                // ruin the player can still read as "that building", not a bare swept plot.
+                if (cursor.getY() == min.getY() || level.random.nextFloat() < RUIN_SURVIVAL_CHANCE)
+                {
+                    continue;
+                }
+                level.destroyBlock(cursor, false);
+                swept++;
+            }
+            final long loot = LOOT_PER_LEVEL * Math.max(1, building.getBuildingLevel());
+            RegionalTreasury.get(level.getServer()).credit(assault.attacker, loot);
+            assault.destroyed++;
+            assault.loot += loot;
+            // One deep crash reads "building coming down" from anywhere in the colony.
+            level.playSound(null, hut, net.minecraft.world.level.block.SoundType.STONE.getBreakSound(),
+              net.minecraft.sounds.SoundSource.HOSTILE, 3.0F, 0.6F);
+            announce(assault, Component.literal("§c").append(Component.translatableEscape(building.getBuildingDisplayName()))
+              .append(Component.literal("§r en ruines (" + swept + " blocs) — butin " + loot + " couronnes.")));
+        }
+        removeBar(assault, hut);
+        WarRuinsData.get(level).markRuined(hut);
+        syncRuins(level, assault.defender);
+        assault.structure.remove(hut);
+        assault.spTotal.remove(hut);
+        assault.targets.remove(hut);
+        assault.byTroop.values().removeIf(hut::equals);
+    }
+
+    /** Man-made only: terrain, water and plants are never touched (the user's war rule). */
+    public static boolean isDesignedBlock(final BlockState state)
+    {
+        return !state.isAir() && !state.liquid() && !Terrain.natural(state);
+    }
+
+    /** The wall block a troop batters and the ground spot (feet position) right outside it where it plants itself. */
+    record SiegeSpot(BlockPos wall, BlockPos stand) {}
+
+    /**
+     * The real exterior wall or door nearest the troop, and the ground spot just outside it. Computed once per
+     * troop-target assignment and kept fixed for the whole fight (see {@link AssaultGoal}).
+     * <p>
+     * {@code getCorners()} is the whole blueprint box — yards, paths, gardens, padding — not the walls: measured on
+     * the medievalspruce blueprints, the first wall sits 3 to 15 blocks (up to 21) inside the box on the approach
+     * face. Snapping to the box edge is what left troops battering thin air several blocks from the building. So we
+     * start from the nearest box face and walk inward along the troop's line until the first wall column, then stand
+     * on the last walkable column before it — on the actual ground, which is rarely at hut height.
+     */
+    static SiegeSpot siegeSpot(final ServerLevel level, final IBuilding building, final BlockPos hut, final BlockPos from)
+    {
+        final Tuple<BlockPos, BlockPos> corners = building.getCorners();
+        final int minX = Math.min(corners.getA().getX(), corners.getB().getX());
+        final int maxX = Math.max(corners.getA().getX(), corners.getB().getX());
+        final int minZ = Math.min(corners.getA().getZ(), corners.getB().getZ());
+        final int maxZ = Math.max(corners.getA().getZ(), corners.getB().getZ());
+        final int minY = Math.min(corners.getA().getY(), corners.getB().getY());
+        final int cx = Mth.clamp(from.getX(), minX, maxX);
+        final int cz = Mth.clamp(from.getZ(), minZ, maxZ);
+        final int toMinX = cx - minX;
+        final int toMaxX = maxX - cx;
+        final int toMinZ = cz - minZ;
+        final int toMaxZ = maxZ - cz;
+        final int nearest = Math.min(Math.min(toMinX, toMaxX), Math.min(toMinZ, toMaxZ));
+        // Edge column, inward step, and the lateral coordinate swapped in for the hut's own line as a fallback.
+        final int ex, ez, ix, iz, length;
+        final boolean alongX;
+        if (nearest == toMinX) { ex = minX; ez = cz; ix = 1; iz = 0; length = maxX - minX; alongX = true; }
+        else if (nearest == toMaxX) { ex = maxX; ez = cz; ix = -1; iz = 0; length = maxX - minX; alongX = true; }
+        else if (nearest == toMinZ) { ex = cx; ez = minZ; ix = 0; iz = 1; length = maxZ - minZ; alongX = false; }
+        else { ex = cx; ez = maxZ; ix = 0; iz = -1; length = maxZ - minZ; alongX = false; }
+
+        SiegeSpot spot = scanInward(level, ex, ez, ix, iz, length, hut, minY);
+        if (spot == null)
+        {
+            // The troop's line can slip through a gap (an open yard side): the hut's own line always meets the house.
+            spot = scanInward(level, alongX ? ex : hut.getX(), alongX ? hut.getZ() : ez, ix, iz, length, hut, minY);
+        }
+        if (spot == null)
+        {
+            final int feet = groundAt(level, ex - ix, ez - iz, hut.getY() + 4, minY - 4);
+            spot = new SiegeSpot(new BlockPos(ex, hut.getY() + 1, ez),
+              new BlockPos(ex - ix, feet == Integer.MIN_VALUE ? hut.getY() : feet, ez - iz));
+        }
+        return spot;
+    }
+
+    private static SiegeSpot scanInward(final ServerLevel level, final int ex, final int ez, final int ix, final int iz,
+      final int length, final BlockPos hut, final int minY)
+    {
+        int ground = groundAt(level, ex - ix, ez - iz, hut.getY() + 4, minY - 4);
+        if (ground == Integer.MIN_VALUE)
+        {
+            ground = hut.getY();
+        }
+        BlockPos stand = new BlockPos(ex - ix, ground, ez - iz);
+        for (int i = 0; i <= length; i++)
+        {
+            final int x = ex + ix * i;
+            final int z = ez + iz * i;
+            final int wallY = wallFace(level, x, z, ground);
+            if (wallY != Integer.MIN_VALUE)
+            {
+                return new SiegeSpot(new BlockPos(x, wallY, z), stand);
+            }
+            final int feet = groundNear(level, x, z, ground);
+            if (feet != Integer.MIN_VALUE)
+            {
+                ground = feet;
+                stand = new BlockPos(x, feet, z);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Where a troop standing at {@code ground} would hit this column, or MIN_VALUE when it's open. A wall is three
+     * stacked man-made blocks around body height; a roof or lintel overhead also counts, so an open doorway or a
+     * porch stops the scan at the threshold instead of leading the troop inside.
+     */
+    private static int wallFace(final ServerLevel level, final int x, final int z, final int ground)
+    {
+        final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        for (int base = ground - 1; base <= ground + 1; base++)
+        {
+            if (isDesignedBlock(level.getBlockState(cursor.set(x, base, z)))
+                  && isDesignedBlock(level.getBlockState(cursor.set(x, base + 1, z)))
+                  && isDesignedBlock(level.getBlockState(cursor.set(x, base + 2, z))))
+            {
+                return Math.max(base, ground);
+            }
+        }
+        for (int y = ground + 2; y <= ground + 4; y++)
+        {
+            if (isDesignedBlock(level.getBlockState(cursor.set(x, y, z))))
+            {
+                return ground + 1;
+            }
+        }
+        return Integer.MIN_VALUE;
+    }
+
+    /** Feet height closest to {@code around} (within 3) where a troop can stand in this column, or MIN_VALUE. */
+    private static int groundNear(final ServerLevel level, final int x, final int z, final int around)
+    {
+        for (int d = 0; d <= 3; d++)
+        {
+            if (standable(level, x, around + d, z))
+            {
+                return around + d;
+            }
+            if (d > 0 && standable(level, x, around - d, z))
+            {
+                return around - d;
+            }
+        }
+        return Integer.MIN_VALUE;
+    }
+
+    /** Highest standable feet height in this column between {@code top} and {@code bottom}, or MIN_VALUE. */
+    private static int groundAt(final ServerLevel level, final int x, final int z, final int top, final int bottom)
+    {
+        for (int y = top; y >= bottom; y--)
+        {
+            if (standable(level, x, y, z))
+            {
+                return y;
+            }
+        }
+        return Integer.MIN_VALUE;
+    }
+
+    private static boolean standable(final ServerLevel level, final int x, final int y, final int z)
+    {
+        final BlockPos feet = new BlockPos(x, y, z);
+        final BlockState below = level.getBlockState(feet.below());
+        if (below.getCollisionShape(level, feet.below()).isEmpty() || !below.getFluidState().isEmpty())
+        {
+            return false;
+        }
+        for (final BlockPos body : new BlockPos[] {feet, feet.above()})
+        {
+            final BlockState state = level.getBlockState(body);
+            if (!state.getCollisionShape(level, body).isEmpty() || !state.getFluidState().isEmpty())
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Worst horizontal troop→wall distance at a troop's first blow on each wall, per defender colony — the objective
+     * check of "the troop batters from right in front of the wall" (WarScenario reads it). Kept past the assault's
+     * end, reset at the next launch.
+     */
+    private static final Map<Integer, double[]> STRIKES = new HashMap<>();
+
+    static void recordFirstBlow(final EntLegionnaire troop, final BlockPos hut, final SiegeSpot spot, final double distance)
+    {
+        final double[] stats = STRIKES.computeIfAbsent(colonyOf(troop), id -> new double[2]);
+        stats[0] = Math.max(stats[0], distance);
+        stats[1]++;
+        InterregneMod.LOGGER.info("[war] troupe {} frappe {} : mur {} depuis {} (cible {}), distance {}",
+          troop.getId(), hut.toShortString(), spot.wall().toShortString(), troop.blockPosition().toShortString(),
+          spot.stand().toShortString(), String.format(java.util.Locale.ROOT, "%.2f", distance));
+    }
+
+    /** {worst first-blow distance, number of first blows}, or null when no troop has struck yet. */
+    public static double[] strikeDistances(final IColony defender)
+    {
+        return STRIKES.get(defender.getID());
     }
 
     /** Closes the assault when its last troop falls. */
@@ -398,17 +714,24 @@ public final class WarAssaults
         }
         assault.troopIds.remove(Integer.valueOf(troop.getId()));
         assault.byTroop.remove(troop.getId());
-        if (assault.defender.getWorld() instanceof ServerLevel level)
-        {
-            for (final BlockPos pos : assault.targets)
-            {
-                level.destroyBlockProgress(troop.getId(), pos, -1);
-            }
-        }
         if (assault.troopIds.isEmpty() && !assault.over)
         {
             assault.over = true;
             BY_DEFENDER.remove(assault.defender.getID());
+            // The fight's done but these buildings aren't: don't leave their crack overlay or health bar stuck
+            // showing to players forever.
+            if (assault.defender.getWorld() instanceof ServerLevel level)
+            {
+                for (final BlockPos pos : assault.targets)
+                {
+                    final IBuilding building = assault.defender.getBuildingManager().getBuilding(pos);
+                    if (building != null)
+                    {
+                        clearCracks(level, building, pos);
+                    }
+                    removeBar(assault, pos);
+                }
+            }
             announce(assault, "§aAssaut repoussé§r : la colonie tient toujours.");
         }
     }
@@ -442,6 +765,94 @@ public final class WarAssaults
     /**
      * Readings for scenarios and dev tooling.
      */
+    /**
+     * Clears a hut's war-ruin status once its repair work order actually finishes (not when it's merely
+     * requested — {@link fr.kodistan.interregne.colony.InstantBuilder#complete} calls this). Applies to any way the
+     * building gets repaired, not just the "Tout reconstruire" button; a no-op if it wasn't ruined in the first
+     * place (an ordinary repair, unrelated to the war system).
+     */
+    public static void onRepairCompleted(final ServerLevel level, final IColony colony, final BlockPos hut)
+    {
+        final WarRuinsData ruins = WarRuinsData.get(level);
+        if (!ruins.isRuined(hut))
+        {
+            return;
+        }
+        ruins.clearRuined(hut);
+        syncRuins(level, colony);
+    }
+
+    /** Broadcasts this colony's current ruin count and total rebuild price (the town hall's "Tout reconstruire"). */
+    private static void syncRuins(final ServerLevel level, final IColony colony)
+    {
+        final WarRuinsData ruins = WarRuinsData.get(level);
+        int count = 0;
+        for (final IBuilding b : colony.getBuildingManager().getBuildings().values())
+        {
+            if (ruins.isRuined(b.getID()))
+            {
+                count++;
+            }
+        }
+        PacketDistributor.sendToAllPlayers(new WarRuinsSyncPayload(RegionalTreasury.keyOf(colony), count, (long) count * BuildCosts.forRepair()));
+    }
+
+    /** "Tout reconstruire" clicked on the town hall screen: pays once for every ruined building, then requests a
+     * repair on each — the same instant-build pipeline as any other chantier (loads the blueprint, replaces only
+     * what's missing). {@link #onRepairCompleted} clears each one's ruin status once its own chantier finishes. */
+    public static void onRebuildAll(final WarRebuildPayload payload, final IPayloadContext context)
+    {
+        if (!(context.player() instanceof ServerPlayer player))
+        {
+            return;
+        }
+        final ServerLevel level = player.serverLevel();
+        final IColony colony = IColonyManager.getInstance().getColonyByWorld(payload.colony(), level);
+        if (colony == null || !colony.getPermissions().isColonyMember(player))
+        {
+            return;
+        }
+        final WarRuinsData ruins = WarRuinsData.get(level);
+        final List<IBuilding> targets = new ArrayList<>();
+        for (final IBuilding b : colony.getBuildingManager().getBuildings().values())
+        {
+            if (ruins.isRuined(b.getID()))
+            {
+                targets.add(b);
+            }
+        }
+        if (targets.isEmpty())
+        {
+            return;
+        }
+        final long cost = player.isCreative() ? 0 : (long) targets.size() * BuildCosts.forRepair();
+        final TreasuryPayment payment = TreasuryPayment.pay(player, colony, cost);
+        if (payment == null)
+        {
+            player.sendSystemMessage(Component.literal("Il te faut " + Wallet.couronnes(cost, null) + " pour tout reconstruire (trésor régional : "
+              + Wallet.format(RegionalTreasury.get(level.getServer()).balance(colony)) + ", sur toi : "
+              + Wallet.format(Wallet.value(new PlayerMainInvWrapper(player.getInventory()))) + ")."));
+            return;
+        }
+        if (payment.fromTreasury() > 0 || payment.fromPurse() > 0)
+        {
+            player.sendSystemMessage(Component.literal("Payé : " + payment.describe() + "."));
+        }
+        BuildContext.begin(player);
+        try
+        {
+            for (final IBuilding building : targets)
+            {
+                building.requestRepair(BlockPos.ZERO);
+            }
+        }
+        finally
+        {
+            BuildContext.end();
+        }
+        player.sendSystemMessage(Component.literal("§6Reconstruction lancée§r : " + targets.size() + " bâtiment(s)."));
+    }
+
     public static boolean hasAssault(final IColony defender)
     {
         return BY_DEFENDER.containsKey(defender.getID());
@@ -500,12 +911,14 @@ public final class WarAssaults
         {
             if (assault.defender.getWorld() instanceof ServerLevel level)
             {
-                for (final int id : assault.troopIds)
+                for (final BlockPos pos : assault.targets)
                 {
-                    for (final BlockPos pos : assault.targets)
+                    final IBuilding building = assault.defender.getBuildingManager().getBuilding(pos);
+                    if (building != null)
                     {
-                        level.destroyBlockProgress(id, pos, -1);
+                        clearCracks(level, building, pos);
                     }
+                    removeBar(assault, pos);
                 }
             }
             for (final int id : assault.troopIds)
@@ -539,15 +952,20 @@ public final class WarAssaults
 
     private static void announce(final Assault assault, final String line)
     {
+        announce(assault, Component.literal(line));
+    }
+
+    private static void announce(final Assault assault, final Component line)
+    {
         if (assault.commander != null && assault.defender.getWorld() instanceof ServerLevel level)
         {
             final Player player = level.getServer().getPlayerList().getPlayer(assault.commander);
             if (player != null)
             {
-                player.sendSystemMessage(Component.literal(line));
+                player.sendSystemMessage(line);
             }
         }
-        InterregneMod.LOGGER.info("[war] {}", line);
+        InterregneMod.LOGGER.info("[war] {}", line.getString());
     }
 
     private WarAssaults()

@@ -154,6 +154,22 @@ public class WarScenario implements Scenario
             lines.add("FAIL personne n'a combattu les troupes");
         }
 
+        final double[] strikes = WarAssaults.strikeDistances(colony);
+        if (strikes == null)
+        {
+            lines.add("FAIL aucune troupe n'a frappé de mur");
+        }
+        else if (strikes[0] <= 2.5D)
+        {
+            lines.add(String.format(java.util.Locale.ROOT, "PASS troupes collées au mur (pire distance %.2f sur %d premières frappes)",
+              strikes[0], (int) strikes[1]));
+        }
+        else
+        {
+            lines.add(String.format(java.util.Locale.ROOT, "FAIL une troupe frappe de trop loin (pire distance %.2f sur %d premières frappes)",
+              strikes[0], (int) strikes[1]));
+        }
+
         final String end = snapshot(colony, level);
         if (WarAssaults.hasAssault(colony))
         {
