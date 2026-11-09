@@ -5,9 +5,9 @@ Style : jungle, comme le donjon n°1 (roche en grandes plaques, briques moussues
 
 ## Cadre
 
-- Monde « Donjon 2 » neuf, superflat, sol à Y-61, dans l'instance de test (`test-local`).
+- Monde « Donjon 2 » neuf, superflat, sol à Y-61, dans le client de test du dépôt (`mod/run/client/saves`).
 - Gabarit prévu : **130 × 100 × 130** blocs. La colline de surface fait partie de la structure (la structure est « enfouie » dans sa propre terre). Entrée au sommet, salle du Gardien tout en bas.
-- Scripts : `scripts/donjon_temple.py` (générateur) et `scripts/verif_donjon_temple.py` (contrôles), construits à partir des fonctions de `donjon2.py` (roche, salles voûtées, ancrages, salles cachées). Les chemins de monde sont à adapter à l'arborescence `test-local/launcher/instances/…`.
+- Scripts : `scripts/donjon_temple.py` (générateur) et `scripts/verif_donjon_temple.py` (contrôles), construits à partir des fonctions de `donjon2.py` (roche, salles voûtées, ancrages, salles cachées). Les chemins de monde sont à adapter à l'arborescence `mod/run/client/saves/…`.
 - Mécanismes par blocs de commande (comme le n°1) : portes, plaques, leviers, retour au dernier point de passage après une chute. Pas de coffre, conteneur, spawner ni mob : ni dispensers ni tonneaux ; les pièges sont des blocs qui tombent ou cèdent.
 - Eau et lave : confinées. Éclairage calculé partout (aucune apparition hostile naturelle).
 
