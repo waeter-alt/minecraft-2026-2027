@@ -3,6 +3,7 @@
   "item.grappin.grappin.aide1": "Clic droit : lance le crochet (30 blocs) ; il ne tient que sur un point d'ancrage",
   "item.grappin.grappin.aide2": "Accroché : clic droit maintenu = traction ; relâché, on reste accroché et on se balance ; molette = longueur de la corde",
   "item.grappin.grappin.aide3": "Espace ou s'accroupir : lâcher le crochet avec un saut",
+  "itemGroup.grappin.donjon": "Donjons",
   "block.grappin.ancrage": "Point d'ancrage",
   "entity.grappin.crochet": "Crochet de grappin"
 }

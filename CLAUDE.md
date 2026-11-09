@@ -16,6 +16,7 @@ Contexte : mod NeoForge custom (`mod/`) pour un serveur Minecraft communautaire 
 
 - Si la tâche touche des internals MineColonies/Structurize, des mixins, ou une zone du code que tu ne connais pas encore : fais d'abord un passage d'exploration (lecture, pas d'écriture), et si un choix d'architecture a des conséquences durables, demande confirmation à Duncan avant de partir sur l'implémentation. C'est le genre de zone qui casse silencieusement et coûte cher à déboguer après coup.
 - Ne touche pas à `neo_version` dans `mod/gradle.properties` — cette version de NeoForge est figée pour tout le projet. Si une dépendance tierce ne colle pas avec cette version, c'est elle qu'on downgrade/adapte, jamais NeoForge qu'on monte.
+- **Tout développement fait pour ce projet (mod, outils, sandbox type `atelier/`) doit cibler la version de NeoForge figée dans `mod/gradle.properties`** — pas une autre version installée localement par un contributeur. Aucune exception, aucun "pour l'instant" : si une PR arrive sur une version différente, elle n'est pas mergeable telle quelle, il faut la refaire sur la bonne version avant.
 
 ## Build & test (depuis `mod/`, en Git Bash — pas PowerShell pour les commandes Gradle)
 

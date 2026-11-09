@@ -12,7 +12,7 @@ Z = R / "exports/Pack_ami.zip"
 ARENE = R / "launcher/instances/Build-1.21.1/minecraft/saves/Arene Semaine"
 LISEZMOI = """Les 7 arenes (Arene Semaine) et le donjon n°1 - La Gorge suspendue, version 2 (grappin a balancier)
 
-Il faut : Minecraft 1.21.1 avec NeoForge 21.1.265 et Create 6.0.10.
+Il faut : Minecraft 1.21.1 avec NeoForge 21.1.216 et Create 6.0.9.
 
 1. Mets mods/grappin-2.3.0.jar dans ton dossier mods (a cote de Create) et retire l'ancien grappin-1.1.0.jar si tu l'as.
 2. Mets les dossiers saves/Arene Semaine et saves/Donjon 1 dans ton dossier saves (remplace l'ancien Donjon Grappin).
