@@ -293,3 +293,15 @@ Liste de chaque fichier généré par Claude (marque [claude-build]).
 | (déplacé) D:\PROJET\minecraft-2026-2027 | 2026-11-09 | Clone du dépôt GitHub waeter-alt/minecraft-2026-2027 (projet Kodistan / mod Interrègne de Duncan), déplacé hors de l'Atelier à la demande de l'utilisateur (exception à la règle 1 pour ce seul dossier) pour que seul son CLAUDE.md s'y applique. Pas un fichier [claude-build]
 | .venv : paquet pypdf | 2026-11-09 | [claude-build] Installé dans le Python du projet pour lire les PDF (guide du projet Kodistan) |
 | outils/gh/ | 2026-11-09 | [claude-build] GitHub CLI 2.103.3 portable (zip officiel github.com/cli/cli, somme sha256 contrôlée), pour `gh auth login` et les Pull Requests du dépôt Kodistan |
+
+## Donjon n°2 « Le Temple des Mille Racines » (dépôt, 2026-11-09)
+
+| Fichier | Date | Rôle |
+|---|---|---|
+| docs/donjon_temple_plan.md | 2026-11-09 | Plan validé : 12 sections, ≈ 31 min, 8 salles cachées |
+| scripts/donjon_temple.py | 2026-11-09 | Générateur du temple (130 × 100 × 130), monde « Donjon 2 » ; écrit la structure, les fonctions de pose et de remise à zéro, les cibles |
+| scripts/verif_donjon_temple.py | 2026-11-09 | Contrôle anti-raccourcis (marche, sauts, grappin réaliste et généreux, portes fermées) |
+| scripts/fiche_donjon_temple.py | 2026-11-09 | Écrit docs/donjon_temple.md |
+| docs/donjon_temple.md | 2026-11-09 | Fiche du donjon : pose, grappin 2.4, parcours, solutions, ancrages, salles cachées, écarts |
+| exports/temple.nbt, temple_cibles.json, temple_vide.npz | 2026-11-09 | Structure, points à atteindre, masque des volumes creux (pour le vérificateur) |
+| scripts/donjon_temple_decor.py, donjon_temple_decor2.py, donjon_temple_decor3.py | 2026-11-09 | Passe de décoration du temple (murs, sols, plafonds, pilastres, mobilier, végétation, aile du boss), exécutée par donjon_temple.py |
