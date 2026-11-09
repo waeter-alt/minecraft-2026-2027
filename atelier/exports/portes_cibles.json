@@ -1,0 +1,266 @@
+{
+ "_marque": "[claude-build]",
+ "sol": 18,
+ "depart": [
+  52,
+  19,
+  5
+ ],
+ "cibles": {
+  "carrefour": [
+   65,
+   19,
+   52
+  ],
+  "salon Forge": [
+   73,
+   19,
+   52
+  ],
+  "salon Serre": [
+   66,
+   19,
+   66
+  ],
+  "salon Bibliothèque": [
+   52,
+   19,
+   73
+  ],
+  "salon Cristaux": [
+   37,
+   19,
+   66
+  ],
+  "salon Ossuaire": [
+   31,
+   19,
+   52
+  ],
+  "salon Glacier": [
+   37,
+   19,
+   37
+  ],
+  "salon Hall": [
+   51,
+   19,
+   31
+  ],
+  "salon Désert": [
+   66,
+   19,
+   37
+  ],
+  "apparition 1": [
+   97,
+   19,
+   52
+  ],
+  "apparition 2": [
+   88,
+   19,
+   78
+  ],
+  "apparition 3": [
+   65,
+   19,
+   94
+  ],
+  "apparition 4": [
+   37,
+   19,
+   95
+  ],
+  "apparition 5": [
+   15,
+   19,
+   78
+  ],
+  "apparition 6": [
+   7,
+   19,
+   52
+  ],
+  "apparition 7": [
+   15,
+   19,
+   25
+  ],
+  "apparition 8": [
+   38,
+   19,
+   9
+  ],
+  "apparition 9": [
+   66,
+   19,
+   8
+  ],
+  "apparition 10": [
+   88,
+   19,
+   25
+  ],
+  "arrivee red Forge": [
+   77,
+   19,
+   59
+  ],
+  "entree red Forge": [
+   80,
+   19,
+   58
+  ],
+  "arrivee red Ossuaire": [
+   26,
+   19,
+   46
+  ],
+  "entree red Ossuaire": [
+   23,
+   19,
+   45
+  ],
+  "arrivee orange Serre": [
+   68,
+   19,
+   73
+  ],
+  "entree orange Serre": [
+   67,
+   19,
+   76
+  ],
+  "arrivee orange Glacier": [
+   37,
+   19,
+   30
+  ],
+  "entree orange Glacier": [
+   36,
+   19,
+   27
+  ],
+  "arrivee yellow Bibliothèque": [
+   46,
+   19,
+   77
+  ],
+  "entree yellow Bibliothèque": [
+   45,
+   19,
+   80
+  ],
+  "arrivee yellow Hall": [
+   59,
+   19,
+   26
+  ],
+  "entree yellow Hall": [
+   58,
+   19,
+   23
+  ],
+  "arrivee lime Cristaux": [
+   30,
+   19,
+   68
+  ],
+  "entree lime Cristaux": [
+   27,
+   19,
+   67
+  ],
+  "arrivee lime Désert": [
+   73,
+   19,
+   37
+  ],
+  "entree lime Désert": [
+   76,
+   19,
+   36
+  ],
+  "arrivee cyan Carrefour": [
+   60,
+   19,
+   56
+  ],
+  "entree cyan Carrefour": [
+   59,
+   19,
+   59
+  ],
+  "arrivee cyan Tour sud-est": [
+   88,
+   32,
+   65
+  ],
+  "entree cyan Tour sud-est": [
+   87,
+   32,
+   68
+  ],
+  "arrivee blue Carrefour": [
+   45,
+   19,
+   56
+  ],
+  "entree blue Carrefour": [
+   44,
+   19,
+   59
+  ],
+  "arrivee blue Tour sud-ouest": [
+   37,
+   32,
+   87
+  ],
+  "entree blue Tour sud-ouest": [
+   36,
+   32,
+   90
+  ],
+  "arrivee purple Carrefour": [
+   45,
+   19,
+   47
+  ],
+  "entree purple Carrefour": [
+   44,
+   19,
+   44
+  ],
+  "arrivee purple Tour nord-ouest": [
+   15,
+   32,
+   37
+  ],
+  "entree purple Tour nord-ouest": [
+   14,
+   32,
+   34
+  ],
+  "arrivee pink Carrefour": [
+   60,
+   19,
+   47
+  ],
+  "entree pink Carrefour": [
+   59,
+   19,
+   44
+  ],
+  "arrivee pink Tour nord-est": [
+   66,
+   32,
+   15
+  ],
+  "entree pink Tour nord-est": [
+   65,
+   32,
+   12
+  ]
+ }
+}

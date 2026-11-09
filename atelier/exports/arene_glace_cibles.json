@@ -1,0 +1,156 @@
+{
+ "_marque": "[claude-build]",
+ "sol": 18,
+ "depart": [
+  238,
+  19,
+  126
+ ],
+ "cibles": {
+  "sommet du pic creux NE": [
+   163,
+   47,
+   82
+  ],
+  "sommet du pic creux NO": [
+   80,
+   52,
+   82
+  ],
+  "haut de la tour SE": [
+   165,
+   49,
+   167
+  ],
+  "haut de la tour SO": [
+   82,
+   45,
+   167
+  ],
+  "ilot du trone": [
+   133,
+   21,
+   133
+  ],
+  "labyrinthe SE": [
+   183,
+   19,
+   195
+  ],
+  "labyrinthe SO": [
+   81,
+   19,
+   201
+  ],
+  "labyrinthe NO": [
+   63,
+   19,
+   63
+  ],
+  "labyrinthe NE": [
+   171,
+   19,
+   51
+  ],
+  "cuvette du glacier": [
+   213,
+   19,
+   157
+  ],
+  "grotte": [
+   102,
+   7,
+   60
+  ],
+  "salle 1": [
+   213,
+   19,
+   141
+  ],
+  "salle 2": [
+   140,
+   19,
+   176
+  ],
+  "salle 3": [
+   123,
+   10,
+   110
+  ],
+  "salle 4": [
+   176,
+   11,
+   227
+  ],
+  "salle 5": [
+   84,
+   9,
+   102
+  ],
+  "salle 6": [
+   71,
+   19,
+   133
+  ],
+  "salle 7": [
+   200,
+   32,
+   117
+  ],
+  "salle 8": [
+   102,
+   7,
+   33
+  ],
+  "apparition 1": [
+   234,
+   19,
+   143
+  ],
+  "apparition 2": [
+   203,
+   19,
+   203
+  ],
+  "apparition 3": [
+   143,
+   20,
+   234
+  ],
+  "apparition 4": [
+   76,
+   19,
+   223
+  ],
+  "apparition 5": [
+   28,
+   19,
+   175
+  ],
+  "apparition 6": [
+   17,
+   19,
+   108
+  ],
+  "apparition 7": [
+   48,
+   19,
+   48
+  ],
+  "apparition 8": [
+   108,
+   19,
+   17
+  ],
+  "apparition 9": [
+   175,
+   19,
+   28
+  ],
+  "apparition 10": [
+   223,
+   19,
+   76
+  ]
+ }
+}

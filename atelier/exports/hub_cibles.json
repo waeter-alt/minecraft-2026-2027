@@ -1,0 +1,51 @@
+{
+ "_marque": "[claude-build]",
+ "sol": 8,
+ "depart": [
+  114,
+  9,
+  134
+ ],
+ "cibles": {
+  "bout de l'avenue GLACE": [
+   114,
+   9,
+   0
+  ],
+  "balcon au-dessus de la porte GLACE": [
+   114,
+   18,
+   66
+  ],
+  "bout de l'avenue AIR": [
+   227,
+   9,
+   114
+  ],
+  "balcon au-dessus de la porte AIR": [
+   161,
+   18,
+   114
+  ],
+  "bout de l'avenue FEU": [
+   113,
+   9,
+   227
+  ],
+  "balcon au-dessus de la porte FEU": [
+   113,
+   18,
+   161
+  ],
+  "bout de l'avenue NATURE": [
+   0,
+   9,
+   113
+  ],
+  "balcon au-dessus de la porte NATURE": [
+   66,
+   18,
+   113
+  ]
+ }
+}

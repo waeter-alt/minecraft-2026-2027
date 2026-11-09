@@ -1,0 +1,106 @@
+{
+ "_marque": "[claude-build]",
+ "sol": 18,
+ "depart": [
+  100,
+  19,
+  52
+ ],
+ "cibles": {
+  "sommet de l'arbre-monde": [
+   48,
+   43,
+   53
+  ],
+  "haut de la tour 1": [
+   27,
+   41,
+   74
+  ],
+  "haut de la tour 2": [
+   74,
+   45,
+   27
+  ],
+  "labyrinthe 1": [
+   77,
+   19,
+   77
+  ],
+  "labyrinthe 2": [
+   27,
+   19,
+   27
+  ],
+  "salle 1": [
+   26,
+   41,
+   75
+  ],
+  "salle 2": [
+   65,
+   11,
+   87
+  ],
+  "salle 3": [
+   55,
+   11,
+   58
+  ],
+  "salle 4": [
+   6,
+   19,
+   51
+  ],
+  "apparition 1": [
+   75,
+   19,
+   55
+  ],
+  "apparition 2": [
+   69,
+   19,
+   69
+  ],
+  "apparition 3": [
+   55,
+   19,
+   75
+  ],
+  "apparition 4": [
+   41,
+   19,
+   73
+  ],
+  "apparition 5": [
+   30,
+   19,
+   62
+  ],
+  "apparition 6": [
+   27,
+   19,
+   48
+  ],
+  "apparition 7": [
+   35,
+   19,
+   35
+  ],
+  "apparition 8": [
+   48,
+   19,
+   27
+  ],
+  "apparition 9": [
+   62,
+   19,
+   30
+  ],
+  "apparition 10": [
+   74,
+   19,
+   40
+  ]
+ }
+}

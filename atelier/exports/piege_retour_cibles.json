@@ -1,0 +1,26 @@
+{
+ "_marque": "[claude-build]",
+ "sol": 18,
+ "depart": [
+  60,
+  9,
+  52
+ ],
+ "cibles": {
+  "corniche": [
+   66,
+   9,
+   52
+  ],
+  "sortie du puits dans le laboratoire": [
+   72,
+   19,
+   52
+  ],
+  "grande salle": [
+   62,
+   19,
+   55
+  ]
+ }
+}

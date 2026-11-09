@@ -1,0 +1,156 @@
+{
+ "_marque": "[claude-build]",
+ "sol": 18,
+ "depart": [
+  238,
+  19,
+  126
+ ],
+ "cibles": {
+  "sommet de l'arbre-monde": [
+   121,
+   65,
+   124
+  ],
+  "balcon de l'arbre-monde": [
+   139,
+   43,
+   126
+  ],
+  "sommet de l'arbre creux NE": [
+   173,
+   45,
+   84
+  ],
+  "sommet de l'arbre creux NO": [
+   90,
+   49,
+   84
+  ],
+  "haut de la tour SE": [
+   165,
+   45,
+   167
+  ],
+  "haut de la tour SO": [
+   82,
+   49,
+   167
+  ],
+  "labyrinthe SE": [
+   177,
+   19,
+   195
+  ],
+  "labyrinthe SO": [
+   81,
+   19,
+   201
+  ],
+  "labyrinthe NO": [
+   63,
+   19,
+   63
+  ],
+  "labyrinthe NE": [
+   171,
+   19,
+   51
+  ],
+  "grotte": [
+   102,
+   7,
+   60
+  ],
+  "salle 1": [
+   213,
+   18,
+   140
+  ],
+  "salle 2": [
+   144,
+   19,
+   173
+  ],
+  "salle 3": [
+   151,
+   10,
+   75
+  ],
+  "salle 4": [
+   109,
+   19,
+   186
+  ],
+  "salle 5": [
+   176,
+   11,
+   227
+  ],
+  "salle 6": [
+   72,
+   19,
+   107
+  ],
+  "salle 7": [
+   200,
+   31,
+   117
+  ],
+  "salle 8": [
+   102,
+   7,
+   33
+  ],
+  "apparition 1": [
+   234,
+   19,
+   143
+  ],
+  "apparition 2": [
+   203,
+   19,
+   203
+  ],
+  "apparition 3": [
+   143,
+   20,
+   234
+  ],
+  "apparition 4": [
+   76,
+   19,
+   223
+  ],
+  "apparition 5": [
+   28,
+   19,
+   175
+  ],
+  "apparition 6": [
+   17,
+   19,
+   108
+  ],
+  "apparition 7": [
+   48,
+   19,
+   48
+  ],
+  "apparition 8": [
+   108,
+   19,
+   17
+  ],
+  "apparition 9": [
+   175,
+   19,
+   28
+  ],
+  "apparition 10": [
+   223,
+   19,
+   76
+  ]
+ }
+}

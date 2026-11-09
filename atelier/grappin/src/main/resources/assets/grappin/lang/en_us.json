@@ -1,0 +1,9 @@
+{
+  "item.grappin.grappin": "Grappling Hook",
+  "item.grappin.grappin.aide1": "Right click: fire the hook (30 blocks); it only holds on an anchor point",
+  "item.grappin.grappin.aide2": "Hooked: swing; scroll wheel = shorten or lengthen the rope",
+  "item.grappin.grappin.aide3": "Sneak: let go with a jump; hold jump: reel in; right click while hooked: let go and fire again",
+  "itemGroup.grappin.donjon": "Dungeons",
+  "block.grappin.ancrage": "Anchor Point",
+  "entity.grappin.crochet": "Grappling Hook"
+}

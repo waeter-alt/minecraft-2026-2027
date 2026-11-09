@@ -1,0 +1,322 @@
+{
+ "_marque": "[claude-build]",
+ "sol": 12,
+ "depart": [
+  184,
+  13,
+  96
+ ],
+ "plateau": 30,
+ "cibles": {
+  "île SE": [
+   153,
+   31,
+   152
+  ],
+  "île SO": [
+   39,
+   33,
+   152
+  ],
+  "île NO": [
+   39,
+   28,
+   39
+  ],
+  "île NE": [
+   152,
+   35,
+   39
+  ],
+  "sommet de la tour NE": [
+   115,
+   59,
+   74
+  ],
+  "sommet de la tour SE": [
+   115,
+   53,
+   117
+  ],
+  "sommet de la tour SO": [
+   72,
+   44,
+   117
+  ],
+  "sommet de la tour NO": [
+   72,
+   55,
+   74
+  ],
+  "sanctuaire": [
+   102,
+   34,
+   95
+  ],
+  "labyrinthe SE": [
+   130,
+   31,
+   130
+  ],
+  "labyrinthe SO": [
+   58,
+   31,
+   130
+  ],
+  "labyrinthe NO": [
+   62,
+   31,
+   58
+  ],
+  "labyrinthe NE": [
+   130,
+   31,
+   58
+  ],
+  "îlot SO": [
+   19,
+   30,
+   123
+  ],
+  "îlot NO": [
+   68,
+   31,
+   19
+  ],
+  "îlot SE (passage étroit)": [
+   123,
+   34,
+   172
+  ],
+  "remontée 1 bas": [
+   182,
+   13,
+   96
+  ],
+  "remontée 1 haut": [
+   163,
+   31,
+   96
+  ],
+  "remontée 2 bas": [
+   95,
+   13,
+   182
+  ],
+  "remontée 2 haut": [
+   95,
+   31,
+   163
+  ],
+  "remontée 3 bas": [
+   9,
+   13,
+   95
+  ],
+  "remontée 3 haut": [
+   28,
+   31,
+   95
+  ],
+  "remontée 4 bas": [
+   96,
+   13,
+   9
+  ],
+  "remontée 4 haut": [
+   96,
+   31,
+   28
+  ],
+  "remontée 5 bas": [
+   123,
+   13,
+   99
+  ],
+  "remontée 5 haut": [
+   125,
+   31,
+   99
+  ],
+  "remontée 6 bas": [
+   68,
+   13,
+   92
+  ],
+  "remontée 6 haut": [
+   66,
+   31,
+   93
+  ],
+  "remontée 7 bas": [
+   85,
+   13,
+   122
+  ],
+  "remontée 7 haut": [
+   85,
+   31,
+   122
+  ],
+  "remontée 8 bas": [
+   106,
+   13,
+   69
+  ],
+  "remontée 8 haut": [
+   106,
+   31,
+   69
+  ],
+  "remontée 9 bas": [
+   69,
+   13,
+   106
+  ],
+  "remontée 9 haut": [
+   71,
+   31,
+   106
+  ],
+  "remontée 10 bas": [
+   122,
+   13,
+   85
+  ],
+  "remontée 10 haut": [
+   120,
+   31,
+   85
+  ],
+  "remontée 11 bas": [
+   118,
+   13,
+   74
+  ],
+  "remontée 11 haut": [
+   118,
+   31,
+   74
+  ],
+  "remontée 12 bas": [
+   118,
+   13,
+   117
+  ],
+  "remontée 12 haut": [
+   118,
+   31,
+   117
+  ],
+  "remontée 13 bas": [
+   75,
+   13,
+   117
+  ],
+  "remontée 13 haut": [
+   75,
+   31,
+   117
+  ],
+  "remontée 14 bas": [
+   75,
+   13,
+   74
+  ],
+  "remontée 14 haut": [
+   75,
+   31,
+   74
+  ],
+  "salle 1": [
+   114,
+   59,
+   74
+  ],
+  "salle 2": [
+   143,
+   24,
+   128
+  ],
+  "salle 3": [
+   95,
+   13,
+   166
+  ],
+  "salle 4": [
+   156,
+   31,
+   156
+  ],
+  "salle 5": [
+   36,
+   19,
+   39
+  ],
+  "salle 6": [
+   175,
+   40,
+   72
+  ],
+  "salle 7": [
+   57,
+   13,
+   57
+  ],
+  "salle 8": [
+   98,
+   24,
+   101
+  ],
+  "apparition 1": [
+   155,
+   31,
+   105
+  ],
+  "apparition 2": [
+   138,
+   31,
+   138
+  ],
+  "apparition 3": [
+   105,
+   31,
+   155
+  ],
+  "apparition 4": [
+   68,
+   31,
+   149
+  ],
+  "apparition 5": [
+   42,
+   31,
+   123
+  ],
+  "apparition 6": [
+   36,
+   31,
+   86
+  ],
+  "apparition 7": [
+   53,
+   31,
+   53
+  ],
+  "apparition 8": [
+   86,
+   31,
+   36
+  ],
+  "apparition 9": [
+   123,
+   31,
+   42
+  ],
+  "apparition 10": [
+   149,
+   31,
+   68
+  ]
+ }
+}

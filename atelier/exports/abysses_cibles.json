@@ -1,0 +1,146 @@
+{
+ "_marque": "[claude-build]",
+ "sol": 18,
+ "depart": [
+  52,
+  19,
+  1
+ ],
+ "cibles": {
+  "salle d'entree": [
+   55,
+   24,
+   13
+  ],
+  "sous la salle": [
+   52,
+   19,
+   21
+  ],
+  "coeur": [
+   55,
+   8,
+   55
+  ],
+  "apparition 1": [
+   90,
+   23,
+   54
+  ],
+  "apparition 2": [
+   79,
+   22,
+   81
+  ],
+  "apparition 3": [
+   62,
+   24,
+   91
+  ],
+  "apparition 4": [
+   40,
+   23,
+   91
+  ],
+  "apparition 5": [
+   26,
+   22,
+   83
+  ],
+  "apparition 6": [
+   16,
+   24,
+   52
+  ],
+  "apparition 7": [
+   23,
+   23,
+   27
+  ],
+  "apparition 8": [
+   41,
+   23,
+   17
+  ],
+  "apparition 9": [
+   66,
+   22,
+   16
+  ],
+  "apparition 10": [
+   80,
+   24,
+   28
+  ],
+  "palais 1": [
+   67,
+   24,
+   79
+  ],
+  "palais 2": [
+   27,
+   24,
+   71
+  ],
+  "palais 3": [
+   25,
+   24,
+   40
+  ],
+  "palais 4": [
+   79,
+   24,
+   40
+  ],
+  "sommet de tour 1": [
+   78,
+   35,
+   55
+  ],
+  "sommet de tour 2": [
+   46,
+   37,
+   78
+  ],
+  "sommet de tour 3": [
+   27,
+   32,
+   55
+  ],
+  "sommet de tour 4": [
+   39,
+   34,
+   27
+  ],
+  "conduite 0 entree": [
+   97,
+   20,
+   44
+  ],
+  "conduite 0 sortie": [
+   97,
+   20,
+   61
+  ],
+  "conduite 90 entree": [
+   59,
+   20,
+   97
+  ],
+  "conduite 90 sortie": [
+   45,
+   20,
+   97
+  ],
+  "conduite 180 entree": [
+   6,
+   20,
+   59
+  ],
+  "conduite 180 sortie": [
+   6,
+   20,
+   43
+  ]
+ }
+}

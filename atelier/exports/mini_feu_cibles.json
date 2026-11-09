@@ -1,0 +1,101 @@
+{
+ "_marque": "[claude-build]",
+ "sol": 18,
+ "depart": [
+  52,
+  19,
+  3
+ ],
+ "cibles": {
+  "haut de la tour 1": [
+   74,
+   41,
+   74
+  ],
+  "haut de la tour 2": [
+   27,
+   45,
+   27
+  ],
+  "labyrinthe 1": [
+   78,
+   19,
+   26
+  ],
+  "labyrinthe 2": [
+   26,
+   19,
+   78
+  ],
+  "salle 1": [
+   73,
+   41,
+   75
+  ],
+  "salle 2": [
+   89,
+   11,
+   38
+  ],
+  "salle 3": [
+   55,
+   11,
+   58
+  ],
+  "salle 4": [
+   51,
+   19,
+   97
+  ],
+  "apparition 1": [
+   75,
+   19,
+   55
+  ],
+  "apparition 2": [
+   68,
+   19,
+   68
+  ],
+  "apparition 3": [
+   55,
+   19,
+   75
+  ],
+  "apparition 4": [
+   41,
+   19,
+   73
+  ],
+  "apparition 5": [
+   30,
+   19,
+   62
+  ],
+  "apparition 6": [
+   28,
+   19,
+   48
+  ],
+  "apparition 7": [
+   35,
+   19,
+   35
+  ],
+  "apparition 8": [
+   48,
+   19,
+   28
+  ],
+  "apparition 9": [
+   62,
+   19,
+   30
+  ],
+  "apparition 10": [
+   73,
+   19,
+   41
+  ]
+ }
+}
