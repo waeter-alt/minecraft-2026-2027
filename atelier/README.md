@@ -7,6 +7,7 @@ Copie (2026-11-09) du dossier de travail de Luca (« Atelier », hors dépôt) :
 | `scripts/` | Scripts Python qui génèrent les structures (arènes, hub à 7 portes, donjons) et les vérifient. Dans l'Atelier ce dossier s'appelait `sources/` ; renommé ici car `.gitignore` ignore tout dossier `sources/`. Certains scripts et fiches citent encore l'ancien nom. |
 | `exports/` | Structures `.nbt`, plans et captures PNG, listes de points `*_cibles.json`, jars Grappin 1.0.0 à 2.3.0. |
 | `docs/` | Fiches d'arènes et de donjons, salles cachées, `MANIFEST.md` (registre de tout ce qui a été généré, avec ses chemins d'origine dans l'Atelier). |
+| `docs/donjon_temple.md` | Fiche du donjon n°2 (Temple des Mille Racines), généré par `scripts/donjon_temple.py` (python du venv de `test-local`). |
 | `grappin/` | Code source du mod NeoForge 1.21.1 Grappin (sans `build/` ni `.gradle/`). |
 
 Pas copiés : les zips de mondes (`Arene_*_map.zip`, `Pack_ami.zip`), `launcher/`, `outils/`, `sauvegardes/`, `.venv`.
