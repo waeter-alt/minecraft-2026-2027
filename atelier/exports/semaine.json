@@ -1,0 +1,206 @@
+{
+ "_marque": "[claude-build]",
+ "spawn": [
+  0,
+  87,
+  20
+ ],
+ "arenes": [
+  {
+   "n": 1,
+   "nom": "Le Croissant",
+   "f": "croissant",
+   "c": [
+    0,
+    -256
+   ],
+   "y": 80,
+   "porte": [
+    0,
+    87,
+    -48
+   ],
+   "arrivee": [
+    57.5,
+    87,
+    -255.5
+   ],
+   "yaw": 90,
+   "retour": [
+    62.5,
+    87,
+    -256.0
+   ],
+   "heure": 6000,
+   "biome": "snowy_plains"
+  },
+  {
+   "n": 2,
+   "nom": "Le Feu",
+   "f": "feu2",
+   "c": [
+    256,
+    -256
+   ],
+   "y": 56,
+   "porte": [
+    37,
+    87,
+    -30
+   ],
+   "arrivee": [
+    256.5,
+    87,
+    -312.5
+   ],
+   "yaw": 0,
+   "retour": [
+    256.0,
+    87,
+    -317.5
+   ],
+   "heure": 6000,
+   "biome": "desert"
+  },
+  {
+   "n": 3,
+   "nom": "La Jungle",
+   "f": "jungle",
+   "c": [
+    256,
+    0
+   ],
+   "y": 226,
+   "porte": [
+    46,
+    87,
+    11
+   ],
+   "arrivee": [
+    211.5,
+    257,
+    0.5
+   ],
+   "yaw": -90,
+   "retour": [
+    207.5,
+    257,
+    0.0
+   ],
+   "heure": 6000,
+   "biome": "jungle"
+  },
+  {
+   "n": 4,
+   "nom": "Le Piège",
+   "f": "piege",
+   "c": [
+    256,
+    256
+   ],
+   "y": 68,
+   "porte": [
+    21,
+    87,
+    43
+   ],
+   "arrivee": [
+    256.5,
+    87,
+    199.5
+   ],
+   "yaw": 0,
+   "retour": [
+    256.0,
+    87,
+    194.5
+   ],
+   "heure": 6000,
+   "biome": null
+  },
+  {
+   "n": 5,
+   "nom": "Les Abysses",
+   "f": "abysses",
+   "c": [
+    0,
+    256
+   ],
+   "y": 68,
+   "porte": [
+    -21,
+    87,
+    43
+   ],
+   "arrivee": [
+    0.5,
+    87,
+    199.5
+   ],
+   "yaw": 0,
+   "retour": [
+    0.0,
+    87,
+    194.5
+   ],
+   "heure": 6000,
+   "biome": "deep_ocean"
+  },
+  {
+   "n": 6,
+   "nom": "Les Ténèbres",
+   "f": "tenebres",
+   "c": [
+    -256,
+    256
+   ],
+   "y": 68,
+   "porte": [
+    -46,
+    87,
+    11
+   ],
+   "arrivee": [
+    -255.5,
+    87,
+    199.5
+   ],
+   "yaw": 0,
+   "retour": [
+    -256.0,
+    87,
+    194.5
+   ],
+   "heure": 18000,
+   "biome": "deep_dark"
+  },
+  {
+   "n": 7,
+   "nom": "Les Portes",
+   "f": "portes",
+   "c": [
+    -256,
+    0
+   ],
+   "y": 68,
+   "porte": [
+    -37,
+    87,
+    -30
+   ],
+   "arrivee": [
+    -255.5,
+    87,
+    -56.5
+   ],
+   "yaw": 0,
+   "retour": [
+    -256.0,
+    87,
+    -61.5
+   ],
+   "heure": 6000,
+   "biome": "plains"
+  }
+ ]
+}

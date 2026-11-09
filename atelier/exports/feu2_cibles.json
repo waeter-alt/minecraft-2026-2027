@@ -1,0 +1,217 @@
+{
+ "_marque": "[claude-build]",
+ "sol": 30,
+ "sauts_longs": true,
+ "depart": [
+  52,
+  31,
+  5
+ ],
+ "cibles": {
+  "îlot central": [
+   54,
+   10,
+   50
+  ],
+  "plage, angle 20": [
+   67,
+   9,
+   57
+  ],
+  "plage, angle 200": [
+   36,
+   9,
+   46
+  ],
+  "corniche, débouché de la galerie 30": [
+   69,
+   19,
+   62
+  ],
+  "corniche, débouché de la galerie 125": [
+   40,
+   19,
+   68
+  ],
+  "corniche, débouché de la galerie 240": [
+   41,
+   19,
+   34
+  ],
+  "corniche, débouché de la galerie 330": [
+   69,
+   19,
+   41
+  ],
+  "sommet : tour de garde": [
+   86,
+   55,
+   62
+  ],
+  "sommet : tour en ruine": [
+   58,
+   49,
+   86
+  ],
+  "sommet : flèche de basalte": [
+   31,
+   65,
+   73
+  ],
+  "sommet : tour de nether bricks": [
+   23,
+   59,
+   45
+  ],
+  "sommet : poste de guet": [
+   41,
+   46,
+   23
+  ],
+  "sommet : tour d'obsidienne": [
+   78,
+   62,
+   26
+  ],
+  "bas de la faille": [
+   83,
+   19,
+   43
+  ],
+  "salle 1": [
+   17,
+   59,
+   43
+  ],
+  "salle 2": [
+   94,
+   23,
+   68
+  ],
+  "salle 3": [
+   55,
+   23,
+   58
+  ],
+  "salle 4": [
+   51,
+   31,
+   97
+  ],
+  "apparition 1": [
+   75,
+   31,
+   55
+  ],
+  "apparition 2": [
+   68,
+   31,
+   68
+  ],
+  "apparition 3": [
+   55,
+   31,
+   75
+  ],
+  "apparition 4": [
+   41,
+   31,
+   73
+  ],
+  "apparition 5": [
+   31,
+   31,
+   62
+  ],
+  "apparition 6": [
+   27,
+   31,
+   48
+  ],
+  "apparition 7": [
+   35,
+   31,
+   35
+  ],
+  "apparition 8": [
+   48,
+   31,
+   28
+  ],
+  "apparition 9": [
+   62,
+   31,
+   30
+  ],
+  "apparition 10": [
+   73,
+   31,
+   41
+  ],
+  "accès : Descente dans la tour de garde": [
+   86,
+   31,
+   62
+  ],
+  "accès : Puits à colimaçon": [
+   48,
+   31,
+   83
+  ],
+  "accès : Cratère": [
+   36,
+   31,
+   28
+  ],
+  "accès : Faille": [
+   96,
+   30,
+   40
+  ],
+  "souterrain, angle 60": [
+   68,
+   19,
+   80
+  ],
+  "souterrain, angle 165": [
+   20,
+   19,
+   60
+  ],
+  "souterrain, angle 285": [
+   60,
+   19,
+   20
+  ],
+  "souterrain, angle 15": [
+   79,
+   19,
+   59
+  ],
+  "secteur 30": [
+   74,
+   32,
+   64
+  ],
+  "secteur 90": [
+   52,
+   32,
+   77
+  ],
+  "secteur 150": [
+   29,
+   32,
+   64
+  ],
+  "secteur 210": [
+   29,
+   31,
+   39
+  ],
+  "secteur 330": [
+   74,
+   32,
+   39
+  ]
+ }
+}

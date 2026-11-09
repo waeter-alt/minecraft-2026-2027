@@ -1,0 +1,156 @@
+{
+ "_marque": "[claude-build]",
+ "sol": 18,
+ "depart": [
+  52,
+  19,
+  1
+ ],
+ "cibles": {
+  "sanctuaire": [
+   55,
+   21,
+   55
+  ],
+  "bas du sanctuaire": [
+   63,
+   20,
+   52
+  ],
+  "anneau de tapis": [
+   69,
+   19,
+   52
+  ],
+  "apparition 1": [
+   96,
+   19,
+   45
+  ],
+  "apparition 2": [
+   90,
+   19,
+   75
+  ],
+  "apparition 3": [
+   68,
+   19,
+   93
+  ],
+  "apparition 4": [
+   38,
+   19,
+   94
+  ],
+  "apparition 5": [
+   15,
+   19,
+   78
+  ],
+  "apparition 6": [
+   7,
+   19,
+   45
+  ],
+  "apparition 7": [
+   15,
+   19,
+   25
+  ],
+  "apparition 8": [
+   38,
+   19,
+   9
+  ],
+  "apparition 9": [
+   65,
+   19,
+   9
+  ],
+  "apparition 10": [
+   85,
+   19,
+   27
+  ],
+  "haut de tour 1": [
+   92,
+   30,
+   52
+  ],
+  "haut de tour 2": [
+   72,
+   30,
+   85
+  ],
+  "haut de tour 3": [
+   33,
+   30,
+   85
+  ],
+  "haut de tour 4": [
+   14,
+   30,
+   52
+  ],
+  "haut de tour 5": [
+   33,
+   30,
+   18
+  ],
+  "haut de tour 6": [
+   72,
+   30,
+   18
+  ],
+  "ruine 1": [
+   78,
+   19,
+   60
+  ],
+  "ruine 2": [
+   68,
+   19,
+   74
+  ],
+  "ruine 3": [
+   52,
+   19,
+   80
+  ],
+  "ruine 4": [
+   35,
+   19,
+   74
+  ],
+  "ruine 5": [
+   25,
+   19,
+   60
+  ],
+  "ruine 6": [
+   25,
+   19,
+   43
+  ],
+  "ruine 7": [
+   35,
+   19,
+   29
+  ],
+  "ruine 8": [
+   51,
+   19,
+   24
+  ],
+  "ruine 9": [
+   68,
+   19,
+   29
+  ],
+  "ruine 10": [
+   78,
+   19,
+   43
+  ]
+ }
+}

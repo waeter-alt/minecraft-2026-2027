@@ -1,0 +1,306 @@
+{
+ "_marque": "[claude-build]",
+ "sol": 18,
+ "depart": [
+  52,
+  19,
+  5
+ ],
+ "cibles": {
+  "grande salle": [
+   62,
+   19,
+   55
+  ],
+  "dalle du piege mortel": [
+   59,
+   19,
+   52
+  ],
+  "dalle mortelle 2": [
+   54,
+   19,
+   59
+  ],
+  "dalle mortelle 3": [
+   45,
+   19,
+   56
+  ],
+  "dalle mortelle 4": [
+   46,
+   19,
+   46
+  ],
+  "dalle mortelle 5": [
+   56,
+   19,
+   45
+  ],
+  "bouton de remise en etat": [
+   59,
+   19,
+   11
+  ],
+  "tapis nord": [
+   52,
+   19,
+   29
+  ],
+  "tapis sud": [
+   52,
+   19,
+   74
+  ],
+  "refuge nord ouest": [
+   47,
+   19,
+   30
+  ],
+  "refuge nord est": [
+   56,
+   19,
+   24
+  ],
+  "refuge sud ouest": [
+   47,
+   19,
+   79
+  ],
+  "refuge sud est": [
+   56,
+   19,
+   73
+  ],
+  "passerelle": [
+   57,
+   26,
+   52
+  ],
+  "toit par l'escalier est": [
+   86,
+   26,
+   58
+  ],
+  "toit par l'escalier ouest": [
+   17,
+   26,
+   45
+  ],
+  "toit par l'escalier de la reserve": [
+   34,
+   26,
+   79
+  ],
+  "passage secret de la bibliotheque": [
+   20,
+   19,
+   60
+  ],
+  "balcon de la bibliotheque": [
+   20,
+   23,
+   60
+  ],
+  "tunnel sous le plancher": [
+   31,
+   16,
+   48
+  ],
+  "observatoire": [
+   77,
+   32,
+   61
+  ],
+  "zone : Laboratoire principal": [
+   77,
+   19,
+   51
+  ],
+  "zone : Salle des expériences ratées": [
+   69,
+   19,
+   69
+  ],
+  "zone : Chaîne de production et atelier": [
+   56,
+   19,
+   76
+  ],
+  "zone : Réserve": [
+   34,
+   19,
+   69
+  ],
+  "zone : Bureau et bibliothèque": [
+   27,
+   19,
+   51
+  ],
+  "zone : Quartiers de vie": [
+   34,
+   19,
+   34
+  ],
+  "zone : Salle des machines (baie ouest)": [
+   46,
+   19,
+   27
+  ],
+  "zone : Serre": [
+   69,
+   19,
+   34
+  ],
+  "salle 1": [
+   77,
+   19,
+   52
+  ],
+  "salle 2": [
+   69,
+   19,
+   69
+  ],
+  "salle 3": [
+   52,
+   19,
+   77
+  ],
+  "salle 4": [
+   34,
+   19,
+   69
+  ],
+  "salle 5": [
+   27,
+   19,
+   52
+  ],
+  "salle 6": [
+   34,
+   19,
+   34
+  ],
+  "salle 7": [
+   51,
+   19,
+   27
+  ],
+  "salle 8": [
+   69,
+   19,
+   34
+  ],
+  "piège : Lenteur": [
+   76,
+   19,
+   57
+  ],
+  "piège : Faim": [
+   65,
+   19,
+   72
+  ],
+  "piège : Obscurité": [
+   46,
+   19,
+   76
+  ],
+  "piège : Nausée": [
+   31,
+   19,
+   65
+  ],
+  "piège : Fatigue": [
+   27,
+   19,
+   46
+  ],
+  "piège : Lévitation": [
+   38,
+   19,
+   31
+  ],
+  "piège : Pluie de flèches": [
+   57,
+   19,
+   27
+  ],
+  "piège : Retour à la porte": [
+   72,
+   19,
+   38
+  ],
+  "piège : Cécité": [
+   81,
+   19,
+   81
+  ],
+  "piège : Repérage": [
+   22,
+   19,
+   81
+  ],
+  "piège : Faiblesse": [
+   22,
+   19,
+   22
+  ],
+  "piège : Poison léger": [
+   81,
+   19,
+   22
+  ],
+  "apparition 1": [
+   89,
+   19,
+   57
+  ],
+  "apparition 2": [
+   78,
+   19,
+   78
+  ],
+  "apparition 3": [
+   58,
+   19,
+   91
+  ],
+  "apparition 4": [
+   33,
+   19,
+   87
+  ],
+  "apparition 5": [
+   16,
+   19,
+   70
+  ],
+  "apparition 6": [
+   14,
+   19,
+   46
+  ],
+  "apparition 7": [
+   25,
+   19,
+   25
+  ],
+  "apparition 8": [
+   45,
+   19,
+   12
+  ],
+  "apparition 9": [
+   70,
+   19,
+   16
+  ],
+  "apparition 10": [
+   87,
+   19,
+   33
+  ]
+ }
+}

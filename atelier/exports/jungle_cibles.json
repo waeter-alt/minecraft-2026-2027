@@ -1,0 +1,197 @@
+{
+ "_marque": "[claude-build]",
+ "sol": -1,
+ "sauts_longs": true,
+ "depart": [
+  97,
+  31,
+  52
+ ],
+ "cibles": {
+  "arrivée Est": [
+   97,
+   31,
+   52
+  ],
+  "arrivée Sud": [
+   52,
+   31,
+   97
+  ],
+  "arrivée Ouest": [
+   6,
+   31,
+   52
+  ],
+  "arrivée Nord": [
+   51,
+   31,
+   6
+  ],
+  "sommet : Le Grand Fromager": [
+   56,
+   87,
+   49
+  ],
+  "sommet : Le Penché": [
+   75,
+   83,
+   26
+  ],
+  "sommet : Le Bossu": [
+   79,
+   67,
+   65
+  ],
+  "sommet : Le Pilier": [
+   63,
+   79,
+   81
+  ],
+  "sommet : La Fourche": [
+   29,
+   73,
+   79
+  ],
+  "sommet : La Vigie": [
+   42,
+   85,
+   18
+  ],
+  "sommet : La Liane": [
+   17,
+   71,
+   62
+  ],
+  "cabane (Le Grand Fromager)": [
+   43,
+   48,
+   49
+  ],
+  "cabane (La Fourche)": [
+   34,
+   41,
+   70
+  ],
+  "plateforme de feuilles (Le Rejet)": [
+   95,
+   37,
+   30
+  ],
+  "plateforme de feuilles (Le Mort)": [
+   24,
+   42,
+   30
+  ],
+  "Le Grand Fromager, plateforme Y238": [
+   55,
+   13,
+   57
+  ],
+  "Le Grand Fromager, plateforme Y257": [
+   52,
+   32,
+   56
+  ],
+  "Le Grand Fromager, plateforme Y273": [
+   46,
+   48,
+   49
+  ],
+  "Le Grand Fromager, plateforme Y294": [
+   50,
+   69,
+   53
+  ],
+  "Le Penché, plateforme Y250": [
+   66,
+   25,
+   27
+  ],
+  "Le Penché, plateforme Y278": [
+   72,
+   53,
+   31
+  ],
+  "Le Bossu, plateforme Y254": [
+   76,
+   29,
+   62
+  ],
+  "Le Bossu, plateforme Y271": [
+   76,
+   46,
+   66
+  ],
+  "Le Pilier, plateforme Y241": [
+   61,
+   16,
+   75
+  ],
+  "Le Pilier, plateforme Y259": [
+   55,
+   34,
+   81
+  ],
+  "Le Pilier, plateforme Y284": [
+   60,
+   59,
+   76
+  ],
+  "La Fourche, plateforme Y248": [
+   27,
+   23,
+   77
+  ],
+  "La Fourche, plateforme Y266": [
+   28,
+   41,
+   75
+  ],
+  "La Fourche, plateforme Y287": [
+   26,
+   62,
+   80
+  ],
+  "La Vigie, plateforme Y253": [
+   35,
+   28,
+   17
+  ],
+  "La Vigie, plateforme Y276": [
+   44,
+   51,
+   14
+  ],
+  "La Vigie, plateforme Y296": [
+   45,
+   71,
+   20
+  ],
+  "Le Rejet, plateforme Y262": [
+   89,
+   37,
+   44
+  ],
+  "La Liane, plateforme Y256": [
+   12,
+   31,
+   66
+  ],
+  "La Liane, plateforme Y278": [
+   15,
+   53,
+   65
+  ],
+  "Le Mort, plateforme Y245": [
+   27,
+   20,
+   59
+  ],
+  "Le Mort, plateforme Y267": [
+   33,
+   42,
+   60
+  ]
+ }
+}

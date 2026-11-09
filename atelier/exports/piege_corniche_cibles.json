@@ -1,0 +1,16 @@
+{
+ "_marque": "[claude-build]",
+ "sol": 18,
+ "depart": [
+  52,
+  19,
+  5
+ ],
+ "cibles": {
+  "corniche (ne doit PAS etre atteignable depuis la porte)": [
+   66,
+   9,
+   52
+  ]
+ }
+}

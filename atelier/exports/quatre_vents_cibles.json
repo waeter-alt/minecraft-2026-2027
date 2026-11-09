@@ -1,0 +1,141 @@
+{
+ "_marque": "[claude-build]",
+ "sol": 12,
+ "depart": [
+  226,
+  13,
+  126
+ ],
+ "cibles": {
+  "sommet de la flèche": [
+   122,
+   67,
+   126
+  ],
+  "balcon de la flèche": [
+   142,
+   37,
+   126
+  ],
+  "sommet de la tour N": [
+   154,
+   53,
+   58
+  ],
+  "sommet de la tour E": [
+   190,
+   47,
+   157
+  ],
+  "sommet de la tour S": [
+   91,
+   45,
+   193
+  ],
+  "sommet de la tour O": [
+   55,
+   57,
+   94
+  ],
+  "anneau céleste": [
+   126,
+   37,
+   201
+  ],
+  "chemin de ronde": [
+   248,
+   27,
+   142
+  ],
+  "salle 1": [
+   188,
+   6,
+   46
+  ],
+  "salle 2": [
+   152,
+   53,
+   58
+  ],
+  "salle 3": [
+   183,
+   6,
+   107
+  ],
+  "salle 4": [
+   222,
+   37,
+   92
+  ],
+  "salle 5": [
+   116,
+   6,
+   240
+  ],
+  "salle 6": [
+   150,
+   6,
+   177
+  ],
+  "salle 7": [
+   74,
+   23,
+   140
+  ],
+  "salle 8": [
+   67,
+   22,
+   163
+  ],
+  "apparition 1": [
+   242,
+   13,
+   144
+  ],
+  "apparition 2": [
+   209,
+   13,
+   209
+  ],
+  "apparition 3": [
+   144,
+   13,
+   242
+  ],
+  "apparition 4": [
+   72,
+   13,
+   230
+  ],
+  "apparition 5": [
+   21,
+   13,
+   179
+  ],
+  "apparition 6": [
+   9,
+   13,
+   107
+  ],
+  "apparition 7": [
+   42,
+   13,
+   42
+  ],
+  "apparition 8": [
+   107,
+   13,
+   9
+  ],
+  "apparition 9": [
+   179,
+   13,
+   21
+  ],
+  "apparition 10": [
+   230,
+   13,
+   72
+  ]
+ }
+}

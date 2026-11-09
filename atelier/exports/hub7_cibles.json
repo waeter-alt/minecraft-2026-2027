@@ -1,0 +1,51 @@
+{
+ "_marque": "[claude-build]",
+ "sol": 8,
+ "depart": [
+  52,
+  9,
+  72
+ ],
+ "cibles": {
+  "porte Le Croissant": [
+   52,
+   9,
+   4
+  ],
+  "porte Le Feu": [
+   89,
+   9,
+   22
+  ],
+  "porte La Jungle": [
+   98,
+   9,
+   63
+  ],
+  "porte Le Piège": [
+   73,
+   9,
+   95
+  ],
+  "porte Les Abysses": [
+   31,
+   9,
+   95
+  ],
+  "porte Les Ténèbres": [
+   6,
+   9,
+   63
+  ],
+  "porte Les Portes": [
+   15,
+   9,
+   22
+  ],
+  "dais": [
+   57,
+   11,
+   57
+  ]
+ }
+}

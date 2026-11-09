@@ -1,0 +1,42 @@
+{
+ "_marque": "[claude-build]",
+ "sol": 6,
+ "sauts_longs": true,
+ "depart": [
+  92,
+  7,
+  52
+ ],
+ "cibles": {
+  "sommet de la tour": [
+   75,
+   47,
+   51
+  ],
+  "entree du labyrinthe": [
+   83,
+   7,
+   15
+  ],
+  "sortie du labyrinthe": [
+   83,
+   7,
+   88
+  ],
+  "palier 1": [
+   75,
+   17,
+   51
+  ],
+  "palier 2": [
+   75,
+   27,
+   51
+  ],
+  "palier 3": [
+   75,
+   37,
+   51
+  ]
+ }
+}
