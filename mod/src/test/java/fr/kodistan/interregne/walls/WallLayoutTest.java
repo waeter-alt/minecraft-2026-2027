@@ -14,12 +14,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Characterizes the wall crest bugs reported by the user on irregular terrain (holes, cliff-like jumps with no
- * stairs): most tests below currently assert the BUGGY behaviour of {@link WallLayout#of} so the regression is
- * pinned down before the crest algorithm is reworked. Once the rework (paliers + Lipschitz smoothing + rise/stairs,
- * see the walls-system plan) lands, those assertions flip to the opposite (no jump, uniform tranche).
- * {@link #outerCornerStaysCovered()} is the exception: a hypothesised "corner hole" bug was checked by hand here
- * and does NOT reproduce, so it is kept as a plain regression guard instead.
+ * Covers the wall crest bugs reported by the user on irregular terrain (holes, cliff-like jumps with no stairs),
+ * fixed by reworking {@link WallLayout#of} into a per-index "local high ground" (not just the centre cell), a
+ * circular-aware fill for unknown ground, and a 1-Lipschitz relaxation of the crest (a ramp, never a cliff).
+ * {@link #outerCornerStaysCovered()} guards a hypothesised "corner hole" bug that was checked by hand and does NOT
+ * reproduce (kept as a plain regression guard, not a fix).
  */
 class WallLayoutTest
 {
@@ -59,12 +58,11 @@ class WallLayoutTest
     }
 
     /**
-     * A sudden 8-block cliff across the trace's run (WallLayout.java ~L290-334): the crest is a 5-cell moving
-     * average of the raw ground, then each column is reclamped to its OWN local ground ± 1 (~L424). The wall
-     * therefore steps straight down the cliff instead of ramping with stairs.
+     * A sudden 8-block cliff across the trace's run: the crest now climbs at most one block per cell (a ramp),
+     * never the whole cliff in one jump.
      */
     @Test
-    void cliffAcrossTheTraceProducesABruteJumpInsteadOfARamp()
+    void cliffAcrossTheTraceBecomesARamp()
     {
         final List<WallTrace.Point> points = List.of(new WallTrace.Point(0, 0), new WallTrace.Point(0, 30));
         final WallLayout.Ground groundFn = flatExcept((x, z) -> z <= 12 ? 70 : 62);
@@ -84,17 +82,18 @@ class WallLayoutTest
             final int nextTop = next.get(0).top();
             maxJump = Math.max(maxJump, Math.abs(nextTop - top));
         }
-        // Desired once fixed: maxJump <= 1 (a ramp, one stair step per cell). Today it jumps the whole cliff at once.
-        assertTrue(maxJump > 1, "expected today's bug (a brute jump); got max jump = " + maxJump);
+        assertTrue(maxJump <= 1, "a ramp should climb at most one block per cell; got max jump = " + maxJump);
+        // And the ramp cells (non-face, mid-slope) are actually marked to carry a stair.
+        final boolean anyRise = layout.columns().stream().anyMatch(c -> c.riseDx() != 0 || c.riseDz() != 0);
+        assertTrue(anyRise, "expected at least one column marked as a stair step across the cliff");
     }
 
     /**
-     * A lateral slope across the wall's 6-block width: every cell of a single tranche reclamps to its own local
-     * ground (~L424), so the walkway is not flat across the wall even though it is meant to be a single uniform
-     * crest per index. This is the main source of the "holes" the user sees (WallLayout.java diagnostic A2).
+     * A lateral slope across the wall's 6-block width: the whole tranche now shares one flat crest (the local high
+     * ground of the cross-section), instead of each cell reclamping to its own local ground.
      */
     @Test
-    void lateralSlopeMakesOneTrancheUneven()
+    void lateralSlopeKeepsOneTrancheFlat()
     {
         final List<WallTrace.Point> points = List.of(new WallTrace.Point(0, 0), new WallTrace.Point(20, 0));
         // Height rises 2 blocks per step away from the centerline (z = 0), across the wall's width.
@@ -110,41 +109,70 @@ class WallLayoutTest
             min = Math.min(min, column.top());
             max = Math.max(max, column.top());
         }
-        // Desired once fixed: min == max (one flat crest per index). Today it varies with the local slope.
-        assertTrue(max - min > 1, "expected today's bug (uneven tranche); got spread = " + (max - min));
+        assertEquals(min, max, "one flat crest per index");
     }
 
     /**
-     * On a closed loop, unloaded cells near index 0 are forward-filled from the first free index instead of
-     * wrapping to the end of the loop (WallLayout.java ~L298-318, non-circular fill). Combined with a real
-     * elevation difference right at the seam, the crest disagrees with itself where the loop closes.
+     * fillMissingGround on a closed loop: an index with no ground of its own borrows its nearest neighbour,
+     * wrapping around the loop — not just scanning forward, as the old per-cell fill used to (it specialcased
+     * only the array's leading prefix, forward-looking, and ignored a closer neighbour reachable by wrapping).
+     * Exercised directly (package-private) since the tower footprint around every trace point otherwise swallows
+     * the cells right where this matters, making it hard to observe through the full WallLayout.of() pipeline.
      */
     @Test
-    void closedLoopSeamIsNotFilledCircularly()
+    void fillMissingGroundWrapsAroundAClosedLoop()
     {
-        final List<WallTrace.Point> points = List.of(
-          new WallTrace.Point(0, 0), new WallTrace.Point(20, 0),
-          new WallTrace.Point(20, 20), new WallTrace.Point(0, 20));
-        final Set<Long> unloaded = new HashSet<>();
-        // The point where the loop closes (index 0, x=0,z=0) and its very next cell (index 1, x=1,z=0) are unloaded
-        // chunks: nothing is known there yet. Both truly sit in the basin below (see groundFn), exactly like their
-        // wrap-around neighbour (the last centerline cell, index n-1, x=0,z=1 — loaded and known).
-        unloaded.add(key(0, 0));
-        unloaded.add(key(1, 0));
-        // A basin along the whole x<=1 strip (all of segment "(0,20)->(0,0)", plus the first two cells of
-        // "(0,0)->(20,0)"): 40 blocks lower than the rest. Index 2 (x=2,z=0, loaded) is the first cell back on the
-        // high plateau.
-        final WallLayout.Ground groundFn = ground((x, z) -> x <= 1 ? 30 : 70, unloaded, Set.of());
-        final WallLayout layout = WallLayout.of(points, true, List.of(), LEVEL, groundFn, ALWAYS);
+        final int n = 10;
+        final int[] g = new int[n];
+        final boolean[] hasG = new boolean[n];
+        // Known: index 3 = 70 (three steps forward), index n-1 = 30 (one step back across the wrap).
+        g[3] = 70;
+        hasG[3] = true;
+        g[n - 1] = 30;
+        hasG[n - 1] = true;
+        // Index 0 is unknown: its nearest known neighbour is index n-1 (one step away, via the wrap), not index 3
+        // (three steps away, forward) — a forward-only fill would wrongly prefer the latter.
+        WallLayout.fillMissingGround(g, hasG, true);
+        assertEquals(30, g[0], "index 0 should borrow its nearest neighbour (one step back across the wrap), not "
+                                + "the farther one reached by scanning forward");
+    }
 
-        // Desired once fixed: filling the unloaded corner should lean on its nearest KNOWN neighbour, which is the
-        // wrap-around one (index n-1, basin, 30) rather than the far one reached by scanning forward past the
-        // unloaded run (index 2, plateau, 70) — so the tower's walkway should land near the basin floor (~34).
-        // Today's forward-only fill (WallLayout.java ~L310-318) ignores the wrap-around neighbour entirely and
-        // fills the corner from the plateau side instead, pulling the walkway up well above the basin (~58).
-        final int walk = layout.towers().get(0).walk();
-        assertTrue(walk > 50, "expected today's bug (walkway pulled toward the far plateau, ignoring the near "
-                                 + "wrap-around basin neighbour); got tower.walk() = " + walk);
+    /**
+     * lipschitzRelax never lowers a value, always closes gaps bigger than one block, and wraps a closed loop (the
+     * seam is as smooth as any other crossing, not a leftover step where the loop closes).
+     */
+    @Test
+    void lipschitzRelaxClosesGapsWithoutLoweringAnything()
+    {
+        final int[] w = {70, 70, 70, 70, 40, 40, 40, 70, 70, 70};
+        final int[] original = w.clone();
+        WallLayout.lipschitzRelax(w, true);
+        for (int i = 0; i < w.length; i++)
+        {
+            final int next = (i + 1) % w.length;
+            assertTrue(Math.abs(w[next] - w[i]) <= 1, "index " + i + " -> " + next + " should differ by at most 1, got " + w[i] + " vs " + w[next]);
+            assertTrue(w[i] >= original[i], "lipschitzRelax must never lower a value; index " + i);
+        }
+    }
+
+    /**
+     * A ravine deeper than the crest is willing to bridge with a ramp (PLAFOND): the cells there are shown blocked
+     * ("trop profond") instead of a very tall pier, while the crest right beside it stays a normal ramp.
+     */
+    @Test
+    void deepRavineIsCappedInsteadOfBuiltTall()
+    {
+        final List<WallTrace.Point> points = List.of(new WallTrace.Point(0, 0), new WallTrace.Point(0, 40));
+        // A deep pit in the middle of the run: 30 blocks down for a short stretch.
+        final WallLayout.Ground groundFn = flatExcept((x, z) -> z >= 18 && z <= 22 ? 40 : 70);
+        final WallLayout layout = WallLayout.of(points, false, List.of(), LEVEL, groundFn, ALWAYS);
+
+        final boolean anyBlocked = layout.columns().stream()
+                                     .filter(c -> c.index() >= 18 && c.index() <= 22)
+                                     .anyMatch(c -> c.status() != WallLayout.Status.OK);
+        assertTrue(anyBlocked, "the pit should be too deep to bridge and shown blocked");
+        final int farTop = byIndex(layout).get(5).get(0).top();
+        assertEquals(74, farTop, "well away from the pit, the crest should stay the plain ground + height");
     }
 
     /**

@@ -31,27 +31,28 @@ public final class WallBlocks
      * The blocks of one level's look.
      */
     private record Style(BlockState body, BlockState cap, BlockState spike, BlockState tower, BlockState towerTop, BlockState rail, BlockState pile,
-                         BlockState floor, BlockState portcullis)
+                         BlockState floor, BlockState portcullis, BlockState stair)
     {
     }
 
     private static final Style[] STYLES = {
       new Style(Blocks.SPRUCE_LOG.defaultBlockState(), Blocks.SPRUCE_LOG.defaultBlockState(), Blocks.SPRUCE_FENCE.defaultBlockState(),
         Blocks.SPRUCE_LOG.defaultBlockState(), Blocks.SPRUCE_PLANKS.defaultBlockState(), Blocks.SPRUCE_FENCE.defaultBlockState(), Blocks.SPRUCE_LOG.defaultBlockState(),
-        Blocks.SPRUCE_PLANKS.defaultBlockState(), Blocks.SPRUCE_FENCE.defaultBlockState()),
+        Blocks.SPRUCE_PLANKS.defaultBlockState(), Blocks.SPRUCE_FENCE.defaultBlockState(), Blocks.SPRUCE_STAIRS.defaultBlockState()),
       new Style(Blocks.COBBLESTONE.defaultBlockState(), Blocks.MOSSY_COBBLESTONE.defaultBlockState(), Blocks.COBBLESTONE_WALL.defaultBlockState(),
         Blocks.COBBLESTONE.defaultBlockState(), Blocks.STONE.defaultBlockState(), Blocks.COBBLESTONE_WALL.defaultBlockState(), Blocks.COBBLESTONE.defaultBlockState(),
-        Blocks.ANDESITE.defaultBlockState(), Blocks.IRON_BARS.defaultBlockState()),
+        Blocks.ANDESITE.defaultBlockState(), Blocks.IRON_BARS.defaultBlockState(), Blocks.COBBLESTONE_STAIRS.defaultBlockState()),
       new Style(Blocks.STONE_BRICKS.defaultBlockState(), Blocks.CHISELED_STONE_BRICKS.defaultBlockState(), Blocks.STONE_BRICK_WALL.defaultBlockState(),
         Blocks.STONE_BRICKS.defaultBlockState(), Blocks.SMOOTH_STONE.defaultBlockState(), Blocks.STONE_BRICK_WALL.defaultBlockState(), Blocks.STONE_BRICKS.defaultBlockState(),
-        Blocks.POLISHED_ANDESITE.defaultBlockState(), Blocks.IRON_BARS.defaultBlockState()),
+        Blocks.POLISHED_ANDESITE.defaultBlockState(), Blocks.IRON_BARS.defaultBlockState(), Blocks.STONE_BRICK_STAIRS.defaultBlockState()),
       new Style(Blocks.DEEPSLATE_BRICKS.defaultBlockState(), Blocks.POLISHED_DEEPSLATE.defaultBlockState(), Blocks.DEEPSLATE_BRICK_WALL.defaultBlockState(),
         Blocks.DEEPSLATE_TILES.defaultBlockState(), Blocks.POLISHED_DEEPSLATE.defaultBlockState(), Blocks.DEEPSLATE_BRICK_WALL.defaultBlockState(),
-        Blocks.COBBLED_DEEPSLATE.defaultBlockState(), Blocks.POLISHED_DEEPSLATE.defaultBlockState(), Blocks.IRON_BARS.defaultBlockState()),
+        Blocks.COBBLED_DEEPSLATE.defaultBlockState(), Blocks.POLISHED_DEEPSLATE.defaultBlockState(), Blocks.IRON_BARS.defaultBlockState(),
+        Blocks.DEEPSLATE_BRICK_STAIRS.defaultBlockState()),
       new Style(Blocks.POLISHED_BLACKSTONE_BRICKS.defaultBlockState(), Blocks.GILDED_BLACKSTONE.defaultBlockState(),
         Blocks.POLISHED_BLACKSTONE_BRICK_WALL.defaultBlockState(), Blocks.POLISHED_BLACKSTONE.defaultBlockState(), Blocks.GOLD_BLOCK.defaultBlockState(),
         Blocks.POLISHED_BLACKSTONE_BRICK_WALL.defaultBlockState(), Blocks.BLACKSTONE.defaultBlockState(),
-        Blocks.POLISHED_BLACKSTONE.defaultBlockState(), Blocks.CHAIN.defaultBlockState()),
+        Blocks.POLISHED_BLACKSTONE.defaultBlockState(), Blocks.CHAIN.defaultBlockState(), Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS.defaultBlockState()),
     };
 
     private static final int CLEAR_ABOVE = 24;
@@ -62,14 +63,15 @@ public final class WallBlocks
     public static boolean isWallBlock(final BlockState state)
     {
         if (state.is(Blocks.LANTERN) || state.is(Blocks.WHITE_WALL_BANNER) || state.is(Blocks.LADDER) || state.is(Blocks.GRAVEL) || state.is(Blocks.STONE_BRICK_STAIRS)
-              || state.is(Blocks.DEEPSLATE_BRICK_STAIRS) || state.is(Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS))
+              || state.is(Blocks.DEEPSLATE_BRICK_STAIRS) || state.is(Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS) || state.is(Blocks.SPRUCE_STAIRS)
+              || state.is(Blocks.COBBLESTONE_STAIRS))
         {
             return true;
         }
         for (final Style style : STYLES)
         {
             for (final BlockState part : new BlockState[] {style.body(), style.cap(), style.spike(), style.tower(), style.towerTop(), style.rail(),
-              style.pile(), style.floor(), style.portcullis()})
+              style.pile(), style.floor(), style.portcullis(), style.stair()})
             {
                 if (state.is(part.getBlock()))
                 {
@@ -122,9 +124,12 @@ public final class WallBlocks
             // The two faces carry the parapet; between them the crest is a walkway
             final boolean face = !body.contains(WallRegistry.cell(x + 1, z)) || !body.contains(WallRegistry.cell(x - 1, z))
                                    || !body.contains(WallRegistry.cell(x, z + 1)) || !body.contains(WallRegistry.cell(x, z - 1));
+            final Direction rise = !face && (column.riseDx() != 0 || column.riseDz() != 0)
+                                      ? Direction.fromDelta(column.riseDx(), 0, column.riseDz()) : null;
             for (int y = column.bottom(); y <= column.top(); y++)
             {
-                steps.add(new Step(new BlockPos(x, y, z), y < column.top() ? style.body() : face ? style.cap() : style.floor(), order));
+                final BlockState top = face ? style.cap() : rise != null ? style.stair().setValue(net.minecraft.world.level.block.StairBlock.FACING, rise) : style.floor();
+                steps.add(new Step(new BlockPos(x, y, z), y < column.top() ? style.body() : top, order));
             }
             if (face)
             {
