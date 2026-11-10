@@ -129,8 +129,9 @@ public class AssaultGoal extends Goal
             anchor = null;
             standAt = null;
         }
-        final IBuilding building = troop.getColony().getBuildingManager().getBuilding(hut);
-        if (building == null)
+        final boolean wallTarget = WarAssaults.isWallTarget(troop, hut);
+        final IBuilding building = wallTarget ? null : troop.getColony().getBuildingManager().getBuilding(hut);
+        if (!wallTarget && building == null)
         {
             return;
         }
@@ -142,11 +143,15 @@ public class AssaultGoal extends Goal
                 march(hut);
                 return;
             }
-            spot = WarAssaults.siegeSpot((ServerLevel) troop.level(), building, hut, troop.blockPosition(),
-              WarAssaults.occupiedStands(troop));
+            spot = wallTarget ? WarAssaults.wallSiegeSpot(troop, 1)
+              : WarAssaults.siegeSpot((ServerLevel) troop.level(), building, hut, troop.blockPosition(), WarAssaults.occupiedStands(troop));
             anchor = spot.wall();
             standAt = spot.stand();
-            WarAssaults.claimStand(troop, standAt);
+            // wallSiegeSpot already claims its own near-wall occupancy slot; siegeSpot's melee stand still needs it.
+            if (!wallTarget)
+            {
+                WarAssaults.claimStand(troop, standAt);
+            }
             marching = null;
             stalled = 0;
             closest = Double.MAX_VALUE;

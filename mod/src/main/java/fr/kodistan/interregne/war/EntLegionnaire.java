@@ -1,11 +1,8 @@
 package fr.kodistan.interregne.war;
 
 import com.minecolonies.api.entity.mobs.AbstractEntityMinecoloniesRaider;
-import com.minecolonies.api.entity.mobs.RaiderType;
 import com.minecolonies.api.entity.mobs.RaiderMobUtils;
 import com.minecolonies.api.entity.mobs.barbarians.IMeleeBarbarianEntity;
-import com.minecolonies.core.entity.pathfinding.navigation.AbstractAdvancedPathNavigate;
-import com.minecolonies.core.entity.pathfinding.navigation.PathingStuckHandler;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -23,40 +20,18 @@ import net.minecraft.world.level.Level;
  * RaiderWalkAI idles on a missing event, and {@link AssaultGoal} owns the march and the battering instead.
  * Skin is the plain barbarian for the slice; a proper look comes with the Caserne round.
  */
-public class EntLegionnaire extends AbstractEntityMinecoloniesRaider implements IMeleeBarbarianEntity
+public class EntLegionnaire extends AssaultTroop implements IMeleeBarbarianEntity
 {
     public EntLegionnaire(final EntityType<? extends AbstractEntityMinecoloniesRaider> type, final Level world)
     {
         super(type, world);
         RaiderMobUtils.setEquipment(this);
-        this.setPersistenceRequired();
         // MobAIRegistry attaches nothing to a légionnaire (MobAiRegistryMixin): its whole AI is here, vanilla and
         // ours. Fight back against whoever hits it — never a proactive scan — and otherwise march and batter.
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new RetaliateGoal(this));
         this.goalSelector.addGoal(2, new AssaultGoal(this));
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
-    }
-
-    /**
-     * The stock raider navigator gets a stuck handler that, with MineColonies' default config
-     * (dobarbariansbreakthroughwalls), silently sets blocks to air around a stuck raider — building blocks vanished
-     * with no troop battering them. Same handler minus the block breaking: only AssaultGoal's counted blows wreck.
-     */
-    @Override
-    public AbstractAdvancedPathNavigate getNavigation()
-    {
-        final boolean fresh = this.newNavigator == null;
-        final AbstractAdvancedPathNavigate navigator = super.getNavigation();
-        if (fresh)
-        {
-            navigator.setStuckHandler(PathingStuckHandler.createStuckHandler()
-              .withTakeDamageOnStuck(0.4f)
-              .withBuildLeafBridges()
-              .withChanceToByPassMovingAway(0.20)
-              .withPlaceLadders());
-        }
-        return navigator;
     }
 
     /**
@@ -93,17 +68,5 @@ public class EntLegionnaire extends AbstractEntityMinecoloniesRaider implements 
             final LivingEntity target = this.mob.getTarget();
             return target != null && target.isAlive();
         }
-    }
-
-    @Override
-    public RaiderType getRaiderType()
-    {
-        return RaiderType.BARBARIAN;
-    }
-
-    @Override
-    public double getSwimSpeedFactor()
-    {
-        return 0.7D;
     }
 }

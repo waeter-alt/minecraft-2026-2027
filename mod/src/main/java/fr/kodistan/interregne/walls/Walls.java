@@ -184,7 +184,19 @@ public final class Walls
         {
             player.sendSystemMessage(Component.literal("Payé : " + payment.describe() + ".").withStyle(ChatFormatting.GRAY));
         }
+        buildSite(player, colony, level, old, points, gates, closed, wallLevel, ground, reader, claim, layout, cost);
+    }
 
+    /**
+     * Lays the wall out and starts its construction site — the part {@code apply} runs once payment clears, and
+     * {@link #repair} also runs, with no payment of its own (its caller, "Tout reconstruire", already charged the
+     * flat retouch price as part of one combined total — see {@link #repairPrice}).
+     */
+    private static void buildSite(final ServerPlayer player, final IColony colony, final ServerLevel level, @Nullable final WallRegistry.Wall old,
+      final List<WallTrace.Point> points, final List<WallTrace.Point> gates, final boolean closed, final int wallLevel,
+      final Map<Long, Terrain.Probe> ground, final WallLayout.Ground reader, final WallLayout.Claim claim, final WallLayout layout, final long cost)
+    {
+        final String key = RegionalTreasury.keyOf(colony);
         final List<WallBlocks.Step> steps = new ArrayList<>(WallBlocks.of(level, layout, wallLevel, reader, colony.getCenter()));
         final Set<Long> placed = new HashSet<>();
         for (final WallBlocks.Step step : steps)
@@ -227,10 +239,62 @@ public final class Walls
             BUILDING.remove(key);
             registry.put(colony, wall);
             sync(player.server, key, wall, false);
+            fr.kodistan.interregne.war.WarAssaults.onWallRepaired(level, colony);
         });
         final String what = old == null ? "Chantier de la muraille lancé" : wallLevel > old.level() ? "Muraille en route vers le niveau " + wallLevel
                               : "Retouche de la muraille lancée";
         player.sendSystemMessage(Component.literal(what + " : " + seconds + " s.").withStyle(ChatFormatting.GOLD));
+    }
+
+    /** The flat price of fixing whatever a colony's wall is missing against its own saved trace — a pure repair
+      * (same trace, same level) always costs exactly a level's retouch price, never more: see {@code editCost} in
+      * {@link #apply}. Zero when the colony has no wall. */
+    public static long repairPrice(final ServerLevel level, final IColony colony)
+    {
+        final WallRegistry.Wall wall = WallRegistry.get(level.getServer()).of(colony);
+        return wall == null ? 0 : WallLevels.of(wall.level()).retouchPrice();
+    }
+
+    /**
+     * Replays a colony's own saved wall trace, unchanged: whatever the live world is missing against it — a war
+     * breach, a knocked-off ladder, gravel that slid away — gets rebuilt. Unlike {@link #apply}, this never charges
+     * the player: it's meant for "Tout reconstruire" ({@link fr.kodistan.interregne.war.WarAssaults#onRebuildAll}),
+     * which already folded {@link #repairPrice} into one combined payment alongside any ruined buildings. A no-op
+     * if the colony has no wall, or something now blocks it (a bare refusal, since there's no player action here to
+     * answer — they'll see it fail for real next time they open the planner on it).
+     */
+    public static void repair(final ServerPlayer player, final IColony colony)
+    {
+        final WallRegistry.Wall wall = WallRegistry.get(player.server).of(colony);
+        if (wall == null)
+        {
+            return;
+        }
+        final ServerLevel level = player.serverLevel();
+        final Map<Long, Terrain.Probe> ground = new HashMap<>(wall.ground());
+        final java.util.Set<Long> own = WallLayout.ownCells(wall.points(), wall.closed());
+        final WallLayout.Ground reader = (x, z) -> {
+            final long cell = WallRegistry.cell(x, z);
+            final Terrain.Probe known = ground.get(cell);
+            if (known != null)
+            {
+                return known;
+            }
+            final Terrain.Probe probe = Terrain.probe(level, x, z, own.contains(cell) ? WallBlocks::isWallBlock : null);
+            if (probe.loaded() && !probe.blocked())
+            {
+                ground.put(cell, probe);
+            }
+            return probe;
+        };
+        final WallLayout.Claim claim = (x, z) -> colony.isCoordInColony(level, new BlockPos(x, 64, z));
+        final WallLevels.Level look = WallLevels.of(wall.level());
+        final WallLayout layout = WallLayout.of(wall.points(), wall.closed(), wall.gates(), look, reader, claim);
+        if (layout.blocked() > 0)
+        {
+            return;
+        }
+        buildSite(player, colony, level, wall, wall.points(), wall.gates(), wall.closed(), wall.level(), ground, reader, claim, layout, look.retouchPrice());
     }
 
     /**

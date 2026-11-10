@@ -19,7 +19,7 @@ public final class ClientWarRuins
 
     public static void put(final WarRuinsSyncPayload payload)
     {
-        if (payload.count() <= 0)
+        if (payload.count() <= 0 && !payload.wallDamaged())
         {
             RUINS.remove(payload.colony());
             return;
