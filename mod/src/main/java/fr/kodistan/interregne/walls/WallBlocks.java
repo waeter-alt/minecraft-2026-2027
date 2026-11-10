@@ -107,14 +107,20 @@ public final class WallBlocks
     {
         final Style style = STYLES[Math.max(1, Math.min(STYLES.length, wallLevel)) - 1];
         final List<Step> steps = new ArrayList<>();
-        final java.util.Set<Long> body = footprint(layout);
+        // An obstacle (a building, a block the colony doesn't own, terrain too deep to bridge) is never built over:
+        // its column/tower/gate is left out entirely rather than overwriting what stands there. An upgrade is
+        // allowed to go ahead even with such obstacles present (see Walls#apply) — the gap simply stays a gap.
+        final List<WallLayout.Column> buildableColumns = layout.columns().stream().filter(c -> c.status() == WallLayout.Status.OK).toList();
+        final List<WallLayout.Tower> buildableTowers = layout.towers().stream().filter(t -> t.status() == WallLayout.Status.OK).toList();
+        final List<WallLayout.Gate> buildableGates = layout.gates().stream().filter(g -> g.status() == WallLayout.Status.OK).toList();
+        final java.util.Set<Long> body = footprint(buildableColumns, buildableTowers, buildableGates);
         final java.util.Map<Long, WallLayout.Column> columns = new java.util.HashMap<>();
         final java.util.Set<Long> faces = new java.util.HashSet<>();
-        for (final WallLayout.Column column : layout.columns())
+        for (final WallLayout.Column column : buildableColumns)
         {
             columns.put(WallRegistry.cell(column.x(), column.z()), column);
         }
-        for (final WallLayout.Column column : layout.columns())
+        for (final WallLayout.Column column : buildableColumns)
         {
             final int order = column.index() * 2;
             final int x = column.x();
@@ -137,12 +143,12 @@ public final class WallBlocks
                 steps.add(new Step(new BlockPos(x, column.top() + 1, z), ((x + z) & 1) == 0 ? style.spike() : style.cap(), order));
             }
         }
-        for (final WallLayout.Tower tower : layout.towers())
+        for (final WallLayout.Tower tower : buildableTowers)
         {
             tower(level, steps, tower, style, ground, columns, faces);
         }
         final java.util.Map<Long, Step> overrides = new java.util.HashMap<>();
-        for (final WallLayout.Gate gate : layout.gates())
+        for (final WallLayout.Gate gate : buildableGates)
         {
             gate(level, steps, gate, style, ground);
             wayUp(overrides, gate, wallLevel, columns, faces, inside);
@@ -169,14 +175,15 @@ public final class WallBlocks
     /**
      * Every cell the wall stands on: columns, towers and gatehouses.
      */
-    private static java.util.Set<Long> footprint(final WallLayout layout)
+    private static java.util.Set<Long> footprint(final List<WallLayout.Column> columns, final List<WallLayout.Tower> towers,
+      final List<WallLayout.Gate> gates)
     {
         final java.util.Set<Long> cells = new java.util.HashSet<>();
-        for (final WallLayout.Column column : layout.columns())
+        for (final WallLayout.Column column : columns)
         {
             cells.add(WallRegistry.cell(column.x(), column.z()));
         }
-        for (final WallLayout.Tower tower : layout.towers())
+        for (final WallLayout.Tower tower : towers)
         {
             for (int dx = 0; dx < tower.size(); dx++)
             {
@@ -189,7 +196,7 @@ public final class WallBlocks
                 }
             }
         }
-        for (final WallLayout.Gate gate : layout.gates())
+        for (final WallLayout.Gate gate : gates)
         {
             for (int along = -WallLayout.GATE_HALF; along <= WallLayout.GATE_HALF; along++)
             {

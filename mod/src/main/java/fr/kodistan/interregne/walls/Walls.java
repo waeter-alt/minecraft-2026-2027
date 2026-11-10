@@ -103,12 +103,12 @@ public final class Walls
         final WallRegistry.Wall old = WallRegistry.get(player.server).of(colony);
         if (old == null)
         {
-            apply(player, colony, null, points, gates, payload.closed(), 1, false);
+            apply(player, colony, null, points, gates, payload.closed(), 1, false, false);
             return;
         }
         if (payload.level() <= old.level())
         {
-            apply(player, colony, old, points, gates, payload.closed(), old.level(), true);
+            apply(player, colony, old, points, gates, payload.closed(), old.level(), true, false);
             return;
         }
         // An upgrade: the whole wall at the next level, on the trace as it stands in the planner
@@ -124,7 +124,7 @@ public final class Walls
             refuse(player, "Il faut un hôtel de ville de niveau " + next + " pour une muraille de niveau " + next + ".");
             return;
         }
-        apply(player, colony, old, points, gates, payload.closed(), next, false);
+        apply(player, colony, old, points, gates, payload.closed(), next, false, true);
     }
 
     /**
@@ -132,9 +132,12 @@ public final class Walls
      * the site: the old blocks the new wall no longer covers come down first, then the new wall rises.
      *
      * @param difference charge only the difference with the old wall at the same level (a retrace), not the full price
+     * @param upgrade    an upgrade of an already-built wall: a player who could already place it must never be
+     *                   blocked from improving it by an obstacle only an upgrade's bigger reach can reveal — an
+     *                   obstacle there is a warning, not a refusal (the section is simply left out, see WallBlocks)
      */
     private static void apply(final ServerPlayer player, final IColony colony, @Nullable final WallRegistry.Wall old, final List<WallTrace.Point> points,
-      final List<WallTrace.Point> gates, final boolean closed, final int wallLevel, final boolean difference)
+      final List<WallTrace.Point> gates, final boolean closed, final int wallLevel, final boolean difference, final boolean upgrade)
     {
         final ServerLevel level = player.serverLevel();
         final String key = RegionalTreasury.keyOf(colony);
@@ -160,8 +163,13 @@ public final class Walls
         final WallLayout layout = WallLayout.of(points, closed, gates, look, reader, claim);
         if (layout.blocked() > 0)
         {
-            refuse(player, "La muraille touche un bâtiment, sort de la colonie ou une porte ne tient pas : retire les parties rouges.");
-            return;
+            if (!upgrade)
+            {
+                refuse(player, "La muraille touche un bâtiment, sort de la colonie ou une porte ne tient pas : retire les parties rouges.");
+                return;
+            }
+            player.sendSystemMessage(Component.literal("Attention : " + layout.blocked() + " section(s) de la muraille n'ont pas pu être générées "
+                                                           + "proprement (obstacle, terrain trop accidenté) et resteront des brèches.").withStyle(ChatFormatting.YELLOW));
         }
         long cost = layout.cost(look);
         if (difference && old != null)
@@ -260,8 +268,8 @@ public final class Walls
      * breach, a knocked-off ladder, gravel that slid away — gets rebuilt. Unlike {@link #apply}, this never charges
      * the player: it's meant for "Tout reconstruire" ({@link fr.kodistan.interregne.war.WarAssaults#onRebuildAll}),
      * which already folded {@link #repairPrice} into one combined payment alongside any ruined buildings. A no-op
-     * if the colony has no wall, or something now blocks it (a bare refusal, since there's no player action here to
-     * answer — they'll see it fail for real next time they open the planner on it).
+     * only if the colony has no wall at all; an obstacle that has since appeared is never a reason to refuse
+     * repairing an already-built wall — that section is simply left out (see WallBlocks).
      */
     public static void repair(final ServerPlayer player, final IColony colony)
     {
@@ -290,10 +298,6 @@ public final class Walls
         final WallLayout.Claim claim = (x, z) -> colony.isCoordInColony(level, new BlockPos(x, 64, z));
         final WallLevels.Level look = WallLevels.of(wall.level());
         final WallLayout layout = WallLayout.of(wall.points(), wall.closed(), wall.gates(), look, reader, claim);
-        if (layout.blocked() > 0)
-        {
-            return;
-        }
         buildSite(player, colony, level, wall, wall.points(), wall.gates(), wall.closed(), wall.level(), ground, reader, claim, layout, look.retouchPrice());
     }
 
