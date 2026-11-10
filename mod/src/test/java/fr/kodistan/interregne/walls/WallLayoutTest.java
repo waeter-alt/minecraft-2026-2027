@@ -10,13 +10,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.IntBinaryOperator;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Characterizes the wall crest bugs reported by the user on irregular terrain (holes, cliff-like jumps with no
- * stairs): each test below currently asserts the BUGGY behaviour of {@link WallLayout#of} so the regression is
+ * stairs): most tests below currently assert the BUGGY behaviour of {@link WallLayout#of} so the regression is
  * pinned down before the crest algorithm is reworked. Once the rework (paliers + Lipschitz smoothing + rise/stairs,
- * see the walls-system plan) lands, these assertions flip to the opposite (no jump, uniform tranche, full coverage).
+ * see the walls-system plan) lands, those assertions flip to the opposite (no jump, uniform tranche).
+ * {@link #outerCornerStaysCovered()} is the exception: a hypothesised "corner hole" bug was checked by hand here
+ * and does NOT reproduce, so it is kept as a plain regression guard instead.
  */
 class WallLayoutTest
 {
@@ -145,16 +148,19 @@ class WallLayoutTest
     }
 
     /**
-     * A 90° bend: WallLayout attributes each cell to the FIRST centerline index whose segment distance test passes
-     * (~L397-428), not the nearest one, and that test only looks at the cell's own segment. On the outer corner
-     * this can leave cells uncovered by either adjacent segment even though they sit within half the wall's width
-     * of the polyline as a whole.
+     * A regression guard, not a bug reproduction: WallLayout attributes each cell to whichever centerline index's
+     * OWN segment distance test passes first (~L397-428), not necessarily the nearest one. On paper that reads as
+     * a risk of uncovered corner cells, but both a 90° and a 45° bend were checked by hand (with an oracle using
+     * WallLayout's own coordinate convention, see {@link #distanceToPolylineShifted}) and neither shows a hole:
+     * each segment's own distance test already clamps to its shared endpoint, which rounds the corner correctly
+     * regardless of which adjacent segment "owns" that endpoint's index. Kept so a future rework of the crest
+     * algorithm (nearest-index attribution, paliers) does not regress this.
      */
     @Test
-    void outerCornerLeavesCellsUncovered()
+    void outerCornerStaysCovered()
     {
         final List<WallTrace.Point> points = List.of(
-          new WallTrace.Point(0, 0), new WallTrace.Point(0, 20), new WallTrace.Point(20, 20));
+          new WallTrace.Point(0, 0), new WallTrace.Point(20, 20), new WallTrace.Point(40, 20));
         final WallLayout.Ground groundFn = flatExcept((x, z) -> 70);
         final WallLayout layout = WallLayout.of(points, false, List.of(), LEVEL, groundFn, ALWAYS);
 
@@ -165,13 +171,13 @@ class WallLayoutTest
         }
         final double halfWidth = LEVEL.thickness() / 2.0;
         int missing = 0;
-        for (int x = -4; x <= 4; x++)
+        for (int x = 14; x <= 26; x++)
         {
             for (int z = 16; z <= 24; z++)
             {
                 final int cx = x;
                 final int cz = z;
-                final boolean nearPolyline = distanceToPolyline(cx, cz, points) <= halfWidth;
+                final boolean nearPolyline = distanceToPolylineShifted(cx, cz, points) <= halfWidth;
                 final boolean covered = actual.contains(key(cx, cz))
                                            || layout.towers().stream().anyMatch(t -> t.covers(cx, cz));
                 if (nearPolyline && !covered)
@@ -180,33 +186,35 @@ class WallLayoutTest
                 }
             }
         }
-        // Desired once fixed: missing == 0 (attribution to the nearest index covers the whole corner). Today some
-        // cells near the outer corner belong to neither adjacent segment's own distance test.
-        assertTrue(missing > 0, "expected today's bug (uncovered corner cells); got missing = " + missing);
+        assertEquals(0, missing, "no cell near the bend should go uncovered");
     }
 
     /**
-     * Ground-truth oracle independent of WallLayout's own (buggy) per-segment attribution: distance from (x, z) to
-     * the closest point of the whole polyline, not just one segment.
+     * Ground-truth oracle independent of WallLayout's own (buggy) per-index attribution: distance from a cell's
+     * centre to the NEAREST of the whole polyline's segments, in WallLayout's own coordinate convention (the
+     * segment's endpoints shifted by +1.0, ~L411) — not just the single segment the closest centerline index
+     * happens to own.
      */
-    private static double distanceToPolyline(final int x, final int z, final List<WallTrace.Point> points)
+    private static double distanceToPolylineShifted(final int x, final int z, final List<WallTrace.Point> points)
     {
         double best = Double.MAX_VALUE;
         for (int i = 0; i + 1 < points.size(); i++)
         {
-            best = Math.min(best, distanceToSegment(x, z, points.get(i), points.get(i + 1)));
+            best = Math.min(best, distanceToSegment(x + 0.5, z + 0.5, points.get(i), points.get(i + 1)));
         }
         return best;
     }
 
     private static double distanceToSegment(final double px, final double pz, final WallTrace.Point a, final WallTrace.Point b)
     {
-        final double dx = b.x() - a.x();
-        final double dz = b.z() - a.z();
+        final double ax = a.x() + 1.0;
+        final double az = a.z() + 1.0;
+        final double dx = b.x() + 1.0 - ax;
+        final double dz = b.z() + 1.0 - az;
         final double length = dx * dx + dz * dz;
-        final double t = length == 0 ? 0 : Math.max(0, Math.min(1, ((px - a.x()) * dx + (pz - a.z()) * dz) / length));
-        final double ex = px - (a.x() + t * dx);
-        final double ez = pz - (a.z() + t * dz);
+        final double t = length == 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / length));
+        final double ex = px - (ax + t * dx);
+        final double ez = pz - (az + t * dz);
         return Math.sqrt(ex * ex + ez * ez);
     }
 }
