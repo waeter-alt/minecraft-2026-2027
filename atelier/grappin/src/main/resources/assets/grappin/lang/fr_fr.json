@@ -4,6 +4,12 @@
   "item.grappin.grappin.aide2": "Accroché : clic droit maintenu = traction ; relâché, on reste accroché et on se balance ; molette = longueur de la corde",
   "item.grappin.grappin.aide3": "Espace ou s'accroupir : lâcher le crochet avec un saut",
   "itemGroup.grappin.donjon": "Donjons",
+  "item.grappin.voile": "Voile des Profondeurs",
+  "item.grappin.voile.aide1": "Casque : permet de respirer sous l'eau",
+  "item.grappin.voile.aide2": "Réserve de %s s sous l'eau, rechargée en %s s à la surface",
+  "item.grappin.voile.reserve": "Réserve : %s s sur %s s",
+  "item.grappin.voile.alerte": "Voile : %s s d'air",
+  "item.grappin.voile.epuise": "Voile épuisé !",
   "block.grappin.ancrage": "Point d'ancrage",
   "entity.grappin.crochet": "Crochet de grappin"
 }

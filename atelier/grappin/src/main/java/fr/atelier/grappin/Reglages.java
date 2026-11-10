@@ -19,6 +19,10 @@ public final class Reglages {
     public static final ModConfigSpec.DoubleValue TREUIL = B.comment("Vitesse du treuil : corde rembobinee par tick quand on maintient la touche de saut, en blocs (0,3 = 6 blocs/s).").defineInRange("vitesseTreuil", 0.3, 0.0, 2.0);
     public static final ModConfigSpec.DoubleValue PAS_MOLETTE = B.comment("Blocs de corde gagnes ou perdus par cran de molette.").defineInRange("pasMolette", 1.0, 0.25, 4.0);
 
+    public static final ModConfigSpec.IntValue VOILE_RESERVE = B.comment("Voile des Profondeurs : duree de respiration sous l'eau, en secondes.").defineInRange("voileReserveSecondes", 40, 5, 600);
+    public static final ModConfigSpec.IntValue VOILE_RECHARGE = B.comment("Voile des Profondeurs : temps pour le recharger entierement a la surface, en secondes.").defineInRange("voileRechargeSecondes", 12, 1, 600);
+    public static final ModConfigSpec.IntValue VOILE_ALERTE = B.comment("Voile des Profondeurs : il avertit (message et son) quand il lui reste moins de ce nombre de secondes.").defineInRange("voileAlerteSecondes", 10, 1, 60);
+
     public static final ModConfigSpec SPEC = B.build();
 
     private Reglages() {
