@@ -18,8 +18,12 @@ import fr.kodistan.interregne.client.ClientTreasury;
 import fr.kodistan.interregne.client.hud.Grievances;
 import fr.kodistan.interregne.client.hud.InterregneHud;
 import fr.kodistan.interregne.economy.Wallet;
+import fr.kodistan.interregne.client.war.ClientWarRuins;
 import fr.kodistan.interregne.network.IntendanceActionPayload;
 import fr.kodistan.interregne.network.IntendanceQuotePayload;
+import fr.kodistan.interregne.network.WarRebuildPayload;
+import fr.kodistan.interregne.network.WarRuinsSyncPayload;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
 import fr.kodistan.interregne.client.ui.Icon;
@@ -861,6 +865,19 @@ public final class ColonyHubScreen extends ParchmentScreen
         final IntendanceQuotePayload intendance = ClientIntendance.of(colony.getID());
         final int requests = intendance == null ? -1 : intendance.care().size() + intendance.supplies().size();
 
+        final WarRuinsSyncPayload ruins = ClientWarRuins.of(colony);
+        if (ruins != null && (ruins.count() > 0 || ruins.wallDamaged()))
+        {
+            final String ruinPart = ruins.count() <= 0 ? null
+              : ruins.count() + (ruins.count() == 1 ? " bâtiment en ruines" : " bâtiments en ruines");
+            final String wallPart = ruins.wallDamaged() ? "muraille percée" : null;
+            final String text = ruinPart == null ? wallPart : wallPart == null ? ruinPart : ruinPart + ", " + wallPart;
+            // banner() returns only the height ADDED past its base 14px (0 on a one-line banner) — the base row
+            // itself is never reflected in the return value, so it has to be added here too.
+            y += 14 + Ui.banner(graphics, font, x, y, width, Ui.State.BAD, "Guerre", text);
+            y += 4;
+            y = renderRebuildButton(graphics, mouseX, mouseY, x, y, width, ruins) + 6;
+        }
         if (blocked > 0)
         {
             y += Ui.banner(graphics, font, x, y, width, Ui.State.BAD, "À régler", blocked + (blocked == 1 ? " bâtiment bloqué" : " bâtiments bloqués"));
@@ -895,6 +912,45 @@ public final class ColonyHubScreen extends ParchmentScreen
           mercenaries()));
 
         return y;
+    }
+
+    /**
+     * "Tout reconstruire" : pays une fois pour chaque bâtiment en ruines et, s'il y en a une, pour la brèche de
+     * la muraille — un seul prix combiné (price inside the button, the same convention as the wall's upgrade
+     * button — green and payable, or grey with the shortfall in red).
+     */
+    private int renderRebuildButton(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width,
+      final WarRuinsSyncPayload ruins)
+    {
+        final long totalPrice = ruins.price() + ruins.wallPrice();
+        final boolean creative = minecraft.player != null && minecraft.player.isCreative();
+        final long money = ClientTreasury.of(colony) + (minecraft.player == null ? 0 : Wallet.value(new PlayerMainInvWrapper(minecraft.player.getInventory())));
+        final boolean payable = creative || money >= totalPrice;
+        final int h = Ui.BUTTON_H;
+        final boolean over = Ui.inside(mouseX, mouseY, x, y, width, h);
+        Ui.plate(graphics, x, y, x + width, y + h, payable ? (over ? Palette.GREEN_HOVER : Palette.GREEN) : Palette.PAPER_DARK, Palette.EDGE,
+          payable ? Palette.GREEN_LIGHT : Palette.PAPER_DARK);
+
+        final int textY = y + (h - 8) / 2;
+        final Component verbText = Component.literal("Tout reconstruire").withStyle(ChatFormatting.BOLD);
+        final Component price = Component.literal(creative ? "gratuit" : money >= totalPrice ? Wallet.format(totalPrice) : Wallet.format(money) + "/" + Wallet.format(totalPrice))
+                                  .withStyle(ChatFormatting.BOLD);
+        final int priceW = PRICE_ICON + 3 + font.width(price);
+        int cx = x + (width - (font.width(verbText) + 12 + priceW)) / 2;
+        graphics.drawString(font, verbText, cx, textY, payable ? Palette.GREEN_TEXT : Palette.MUTED, false);
+        cx += font.width(verbText) + 12;
+        Ui.coinTight(graphics, cx, y + (h - PRICE_ICON) / 2, PRICE_ICON);
+        graphics.drawString(font, price, cx + PRICE_ICON + 3, textY, money >= totalPrice ? (payable ? Palette.GREEN_TEXT : Palette.INK) : Palette.RED, false);
+
+        if (payable)
+        {
+            addHit(x, y, width, h, () -> PacketDistributor.sendToServer(new WarRebuildPayload(colony.getID())));
+        }
+        if (over && !payable)
+        {
+            hint = "Il manque " + Wallet.format(totalPrice - money) + " Couronnes (trésor régional et bourse comptés).";
+        }
+        return y + h;
     }
 
     /**

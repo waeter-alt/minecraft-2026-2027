@@ -25,6 +25,7 @@ Contexte : mod NeoForge custom (`mod/`) pour un serveur Minecraft communautaire 
 - Serveur de test : `./gradlew runServer`
 - Client de test : `./gradlew runClient`
 - "Build qui passe" n'est pas "la feature marche" : si le changement touche à du gameplay ou de l'UI, teste-le réellement en jeu (ou demande à quelqu'un de le tester) avant de dire que c'est fait.
+- **Un script ou outil de test ne doit jamais supposer un état local déjà en place** (dossier datapack monté à la main, save pré-existante, config locale) — sinon ça ne marche que chez son auteur et personne d'autre ne peut reproduire le test. Rencontré sur la PR #5 (`donjon_temple.py`) : le script n'écrivait la structure et les fonctions que si `datapacks/atelier/...` existait déjà dans la save visée, sans jamais le créer lui-même ; sur une save neuve, il échouait en silence, sans la moindre erreur. Deux solutions, au choix de l'auteur : le script crée lui-même tout ce qu'il lui faut (dossiers, `pack.mcmeta`), ou la PR fournit une save/datapack prêt à copier dans `mod/run/client/saves/`.
 
 ## Pendant un build/test
 

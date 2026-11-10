@@ -184,7 +184,16 @@ public class InterregneMod
                 {
                     ClientPayloads.intendanceQuote(payload);
                 }
-            });
+            })
+          .playToClient(fr.kodistan.interregne.network.WarRuinsSyncPayload.TYPE, fr.kodistan.interregne.network.WarRuinsSyncPayload.STREAM_CODEC,
+            (payload, context) -> {
+                if (FMLEnvironment.dist.isClient())
+                {
+                    ClientPayloads.syncWarRuins(payload);
+                }
+            })
+          .playToServer(fr.kodistan.interregne.network.WarRebuildPayload.TYPE, fr.kodistan.interregne.network.WarRebuildPayload.STREAM_CODEC,
+            fr.kodistan.interregne.war.WarAssaults::onRebuildAll);
     }
 
     /**

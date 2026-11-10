@@ -34,6 +34,11 @@ public final class ClientPayloads
         fr.kodistan.interregne.client.walls.ClientWalls.put(payload);
     }
 
+    public static void syncWarRuins(final fr.kodistan.interregne.network.WarRuinsSyncPayload payload)
+    {
+        fr.kodistan.interregne.client.war.ClientWarRuins.put(payload);
+    }
+
     public static void syncWallet(final WalletSyncPayload payload)
     {
         InterregneHud.setWallet(payload.bank(), payload.regional());

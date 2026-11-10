@@ -134,7 +134,7 @@ public class AssautEvent implements IColonyRaidEvent, INBTSerializable<CompoundT
     @Override
     public EntityType<?> getArcherRaiderType()
     {
-        return WarEntities.LEGIONNAIRE.get();
+        return WarEntities.ARCHER.get();
     }
 
     @Override

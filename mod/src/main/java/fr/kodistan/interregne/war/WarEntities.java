@@ -16,8 +16,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import java.util.function.Supplier;
 
 /**
- * War troops. The slice spawns one melee unit, the légionnaire: it rides on MineColonies' raider base, so guards,
- * citizens and threat tables already know how to fight it (CombatUtils' raider branch, guard patrol calls).
+ * War troops: the melee légionnaire and the ranged archer. Both ride on MineColonies' raider base, so guards,
+ * citizens and threat tables already know how to fight them (CombatUtils' raider branch, guard patrol calls).
  */
 @EventBusSubscriber(modid = InterregneMod.MODID)
 public final class WarEntities
@@ -29,6 +29,12 @@ public final class WarEntities
              .sized(0.6F, 1.95F)
              .clientTrackingRange(64)
              .build("legionnaire"));
+
+    public static final Supplier<EntityType<EntArcher>> ARCHER = ENTITIES.register("archer",
+      () -> EntityType.Builder.of(EntArcher::new, MobCategory.MONSTER)
+             .sized(0.6F, 1.95F)
+             .clientTrackingRange(64)
+             .build("archer"));
 
     /** The assault's colony event type: MineColonies saves running events and crashes the colony load on an unknown type. */
     public static final DeferredRegister<ColonyEventTypeRegistryEntry> EVENT_TYPES =
@@ -42,6 +48,7 @@ public final class WarEntities
     public static void createEntityAttributes(final EntityAttributeCreationEvent event)
     {
         event.put(LEGIONNAIRE.get(), AbstractEntityMinecoloniesRaider.getDefaultAttributes().build());
+        event.put(ARCHER.get(), AbstractEntityMinecoloniesRaider.getDefaultAttributes().build());
     }
 
     public static void register(final IEventBus modEventBus)

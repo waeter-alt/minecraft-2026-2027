@@ -13,7 +13,9 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * The war slice: two légionnaires assault the colony itself. The checks are the user's war rules:
+ * The war slice: a handful of troops assault the colony itself. Same checks regardless of composition (see
+ * {@link fr.kodistan.interregne.dev.ScenarioRunner}'s {@code war} / {@code war-archers} entries) — the user's war
+ * rules:
  * <ul>
  *   <li>the troops march, fight the defenders and bring a building down;</li>
  *   <li>the hut block survives and the building stays registered (the rigorous-rebuild contract);</li>
@@ -25,11 +27,25 @@ import java.util.List;
  */
 public class WarScenario implements Scenario
 {
+    private final int legionnaires;
+    private final int archers;
+
     private IBuilding target;
     private long startTreasury;
     private int startTargets;
     /** States of a +2 rim around the target at setup: the verdict proves the sweep never left the box. */
     private final java.util.Map<BlockPos, net.minecraft.world.level.block.state.BlockState> rim = new java.util.HashMap<>();
+
+    public WarScenario()
+    {
+        this(6, 0);
+    }
+
+    public WarScenario(final int legionnaires, final int archers)
+    {
+        this.legionnaires = legionnaires;
+        this.archers = archers;
+    }
 
     @Override
     public List<String> setup(final IColony colony, final ServerLevel level)
@@ -42,7 +58,7 @@ public class WarScenario implements Scenario
         snapshotRim(colony.getWorld());
 
         startTreasury = RegionalTreasury.get(level.getServer()).balance(colony);
-        final String refusal = WarAssaults.launch(level, colony, colony, null, 6);
+        final String refusal = WarAssaults.launch(level, colony, colony, null, legionnaires, archers);
         if (refusal != null)
         {
             throw new IllegalStateException("assault refused: " + refusal);
@@ -152,6 +168,25 @@ public class WarScenario implements Scenario
         else
         {
             lines.add("FAIL personne n'a combattu les troupes");
+        }
+
+        // Légionnaires batter from right against the wall (2.5 blocks); archers deliberately stand back
+        // (WarAssaults.RANGED_STANDOFF, up to 8) instead of pressing up against it like a pillager.
+        final double maxDistance = archers > 0 ? 9.0D : 2.5D;
+        final double[] strikes = WarAssaults.strikeDistances(colony);
+        if (strikes == null)
+        {
+            lines.add("FAIL aucune troupe n'a frappé de mur");
+        }
+        else if (strikes[0] <= maxDistance)
+        {
+            lines.add(String.format(java.util.Locale.ROOT, "PASS troupes à bonne distance du mur (pire distance %.2f sur %d premières frappes)",
+              strikes[0], (int) strikes[1]));
+        }
+        else
+        {
+            lines.add(String.format(java.util.Locale.ROOT, "FAIL une troupe frappe de trop loin (pire distance %.2f sur %d premières frappes)",
+              strikes[0], (int) strikes[1]));
         }
 
         final String end = snapshot(colony, level);
