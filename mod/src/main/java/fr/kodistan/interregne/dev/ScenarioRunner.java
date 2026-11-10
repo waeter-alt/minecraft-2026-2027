@@ -42,7 +42,8 @@ public final class ScenarioRunner
       "intendance", IntendanceScenario::new,
       "apiary", ApiaryScenario::new,
       "production", ProductionScenario::new,
-      "war", WarScenario::new);
+      "war", WarScenario::new,
+      "war-archers", () -> new WarScenario(2, 4));
 
     /** Colonies load their buildings a little after the world: wait this long before touching them. */
     private static final int WARMUP_TICKS = 200;
