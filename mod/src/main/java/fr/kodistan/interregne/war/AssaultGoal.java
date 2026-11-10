@@ -18,10 +18,12 @@ import java.util.EnumSet;
 import static com.minecolonies.api.util.constant.Constants.TICKS_SECOND;
 
 /**
- * The légionnaire's battering. Each troop is handed ONE building ({@link WarAssaults#assignedTarget}): it walks to
- * a single fixed point just outside that building's nearest exterior wall or door ({@link WarAssaults#siegeSpot})
- * and batters that wall from there until {@link WarAssaults} declares the building destroyed — it never steps onto
- * the footprint. It yields whenever the troop has a vanilla target (it was hit: RetaliateGoal fights back).
+ * The légionnaire's battering. Every troop of the assault is handed the SAME building
+ * ({@link WarAssaults#assignedTarget}, converging the whole band instead of scattering it): it walks to a fixed
+ * point just outside that building's nearest exterior wall or door ({@link WarAssaults#siegeSpot}, picked from its
+ * own approach) and batters that wall from there until {@link WarAssaults} declares the building destroyed — it
+ * never steps onto the footprint. It yields whenever the troop has a vanilla target (it was hit: RetaliateGoal
+ * fights back).
  */
 public class AssaultGoal extends Goal
 {
@@ -140,9 +142,11 @@ public class AssaultGoal extends Goal
                 march(hut);
                 return;
             }
-            spot = WarAssaults.siegeSpot((ServerLevel) troop.level(), building, hut, troop.blockPosition());
+            spot = WarAssaults.siegeSpot((ServerLevel) troop.level(), building, hut, troop.blockPosition(),
+              WarAssaults.occupiedStands(troop));
             anchor = spot.wall();
             standAt = spot.stand();
+            WarAssaults.claimStand(troop, standAt);
             marching = null;
             stalled = 0;
             closest = Double.MAX_VALUE;

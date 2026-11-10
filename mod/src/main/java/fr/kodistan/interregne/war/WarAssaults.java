@@ -123,7 +123,9 @@ public final class WarAssaults
         final List<BlockPos> targets    = new ArrayList<>();
         final Map<BlockPos, Integer> structure = new HashMap<>();
         final Map<BlockPos, Integer> spTotal   = new HashMap<>();
-        final Map<Integer, BlockPos> byTroop   = new HashMap<>();
+        // Keyed by troop id, not building: several troops share one target now, so this is what keeps them from
+        // all scanning into the exact same wall column (see occupiedStands/claimStand, used by siegeSpot).
+        final Map<Integer, BlockPos> standByTroop = new HashMap<>();
         final Map<BlockPos, ServerBossEvent> bars = new HashMap<>();
         // Computed once, on first use, from the live world — nothing removes any of a building's blocks before
         // its final sweep, so re-scanning the whole volume on every single blow (the previous behaviour) bought
@@ -131,7 +133,6 @@ public final class WarAssaults
         final Map<BlockPos, List<BlockPos>> footprints    = new HashMap<>();
         final Map<BlockPos, List<BlockPos>> crackSamples  = new HashMap<>();
         final Map<BlockPos, Long>           lastEffectTick = new HashMap<>();
-        int cursor;
         int destroyed;
         long loot;
         boolean engaged;
@@ -302,10 +303,13 @@ public final class WarAssaults
     }
 
     /**
-     * The troop's own building: sticky per troop, handed out round-robin (targets already held by a living troop
-     * are skipped). The march ({@link AssaultGoal}) and the battering point at this same structure, so a pillager
-     * charging a building is destroying THAT building. Re-rolls when the assignment falls out of the target list
-     * (destroyed).
+     * The troop's own building: every légionnaire of the assault, always the same one — the nearest surviving
+     * target to the rally point ({@link #planTargets}, town hall last). The march ({@link AssaultGoal}) and the
+     * battering point at this same structure, so the whole war band converges on one building at a time instead of
+     * scattering across the colony; once it falls, {@link #destroyBuilding} drops it from {@code targets} and
+     * everyone pivots to the new first entry on their next tick. Each troop still picks its own wall face in
+     * {@link #siegeSpot}, from its own approach, so a converged band spreads around the building's sides rather
+     * than stacking on one block.
      */
     public static BlockPos assignedTarget(final EntLegionnaire troop)
     {
@@ -314,42 +318,7 @@ public final class WarAssaults
         {
             return null;
         }
-        final BlockPos held = assault.byTroop.get(troop.getId());
-        if (held != null && assault.targets.contains(held))
-        {
-            return held;
-        }
-        assault.byTroop.remove(troop.getId());
-
-        final Set<BlockPos> taken = new HashSet<>();
-        if (assault.defender.getWorld() instanceof ServerLevel level)
-        {
-            for (final Map.Entry<Integer, BlockPos> entry : assault.byTroop.entrySet())
-            {
-                if (level.getEntity(entry.getKey()) instanceof LivingEntity living && living.isAlive())
-                {
-                    taken.add(entry.getValue());
-                }
-            }
-        }
-        BlockPos next = null;
-        for (int i = 0; i < assault.targets.size(); i++)
-        {
-            final BlockPos candidate = assault.targets.get((assault.cursor + i) % assault.targets.size());
-            if (!taken.contains(candidate))
-            {
-                next = candidate;
-                assault.cursor += i + 1;
-                break;
-            }
-        }
-        if (next == null)
-        {
-            // More troops than surviving buildings: share them round-robin instead.
-            next = assault.targets.get(assault.cursor++ % assault.targets.size());
-        }
-        assault.byTroop.put(troop.getId(), next);
-        return next;
+        return assault.targets.get(0);
     }
 
     /** Mining-crack stage (0-9) of the building under battering: how close each blow leaves it to collapse. */
@@ -599,7 +568,6 @@ public final class WarAssaults
         assault.structure.remove(hut);
         assault.spTotal.remove(hut);
         assault.targets.remove(hut);
-        assault.byTroop.values().removeIf(hut::equals);
         assault.footprints.remove(hut);
         assault.crackSamples.remove(hut);
         assault.lastEffectTick.remove(hut);
@@ -623,8 +591,13 @@ public final class WarAssaults
      * face. Snapping to the box edge is what left troops battering thin air several blocks from the building. So we
      * start from the nearest box face and walk inward along the troop's line until the first wall column, then stand
      * on the last walkable column before it — on the actual ground, which is rarely at hut height.
+     * <p>
+     * {@code occupiedStands} (see {@link #occupiedStands}) steers the scan past whatever column another living
+     * troop already stands at, onto the next one along the same wall — several troops converged on one building
+     * (see {@link #assignedTarget}) now spread along its walls instead of overlapping on the single nearest column.
      */
-    static SiegeSpot siegeSpot(final ServerLevel level, final IBuilding building, final BlockPos hut, final BlockPos from)
+    static SiegeSpot siegeSpot(final ServerLevel level, final IBuilding building, final BlockPos hut, final BlockPos from,
+      final Set<BlockPos> occupiedStands)
     {
         final Tuple<BlockPos, BlockPos> corners = building.getCorners();
         final int minX = Math.min(corners.getA().getX(), corners.getB().getX());
@@ -647,11 +620,11 @@ public final class WarAssaults
         else if (nearest == toMinZ) { ex = cx; ez = minZ; ix = 0; iz = 1; length = maxZ - minZ; alongX = false; }
         else { ex = cx; ez = maxZ; ix = 0; iz = -1; length = maxZ - minZ; alongX = false; }
 
-        SiegeSpot spot = scanInward(level, ex, ez, ix, iz, length, hut, minY);
+        SiegeSpot spot = scanInward(level, ex, ez, ix, iz, length, hut, minY, occupiedStands);
         if (spot == null)
         {
             // The troop's line can slip through a gap (an open yard side): the hut's own line always meets the house.
-            spot = scanInward(level, alongX ? ex : hut.getX(), alongX ? hut.getZ() : ez, ix, iz, length, hut, minY);
+            spot = scanInward(level, alongX ? ex : hut.getX(), alongX ? hut.getZ() : ez, ix, iz, length, hut, minY, occupiedStands);
         }
         if (spot == null)
         {
@@ -663,7 +636,7 @@ public final class WarAssaults
     }
 
     private static SiegeSpot scanInward(final ServerLevel level, final int ex, final int ez, final int ix, final int iz,
-      final int length, final BlockPos hut, final int minY)
+      final int length, final BlockPos hut, final int minY, final Set<BlockPos> occupiedStands)
     {
         int ground = groundAt(level, ex - ix, ez - iz, hut.getY() + 4, minY - 4);
         if (ground == Integer.MIN_VALUE)
@@ -671,6 +644,9 @@ public final class WarAssaults
             ground = hut.getY();
         }
         BlockPos stand = new BlockPos(ex - ix, ground, ez - iz);
+        // Kept in case every free wall column is already somebody else's: better a stacked troop than no fight at
+        // all, exactly the old behaviour (first wall found, period) when there's nowhere else to put it.
+        SiegeSpot fallback = null;
         for (int i = 0; i <= length; i++)
         {
             final int x = ex + ix * i;
@@ -678,7 +654,15 @@ public final class WarAssaults
             final int wallY = wallFace(level, x, z, ground);
             if (wallY != Integer.MIN_VALUE)
             {
-                return new SiegeSpot(new BlockPos(x, wallY, z), stand);
+                final SiegeSpot candidate = new SiegeSpot(new BlockPos(x, wallY, z), stand);
+                if (fallback == null)
+                {
+                    fallback = candidate;
+                }
+                if (!occupiedStands.contains(horizontalKey(stand)))
+                {
+                    return candidate;
+                }
             }
             final int feet = groundNear(level, x, z, ground);
             if (feet != Integer.MIN_VALUE)
@@ -687,7 +671,54 @@ public final class WarAssaults
                 stand = new BlockPos(x, feet, z);
             }
         }
-        return null;
+        return fallback;
+    }
+
+    /** Horizontal-only key for an occupancy check: the stand's feet height can shift a block or two between
+      * adjacent wall columns on uneven ground, which would otherwise make two genuinely different spots compare
+      * as "free" or vice versa for no reason tied to actual crowding. */
+    private static BlockPos horizontalKey(final BlockPos pos)
+    {
+        return new BlockPos(pos.getX(), 0, pos.getZ());
+    }
+
+    /**
+     * Horizontal spots other living troops of this assault are currently standing at, so a troop (re-)picking its
+     * siege spot in {@link #siegeSpot} can walk past them instead of ending up in the same block — MineColonies'
+     * raider collision stops pushing entities apart once a spot gets crowded enough, so without this several
+     * légionnaires converged on one building (see {@link #assignedTarget}) would otherwise just overlap.
+     */
+    static Set<BlockPos> occupiedStands(final EntLegionnaire troop)
+    {
+        final Assault assault = BY_DEFENDER.get(colonyOf(troop));
+        if (assault == null || !(assault.defender.getWorld() instanceof ServerLevel level))
+        {
+            return Set.of();
+        }
+        final Set<BlockPos> occupied = new HashSet<>();
+        for (final Map.Entry<Integer, BlockPos> entry : assault.standByTroop.entrySet())
+        {
+            if (entry.getKey() == troop.getId())
+            {
+                continue;
+            }
+            if (level.getEntity(entry.getKey()) instanceof LivingEntity living && living.isAlive())
+            {
+                occupied.add(horizontalKey(entry.getValue()));
+            }
+        }
+        return occupied;
+    }
+
+    /** Records the ground spot a troop just claimed for its current siege, so {@link #occupiedStands} can steer
+      * the next troop (re-)picking a spot away from it. */
+    static void claimStand(final EntLegionnaire troop, final BlockPos stand)
+    {
+        final Assault assault = BY_DEFENDER.get(colonyOf(troop));
+        if (assault != null)
+        {
+            assault.standByTroop.put(troop.getId(), stand);
+        }
     }
 
     /**
@@ -827,7 +858,7 @@ public final class WarAssaults
             return;
         }
         assault.troopIds.remove(Integer.valueOf(troop.getId()));
-        assault.byTroop.remove(troop.getId());
+        assault.standByTroop.remove(troop.getId());
         if (assault.troopIds.isEmpty() && !assault.over)
         {
             assault.over = true;
