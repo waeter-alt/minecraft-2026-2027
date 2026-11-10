@@ -347,6 +347,9 @@ public final class WallLayout
         // for the leading unloaded cells ignored the wrap-around neighbour entirely, see
         // WallLayoutTest#closedLoopSeamIsNotFilledCircularly).
         fillMissingGround(g, hasG, closed);
+        // A single-cell relief blip (one isolated block of noise, surrounded by otherwise consistent ground)
+        // should not read as a step in the crest: the walkway passes over it smoothly instead of bumping up/down.
+        despikeGround(g, closed);
 
         // The crest: this index's own ground plus the level's nominal height (same resting height as on flat
         // ground before), raised only where a neighbour's cliff forces it, so it climbs or descends at most one
@@ -495,6 +498,37 @@ public final class WallLayout
     }
 
     /**
+     * Smooths away an isolated single-cell relief blip: an index whose ground differs from BOTH its neighbours by
+     * exactly one block, while those neighbours themselves roughly agree with each other, is noise (a lone rock, a
+     * single raised dirt block) rather than a real feature — it is flattened to its neighbours' level instead of
+     * poking a one-block bump or dip into the crest. A genuine slope (neighbours disagreeing by more than one) is
+     * left untouched.
+     */
+    static void despikeGround(final int[] g, final boolean closed)
+    {
+        final int n = g.length;
+        if (n < 3)
+        {
+            return;
+        }
+        final int[] smoothed = g.clone();
+        for (int i = 0; i < n; i++)
+        {
+            final int prev = closed ? Math.floorMod(i - 1, n) : Math.max(0, i - 1);
+            final int next = closed ? Math.floorMod(i + 1, n) : Math.min(n - 1, i + 1);
+            if (prev == i || next == i || prev == next)
+            {
+                continue;
+            }
+            if (Math.abs(g[prev] - g[next]) <= 1 && Math.abs(g[i] - g[prev]) == 1 && Math.abs(g[i] - g[next]) == 1)
+            {
+                smoothed[i] = Math.round((g[prev] + g[next]) / 2.0f);
+            }
+        }
+        System.arraycopy(smoothed, 0, g, 0, n);
+    }
+
+    /**
      * Relaxes the crest so it never differs by more than one block between neighbours, by raising (never
      * lowering) whichever side is low until it is consistent — a ramp instead of a cliff, wrapping a closed loop.
      * Converges because every step only raises a value, bounded by the array's own maximum.
@@ -525,9 +559,10 @@ public final class WallLayout
     }
 
     /**
-     * Marks, for every column, the direction (if any) in which its index's crest climbs exactly one block towards
-     * a neighbour: a stair goes there instead of a flat floor. A local one-cell dip between two higher neighbours
-     * is a known rare edge case where only one of its two directions is kept.
+     * Marks, for every column, the direction (if any) in which its index's crest climbs exactly one block FROM a
+     * neighbour: a stair goes on the HIGHER of the two indices (replacing what would otherwise be a one-block-tall
+     * wall blocking the step up from the lower one), facing the direction of ascent. A local one-cell dip between
+     * two higher neighbours is a known rare edge case where only one of its two directions is kept.
      */
     private static List<Column> markRises(final List<Column> columns, final int[] w, final List<WallTrace.Point> center, final boolean closed)
     {
@@ -549,13 +584,15 @@ public final class WallLayout
             final WallTrace.Point there = center.get(next);
             if (w[next] == w[i] + 1)
             {
-                riseDx[i] = Integer.signum(there.x() - here.x());
-                riseDz[i] = Integer.signum(there.z() - here.z());
+                // "there" (next) is higher: it gets the stair, facing the way you climb up to reach it.
+                riseDx[next] = Integer.signum(there.x() - here.x());
+                riseDz[next] = Integer.signum(there.z() - here.z());
             }
             else if (w[next] == w[i] - 1)
             {
-                riseDx[next] = Integer.signum(here.x() - there.x());
-                riseDz[next] = Integer.signum(here.z() - there.z());
+                // "here" (i) is higher: it gets the stair, facing the way you climb up to reach it.
+                riseDx[i] = Integer.signum(here.x() - there.x());
+                riseDz[i] = Integer.signum(here.z() - there.z());
             }
         }
         final List<Column> marked = new ArrayList<>(columns.size());

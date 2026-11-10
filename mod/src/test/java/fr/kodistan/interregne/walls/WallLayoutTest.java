@@ -83,9 +83,60 @@ class WallLayoutTest
             maxJump = Math.max(maxJump, Math.abs(nextTop - top));
         }
         assertTrue(maxJump <= 1, "a ramp should climb at most one block per cell; got max jump = " + maxJump);
-        // And the ramp cells (non-face, mid-slope) are actually marked to carry a stair.
+        // And the ramp cells (non-face, mid-slope) are actually marked to carry a stair — on the HIGHER of each
+        // pair of indices (replacing what would otherwise block the step up from the lower one), not the lower.
+        for (final WallLayout.Column column : layout.columns())
+        {
+            if (column.riseDx() == 0 && column.riseDz() == 0)
+            {
+                continue;
+            }
+            final int neighbourIndex = column.index() - Integer.signum(column.riseDx() + column.riseDz());
+            final List<WallLayout.Column> neighbourTranche = byIndex.get(neighbourIndex);
+            assertTrue(neighbourTranche != null, "a rise column should have a neighbouring tranche on its low side");
+            final int neighbourTop = neighbourTranche.get(0).top();
+            assertEquals(column.top(), neighbourTop + 1, "the stair must sit on the HIGHER column (one block "
+                                                            + "above its low-side neighbour), not the lower one");
+        }
         final boolean anyRise = layout.columns().stream().anyMatch(c -> c.riseDx() != 0 || c.riseDz() != 0);
         assertTrue(anyRise, "expected at least one column marked as a stair step across the cliff");
+    }
+
+    /**
+     * An isolated single-block relief blip (one block taller than its surroundings on both sides, which themselves
+     * roughly agree) does not poke a bump into the crest: it is smoothed away, and the crest stays flat across it.
+     */
+    @Test
+    void isolatedReliefBlipDoesNotBumpTheCrest()
+    {
+        final List<WallTrace.Point> points = List.of(new WallTrace.Point(0, 0), new WallTrace.Point(0, 30));
+        // Flat at 70 except a single raised block at z = 15, well clear of the towers at both ends.
+        final WallLayout.Ground groundFn = flatExcept((x, z) -> z == 15 ? 71 : 70);
+        final WallLayout layout = WallLayout.of(points, false, List.of(), LEVEL, groundFn, ALWAYS);
+
+        final Map<Integer, List<WallLayout.Column>> byIndex = byIndex(layout);
+        for (int i = 11; i <= 19; i++)
+        {
+            final int top = byIndex.get(i).get(0).top();
+            assertEquals(74, top, "the crest should ignore the single-block blip at index " + i + " and stay flat");
+        }
+    }
+
+    /**
+     * despikeGround directly: an isolated spike surrounded by agreeing neighbours is flattened; a genuine slope
+     * (neighbours disagreeing by more than one) is left untouched.
+     */
+    @Test
+    void despikeGroundFlattensIsolatedSpikesOnly()
+    {
+        final int[] spike = {70, 70, 71, 70, 70};
+        WallLayout.despikeGround(spike, false);
+        assertEquals(70, spike[2], "an isolated one-block spike between agreeing neighbours is noise");
+
+        final int[] slope = {68, 69, 70, 71, 72};
+        final int[] original = slope.clone();
+        WallLayout.despikeGround(slope, false);
+        assertEquals(original[2], slope[2], "a genuine monotonic slope must not be flattened");
     }
 
     /**
