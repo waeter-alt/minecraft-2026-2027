@@ -1,7 +1,7 @@
 # [claude-build]
 """
 donjon_temple.py - Donjon n°2 « Le Temple des Mille Racines » (2026-11-09) : 12 sections, ~31 min, style jungle, Grappin 2.4.
-Plan : docs/donjon_temple_plan.md. Gabarit 130 x 100 x 216, pose en (150, -61, -65) dans le monde « Donjon 2 ».
+Plan : docs/donjon_temple_plan.md. Gabarit 130 x 100 x 216, pose en (150, -61, -65) dans le monde « Donjon 1 » (dossier `Donjon 2`).
 Eau et lave confinees, aucun coffre ni mob ni spawner. Portes et pieges par blocs de commande (3 chaines enterrees).
   test-local\\venv\\Scripts\\python.exe atelier\\scripts\\donjon_temple.py
 En jeu : /reload puis /function atelier:temple_pose ; remise a zero : /function atelier:temple_reset

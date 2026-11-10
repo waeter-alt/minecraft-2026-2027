@@ -1,7 +1,7 @@
 <!-- [claude-build] fiche du donjon n°2, ecrite par scripts/fiche_donjon_temple.py -->
 # Donjon n°2 « Le Temple des Mille Racines »
 
-Monde « Donjon 2 » (superflat, sol à Y-61), Minecraft 1.21.1 + NeoForge 21.1.216 + mod **Grappin 2.4.1** (onglet créatif « Donjons ») (obligatoire chez chaque joueur). Structure `temple` 130 × 100 × 216, posée en 150 -61 -65 (x 150 à 279, z -65 à 150). Générateur : `scripts/donjon_temple.py`, contrôle : `scripts/verif_donjon_temple.py`, plan de conception : `donjon_temple_plan.md`.
+Monde « Donjon 1 » (dossier `Donjon 2` de `mod/run/client/saves`, superflat, sol à Y-61), Minecraft 1.21.1 + NeoForge 21.1.216 + mod **Grappin 2.4.1** (onglet créatif « Donjons ») (obligatoire chez chaque joueur). Structure `temple` 130 × 100 × 216, posée en 150 -61 -65 (x 150 à 279, z -65 à 150). Générateur : `scripts/donjon_temple.py`, contrôle : `scripts/verif_donjon_temple.py`, plan de conception : `donjon_temple_plan.md`.
 
 Style jungle, comme la Gorge suspendue : briques de pierre moussues et fissurées, roche en plaques, mousse, lianes à baies lumineuses, racines et troncs de jungle. On **descend** un temple enseveli : Parvis à ciel ouvert tout en haut, trois ailes et un sanctuaire à l'étage 1, puis les salles du bas jusqu'au Gardien.
 

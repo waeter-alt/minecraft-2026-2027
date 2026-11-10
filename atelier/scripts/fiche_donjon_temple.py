@@ -18,7 +18,7 @@ a = L.append
 a("<!-- [claude-build] fiche du donjon n°2, ecrite par scripts/fiche_donjon_temple.py -->")
 a("# Donjon n°2 « Le Temple des Mille Racines »")
 a("")
-a(f"Monde « Donjon 2 » (superflat, sol à Y-61), Minecraft 1.21.1 + NeoForge 21.1.216 + mod **Grappin 2.4.1** (onglet créatif « Donjons ») (obligatoire chez chaque joueur). Structure `temple` "
+a(f"Monde « Donjon 1 » (dossier `Donjon 2` de `mod/run/client/saves`, superflat, sol à Y-61), Minecraft 1.21.1 + NeoForge 21.1.216 + mod **Grappin 2.4.1** (onglet créatif « Donjons ») (obligatoire chez chaque joueur). Structure `temple` "
   f"{conf['taille'][0]} × {conf['taille'][1]} × {conf['taille'][2]}, posée en {OX} {OY} {OZ} (x {OX} à {OX + conf['taille'][0] - 1}, z {OZ} à {OZ + conf['taille'][2] - 1}). "
   "Générateur : `scripts/donjon_temple.py`, contrôle : `scripts/verif_donjon_temple.py`, plan de conception : `donjon_temple_plan.md`.")
 a("")
