@@ -33,7 +33,7 @@ Un temple englouti, à moitié noyé : briques de prismarine et de pierre moussu
 
 | # | Section | Durée | Ce qu'on y fait | Porte de sortie |
 |---|---|---|---|---|
-| 1 | Le Débarcadère | 2 min | On reçoit le voile. Une lanterne de mer posée sur un socle au fond du petit bassin (178 -21 281) : s'en approcher à moins d'un bloc lève la herse. Première plongée. | G1, grille 176 -17 301 → 178 -14 301 |
+| 1 | Le Débarcadère | 2 min | On reçoit le voile. Une trappe en bois à plat au fond du petit bassin, entre deux lanternes de mer (178 -22 281) : on l'ouvre d'un clic et la herse se lève. Première plongée. | G1, grille 176 -17 301 → 178 -14 301 |
 | 2 | La Colonnade | 4 min | Grand bassin semé de colonnes. On nage jusqu'à la colonne centrale, trois marches, bouton au sommet (190 -15 322). Le panneau du mur ouest donne l'ordre des glyphes pour la Bibliothèque. | G2, grille 223 -17 320 → 223 -14 322 |
 | 3 | Les Citernes | 4 min | Trois citernes reliées par des passages inondés. Deux vannes sur des îlots (239 -16 322 et 261 -16 322), à lever toutes les deux. | G3, grille noyée au fond de la troisième citerne, 280 -23 333 → 282 -23 335 |
 | 4 | Tunnel T1 | 1 min | **Voile obligatoire.** 48 blocs sous l'eau, 22 s en nage ordinaire. Sortie dans le bassin de la Bibliothèque. | — |
@@ -63,7 +63,7 @@ Avec le voile (40 s de réserve, puis 15 s d'air) : le plus long trajet prend 25
 
 ## Solutions
 
-1. Débarcadère : plonger dans le petit bassin et s'approcher de la lanterne du fond.
+1. Débarcadère : plonger dans le petit bassin et ouvrir la trappe du fond (clic droit).
 2. Colonnade : nager jusqu'à la colonne centrale, monter les trois marches, presser le bouton.
 3. Citernes : lever les deux vannes (îlots des citernes 1 et 2), puis plonger au fond de la citerne 3.
 4. Bibliothèque : **Poulpe, Raie, Crabe, Étoile**.

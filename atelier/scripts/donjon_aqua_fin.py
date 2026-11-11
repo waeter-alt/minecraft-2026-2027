@@ -59,8 +59,8 @@ for (x0, x1, y0, y1, z0, z1) in PRESSION:
     CMD.append(f"execute if score #t aqua matches 10.. positioned {rel(x0, y0, z0)} as @a[dx={x1 - x0},dy={y1 - y0},dz={z1 - z0}] unless items entity @s armor.head {VOILE} run damage @s 3 minecraft:drown")
 CMD.append("execute if score #t aqua matches 10.. run scoreboard players set #t aqua 0")
 # portes et enigmes
-ZB = f"positioned {rel(ZONE_G1[0], ZONE_G1[1], ZONE_G1[2])} if entity @a[dx={ZONE_G1[3] - ZONE_G1[0]},dy={ZONE_G1[4] - ZONE_G1[1]},dz={ZONE_G1[5] - ZONE_G1[2]}] if score #g1 aqua matches 0"
-CMD.append(f"execute {ZB} run playsound minecraft:block.chain.break master @a[distance=..40] ~ ~ ~ 1 0.6")
+ZB = f"if block {rel(*VANNE_G1)} minecraft:oak_trapdoor[open=true] if score #g1 aqua matches 0"          # pas de « positioned » : il decalerait les coordonnees relatives du fill
+CMD.append(f"execute {ZB} positioned {rel(*VANNE_G1)} run playsound minecraft:block.chain.break master @a[distance=..40] ~ ~ ~ 1 0.6")
 CMD.append(f"execute {ZB} run " + ouvrir("G1"))
 CMD.append(f"execute {ZB} run scoreboard players set #g1 aqua 1")
 CMD.append(f"execute if block {rel(*BOUTONS_G2)} minecraft:stone_button[powered=true] run " + ouvrir("G2"))
@@ -235,6 +235,7 @@ if FN.exists():
         face = "east" if n_ in ("L3a", "L3b", "LE", "L1") else "south"
         reset.append(f"setblock {w(p)} minecraft:lever[face=wall,facing={face},powered=false]")
     reset.append(f"fill {w((bx0, by0, bz0))} {w((bx1, by1, bz1))} minecraft:water replace minecraft:air")
+    reset.append(f"setblock {w(VANNE_G1)} minecraft:oak_trapdoor[half=bottom,facing=north,open=false,powered=false,waterlogged=true]")
     reset += ["scoreboard objectives add aqua dummy"] + [f"scoreboard players set {v_} aqua 0" for v_ in VARS]
     reset += [f"clear @a {CLE}", 'tellraw @a {"text":"Sanctuaire remis a zero.","color":"gray"}']
     (FN / "aqua_reset.mcfunction").write_text("\n".join(reset) + "\n", encoding="utf-8")

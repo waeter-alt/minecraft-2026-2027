@@ -68,7 +68,7 @@ a("## Parcours (≈ 27 min sans les salles cachées, ≈ 31 min avec quelques-un
 a("")
 a("| # | Section | Durée | Ce qu'on y fait | Porte de sortie |")
 a("|---|---|---|---|---|")
-a(f"| 1 | Le Débarcadère | 2 min | On reçoit le voile. Une lanterne de mer posée sur un socle au fond du petit bassin ({w(C['vanne_G1'])}) : s'en approcher à moins d'un bloc lève la herse. Première plongée. | G1, grille {boite(P['G1'])} |")
+a(f"| 1 | Le Débarcadère | 2 min | On reçoit le voile. Une trappe en bois à plat au fond du petit bassin, entre deux lanternes de mer ({w(C['vanne_G1'])}) : on l'ouvre d'un clic et la herse se lève. Première plongée. | G1, grille {boite(P['G1'])} |")
 a(f"| 2 | La Colonnade | 4 min | Grand bassin semé de colonnes. On nage jusqu'à la colonne centrale, trois marches, bouton au sommet ({w(C['bouton_G2'])}). "
   "Le panneau du mur ouest donne l'ordre des glyphes pour la Bibliothèque. | "
   f"G2, grille {boite(P['G2'])} |")
@@ -105,7 +105,7 @@ a("Avec le voile (40 s de réserve, puis 15 s d'air) : le plus long trajet prend
 a("")
 a("## Solutions")
 a("")
-a("1. Débarcadère : plonger dans le petit bassin et s'approcher de la lanterne du fond.")
+a("1. Débarcadère : plonger dans le petit bassin et ouvrir la trappe du fond (clic droit).")
 a("2. Colonnade : nager jusqu'à la colonne centrale, monter les trois marches, presser le bouton.")
 a("3. Citernes : lever les deux vannes (îlots des citernes 1 et 2), puis plonger au fond de la citerne 3.")
 a("4. Bibliothèque : **Poulpe, Raie, Crabe, Étoile**.")

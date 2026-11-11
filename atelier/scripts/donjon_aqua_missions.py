@@ -40,14 +40,15 @@ def ilot(x0, x1, z0, z1, y0):
 
 
 # ---------------------------------------------------------------- S1 : le Debarcadere ; le levier de la porte est au fond du mini-bassin (apprendre a plonger et a remonter respirer)
-# la vanne du fond : une lanterne de mer sur un socle, au fond du mini-bassin. Pas de levier : l'eau qui coule dans sa case le detruirait (un levier ne se waterlogue pas).
-# On ouvre la herse en s'approchant a moins d'un bloc de la lanterne (boite de detection), ce qui oblige a plonger.
-put(28, 39, 21, S("dark_prismarine"))
-put(28, 40, 21, S("sea_lantern"))
-VANNE_G1 = (28, 40, 21)
-ZONE_G1 = (27, 39, 20, 29, 41, 22)                                 # boite de detection autour de la lanterne
+# la vanne du fond : une trappe en bois posee a plat sur le fond du mini-bassin, entre deux lanternes de mer. Un levier ou un bouton ne peut pas etre sous l'eau (l'eau qui
+# coule dans sa case le detruit, il ne se waterlogue pas) ; une trappe, si. On la clique pour l'ouvrir : le bloc de commande lit open=true et leve la herse.
+TRAPPE = S("oak_trapdoor", half="bottom", facing="north", open=False, powered=False, waterlogged=True)
+put(28, 39, 21, TRAPPE)
+put(27, 39, 21, S("sea_lantern"))
+put(29, 39, 21, S("sea_lantern"))
+VANNE_G1 = (28, 39, 21)
 signe(28, SOL + 2, 6, "south", ["DEBARCADERE", "Le voile vous", "est remis : il", "garde l'air"], "dark_blue")
-signe(30, SOL + 2, 38, "north", ["VANNE DU FOND", "Plongez vers", "la lanterne", "du fond"], "dark_blue")
+signe(30, SOL + 2, 38, "north", ["VANNE DU FOND", "Plongez, puis", "ouvrez la", "trappe du fond"], "dark_blue")
 porte("G1", [(x, y, 41) for x in (26, 27, 28) for y in range(SOL + 1, SOL + 5)])
 # ---------------------------------------------------------------- S2 : la Colonnade ; le bouton de la porte est sur une colonne au milieu du bassin
 COLONNES = [(22, 54, 46), (30, 62, 45), (40, 62, 45), (50, 66, 45), (58, 56, 46), (46, 70, 45), (34, 72, 46), (18, 68, 45)]
