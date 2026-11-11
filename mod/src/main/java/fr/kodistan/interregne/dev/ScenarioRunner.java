@@ -43,7 +43,8 @@ public final class ScenarioRunner
       "apiary", ApiaryScenario::new,
       "production", ProductionScenario::new,
       "war", WarScenario::new,
-      "war-archers", () -> new WarScenario(2, 4));
+      "war-archers", () -> new WarScenario(2, 4),
+      "wall-spawn", WallSpawnScenario::new);
 
     /** Colonies load their buildings a little after the world: wait this long before touching them. */
     private static final int WARMUP_TICKS = 200;
