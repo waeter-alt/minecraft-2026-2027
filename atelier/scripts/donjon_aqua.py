@@ -18,10 +18,26 @@ import numpy as np
 from nbtlib import Byte, Compound, Int, List, String
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--monde", default="Donjon 2")
+ap.add_argument("--monde", default="Donjon 2", help="nom du monde tel qu'il s'affiche en jeu")
 args = ap.parse_args()
 RACINE = Path(__file__).resolve().parent.parent                      # atelier/
-SAVE = RACINE.parent / "mod/run/client/saves" / args.monde
+SAVES = RACINE.parent / "mod/run/client/saves"
+
+
+def dossier_du_monde(nom_):
+    """Le monde est designe par son nom en jeu (LevelName de level.dat) : le dossier peut porter un autre nom (le monde « Donjon 2 » est dans « Donjon 2 (1) »,
+    et le dossier « Donjon 2 » contient le monde « Donjon 1 »). A defaut de monde de ce nom, on prend le dossier de ce nom."""
+    for d_ in (sorted(SAVES.iterdir()) if SAVES.exists() else []):
+        try:
+            if str(nbtlib.load(d_ / "level.dat")["Data"]["LevelName"]) == nom_:
+                return d_
+        except Exception:
+            continue
+    return SAVES / nom_
+
+
+SAVE = dossier_du_monde(args.monde)
+print(f"[0] monde « {args.monde} » -> dossier {SAVE.name}", flush=True)
 NOM = "aqua"
 SX, SY, SZ = 150, 70, 170
 ORIGINE = (150, -61, 260)

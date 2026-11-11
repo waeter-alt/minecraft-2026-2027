@@ -5,8 +5,8 @@ Un temple englouti dans une lagune, à moitié noyé. L'objet du donjon est le *
 
 ## Cadre
 
-- Monde « Donjon 1 » (dossier `Donjon 2`), superflat, sol à Y-61, dans le client de test du dépôt. NeoForge 21.1.216.
-- Gabarit 150 × 70 × 170, posé en 150 -61 260, au sud du Temple des Mille Racines (qui s'arrête à z 150).
+- Monde « Donjon 2 » (dossier `Donjon 2 (1)`), superflat, sol à Y-61, dans le client de test du dépôt. NeoForge 21.1.216.
+- Gabarit 150 × 70 × 170, posé en 150 -61 260. Le Temple des Mille Racines est dans un autre monde (« Donjon 1 »).
 - Palette : briques de prismarine, prismarine sombre, briques de pierre moussues et fissurées, grès, calcite ; lanternes de mer, algues, herbiers, coraux, cornichons de mer, lichen lumineux.
 - Interdits : ancrage de grappin, conduit, lave, coffre, conteneur, générateur, monstre, boss, colonne de bulles. Toute l'eau est en sources confinées.
 - Tout est éclairé, eau comprise.

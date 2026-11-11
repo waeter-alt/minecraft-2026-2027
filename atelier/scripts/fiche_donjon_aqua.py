@@ -28,9 +28,9 @@ a = L.append
 a("<!-- [claude-build] fiche du donjon aquatique, ecrite par scripts/fiche_donjon_aqua.py -->")
 a("# Donjon aquatique « Le Sanctuaire des Marées »")
 a("")
-a(f"Monde « Donjon 1 » (dossier `Donjon 2`, superflat, sol à Y-61), Minecraft 1.21.1 + NeoForge 21.1.216 + mod **Grappin 2.5.0** (il apporte le Voile des Profondeurs ; "
-  f"obligatoire chez chaque joueur). Structure `aqua` {TX} × {TY} × {TZ}, posée en {OX} {OY} {OZ} (x {OX} à {OX + TX - 1}, z {OZ} à {OZ + TZ - 1}), "
-  "à côté du Temple des Mille Racines, sans le toucher. Générateur : `scripts/donjon_aqua.py`, contrôle : `scripts/verif_donjon_aqua.py`, plan : `donjon_aquatique_plan.md`.")
+a(f"Monde « Donjon 2 » (dossier `Donjon 2 (1)`, superflat, sol à Y-61 ; le Temple des Mille Racines est dans un autre monde, « Donjon 1 »), Minecraft 1.21.1 + NeoForge 21.1.216 + mod **Grappin 2.5.0** (il apporte le Voile des Profondeurs ; "
+  f"obligatoire chez chaque joueur). Structure `aqua` {TX} × {TY} × {TZ}, posée en {OX} {OY} {OZ} (x {OX} à {OX + TX - 1}, z {OZ} à {OZ + TZ - 1}). "
+  "Générateur : `scripts/donjon_aqua.py`, contrôle : `scripts/verif_donjon_aqua.py`, plan : `donjon_aquatique_plan.md`.")
 a("")
 a("Un temple englouti, à moitié noyé : briques de prismarine et de pierre moussue, prismarine sombre, lanternes de mer encastrées, forêts d'algues, herbiers, "
   "coraux, lichen lumineux, colonnes brisées dans les bassins, lianes sous les voûtes. Pas de grappin (aucun ancrage), pas de conduit, pas de lave, "
@@ -40,7 +40,9 @@ a("**État : généré et contrôlé par script, pas encore testé en jeu.** Les
 a("")
 a("## Poser et remettre à zéro")
 a("")
-a("- Le générateur crée lui-même le datapack `atelier` du monde visé (dossiers et `pack.mcmeta`) ; si le monde n'existe pas, il le dit et n'écrit que `atelier/exports`.")
+a("- Le générateur crée lui-même le datapack `atelier` du monde visé (dossiers et `pack.mcmeta`) ; si le monde n'existe pas, il le dit et n'écrit que `atelier/exports`. "
+  "Le monde est désigné par son nom en jeu (`--monde \"Donjon 2\"` par défaut), pas par le nom de son dossier.")
+a("- Datapack créé pendant que le monde est ouvert : quitter le monde et y revenir pour qu'il soit pris en compte.")
 a("- Pose : `/reload` puis `/function atelier:aqua_pose` (ne pas mettre en pause ; la zone au-dessus du sol est effacée avant la pose, on peut donc reposer une nouvelle version).")
 a(f"- Entrée : `/tp @s {w(conf['entree'])}`.")
 a("- Remise à zéro (portes refermées, leviers baissés, écluse remplie, clé retirée, compteurs à zéro) : `/function atelier:aqua_reset`.")
