@@ -3,7 +3,7 @@
 
 CHAINES = [(14, 61, 50), (14, 61, 54), (14, 61, 58), (14, 61, 62)]
 CMD = []
-VARS = ("#s4", "#g3", "#g6", "#ec", "#cle", "#g5", "#t", "#g1")
+VARS = ("#s4", "#g3", "#g6", "#ec", "#cle", "#g5", "#t")
 
 
 def rel(x, y, z):
@@ -43,6 +43,8 @@ def sequence(var, boutons, porte_nom):
 VOILE = "grappin:voile"
 CLE = "minecraft:tripwire_hook[minecraft:custom_name='\"Clé du Récif\"']"
 CLE_DON = "minecraft:tripwire_hook[minecraft:custom_name='\"Clé du Récif\"',minecraft:lore=['\"Ouvre la porte du Cœur du Temple\"']]"
+# la herse de depart est la toute premiere commande de la premiere chaine : elle part des le tick du clic, sans compteur ni son (le fill est sans effet une fois la herse ouverte)
+CMD.append(f"execute if block {rel(*VANNE_G1)} minecraft:oak_trapdoor[open=true] run " + ouvrir("G1"))
 CMD.append("gamerule commandBlockOutput false")
 CMD.append("gamerule doMobSpawning false")
 CMD.append("scoreboard objectives add aqua dummy")
@@ -59,10 +61,7 @@ for (x0, x1, y0, y1, z0, z1) in PRESSION:
     CMD.append(f"execute if score #t aqua matches 10.. positioned {rel(x0, y0, z0)} as @a[dx={x1 - x0},dy={y1 - y0},dz={z1 - z0}] unless items entity @s armor.head {VOILE} run damage @s 3 minecraft:drown")
 CMD.append("execute if score #t aqua matches 10.. run scoreboard players set #t aqua 0")
 # portes et enigmes
-ZB = f"if block {rel(*VANNE_G1)} minecraft:oak_trapdoor[open=true] if score #g1 aqua matches 0"          # pas de « positioned » : il decalerait les coordonnees relatives du fill
-CMD.append(f"execute {ZB} positioned {rel(*VANNE_G1)} run playsound minecraft:block.chain.break master @a[distance=..40] ~ ~ ~ 1 0.6")
-CMD.append(f"execute {ZB} run " + ouvrir("G1"))
-CMD.append(f"execute {ZB} run scoreboard players set #g1 aqua 1")
+
 CMD.append(f"execute if block {rel(*BOUTONS_G2)} minecraft:stone_button[powered=true] run " + ouvrir("G2"))
 CMD.append(f"execute if block {rel(*LEVIERS['L3a'])} minecraft:lever[powered=true] if block {rel(*LEVIERS['L3b'])} minecraft:lever[powered=true] run " + ouvrir("G3"))
 sequence("#s4", [BOUTONS_G4[n] for n in ("poulpe", "raie", "crabe", "etoile")], "G4")
