@@ -39,7 +39,7 @@ for (x0, x1, y0, y1, z0, z1) in conf["pression"]:
     PRES[x0:x1 + 1, y0:y1 + 1, z0:z1 + 1] = True
 
 
-def grilles(ouvertes, vide_a=False):
+def grilles(ouvertes):
     e = np.maximum(ETAT, 0)
     passe = np.where(ETAT < 0, INT, pas_i[e])
     eau = np.where(ETAT < 0, False, eau_i[e])
@@ -49,17 +49,12 @@ def grilles(ouvertes, vide_a=False):
         for c in p["cases"]:
             passe[tuple(c)] = True
             eau[tuple(c)] = bool(p.get("eau"))
-    if vide_a:
-        x0, x1, y0, y1, z0, z1 = conf["bassin_a"]
-        sub = eau[x0:x1 + 1, y0:y1 + 1, z0:z1 + 1]
-        pure = (ETAT[x0:x1 + 1, y0:y1 + 1, z0:z1 + 1] >= 0) & (np.array([n == "water" for n in pal])[np.maximum(ETAT[x0:x1 + 1, y0:y1 + 1, z0:z1 + 1], 0)])
-        eau[x0:x1 + 1, y0:y1 + 1, z0:z1 + 1] = sub & ~pure
     solide = ~passe & ~eau
     return passe, eau, solide, grimpe
 
 
-def parcours(ouvertes, voile, vide_a=False, depart=None):
-    passe, eau, solide, grimpe = grilles(ouvertes, vide_a)
+def parcours(ouvertes, voile, depart=None):
+    passe, eau, solide, grimpe = grilles(ouvertes)
     bloque = np.zeros_like(PRES) if voile else PRES
     P, E, SO, G, B = (a.tolist() for a in (passe, eau, solide, grimpe, bloque))
 
@@ -131,14 +126,14 @@ def rayon(c):
     return 2.5
 
 
-# (portes ouvertes cumulees, ecluse videe ?, cibles qui deviennent atteignables a cette etape, avec le voile)
+# (portes ouvertes cumulees, sans objet, cibles qui deviennent atteignables a cette etape, avec le voile)
 ETAPES = [
     ([], False, ["S1", "vanne_G1", "bouton_H1"]),
     (["G1", "H1"], False, ["bouton_G2", "H1", "H5"]),
     (["G1", "G2", "H1"], False, ["levier_3a", "levier_3b", "bouton_H2", "bouton_H3", "H6"]),
     (["G1", "G2", "H1", "H2", "H3"], False, ["H2", "H3"]),
     (["G1", "G2", "H1", "H2", "H3", "G3"], False, ["arrivee_T1", "glyphe_poulpe", "glyphe_raie", "glyphe_crabe", "glyphe_etoile", "H7"]),
-    (["G1", "G2", "H1", "H2", "H3", "G3", "G4"], False, ["levier_ecluse", "plaque_cle", "bouton_H4"]),
+    (["G1", "G2", "H1", "H2", "H3", "G3", "G4"], False, ["plaque_cle", "bouton_H4"]),
     (["G1", "G2", "H1", "H2", "H3", "G3", "G4", "H4"], False, ["H4"]),
     (["G1", "G2", "H1", "H2", "H3", "G3", "G4", "H4", "G5"], True, ["arrivee_T2", "levier_p20", "levier_p24", "levier_p28"]),
     (["G1", "G2", "H1", "H2", "H3", "G3", "G4", "H4", "G5", "G6"], False, ["arrivee_T3"]),
@@ -150,7 +145,7 @@ deja = []
 for k, (ouv, vide, nouvelles) in enumerate(ETAPES):
     deja = deja + nouvelles
     plus_tard = [c for c in CIB if c not in deja]
-    vu = parcours(ouv, True, vide)
+    vu = parcours(ouv, True)
     manque = [c for c in deja if not atteint(vu, CIB[c], rayon(c))]
     trop = [c for c in plus_tard if atteint(vu, CIB[c], rayon(c))]
     bon = not manque and not trop
@@ -158,14 +153,14 @@ for k, (ouv, vide, nouvelles) in enumerate(ETAPES):
     print(f"etape {k} portes {ouv[-2:] or '-'} [voile] : {len(vu)} cases | manque {manque} | trop tot {trop} -> {'OK' if bon else 'ECHEC'}", flush=True)
 # sans voile, toutes les portes ouvertes : on ne doit pas passer les tunnels submerges
 TOUTES = list(conf["portes"])
-vu0 = parcours(TOUTES, False, True)
+vu0 = parcours(TOUTES, False)
 permis = {"S1", "vanne_G1", "bouton_H1", "H1", "bouton_G2", "levier_3a", "levier_3b", "bouton_H2", "bouton_H3", "H2", "H3"}
 sans = sorted(c for c in CIB if atteint(vu0, CIB[c], rayon(c)))
 en_trop = sorted(set(sans) - permis)
 print("sans voile, toutes portes ouvertes :", sans, "->", "OK" if not en_trop else f"ECHEC (en trop : {en_trop})")
 ok_ &= not en_trop
 # le puits des salles cachees sous l'eau et la grille des tunnels sont a l'interieur d'une zone de pression : verifier qu'aucune case d'eau d'un tunnel n'echappe aux boites
-passe, eau, solide, grimpe = grilles(TOUTES, False)
+passe, eau, solide, grimpe = grilles(TOUTES)
 hors = []
 for nom_, som in conf["tunnels"].items():
     for a, b in zip(som[:-1], som[1:]):
@@ -180,7 +175,7 @@ ok_ &= not hors
 # budget d'air : plus court chemin (a six voisins) dans l'eau entre l'entree en surface et la sortie en surface de chaque tunnel
 RES, AIR, RECUP = 40.0, 15.0, 12.0
 VIT_N, VIT_R = 2.2, 4.0                                                   # nage ordinaire / nage tres rapide (blocs par seconde)
-passe, eau, solide, grimpe = grilles(TOUTES, False)
+passe, eau, solide, grimpe = grilles(TOUTES)
 E = eau.tolist()
 
 

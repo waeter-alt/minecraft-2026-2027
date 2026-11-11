@@ -27,7 +27,7 @@ Un temple englouti dans une lagune, à moitié noyé. L'objet du donjon est le *
 | 3 | Les Citernes | Deux vannes sur des îlots ; grille noyée | 4 min |
 | 4 | Tunnel T1 | Voile obligatoire | 1 min |
 | 5 | La Bibliothèque noyée | Quatre glyphes dans l'ordre | 4 min |
-| 6 | Les Écluses | Vidage du bassin A ; Clé du Récif sur l'îlot du bassin B | 4 min |
+| 6 | Les Écluses | Dalle sur l'îlot du bassin B : Clé du Récif et grille du bassin A | 4 min |
 | 7 | Tunnel T2 | Voile obligatoire | 1 min |
 | 8 | La salle des Pompes | Trois leviers | 3 min |
 | 9 | Tunnel T3 | Voile obligatoire, descente profonde | 1 min |
@@ -42,4 +42,4 @@ Huit salles de 9 × 9 × 5 : quatre à sec derrière un faux mur (bouton discret
 
 ## Phases de construction
 
-1. Volumes, bassins, tunnels, coquille. 2. Portes, énigmes, écluse, clé, salle du boss. 3. Blocs de commande (voile, pression, portes). 4. Décor. 5. Éclairage. 6. Contrôles du générateur (eau, interdits, appuis). 7. Vérificateur d'accès et de budget d'air. 8. Fiche, puis test en jeu.
+1. Volumes, bassins, tunnels, coquille. 2. Portes, énigmes, écluses, clé, salle du boss. 3. Blocs de commande (voile, pression, portes). 4. Décor. 5. Éclairage. 6. Contrôles du générateur (eau, interdits, appuis). 7. Vérificateur d'accès et de budget d'air. 8. Fiche, puis test en jeu.

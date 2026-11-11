@@ -85,10 +85,7 @@ for nm, (x, coul) in GLYPHES.items():
     BOUTONS_G4[nm] = (x, SOL + 2, 86)
     signe(x, SOL + 5, 86, "south", ["GLYPHE", nm.upper(), "", ""], "dark_blue")
 porte("G4", [(98, y, z) for z in (100, 101, 102) for y in range(SOL + 1, SOL + 5)])
-# ---------------------------------------------------------------- S6 : les Ecluses ; un levier vidange le bassin A, un bouton au fond ouvre la grille de T2, on reinonde
-LEVIERS["LE"] = (81, SOL + 2, 100)
-pilier(80, 100, SOL + 1, SOL + 2)
-put(81, SOL + 2, 100, LEV("east"))
+# ---------------------------------------------------------------- S6 : les Ecluses ; la dalle de l'ilot du bassin B donne la cle et fait ceder la grille au fond du bassin A (entree de T2)
 for y in range(35, SOL + 1):
     put(62, y, 98, S("ladder", facing="east", waterlogged=True)) if (62, y, 98) in blocs and nom((62, y, 98)) == "water" else None
 for px in (65, 66, 67):
@@ -98,9 +95,7 @@ PORTES["G5"] = {"cases": [[px, 34, pz] for px in (65, 66, 67) for pz in (99, 100
 ilot(87, 89, 100, 102, 40)                                         # la cle du Recif : plaque sur l'ilot du bassin B
 PLAQUE_CLE = (88, SOL + 1, 101)
 put(*PLAQUE_CLE, PLAQUE)
-signe(80, SOL + 3, 98, "south", ["ECLUSE", "Levier en haut :", "le bassin se vide.", "En bas : il se remplit."], "dark_blue") if False else None
-signe(60, SOL + 3, 96, "east", ["ECLUSE", "Haut : on vide", "la grille cede", "Bas : remplit"], "dark_blue")
-BASSIN_A = (62, 78, 35, SOL, 90, 112)
+signe(60, SOL + 3, 96, "east", ["LES ECLUSES", "La dalle de", "l'ilot ouvre", "la grille"], "dark_blue")
 # ---------------------------------------------------------------- S8 : la salle des pompes ; trois leviers a lever ensemble ouvrent la grille de T3
 LEV_X = [20, 24, 28]
 for x in LEV_X:

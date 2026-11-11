@@ -45,7 +45,7 @@ a("- Le générateur crée lui-même le datapack `atelier` du monde visé (dossi
 a("- Datapack créé pendant que le monde est ouvert : quitter le monde et y revenir pour qu'il soit pris en compte.")
 a("- Pose : `/reload` puis `/function atelier:aqua_pose` (ne pas mettre en pause ; la zone au-dessus du sol est effacée avant la pose, on peut donc reposer une nouvelle version).")
 a(f"- Entrée : `/tp @s {w(conf['entree'])}`.")
-a("- Remise à zéro (portes refermées, leviers baissés, écluse remplie, clé retirée, compteurs à zéro) : `/function atelier:aqua_reset`.")
+a("- Remise à zéro (portes refermées, leviers baissés, trappe refermée, clé retirée, compteurs à zéro) : `/function atelier:aqua_reset`.")
 a("- Les blocs de commande règlent `doMobSpawning` sur `false` dans tout le monde et `commandBlockOutput` sur `false`.")
 a("")
 a("## Le Voile des Profondeurs (lu dans le code du mod)")
@@ -77,8 +77,8 @@ a(f"| 3 | Les Citernes | 4 min | Trois citernes reliées par des passages inond�
 a(f"| 4 | Tunnel T1 | 1 min | **Voile obligatoire.** {V['T1']['blocs']} blocs sous l'eau, {V['T1']['ordinaire_s']} s en nage ordinaire. Sortie dans le bassin de la Bibliothèque. | — |")
 a(f"| 5 | La Bibliothèque noyée | 4 min | Quatre glyphes de terre cuite sur le mur nord, à presser dans l'ordre lu dans la Colonnade. Une erreur remet à zéro (son grave). | "
   f"G4, grille {boite(P['G4'])} |")
-a(f"| 6 | Les Écluses | 4 min | Le levier ({w(C['levier_ecluse'])}) vide le bassin A et fait céder la grille du fond ; on descend par l'échelle. "
-  f"Sur l'îlot du bassin B, une dalle ({w(C['plaque_cle'])}) donne la **Clé du Récif**. | G5, grille au fond du bassin A, {boite(P['G5'])} |")
+a(f"| 6 | Les Écluses | 4 min | Sur l'îlot du bassin B, une dalle ({w(C['plaque_cle'])}) donne la **Clé du Récif** et fait céder la grille au fond du bassin A. "
+  f"Une échelle dans le bassin A aide à remonter. | G5, grille au fond du bassin A, {boite(P['G5'])} |")
 a(f"| 7 | Tunnel T2 | 1 min | **Voile obligatoire.** {V['T2']['blocs']} blocs, {V['T2']['ordinaire_s']} s. Le plus long : on arrive avec moins de la moitié de la réserve. | — |")
 a(f"| 8 | La salle des Pompes | 3 min | Trois leviers sur le mur nord ({w(C['levier_p20'])}, {w(C['levier_p24'])}, {w(C['levier_p28'])}), tous en haut. | "
   f"G6, grille noyée dans le second bassin, {boite(P['G6'])} |")
@@ -109,8 +109,7 @@ a("1. Débarcadère : plonger dans le petit bassin et ouvrir la trappe du fond (
 a("2. Colonnade : nager jusqu'à la colonne centrale, monter les trois marches, presser le bouton.")
 a("3. Citernes : lever les deux vannes (îlots des citernes 1 et 2), puis plonger au fond de la citerne 3.")
 a("4. Bibliothèque : **Poulpe, Raie, Crabe, Étoile**.")
-a("5. Écluses : lever le levier (le bassin A se vide, la grille cède), prendre la clé sur l'îlot du bassin B, descendre par l'échelle et plonger dans le puits. "
-  "Le levier baissé remplit de nouveau le bassin ; la grille reste ouverte.")
+a("5. Écluses : nager jusqu'à l'îlot du bassin B et marcher sur la dalle (clé et grille), puis plonger dans le bassin A jusqu'au puits.")
 a("6. Pompes : les trois leviers en haut, puis plonger dans le second bassin.")
 a("7. Antichambre : clé en main devant la grille.")
 a("")
@@ -154,7 +153,6 @@ a("- Le voile vient de la PR #12 (Grappin 2.5.0), pas encore fusionnée : cette 
 a("- Pas de cascades ni de courants : une cascade est de l'eau qui coule, donc non confinée, et un courant demande des colonnes de bulles, exclues. "
   "L'ambiance repose sur les bassins, les algues et la lumière.")
 a("- Parcours principal en chaîne (G1 à G7 dans l'ordre) ; la non-linéarité tient aux renvois entre salles (glyphes, clé) et aux salles cachées, pas à des embranchements.")
-a("- L'écluse : une fois la grille cédée, on peut aussi rebaisser le levier et plonger dans le bassin plein. Le vidage n'est donc obligatoire qu'une fois.")
 a("- Le vérificateur ne simule pas les sauts d'un bloc à l'autre ni les perles de l'Ender ; il suppose qu'on ne casse et ne pose aucun bloc.")
 (RACINE / "docs/donjon_aquatique.md").write_text("\n".join(L) + "\n", encoding="utf-8")
 print("ecrit docs/donjon_aquatique.md :", len(L), "lignes")

@@ -1,9 +1,9 @@
 # [claude-build]
-"""donjon_aqua_fin.py - blocs de commande (voile, pression des profondeurs, portes, enigmes, ecluse), controles (eau confinee) et ecriture. Execute par donjon_aqua.py."""
+"""donjon_aqua_fin.py - blocs de commande (voile, pression des profondeurs, portes, enigmes), controles (eau confinee) et ecriture. Execute par donjon_aqua.py."""
 
 CHAINES = [(14, 61, 50), (14, 61, 54), (14, 61, 58), (14, 61, 62)]
 CMD = []
-VARS = ("#s4", "#g3", "#g6", "#ec", "#cle", "#g5", "#t")
+VARS = ("#s4", "#g3", "#g6", "#cle", "#g5", "#t")
 
 
 def rel(x, y, z):
@@ -65,14 +65,8 @@ CMD.append("execute if score #t aqua matches 10.. run scoreboard players set #t 
 CMD.append(f"execute if block {rel(*BOUTONS_G2)} minecraft:stone_button[powered=true] run " + ouvrir("G2"))
 CMD.append(f"execute if block {rel(*LEVIERS['L3a'])} minecraft:lever[powered=true] if block {rel(*LEVIERS['L3b'])} minecraft:lever[powered=true] run " + ouvrir("G3"))
 sequence("#s4", [BOUTONS_G4[n] for n in ("poulpe", "raie", "crabe", "etoile")], "G4")
-# ecluse : levier en haut = on vide le bassin A, en bas = on le remplit ; le bouton au fond ouvre la grille de T2
-bx0, bx1, by0, by1, bz0, bz1 = BASSIN_A
-BA = [(bx0, by0, bz0), (bx1, by1, bz1)]
-CMD.append(f"execute if block {rel(*LEVIERS['LE'])} minecraft:lever[powered=true] if score #ec aqua matches 0 run " + fill(BA, "minecraft:air replace minecraft:water"))
-CMD.append(f"execute if block {rel(*LEVIERS['LE'])} minecraft:lever[powered=true] if score #ec aqua matches 0 run " + ouvrir("G5"))
-CMD.append(f"execute if block {rel(*LEVIERS['LE'])} minecraft:lever[powered=true] if score #ec aqua matches 0 run scoreboard players set #ec aqua 1")
-CMD.append(f"execute if block {rel(*LEVIERS['LE'])} minecraft:lever[powered=false] if score #ec aqua matches 1 run " + fill(BA, "minecraft:water replace minecraft:air"))
-CMD.append(f"execute if block {rel(*LEVIERS['LE'])} minecraft:lever[powered=false] if score #ec aqua matches 1 run scoreboard players set #ec aqua 0")
+# ecluse : la dalle de l'ilot du bassin B fait ceder la grille au fond du bassin A (et donne la cle, plus bas)
+CMD.append(f"execute if block {rel(*PLAQUE_CLE)} minecraft:stone_pressure_plate[powered=true] run " + ouvrir("G5"))
 cond = " ".join(f"if block {rel(*LEVIERS[f'P{x}'])} minecraft:lever[powered=true]" for x in LEV_X)
 CMD.append(f"execute {cond} run " + ouvrir("G6"))
 # la cle du Recif : la plaque au fond du bassin A la donne, la porte du Coeur la prend
@@ -225,7 +219,7 @@ if FN.exists():
         f"playsound minecraft:block.iron_door.open master @a {w((a, b, c))} 2 0.6\n", encoding="utf-8")
     (FN / "aqua_fermer_sortie_boss.mcfunction").write_text(
         f"# [claude-build] Referme la sortie du boss.\nfill {w((a, b, c))} {w((d_, e, f_))} minecraft:iron_bars[waterlogged=false]\n", encoding="utf-8")
-    reset = ["# [claude-build] Remet le sanctuaire a zero : portes fermees, leviers baisses, ecluse et cle remises."]
+    reset = ["# [claude-build] Remet le sanctuaire a zero : portes fermees, leviers baisses et cle remise."]
     for n_, p in PORTES.items():
         props = ",".join(f"{k}={v}" for k, v in p["props"].items())
         (a, b, c), (d_, e, f_) = plage([tuple(x) for x in p["cases"]])
@@ -233,16 +227,15 @@ if FN.exists():
     for n_, p in LEVIERS.items():
         face = "east" if n_ in ("L3a", "L3b", "LE", "L1") else "south"
         reset.append(f"setblock {w(p)} minecraft:lever[face=wall,facing={face},powered=false]")
-    reset.append(f"fill {w((bx0, by0, bz0))} {w((bx1, by1, bz1))} minecraft:water replace minecraft:air")
     reset.append(f"setblock {w(VANNE_G1)} minecraft:oak_trapdoor[half=bottom,facing=north,open=false,powered=false,waterlogged=true]")
     reset += ["scoreboard objectives add aqua dummy"] + [f"scoreboard players set {v_} aqua 0" for v_ in VARS]
     reset += [f"clear @a {CLE}", 'tellraw @a {"text":"Sanctuaire remis a zero.","color":"gray"}']
     (FN / "aqua_reset.mcfunction").write_text("\n".join(reset) + "\n", encoding="utf-8")
 conf = {"_marque": "[claude-build]", "taille": [SX, SY, SZ], "origine": ORIGINE, "portes": PORTES, "points": POINTS, "entree": list(POINTS["S1"]), "tunnels": {k: v for k, v in TUNNELS.items()},
-        "longueurs": LONG, "pression": PRESSION, "cachees_detail": {str(k): v for k, v in CACHEES.items()}, "boss": BOSS, "niveau_eau": SOL, "bassin_a": list(BASSIN_A),
+        "longueurs": LONG, "pression": PRESSION, "cachees_detail": {str(k): v for k, v in CACHEES.items()}, "boss": BOSS, "niveau_eau": SOL,
         "cibles": {"S1": list(POINTS["S1"]), "vanne_G1": list(VANNE_G1), "bouton_G2": list(BOUTONS_G2), "levier_3a": list(LEVIERS["L3a"]), "levier_3b": list(LEVIERS["L3b"]),
                    "glyphe_poulpe": list(BOUTONS_G4["poulpe"]), "glyphe_raie": list(BOUTONS_G4["raie"]), "glyphe_crabe": list(BOUTONS_G4["crabe"]),
-                   "glyphe_etoile": list(BOUTONS_G4["etoile"]), "levier_ecluse": list(LEVIERS["LE"]), "plaque_cle": list(PLAQUE_CLE),
+                   "glyphe_etoile": list(BOUTONS_G4["etoile"]), "plaque_cle": list(PLAQUE_CLE),
                    "levier_p20": list(LEVIERS["P20"]), "levier_p24": list(LEVIERS["P24"]), "levier_p28": list(LEVIERS["P28"]),
                    "arrivee_T1": list(POINTS["arrivee_T1"]), "arrivee_T2": list(POINTS["arrivee_T2"]), "arrivee_T3": list(POINTS["arrivee_T3"]), "Coeur": list(POINTS["Coeur"]),
                    "sortie": list(POINTS["sortie"]), **{k: list(v) for k, v in BOSS.items()},

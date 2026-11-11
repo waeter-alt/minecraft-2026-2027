@@ -13,7 +13,7 @@ Un temple englouti, à moitié noyé : briques de prismarine et de pierre moussu
 - Datapack créé pendant que le monde est ouvert : quitter le monde et y revenir pour qu'il soit pris en compte.
 - Pose : `/reload` puis `/function atelier:aqua_pose` (ne pas mettre en pause ; la zone au-dessus du sol est effacée avant la pose, on peut donc reposer une nouvelle version).
 - Entrée : `/tp @s 178 -17 272`.
-- Remise à zéro (portes refermées, leviers baissés, écluse remplie, clé retirée, compteurs à zéro) : `/function atelier:aqua_reset`.
+- Remise à zéro (portes refermées, leviers baissés, trappe refermée, clé retirée, compteurs à zéro) : `/function atelier:aqua_reset`.
 - Les blocs de commande règlent `doMobSpawning` sur `false` dans tout le monde et `commandBlockOutput` sur `false`.
 
 ## Le Voile des Profondeurs (lu dans le code du mod)
@@ -38,7 +38,7 @@ Un temple englouti, à moitié noyé : briques de prismarine et de pierre moussu
 | 3 | Les Citernes | 4 min | Trois citernes reliées par des passages inondés. Deux vannes sur des îlots (239 -16 322 et 261 -16 322), à lever toutes les deux. | G3, grille noyée au fond de la troisième citerne, 280 -23 333 → 282 -23 335 |
 | 4 | Tunnel T1 | 1 min | **Voile obligatoire.** 48 blocs sous l'eau, 22 s en nage ordinaire. Sortie dans le bassin de la Bibliothèque. | — |
 | 5 | La Bibliothèque noyée | 4 min | Quatre glyphes de terre cuite sur le mur nord, à presser dans l'ordre lu dans la Colonnade. Une erreur remet à zéro (son grave). | G4, grille 248 -17 360 → 248 -14 362 |
-| 6 | Les Écluses | 4 min | Le levier (231 -16 360) vide le bassin A et fait céder la grille du fond ; on descend par l'échelle. Sur l'îlot du bassin B, une dalle (238 -17 361) donne la **Clé du Récif**. | G5, grille au fond du bassin A, 215 -27 359 → 217 -27 361 |
+| 6 | Les Écluses | 4 min | Sur l'îlot du bassin B, une dalle (238 -17 361) donne la **Clé du Récif** et fait céder la grille au fond du bassin A. Une échelle dans le bassin A aide à remonter. | G5, grille au fond du bassin A, 215 -27 359 → 217 -27 361 |
 | 7 | Tunnel T2 | 1 min | **Voile obligatoire.** 56 blocs, 25 s. Le plus long : on arrive avec moins de la moitié de la réserve. | — |
 | 8 | La salle des Pompes | 3 min | Trois leviers sur le mur nord (170 -16 346, 174 -16 346, 178 -16 346), tous en haut. | G6, grille noyée dans le second bassin, 189 -23 367 → 191 -23 369 |
 | 9 | Tunnel T3 | 1 min | **Voile obligatoire.** 54 blocs, 25 s, avec une descente de 12 blocs. | — |
@@ -67,7 +67,7 @@ Avec le voile (40 s de réserve, puis 15 s d'air) : le plus long trajet prend 25
 2. Colonnade : nager jusqu'à la colonne centrale, monter les trois marches, presser le bouton.
 3. Citernes : lever les deux vannes (îlots des citernes 1 et 2), puis plonger au fond de la citerne 3.
 4. Bibliothèque : **Poulpe, Raie, Crabe, Étoile**.
-5. Écluses : lever le levier (le bassin A se vide, la grille cède), prendre la clé sur l'îlot du bassin B, descendre par l'échelle et plonger dans le puits. Le levier baissé remplit de nouveau le bassin ; la grille reste ouverte.
+5. Écluses : nager jusqu'à l'îlot du bassin B et marcher sur la dalle (clé et grille), puis plonger dans le bassin A jusqu'au puits.
 6. Pompes : les trois leviers en haut, puis plonger dans le second bassin.
 7. Antichambre : clé en main devant la grille.
 
@@ -113,5 +113,4 @@ Chacune fait 9 × 9 × 5, vide, éclairée. Emplacement libre pour un coffre et 
 - Le voile vient de la PR #12 (Grappin 2.5.0), pas encore fusionnée : cette branche est empilée dessus.
 - Pas de cascades ni de courants : une cascade est de l'eau qui coule, donc non confinée, et un courant demande des colonnes de bulles, exclues. L'ambiance repose sur les bassins, les algues et la lumière.
 - Parcours principal en chaîne (G1 à G7 dans l'ordre) ; la non-linéarité tient aux renvois entre salles (glyphes, clé) et aux salles cachées, pas à des embranchements.
-- L'écluse : une fois la grille cédée, on peut aussi rebaisser le levier et plonger dans le bassin plein. Le vidage n'est donc obligatoire qu'une fois.
 - Le vérificateur ne simule pas les sauts d'un bloc à l'autre ni les perles de l'Ender ; il suppose qu'on ne casse et ne pose aucun bloc.
