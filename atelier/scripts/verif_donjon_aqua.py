@@ -126,14 +126,14 @@ CIB = conf["cibles"]
 def rayon(c):
     if c.startswith(("plaque",)) or (c[0] == "H" and c[1:].isdigit()):
         return 1.8
-    if c.startswith(("levier", "bouton", "glyphe")):
+    if c.startswith(("levier", "bouton", "glyphe", "vanne")):
         return 3.0
     return 2.5
 
 
 # (portes ouvertes cumulees, ecluse videe ?, cibles qui deviennent atteignables a cette etape, avec le voile)
 ETAPES = [
-    ([], False, ["S1", "levier_G1", "bouton_H1"]),
+    ([], False, ["S1", "vanne_G1", "bouton_H1"]),
     (["G1", "H1"], False, ["bouton_G2", "H1", "H5"]),
     (["G1", "G2", "H1"], False, ["levier_3a", "levier_3b", "bouton_H2", "bouton_H3", "H6"]),
     (["G1", "G2", "H1", "H2", "H3"], False, ["H2", "H3"]),
@@ -159,7 +159,7 @@ for k, (ouv, vide, nouvelles) in enumerate(ETAPES):
 # sans voile, toutes les portes ouvertes : on ne doit pas passer les tunnels submerges
 TOUTES = list(conf["portes"])
 vu0 = parcours(TOUTES, False, True)
-permis = {"S1", "levier_G1", "bouton_H1", "H1", "bouton_G2", "levier_3a", "levier_3b", "bouton_H2", "bouton_H3", "H2", "H3"}
+permis = {"S1", "vanne_G1", "bouton_H1", "H1", "bouton_G2", "levier_3a", "levier_3b", "bouton_H2", "bouton_H3", "H2", "H3"}
 sans = sorted(c for c in CIB if atteint(vu0, CIB[c], rayon(c)))
 en_trop = sorted(set(sans) - permis)
 print("sans voile, toutes portes ouvertes :", sans, "->", "OK" if not en_trop else f"ECHEC (en trop : {en_trop})")

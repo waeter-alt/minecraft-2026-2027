@@ -3,7 +3,7 @@
 
 CHAINES = [(14, 61, 50), (14, 61, 54), (14, 61, 58), (14, 61, 62)]
 CMD = []
-VARS = ("#s4", "#g3", "#g6", "#ec", "#cle", "#g5", "#t")
+VARS = ("#s4", "#g3", "#g6", "#ec", "#cle", "#g5", "#t", "#g1")
 
 
 def rel(x, y, z):
@@ -59,7 +59,10 @@ for (x0, x1, y0, y1, z0, z1) in PRESSION:
     CMD.append(f"execute if score #t aqua matches 10.. positioned {rel(x0, y0, z0)} as @a[dx={x1 - x0},dy={y1 - y0},dz={z1 - z0}] unless items entity @s armor.head {VOILE} run damage @s 3 minecraft:drown")
 CMD.append("execute if score #t aqua matches 10.. run scoreboard players set #t aqua 0")
 # portes et enigmes
-CMD.append(f"execute if block {rel(*LEVIERS['L1'])} minecraft:lever[powered=true] run " + ouvrir("G1"))
+ZB = f"positioned {rel(ZONE_G1[0], ZONE_G1[1], ZONE_G1[2])} if entity @a[dx={ZONE_G1[3] - ZONE_G1[0]},dy={ZONE_G1[4] - ZONE_G1[1]},dz={ZONE_G1[5] - ZONE_G1[2]}] if score #g1 aqua matches 0"
+CMD.append(f"execute {ZB} run playsound minecraft:block.chain.break master @a[distance=..40] ~ ~ ~ 1 0.6")
+CMD.append(f"execute {ZB} run " + ouvrir("G1"))
+CMD.append(f"execute {ZB} run scoreboard players set #g1 aqua 1")
 CMD.append(f"execute if block {rel(*BOUTONS_G2)} minecraft:stone_button[powered=true] run " + ouvrir("G2"))
 CMD.append(f"execute if block {rel(*LEVIERS['L3a'])} minecraft:lever[powered=true] if block {rel(*LEVIERS['L3b'])} minecraft:lever[powered=true] run " + ouvrir("G3"))
 sequence("#s4", [BOUTONS_G4[n] for n in ("poulpe", "raie", "crabe", "etoile")], "G4")
@@ -142,6 +145,14 @@ for (x, y, z), s in blocs.items():
             err.append(f"panneau sans appui {(x, y, z)}")
     elif n == "stone_pressure_plate" and not solide_((x, y - 1, z)):
         err.append(f"plaque sans appui {(x, y, z)}")
+    if n in ("lever", "stone_button", "stone_pressure_plate"):             # l'eau qui coule dans la case d'un interrupteur le detruit : aucune eau a cote ni au dessus
+        for q in ((x + 1, y, z), (x - 1, y, z), (x, y, z + 1), (x, y, z - 1), (x, y + 1, z)):
+            if q in blocs and est_eau(blocs[q]):
+                err.append(f"{n} au contact de l'eau {(x, y, z)}")
+    if n == "oak_wall_sign":
+        for l_ in NBT[(x, y, z)]["front_text"]["messages"]:
+            if len(str(l_).split('"text":"')[1].rsplit('"', 1)[0]) > 14:
+                err.append(f"panneau trop large {(x, y, z)}")
 for n_, c in CACHEES.items():
     x0, x1, y0, y1, z0, z1 = c["boite"]
     if min(x1 - x0 + 1, z1 - z0 + 1) < 7 or y1 - y0 + 1 < 4:
@@ -229,7 +240,7 @@ if FN.exists():
     (FN / "aqua_reset.mcfunction").write_text("\n".join(reset) + "\n", encoding="utf-8")
 conf = {"_marque": "[claude-build]", "taille": [SX, SY, SZ], "origine": ORIGINE, "portes": PORTES, "points": POINTS, "entree": list(POINTS["S1"]), "tunnels": {k: v for k, v in TUNNELS.items()},
         "longueurs": LONG, "pression": PRESSION, "cachees_detail": {str(k): v for k, v in CACHEES.items()}, "boss": BOSS, "niveau_eau": SOL, "bassin_a": list(BASSIN_A),
-        "cibles": {"S1": list(POINTS["S1"]), "levier_G1": list(LEVIERS["L1"]), "bouton_G2": list(BOUTONS_G2), "levier_3a": list(LEVIERS["L3a"]), "levier_3b": list(LEVIERS["L3b"]),
+        "cibles": {"S1": list(POINTS["S1"]), "vanne_G1": list(VANNE_G1), "bouton_G2": list(BOUTONS_G2), "levier_3a": list(LEVIERS["L3a"]), "levier_3b": list(LEVIERS["L3b"]),
                    "glyphe_poulpe": list(BOUTONS_G4["poulpe"]), "glyphe_raie": list(BOUTONS_G4["raie"]), "glyphe_crabe": list(BOUTONS_G4["crabe"]),
                    "glyphe_etoile": list(BOUTONS_G4["etoile"]), "levier_ecluse": list(LEVIERS["LE"]), "plaque_cle": list(PLAQUE_CLE),
                    "levier_p20": list(LEVIERS["P20"]), "levier_p24": list(LEVIERS["P24"]), "levier_p28": list(LEVIERS["P28"]),

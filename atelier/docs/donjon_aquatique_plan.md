@@ -22,7 +22,7 @@ Un temple englouti dans une lagune, à moitié noyé. L'objet du donjon est le *
 
 | # | Section | Mécanisme | Temps estimé |
 |---|---|---|---|
-| 1 | Le Débarcadère | Don du voile ; levier au fond d'un petit bassin | 2 min |
+| 1 | Le Débarcadère | Don du voile ; lanterne-vanne au fond d'un petit bassin (approche = herse levée) | 2 min |
 | 2 | La Colonnade | Bouton au sommet d'une colonne au milieu du bassin ; panneau de l'ordre des glyphes | 4 min |
 | 3 | Les Citernes | Deux vannes sur des îlots ; grille noyée | 4 min |
 | 4 | Tunnel T1 | Voile obligatoire | 1 min |

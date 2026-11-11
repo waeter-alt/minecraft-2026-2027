@@ -11,6 +11,7 @@ PRISME = S("prismarine_bricks")
 
 
 def signe(x, y, z, facing, lignes, couleur="black"):
+    assert all(len(l) <= 14 for l in lignes) and len(lignes) <= 4, ("panneau trop large (14 caracteres max par ligne)", lignes)
     put(x, y, z, S("oak_wall_sign", facing=facing, waterlogged=False))
     msg = [String('{"text":"' + (l or "") + '"}') for l in (list(lignes) + ["", "", "", ""])[:4]]
     face = Compound({"messages": List[String](msg), "color": String(couleur), "has_glowing_text": Byte(0)})
@@ -39,10 +40,14 @@ def ilot(x0, x1, z0, z1, y0):
 
 
 # ---------------------------------------------------------------- S1 : le Debarcadere ; le levier de la porte est au fond du mini-bassin (apprendre a plonger et a remonter respirer)
-put(24, 40, 21, LEV("east"))
-LEVIERS["L1"] = (24, 40, 21)
-signe(28, SOL + 2, 6, "south", ["DEBARCADERE", "Le voile vous est remis.", "Il retient votre souffle", "sous l'eau."], "dark_blue")
-signe(30, SOL + 2, 38, "north", ["Le levier est au fond", "du bassin. Remontez", "respirer : le voile", "se recharge a l'air."], "dark_blue")
+# la vanne du fond : une lanterne de mer sur un socle, au fond du mini-bassin. Pas de levier : l'eau qui coule dans sa case le detruirait (un levier ne se waterlogue pas).
+# On ouvre la herse en s'approchant a moins d'un bloc de la lanterne (boite de detection), ce qui oblige a plonger.
+put(28, 39, 21, S("dark_prismarine"))
+put(28, 40, 21, S("sea_lantern"))
+VANNE_G1 = (28, 40, 21)
+ZONE_G1 = (27, 39, 20, 29, 41, 22)                                 # boite de detection autour de la lanterne
+signe(28, SOL + 2, 6, "south", ["DEBARCADERE", "Le voile vous", "est remis : il", "garde l'air"], "dark_blue")
+signe(30, SOL + 2, 38, "north", ["VANNE DU FOND", "Plongez vers", "la lanterne", "du fond"], "dark_blue")
 porte("G1", [(x, y, 41) for x in (26, 27, 28) for y in range(SOL + 1, SOL + 5)])
 # ---------------------------------------------------------------- S2 : la Colonnade ; le bouton de la porte est sur une colonne au milieu du bassin
 COLONNES = [(22, 54, 46), (30, 62, 45), (40, 62, 45), (50, 66, 45), (58, 56, 46), (46, 70, 45), (34, 72, 46), (18, 68, 45)]
@@ -56,7 +61,7 @@ pilier(42, 62, 41, 43, MOUSSE)
 put(40, 46, 62, BOUTON_SOL)                                       # le bouton est sur le haut de la colonne (40,62)
 BOUTONS_G2 = (40, 46, 62)
 porte("G2", [(73, y, z) for z in (60, 61, 62) for y in range(SOL + 1, SOL + 5)])
-signe(10, SOL + 3, 62, "east", ["LA MAREE OBEIT", "AU POULPE, A LA RAIE,", "AU CRABE, PUIS A", "L'ETOILE DE MER."], "dark_blue")
+signe(10, SOL + 3, 62, "east", ["LA MAREE OBEIT", "POULPE, RAIE,", "CRABE, ETOILE", ""], "dark_blue")
 # ---------------------------------------------------------------- S3 : les Citernes ; deux leviers (ilots des citernes 1 et 2) ouvrent la grille du tunnel T1
 ilot(87, 89, 61, 63, 38)
 pilier(88, 62, SOL + 1, SOL + 2)
@@ -68,7 +73,7 @@ LEVIERS["L3a"], LEVIERS["L3b"] = (89, SOL + 2, 62), (111, SOL + 2, 62)
 for (px, pz) in ((130, 73), (131, 73), (132, 73), (130, 74), (131, 74), (132, 74), (130, 75), (131, 75), (132, 75)):
     put(px, 38, pz, BARRES_E)                                       # la grille au fond du puits de T1 (eau comprise)
 PORTES["G3"] = {"cases": [[px, 38, pz] for px in (130, 131, 132) for pz in (73, 74, 75)], "bloc": BARRES_E[0], "props": dict(BARRES_E[1]), "eau": True}
-signe(90, SOL + 3, 44, "south", ["CITERNES", "Deux vannes, a lever", "ensemble : elles", "ouvrent la grille."], "dark_blue")
+signe(90, SOL + 3, 44, "south", ["CITERNES", "Deux vannes,", "levees en meme", "temps = grille"], "dark_blue")
 # ---------------------------------------------------------------- S5 : la Bibliotheque noyee ; quatre glyphes marins a presser dans l'ordre lu dans la colonnade
 GLYPHES = {"crabe": (110, "red"), "etoile": (116, "orange"), "poulpe": (122, "purple"), "raie": (128, "cyan")}
 BOUTONS_G4 = {}
@@ -93,7 +98,7 @@ ilot(87, 89, 100, 102, 40)                                         # la cle du R
 PLAQUE_CLE = (88, SOL + 1, 101)
 put(*PLAQUE_CLE, PLAQUE)
 signe(80, SOL + 3, 98, "south", ["ECLUSE", "Levier en haut :", "le bassin se vide.", "En bas : il se remplit."], "dark_blue") if False else None
-signe(60, SOL + 3, 96, "east", ["ECLUSE", "Levier haut : on vide", "et la grille cede.", "Levier bas : on remplit."], "dark_blue")
+signe(60, SOL + 3, 96, "east", ["ECLUSE", "Haut : on vide", "la grille cede", "Bas : remplit"], "dark_blue")
 BASSIN_A = (62, 78, 35, SOL, 90, 112)
 # ---------------------------------------------------------------- S8 : la salle des pompes ; trois leviers a lever ensemble ouvrent la grille de T3
 LEV_X = [20, 24, 28]

@@ -33,7 +33,7 @@ Un temple englouti, à moitié noyé : briques de prismarine et de pierre moussu
 
 | # | Section | Durée | Ce qu'on y fait | Porte de sortie |
 |---|---|---|---|---|
-| 1 | Le Débarcadère | 2 min | On reçoit le voile. Le levier est au fond du petit bassin (174 -21 281) : première plongée. | G1, grille 176 -17 301 → 178 -14 301 |
+| 1 | Le Débarcadère | 2 min | On reçoit le voile. Une lanterne de mer posée sur un socle au fond du petit bassin (178 -21 281) : s'en approcher à moins d'un bloc lève la herse. Première plongée. | G1, grille 176 -17 301 → 178 -14 301 |
 | 2 | La Colonnade | 4 min | Grand bassin semé de colonnes. On nage jusqu'à la colonne centrale, trois marches, bouton au sommet (190 -15 322). Le panneau du mur ouest donne l'ordre des glyphes pour la Bibliothèque. | G2, grille 223 -17 320 → 223 -14 322 |
 | 3 | Les Citernes | 4 min | Trois citernes reliées par des passages inondés. Deux vannes sur des îlots (239 -16 322 et 261 -16 322), à lever toutes les deux. | G3, grille noyée au fond de la troisième citerne, 280 -23 333 → 282 -23 335 |
 | 4 | Tunnel T1 | 1 min | **Voile obligatoire.** 48 blocs sous l'eau, 22 s en nage ordinaire. Sortie dans le bassin de la Bibliothèque. | — |
@@ -63,7 +63,7 @@ Avec le voile (40 s de réserve, puis 15 s d'air) : le plus long trajet prend 25
 
 ## Solutions
 
-1. Débarcadère : plonger dans le petit bassin, lever le levier du fond.
+1. Débarcadère : plonger dans le petit bassin et s'approcher de la lanterne du fond.
 2. Colonnade : nager jusqu'à la colonne centrale, monter les trois marches, presser le bouton.
 3. Citernes : lever les deux vannes (îlots des citernes 1 et 2), puis plonger au fond de la citerne 3.
 4. Bibliothèque : **Poulpe, Raie, Crabe, Étoile**.
@@ -105,7 +105,7 @@ Chacune fait 9 × 9 × 5, vide, éclairée. Emplacement libre pour un coffre et 
 
 - Générateur : eau confinée (aucune source au contact d'une case d'air sur le côté ou dessous), aucun bloc interdit (coffre, conteneur, générateur, conduit, lave, colonne de bulles, ancrage), chaque levier, bouton, panneau et dalle a son appui. 0 erreur.
 - Éclairage : lumière propagée depuis les lanternes de mer et le lichen, puis blocs `light` invisibles (immergés dans l'eau) là où il manquait. Lumière minimale 5 sur toutes les cases libres, eau comprise ; les monstres n'apparaissent qu'à 0.
-- Vérificateur : résultat **OK**. Avec le voile, chaque étape donne exactement les cibles prévues, aucune plus tôt. Sans voile et toutes portes ouvertes, on n'atteint que : H1, H2, H3, S1, bouton_G2, bouton_H1, bouton_H2, bouton_H3, levier_3a, levier_3b, levier_G1 — rien au-delà du premier tunnel, aucune salle cachée sous l'eau.
+- Vérificateur : résultat **OK**. Avec le voile, chaque étape donne exactement les cibles prévues, aucune plus tôt. Sans voile et toutes portes ouvertes, on n'atteint que : H1, H2, H3, S1, bouton_G2, bouton_H1, bouton_H2, bouton_H3, levier_3a, levier_3b, vanne_G1 — rien au-delà du premier tunnel, aucune salle cachée sous l'eau.
 
 ## Écarts et points à savoir
 
