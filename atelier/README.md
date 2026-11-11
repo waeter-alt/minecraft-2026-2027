@@ -16,4 +16,4 @@ Pas copiés : les zips de mondes (`Arene_*_map.zip`, `Pack_ami.zip`), `launcher/
 
 Tout ce dossier cible la version de NeoForge figée dans `mod/gradle.properties` (**21.1.216**), comme l'exige le `CLAUDE.md`. Grappin se compile pour cette version (`atelier/grappin/gradle.properties`, `neo_version=21.1.216`) ; les anciens jars compilés pour une autre version ont été retirés. Create 6.0.9 (celui de `mod/libs/`) suffit pour les structures qui contiennent des blocs Create (arène Piège, Abysses) ; Create 6.0.10 exige NeoForge 21.1.219 ou plus et n'est donc pas compatible.
 
-Grappin a un onglet créatif dédié, « Donjons » (grappin et point d'ancrage ; la place des futurs objets de donjon).
+Grappin a un onglet créatif dédié, « Donjons » (grappin, point d'ancrage et **Voile des Profondeurs**, le casque de respiration sous l'eau du donjon aquatique ; la place des futurs objets de donjon). Textures dessinées par `scripts/icone_voile.py`.
