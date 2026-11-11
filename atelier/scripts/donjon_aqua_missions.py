@@ -73,8 +73,8 @@ VANNE_3A = vanne("3a", 88, SOL + 1, 62)
 ilot(109, 111, 61, 63, 38)
 VANNE_3B = vanne("3b", 110, SOL + 1, 62)
 for (px, pz) in ((130, 73), (131, 73), (132, 73), (130, 74), (131, 74), (132, 74), (130, 75), (131, 75), (132, 75)):
-    put(px, 38, pz, BARRES_E)                                       # la grille au fond du puits de T1
-PORTES["G3"] = {"cases": [[px, 38, pz] for px in (130, 131, 132) for pz in (73, 74, 75)], "bloc": BARRES_E[0], "props": dict(BARRES_E[1]), "eau": True}
+    put(px, 38, pz, GRILLE)                                       # la grille au fond du puits de T1
+PORTES["G3"] = {"cases": [[px, 38, pz] for px in (130, 131, 132) for pz in (73, 74, 75)], "bloc": GRILLE[0], "props": dict(GRILLE[1]), "eau": True}
 signe(90, SOL + 3, 44, "south", ["CITERNES", "Deux vannes,", "levees en meme", "temps = grille"], "dark_blue")
 # ---------------------------------------------------------------- S5 : la Bibliotheque noyee ; quatre glyphes marins (vannes) a ouvrir dans l'ordre lu dans la Colonnade
 GLYPHES = {"crabe": (110, "red"), "etoile": (116, "orange"), "poulpe": (122, "purple"), "raie": (128, "cyan")}
@@ -90,8 +90,8 @@ ilot(87, 89, 100, 102, 40)
 VANNE_CLE = vanne("cle", 88, SOL + 1, 101)
 for px in (65, 66, 67):
     for pz in (99, 100, 101):
-        put(px, 34, pz, BARRES_E)
-PORTES["G5"] = {"cases": [[px, 34, pz] for px in (65, 66, 67) for pz in (99, 100, 101)], "bloc": BARRES_E[0], "props": dict(BARRES_E[1]), "eau": True}
+        put(px, 34, pz, GRILLE)
+PORTES["G5"] = {"cases": [[px, 34, pz] for px in (65, 66, 67) for pz in (99, 100, 101)], "bloc": GRILLE[0], "props": dict(GRILLE[1]), "eau": True}
 signe(60, SOL + 3, 96, "east", ["LES ECLUSES", "La vanne de", "l'ilot ouvre", "la grille"], "dark_blue")
 # ---------------------------------------------------------------- S8 : la salle des pompes ; trois vannes a ouvrir ensemble ouvrent la grille de T3
 LEV_X = [20, 24, 28]
@@ -101,8 +101,8 @@ for x in LEV_X:
     VANNES_P[x] = vanne(f"p{x}", x, SOL + 2, 86, "south")
 for px in (39, 40, 41):
     for pz in (107, 108, 109):
-        put(px, 38, pz, BARRES_E)
-PORTES["G6"] = {"cases": [[px, 38, pz] for px in (39, 40, 41) for pz in (107, 108, 109)], "bloc": BARRES_E[0], "props": dict(BARRES_E[1]), "eau": True}
+        put(px, 38, pz, GRILLE)
+PORTES["G6"] = {"cases": [[px, 38, pz] for px in (39, 40, 41) for pz in (107, 108, 109)], "bloc": GRILLE[0], "props": dict(GRILLE[1]), "eau": True}
 signe(24, SOL + 4, 86, "south", ["POMPES", "Trois vannes", "a ouvrir", "ensemble"], "dark_blue")
 # ---------------------------------------------------------------- S9 : l'antichambre ; herse a cle vers le Coeur
 porte("G7", [(50, y, z) for z in (135, 136, 137) for y in range(SOL + 1, SOL + 5)])

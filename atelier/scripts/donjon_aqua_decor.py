@@ -5,7 +5,7 @@ dans la Colonnade seulement. Execute par donjon_aqua.py avant l'eclairage et l'e
 import numpy as np
 
 SHELL = {"prismarine_bricks", "prismarine", "dark_prismarine"}
-SPECIAUX = {"lever", "stone_button", "stone_pressure_plate", "oak_wall_sign", "oak_trapdoor", "ladder", "lodestone", "iron_bars"}
+SPECIAUX = {"lever", "stone_button", "stone_pressure_plate", "oak_wall_sign", "oak_trapdoor", "ladder", "lodestone", "iron_bars", "iron_trapdoor"}
 PORTE_CASES = {tuple(c) for p in PORTES.values() for c in p["cases"]}
 P_B, P_R, P_N, LANTERNE = S("prismarine_bricks"), S("prismarine"), S("dark_prismarine"), S("sea_lantern")
 cb = Counter()

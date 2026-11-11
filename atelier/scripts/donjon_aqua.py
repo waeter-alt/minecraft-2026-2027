@@ -52,6 +52,8 @@ def S(n, **p):
 EAU = S("water", level=0)
 BARRES = S("iron_bars", waterlogged=False)
 BARRES_E = S("iron_bars", waterlogged=True)
+# grille posee au sol d'un puits : des barres a plat laissent des trous de 7 pixels (on passe en nageant) ; une trappe de fer fermee, au motif de grille, bouche toute la case
+GRILLE = S("iron_trapdoor", half="bottom", facing="north", open=False, powered=False, waterlogged=True)
 blocs, NBT = {}, {}
 
 
