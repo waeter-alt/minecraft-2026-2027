@@ -10,6 +10,13 @@
   "item.grappin.voile.reserve": "Reserve: %s s of %s s",
   "item.grappin.voile.alerte": "Veil: %s s of air",
   "item.grappin.voile.epuise": "Veil exhausted!",
+  "item.grappin.paravoile": "Paraglider",
+  "item.grappin.paravoile.aide1": "In your hand (main or off hand): jump in mid-air to open the glider and glide",
+  "item.grappin.paravoile.aide2": "Your view steers: look down to dive, look up to brake; jump or sneak to stow it",
+  "item.grappin.paravoile.aide3": "%s s of flight, gauge recharged in %s s on the ground",
+  "item.grappin.paravoile.reserve": "Gauge: %s s of %s s",
+  "item.grappin.paravoile.alerte": "Paraglider: %s s of flight",
+  "item.grappin.paravoile.epuisee": "Paraglider exhausted!",
   "block.grappin.ancrage": "Anchor Point",
   "entity.grappin.crochet": "Grappling Hook"
 }
