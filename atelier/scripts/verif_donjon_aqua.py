@@ -127,18 +127,19 @@ def rayon(c):
 
 
 # (portes ouvertes cumulees, sans objet, cibles qui deviennent atteignables a cette etape, avec le voile)
+G = ["G1", "G2", "H1", "H2", "H3", "G3", "G4", "H4", "G5", "G6", "G7", "SORTIE"]
 ETAPES = [
     ([], False, ["S1", "vanne_G1", "bouton_H1"]),
-    (["G1", "H1"], False, ["bouton_G2", "H1", "H5"]),
-    (["G1", "G2", "H1"], False, ["levier_3a", "levier_3b", "bouton_H2", "bouton_H3", "H6"]),
+    (["G1", "H1"], False, ["vanne_G2", "H1", "H5"]),
+    (["G1", "G2", "H1"], False, ["vanne_3a", "vanne_3b", "vanne_H2", "vanne_H3", "H6"]),
     (["G1", "G2", "H1", "H2", "H3"], False, ["H2", "H3"]),
     (["G1", "G2", "H1", "H2", "H3", "G3"], False, ["arrivee_T1", "glyphe_poulpe", "glyphe_raie", "glyphe_crabe", "glyphe_etoile", "H7"]),
-    (["G1", "G2", "H1", "H2", "H3", "G3", "G4"], False, ["plaque_cle", "bouton_H4"]),
-    (["G1", "G2", "H1", "H2", "H3", "G3", "G4", "H4"], False, ["H4"]),
-    (["G1", "G2", "H1", "H2", "H3", "G3", "G4", "H4", "G5"], True, ["arrivee_T2", "levier_p20", "levier_p24", "levier_p28"]),
-    (["G1", "G2", "H1", "H2", "H3", "G3", "G4", "H4", "G5", "G6"], False, ["arrivee_T3"]),
-    (["G1", "G2", "H1", "H2", "H3", "G3", "G4", "H4", "G5", "G6", "G7"], False, ["Coeur", "H8"] + [f"B{i}" for i in range(1, 6)]),
-    (["G1", "G2", "H1", "H2", "H3", "G3", "G4", "H4", "G5", "G6", "G7", "SORTIE"], False, ["sortie"]),
+    (G[:7], False, ["vanne_cle", "vanne_H4"]),
+    (G[:8], False, ["H4"]),
+    (G[:9], False, ["arrivee_T2", "vanne_p20", "vanne_p24", "vanne_p28"]),
+    (G[:10], False, ["arrivee_T3"]),
+    (G[:11], False, ["Coeur", "H8"] + [f"B{i}" for i in range(1, 6)]),
+    (G, False, ["sortie"]),
 ]
 ok_ = True
 deja = []
@@ -154,7 +155,7 @@ for k, (ouv, vide, nouvelles) in enumerate(ETAPES):
 # sans voile, toutes les portes ouvertes : on ne doit pas passer les tunnels submerges
 TOUTES = list(conf["portes"])
 vu0 = parcours(TOUTES, False)
-permis = {"S1", "vanne_G1", "bouton_H1", "H1", "bouton_G2", "levier_3a", "levier_3b", "bouton_H2", "bouton_H3", "H2", "H3"}
+permis = {"S1", "vanne_G1", "bouton_H1", "H1", "vanne_G2", "vanne_3a", "vanne_3b", "vanne_H2", "vanne_H3", "H2", "H3"}
 sans = sorted(c for c in CIB if atteint(vu0, CIB[c], rayon(c)))
 en_trop = sorted(set(sans) - permis)
 print("sans voile, toutes portes ouvertes :", sans, "->", "OK" if not en_trop else f"ECHEC (en trop : {en_trop})")
@@ -194,26 +195,76 @@ def plus_court(a, b):
     return None
 
 
-TRAJETS = {"T1": ((131, 43, 74), (120, 43, 95)), "T2": ((66, 43, 100), (40, 43, 94)), "T3": ((40, 43, 108), (40, 43, 130))}
+# trajets : de la case d'eau juste au dessus de l'entree du tunnel a la case juste au dessus de sa sortie (ou, pour les salles cachees, au milieu de la salle)
+TRAJETS = {"T1": ((131, 40, 74), (120, 38, 95)), "T2": ((66, 36, 100), (40, 40, 94)), "T3": ((40, 40, 108), (40, 40, 130)), "G7": ((46, 45, 136), (84, 43, 136))}
+SORTIES_AIR = {"G7": True}                                                # la galerie du Coeur debouche dans le bassin du boss, a l'air libre
 for n_, c in conf["cachees_detail"].items():
     if c.get("puits"):
         px, fp, pz = c["puits"]
         x0, x1, y0, y1, z0, z1 = c["boite"]
-        TRAJETS[f"H{n_}"] = ((px, 43, pz), ((x0 + x1) // 2, y0 - 1, (z0 + z1) // 2))
+        TRAJETS[f"H{n_}"] = ((px, fp + 2, pz), ((x0 + x1) // 2, y0 - 1, (z0 + z1) // 2))
+        SORTIES_AIR[f"H{n_}"] = True                                      # la salle cachee a un plafond d'air : on y respire en arrivant
+# distance a la cloche d'air la plus proche (nage a six voisins, hors tunnels a pression, toutes portes ouvertes)
+CLOCHES = [tuple(c) for c in conf["cloches"]]
+C_INT = INT.tolist()
+PR = PRES.tolist()
+AIR_LIBRE = (passe & ~eau).tolist()
+# on respire partout ou une case d'eau a de l'air libre au dessus : sous les cloches, mais aussi dans le mini-bassin du depart, le bassin du Coeur et sous le plafond des salles cachees
+INT_CLOCHES = {(x, y, z) for x, y, z in np.argwhere(eau).tolist() if y + 1 < SY and AIR_LIBRE[x][y + 1][z] and C_INT[x][y + 1][z] and not PR[x][y][z]}
+DIST = {c: 0 for c in INT_CLOCHES}
+file_ = deque(INT_CLOCHES)
+while file_:
+    p = file_.popleft()
+    for d in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)):
+        q = (p[0] + d[0], p[1] + d[1], p[2] + d[2])
+        if q not in DIST and 0 <= q[0] < SX and 0 <= q[1] < SY and 0 <= q[2] < SZ and E[q[0]][q[1]][q[2]] and not PR[q[0]][q[1]][q[2]]:
+            DIST[q] = DIST[p] + 1
+            file_.append(q)
+CLES = np.array(list(DIST.keys()))
+VALS = np.array(list(DIST.values()))
+
+
+def vers_cloche(c, r=3.0):
+    """Nombre de pas d'une cloche d'air a une case d'eau situee a moins de r de la cible."""
+    d2 = ((CLES - np.array(c)) ** 2).sum(1)
+    m = d2 <= r * r
+    return int(VALS[m].min()) if m.any() else None
+
+
 print(f"voile : reserve {RES:.0f} s + air {AIR:.0f} s ; nage ordinaire {VIT_N} b/s, rapide {VIT_R} b/s")
 BILAN = {}
+MAX_PAS = 35                                                              # un aller simple d'une cloche a une vanne : 35 pas, soit un peu plus de 15 s ; avec le retour, moins de 32 s
 for n_, (a, b) in TRAJETS.items():
     d = plus_court(a, b)
     if d is None:
         print(f"trajet {n_} : INTROUVABLE dans l'eau {a} -> {b} -> ECHEC")
         ok_ = False
         continue
-    tn, tr = d / VIT_N, d / VIT_R
-    BILAN[n_] = {"blocs": d, "ordinaire_s": round(tn), "rapide_s": round(tr)}
+    da = vers_cloche(a, 2.0)
+    db = 0 if n_ in SORTIES_AIR else vers_cloche(b, 2.0)
+    if da is None or db is None:
+        print(f"trajet {n_} : aucune cloche d'air accessible pres de l'entree ou de la sortie -> ECHEC")
+        ok_ = False
+        continue
+    total = da + d + db
+    tn, tr = total / VIT_N, total / VIT_R
+    BILAN[n_] = {"blocs": d, "cloche_entree": da, "cloche_sortie": db, "total": total, "ordinaire_s": round(tn), "rapide_s": round(tr)}
     bon = tn <= RES * 0.8 and tr >= 6.0
     ok_ &= bon
-    print(f"trajet {n_} : {d} blocs sous l'eau | {tn:.0f} s en nage ordinaire, {tr:.0f} s en nage rapide | reserve {RES:.0f} s -> {'OK' if bon else 'ECHEC'}"
-          f" (sans voile : {AIR:.0f} s d'air mais degats de pression des l'entree : infranchissable)")
+    print(f"trajet {n_} : cloche -> entree {da} + tunnel {d} + sortie -> cloche {db} = {total} pas | {tn:.0f} s en nage ordinaire, {tr:.0f} s en nage rapide | reserve {RES:.0f} s -> {'OK' if bon else 'ECHEC'}"
+          f" (sans voile : degats de pression des l'entree : infranchissable)")
+# aucun point d'interet ne doit etre trop loin d'une cloche d'air (le voile ne se recharge qu'a l'air libre)
+LOIN = {}
+for nom_, c in CIB.items():
+    if nom_ in ("S1", "sortie", "vanne_G1") or nom_.startswith("bouton_H1") or nom_ in ("H1", "H5", "H6", "H7", "H8") or nom_.startswith("arrivee") or nom_ == "Coeur" or (nom_[0] == "B" and nom_[1:].isdigit()):
+        continue
+    d = vers_cloche(c, 3.0)
+    LOIN[nom_] = d
+pires = sorted(((v if v is not None else 999), k) for k, v in LOIN.items())[-4:]
+mauvais = [k for k, v in LOIN.items() if v is None or v > MAX_PAS]
+print(f"distance cloche -> vanne ou salle cachee : au plus {pires[-1][0]} pas ({pires[-1][1]}) ; les plus eloignees : {pires} ; trop loin (> {MAX_PAS}) : {mauvais or 'aucune'} ->", "OK" if not mauvais else "ECHEC")
+ok_ &= not mauvais
+BILAN["_cloches"] = {"nombre": len(CLOCHES), "pires": {k: v for v, k in pires}}
 (RACINE / "exports/aqua_verif.json").write_text(json.dumps({"_marque": "[claude-build]", "resultat": "OK" if ok_ else "ECHEC", "sans_voile": sans, "trajets": BILAN,
                                                             "reserve_s": RES, "air_s": AIR}, ensure_ascii=False), encoding="utf-8")
 print("RESULTAT :", "OK" if ok_ else "ECHEC")

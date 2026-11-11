@@ -3,7 +3,7 @@
 
 CHAINES = [(14, 61, 50), (14, 61, 54), (14, 61, 58), (14, 61, 62)]
 CMD = []
-VARS = ("#s4", "#g3", "#g6", "#cle", "#g5", "#t")
+VARS = ("#s4", "#cle", "#kp", "#t")
 
 
 def rel(x, y, z):
@@ -27,17 +27,28 @@ def ouvrir(nom_):
     return fill([tuple(c) for c in p["cases"]], "minecraft:water" if p.get("eau") else "minecraft:air")
 
 
-def sequence(var, boutons, porte_nom):
-    for k, b in enumerate(boutons, 1):
-        on = f"execute if block {rel(*b)} minecraft:stone_button[powered=true]"
+def ouverte(nom_vanne):
+    """Condition « la vanne est ouverte » ; la position est relative au bloc de commande qui l'ecrit (pas de « positioned » avant)."""
+    return f"if block {rel(*VANNES[nom_vanne][0])} minecraft:oak_trapdoor[open=true]"
+
+
+def fermee(nom_vanne):
+    return f"minecraft:oak_trapdoor[half=bottom,facing={VANNES[nom_vanne][1]},open=false,powered=false,waterlogged=true]"
+
+
+def sequence(var, noms, porte_nom):
+    """Les vannes se rouvrent a chaque clic : on lit l'ordre, puis on les referme toutes en fin de chaine."""
+    for k, nm in enumerate(noms, 1):
         if k >= 2:
-            CMD.append(f"{on} if score {var} aqua matches ..{k - 2} positioned {rel(*b)} run playsound minecraft:block.note_block.bass master @a[distance=..16] ~ ~ ~ 1 0.6")
-            CMD.append(f"execute if block {rel(*b)} minecraft:stone_button[powered=true] if score {var} aqua matches ..{k - 2} run scoreboard players set {var} aqua 0")
-        CMD.append(f"execute if block {rel(*b)} minecraft:stone_button[powered=true] if score {var} aqua matches {k - 1} run scoreboard players set {var} aqua {k}")
-    n = len(boutons)
-    CMD.append(f"execute if score {var} aqua matches {n} positioned {rel(*boutons[0])} run playsound minecraft:block.note_block.chime master @a[distance=..30] ~ ~ ~ 1 1")
+            CMD.append(f"execute {ouverte(nm)} if score {var} aqua matches ..{k - 2} positioned {rel(*VANNES[nm][0])} run playsound minecraft:block.note_block.bass master @a[distance=..16] ~ ~ ~ 1 0.6")
+            CMD.append(f"execute {ouverte(nm)} if score {var} aqua matches ..{k - 2} run scoreboard players set {var} aqua 0")
+        CMD.append(f"execute {ouverte(nm)} if score {var} aqua matches {k - 1} run scoreboard players set {var} aqua {k}")
+    n = len(noms)
+    CMD.append(f"execute if score {var} aqua matches {n} positioned {rel(*VANNES[noms[0]][0])} run playsound minecraft:block.note_block.chime master @a[distance=..30] ~ ~ ~ 1 1")
     CMD.append(f"execute if score {var} aqua matches {n} run " + ouvrir(porte_nom))
     CMD.append(f"execute if score {var} aqua matches {n} run scoreboard players set {var} aqua {n + 1}")
+    for nm in noms:
+        CMD.append(f"execute {ouverte(nm)} run setblock {rel(*VANNES[nm][0])} {fermee(nm)}")
 
 
 VOILE = "grappin:voile"
@@ -62,15 +73,14 @@ for (x0, x1, y0, y1, z0, z1) in PRESSION:
 CMD.append("execute if score #t aqua matches 10.. run scoreboard players set #t aqua 0")
 # portes et enigmes
 
-CMD.append(f"execute if block {rel(*BOUTONS_G2)} minecraft:stone_button[powered=true] run " + ouvrir("G2"))
-CMD.append(f"execute if block {rel(*LEVIERS['L3a'])} minecraft:lever[powered=true] if block {rel(*LEVIERS['L3b'])} minecraft:lever[powered=true] run " + ouvrir("G3"))
-sequence("#s4", [BOUTONS_G4[n] for n in ("poulpe", "raie", "crabe", "etoile")], "G4")
-# ecluse : la dalle de l'ilot du bassin B fait ceder la grille au fond du bassin A (et donne la cle, plus bas)
-CMD.append(f"execute if block {rel(*PLAQUE_CLE)} minecraft:stone_pressure_plate[powered=true] run " + ouvrir("G5"))
-cond = " ".join(f"if block {rel(*LEVIERS[f'P{x}'])} minecraft:lever[powered=true]" for x in LEV_X)
-CMD.append(f"execute {cond} run " + ouvrir("G6"))
-# la cle du Recif : la plaque au fond du bassin A la donne, la porte du Coeur la prend
-CMD.append(f"execute positioned {rel(*PLAQUE_CLE)} as @a[distance=..1.5] unless items entity @s container.* {CLE} run give @s {CLE_DON} 1")
+CMD.append(f"execute {ouverte('G2')} run " + ouvrir("G2"))
+CMD.append(f"execute {ouverte('3a')} {ouverte('3b')} run " + ouvrir("G3"))
+sequence("#s4", ["g_poulpe", "g_raie", "g_crabe", "g_etoile"], "G4")
+# ecluse : la vanne de l'ilot du bassin B fait ceder la grille au fond du bassin A et donne la cle (une seule fois : #kp)
+CMD.append(f"execute {ouverte('cle')} run " + ouvrir("G5"))
+CMD.append("execute " + " ".join(ouverte(f"p{x}") for x in LEV_X) + " run " + ouvrir("G6"))
+CMD.append(f"execute {ouverte('cle')} if score #kp aqua matches 0 positioned {rel(*VANNE_CLE)} run give @a[distance=..8,limit=1,sort=nearest] {CLE_DON} 1")
+CMD.append(f"execute {ouverte('cle')} if score #kp aqua matches 0 run scoreboard players set #kp aqua 1")
 CMD.append(f"execute if score #cle aqua matches 0 positioned {rel(46, SOL + 1, 135)} as @a[dx=7,dy=3,dz=2] if items entity @s weapon.mainhand {CLE} run scoreboard players set #cle aqua 1")
 CMD.append("execute if score #cle aqua matches 1 run " + ouvrir("G7"))
 CMD.append(f"execute if score #cle aqua matches 1 positioned {rel(46, SOL + 1, 135)} as @a[dx=7,dy=3,dz=2] run clear @s {CLE} 1")
@@ -78,7 +88,11 @@ CMD.append("execute if score #cle aqua matches 1 run scoreboard players set #cle
 CMD.append(f"execute if score #cle aqua matches 0 positioned {rel(46, SOL + 1, 135)} as @a[dx=7,dy=3,dz=2] unless items entity @s weapon.mainhand {CLE} run title @s actionbar "
            "{\"text\":\"Porte fermée à clé (Clé du Récif en main)\",\"color\":\"gold\"}")
 for n_, c in CACHEES.items():
-    if not c["voile"]:
+    if c["voile"]:
+        continue
+    if c["eau"]:
+        CMD.append(f"execute {ouverte(f'h{n_}')} run " + ouvrir(f"H{n_}"))
+    else:
         CMD.append(f"execute if block {rel(*c['bouton'])} minecraft:stone_button[powered=true] run " + ouvrir(f"H{n_}"))
 assert len(CMD) <= 32 * len(CHAINES), len(CMD)
 for i, c in enumerate(CMD):
@@ -219,28 +233,27 @@ if FN.exists():
         f"playsound minecraft:block.iron_door.open master @a {w((a, b, c))} 2 0.6\n", encoding="utf-8")
     (FN / "aqua_fermer_sortie_boss.mcfunction").write_text(
         f"# [claude-build] Referme la sortie du boss.\nfill {w((a, b, c))} {w((d_, e, f_))} minecraft:iron_bars[waterlogged=false]\n", encoding="utf-8")
-    reset = ["# [claude-build] Remet le sanctuaire a zero : portes fermees, leviers baisses et cle remise."]
+    reset = ["# [claude-build] Remet le sanctuaire a zero : portes fermees, vannes refermees et cle remise."]
     for n_, p in PORTES.items():
         props = ",".join(f"{k}={v}" for k, v in p["props"].items())
         (a, b, c), (d_, e, f_) = plage([tuple(x) for x in p["cases"]])
         reset.append(f"fill {w((a, b, c))} {w((d_, e, f_))} {p['bloc']}{'[' + props + ']' if props else ''}")
-    for n_, p in LEVIERS.items():
-        face = "east" if n_ in ("L3a", "L3b", "LE", "L1") else "south"
-        reset.append(f"setblock {w(p)} minecraft:lever[face=wall,facing={face},powered=false]")
-    reset.append(f"setblock {w(VANNE_G1)} minecraft:oak_trapdoor[half=bottom,facing=north,open=false,powered=false,waterlogged=true]")
+    for n_, (p, f_) in VANNES.items():
+        reset.append(f"setblock {w(p)} minecraft:oak_trapdoor[half=bottom,facing={f_},open=false,powered=false,waterlogged=true]")
     reset += ["scoreboard objectives add aqua dummy"] + [f"scoreboard players set {v_} aqua 0" for v_ in VARS]
     reset += [f"clear @a {CLE}", 'tellraw @a {"text":"Sanctuaire remis a zero.","color":"gray"}']
     (FN / "aqua_reset.mcfunction").write_text("\n".join(reset) + "\n", encoding="utf-8")
 conf = {"_marque": "[claude-build]", "taille": [SX, SY, SZ], "origine": ORIGINE, "portes": PORTES, "points": POINTS, "entree": list(POINTS["S1"]), "tunnels": {k: v for k, v in TUNNELS.items()},
         "longueurs": LONG, "pression": PRESSION, "cachees_detail": {str(k): v for k, v in CACHEES.items()}, "boss": BOSS, "niveau_eau": SOL,
-        "cibles": {"S1": list(POINTS["S1"]), "vanne_G1": list(VANNE_G1), "bouton_G2": list(BOUTONS_G2), "levier_3a": list(LEVIERS["L3a"]), "levier_3b": list(LEVIERS["L3b"]),
-                   "glyphe_poulpe": list(BOUTONS_G4["poulpe"]), "glyphe_raie": list(BOUTONS_G4["raie"]), "glyphe_crabe": list(BOUTONS_G4["crabe"]),
-                   "glyphe_etoile": list(BOUTONS_G4["etoile"]), "plaque_cle": list(PLAQUE_CLE),
-                   "levier_p20": list(LEVIERS["P20"]), "levier_p24": list(LEVIERS["P24"]), "levier_p28": list(LEVIERS["P28"]),
+        "cloches": [list(c_) for c_ in CLOCHES], "vannes": {k_: list(v_[0]) for k_, v_ in VANNES.items()},
+        "cibles": {"S1": list(POINTS["S1"]), "vanne_G1": list(VANNE_G1), "vanne_G2": list(VANNE_G2), "vanne_3a": list(VANNE_3A), "vanne_3b": list(VANNE_3B),
+                   "glyphe_poulpe": list(VANNES_G4["poulpe"]), "glyphe_raie": list(VANNES_G4["raie"]), "glyphe_crabe": list(VANNES_G4["crabe"]),
+                   "glyphe_etoile": list(VANNES_G4["etoile"]), "vanne_cle": list(VANNE_CLE),
+                   "vanne_p20": list(VANNES_P[20]), "vanne_p24": list(VANNES_P[24]), "vanne_p28": list(VANNES_P[28]),
                    "arrivee_T1": list(POINTS["arrivee_T1"]), "arrivee_T2": list(POINTS["arrivee_T2"]), "arrivee_T3": list(POINTS["arrivee_T3"]), "Coeur": list(POINTS["Coeur"]),
                    "sortie": list(POINTS["sortie"]), **{k: list(v) for k, v in BOSS.items()},
                    **{f"H{k}": list(v["coffre"]) for k, v in CACHEES.items()},
-                   **{f"bouton_H{k}": list(v["bouton"]) for k, v in CACHEES.items() if not v["voile"]}}}
+                   **{(f"vanne_H{k}" if v["eau"] else f"bouton_H{k}"): list(v["bouton"]) for k, v in CACHEES.items() if not v["voile"]}}}
 (RACINE / "exports" / f"{NOM}_cibles.json").write_text(json.dumps(conf, ensure_ascii=False), encoding="utf-8")
 np.savez_compressed(RACINE / "exports" / f"{NOM}_vide.npz", C=np.packbits(C.ravel()), W=np.packbits(W.ravel()), taille=np.array([SX, SY, SZ]))
 print(f"Ecrit : {n_total} blocs | commandes {len(CMD)} | portes {list(PORTES)}")

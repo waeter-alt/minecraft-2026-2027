@@ -306,9 +306,9 @@ Liste de chaque fichier généré par Claude (marque [claude-build]).
 | exports/temple.nbt, temple_cibles.json, temple_vide.npz | 2026-11-09 | Structure, points à atteindre, masque des volumes creux (pour le vérificateur) |
 | scripts/donjon_temple_decor.py, donjon_temple_decor2.py, donjon_temple_decor3.py | 2026-11-09 | Passe de décoration du temple (murs, sols, plafonds, pilastres, mobilier, végétation, aile du boss), exécutée par donjon_temple.py |
 | docs/donjon_aquatique_plan.md | 2026-11-11 | Plan validé du donjon aquatique « Le Sanctuaire des Marées » : 11 sections, ≈ 31 min, 8 salles cachées |
-| scripts/donjon_aqua.py | 2026-11-11 | Générateur du Sanctuaire (150 × 70 × 170) : volumes, bassins, tunnels noyés, coquille ; exécute les modules ci-dessous |
-| scripts/donjon_aqua_missions.py | 2026-11-11 | Portes, leviers, énigmes, écluse, clé, salles cachées, salle du boss |
-| scripts/donjon_aqua_decor.py | 2026-11-11 | Décor : lanternes de mer, algues, herbiers, coraux, lichen, colonnes brisées, mousse, lianes, totems |
+| scripts/donjon_aqua.py | 2026-11-11 | Générateur du Sanctuaire (150 × 70 × 170) : salles noyées, bassins, tunnels, coquille ; exécute les modules ci-dessous |
+| scripts/donjon_aqua_missions.py | 2026-11-11 | Portes, vannes sous-marines, énigmes, clé, salles cachées, cloches d'air, salle du boss |
+| scripts/donjon_aqua_decor.py | 2026-11-11 | Décor de monument océanique : prismarine, bandeaux, lanternes de mer, pilastres, éponges, noyau d'or, herbier de la Colonnade |
 | scripts/donjon_aqua_lumiere.py | 2026-11-11 | Éclairage calculé, eau comprise (blocs light immergés là où il manque) |
 | scripts/donjon_aqua_fin.py | 2026-11-11 | Blocs de commande (don du voile, pression des profondeurs, portes), contrôles (eau confinée, interdits), écriture de la structure et du datapack |
 | scripts/verif_donjon_aqua.py | 2026-11-11 | Vérificateur : accès étape par étape avec le voile, rien au-delà des tunnels sans voile, budget d'air de chaque tunnel |

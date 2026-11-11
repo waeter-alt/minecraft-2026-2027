@@ -1,6 +1,7 @@
 # [claude-build]
 """
-donjon_aqua.py - Donjon aquatique « Le Sanctuaire des Marees » (2026-11-10) : un temple englouti dans une lagune, ~31 min.
+donjon_aqua.py - Donjon aquatique « Le Sanctuaire des Marees » (2026-11-10) : un monument oceanique englouti, ~31 min. Les salles sont noyees jusqu'au plafond ;
+seuls le Debarcadere (depart), la salle du boss et les cloches d'air (points de recharge du voile) contiennent de l'air.
 Le Voile des Profondeurs (mod Grappin 2.5.0) est donne a l'entree ; les tunnels submerges ne se traversent qu'avec lui (« pression des profondeurs »).
 Pas de grappin, pas de conduit, pas de lave, ni coffre ni mob ni boss. Eau confinee (controlee). Gabarit 150 x 70 x 170, pose en (150, -61, 260).
 Plan : docs/donjon_aquatique_plan.md.
@@ -117,9 +118,12 @@ SALLES = {
     "S6": (60, 96, 86, 116, HAUT), "S8": (10, 45, 86, 116, HAUT), "S9": (10, 45, 122, 150, HAUT), "S10": (62, 140, 120, 166, 66),
 }
 for n_, (x0, x1, z0, z1, top) in SALLES.items():
-    boite(x0, x1, SOL + 1, top, z0, z1)                            # le volume d'air ; les bassins sont creuses dessous
+    if n_ in ("S1", "S10"):
+        boite(x0, x1, SOL + 1, top, z0, z1)                        # le depart et la salle du boss gardent leur volume d'air ; les bassins sont creuses dessous
+    else:
+        eau(x0, x1, SOL + 1, top, z0, z1)                          # toutes les autres salles sont noyees jusqu'au plafond
 POOLS = {                                                          # nom: (x0, x1, z0, z1, fond du bassin) ; l'eau va du fond + 1 a 43
-    "P1": (24, 31, 18, 25, 38), "S2": (14, 66, 48, 76, 40), "C1": (80, 97, 48, 76, 38), "C2": (102, 118, 48, 76, 38), "C3": (122, 138, 48, 76, 38),
+    "P1": (24, 31, 18, 25, 36), "S2": (14, 66, 48, 76, 40), "C1": (80, 97, 48, 76, 38), "C2": (102, 118, 48, 76, 38), "C3": (122, 138, 48, 76, 38),
     "S5": (104, 136, 90, 112, 36), "A": (62, 78, 90, 112, 34), "B": (82, 94, 90, 112, 40), "P8a": (36, 44, 90, 98, 38), "P8b": (36, 44, 104, 112, 38),
     "P9": (36, 44, 126, 134, 38), "S10": (82, 120, 130, 156, 14),
 }
@@ -129,22 +133,23 @@ for n_, (x0, x1, z0, z1, fond) in POOLS.items():
 for (px0, px1) in ((99, 101), (119, 121)):
     boite(px0, px1, 40, 47, 60, 62)
     W[px0:px1 + 1, 40:SOL + 1, 60:63] = True
-# couloirs secs (3 de large, 4 de haut) entre les salles
-COULOIRS = {"G1": (26, 28, SOL + 1, SOL + 4, 39, 43), "G2": (71, 75, SOL + 1, SOL + 4, 60, 62), "G4": (97, 99, SOL + 1, SOL + 4, 100, 102),
-            "G7": (46, 61, SOL + 1, SOL + 4, 135, 137)}
+# couloirs noyes (3 de large, 4 de haut) entre les salles
+COULOIRS = {"G2": (71, 75, SOL + 1, SOL + 4, 60, 62), "G4": (97, 99, SOL + 1, SOL + 4, 100, 102), "G7": (46, 56, SOL + 1, SOL + 4, 135, 137)}
 for n_, (x0, x1, y0, y1, z0, z1) in COULOIRS.items():
-    boite(x0, x1, y0, y1, z0, z1)
+    eau(x0, x1, y0, y1, z0, z1)
 
 
-def tube(sommets, r=1):
-    """Tunnel submerge de (2r+1) de cote le long d'une ligne brisee de sommets (x, y, z) alignes sur les axes ; renvoie sa longueur."""
+def tube(sommets, r=1, pression=True):
+    """Tunnel submerge de (2r+1) de cote le long d'une ligne brisee de sommets (x, y, z) alignes sur les axes ; renvoie sa longueur.
+    Avec pression=False c'est un simple passage noye (sans degats pour qui n'a pas le voile)."""
     longueur = 0
     for (a, b) in zip(sommets[:-1], sommets[1:]):
         x0, x1 = sorted((a[0], b[0]))
         y0, y1 = sorted((a[1], b[1]))
         z0, z1 = sorted((a[2], b[2]))
         eau(x0 - r, x1 + r, y0 - r, y1 + r, z0 - r, z1 + r)
-        PRESSION.append((x0 - r, x1 + r, y0 - r, y1 + r, z0 - r, z1 + r))
+        if pression:
+            PRESSION.append((x0 - r, x1 + r, y0 - r, y1 + r, z0 - r, z1 + r))
         longueur += abs(b[0] - a[0]) + abs(b[1] - a[1]) + abs(b[2] - a[2])
     return longueur
 
@@ -154,6 +159,10 @@ TUNNELS["T1"] = [(131, 38, 74), (131, 34, 74), (131, 34, 95), (120, 34, 95), (12
 TUNNELS["T2"] = [(66, 34, 100), (66, 30, 100), (40, 30, 100), (40, 30, 94), (40, 38, 94)]                    # bassin A des ecluses -> salle des pompes
 TUNNELS["T3"] = [(40, 38, 108), (40, 26, 108), (40, 26, 130), (40, 38, 130)]                                  # pompes -> antichambre
 LONG = {n_: tube(v) for n_, v in TUNNELS.items()}
+# passages noyes sans pression : la galerie du depart (du mini-bassin du Debarcadere a la Colonnade) et la galerie qui amene sous le bassin du Coeur
+PASSAGES = {"G1": [(27, 38, 26), (27, 38, 42), (27, 45, 42)], "G7": [(55, 46, 136), (55, 38, 136), (84, 38, 136)]}
+for n_, v in PASSAGES.items():
+    tube(v, pression=False)
 # profondeurs de plongee jusqu'a l'entree du tunnel (depuis la surface 44)
 PLONGEE = {"T1": 44 - 38, "T2": 44 - 34, "T3": 44 - 38}
 SORTIE_T = {"T1": 44 - 36, "T2": 44 - 38, "T3": 44 - 38}
@@ -162,22 +171,28 @@ print("[1] tunnels (blocs) :", LONG, flush=True)
 # ---------------------------------------------------------------- salles cachees : 4 a sec (porte camouflee) et 4 sous l'eau (tunnel submerge, il faut le voile)
 CACHEES = {}
 HID_SEC = [  # n, (x0, z0), couloir (axe, lateral, a, b), plan de la porte, bouton (x, y, z, facing)
-    (1, (52, 10), ("x", (13, 14, 15), 46, 51), 46, (45, SOL + 2, 18, "west"), "S1 : faux mur de briques fissurées dans le mur est (bouton discret)"),
-    (2, (92, 14), ("z", (95, 96, 97), 23, 43), 43, (92, SOL + 2, 44, "south"), "S3 : faux mur dans le mur nord, derrière un rideau d'algues (bouton discret)"),
-    (3, (112, 14), ("z", (115, 116, 117), 23, 43), 43, (112, SOL + 2, 44, "south"), "S3 : panneau de pierre dans le mur nord (bouton discret)"),
-    (4, (48, 94), ("x", (97, 98, 99), 57, 59), 59, (60, SOL + 2, 102, "east"), "S6 : paroi coulissante dans le mur ouest (bouton discret)"),
+    (1, (52, 10), ("x", (13, 14, 15), 46, 51), 46, (45, SOL + 2, 18, "west"), "S1 : faux mur de prismarine dans le mur est du Débarcadère (bouton de pierre discret, à sec)"),
+    (2, (92, 14), ("z", (95, 96, 97), 23, 43), 43, (92, SOL + 2, 44, "south"), "S3 : faux mur dans le mur nord de la salle des Citernes (vanne discrète, salle noyée)"),
+    (3, (112, 14), ("z", (115, 116, 117), 23, 43), 43, (112, SOL + 2, 44, "south"), "S3 : faux mur dans le mur nord, plus loin (vanne discrète, salle noyée)"),
+    (4, (48, 94), ("x", (97, 98, 99), 57, 59), 59, (60, SOL + 2, 102, "east"), "S6 : faux mur dans le mur ouest des Écluses (vanne discrète, salle noyée)"),
 ]
 for (n_, (bx, bz), (axe, lat, a, b), pv, (bx_, by_, bz_, fb), acces) in HID_SEC:
-    boite(bx, bx + 8, SOL + 1, SOL + 5, bz, bz + 8)
-    if axe == "x":
-        boite(a, b, SOL + 1, SOL + 3, lat[0], lat[-1])
+    if n_ == 1:                                                    # la salle cachee 1 touche le depart (au sec) ; les autres sont noyees, avec une rangee d'air sous le plafond (on y respire)
+        boite(bx, bx + 8, SOL + 1, SOL + 5, bz, bz + 8)
+        vol = boite
     else:
-        boite(lat[0], lat[-1], SOL + 1, SOL + 3, a, b)
+        eau(bx, bx + 8, SOL + 1, SOL + 4, bz, bz + 8)
+        boite(bx, bx + 8, SOL + 5, SOL + 5, bz, bz + 8)
+        vol = eau
+    if axe == "x":
+        vol(a, b, SOL + 1, SOL + 3, lat[0], lat[-1])
+    else:
+        vol(lat[0], lat[-1], SOL + 1, SOL + 3, a, b)
     CACHEES[n_] = {"boite": (bx, bx + 8, SOL + 1, SOL + 5, bz, bz + 8), "acces": acces, "bouton": (bx_, by_, bz_), "fb": fb, "plan": pv, "axe": axe, "lat": lat,
-                   "voile": False, "coffre": (bx + 1, SOL + 1, bz + 7), "mobs": (bx + 5, SOL + 1, bz + 3)}
+                   "voile": False, "eau": n_ != 1, "coffre": (bx + 1, SOL + 1, bz + 7), "mobs": (bx + 5, SOL + 1, bz + 3)}
 FLH = 23                                                           # sol des salles cachees sous l'eau
 HID_EAU = [  # n, (x0, z0) de la salle, (px, pz) du puits d'entree, fond du bassin d'entree, hauteur du tunnel
-    (5, (14, 52), (30, 56, 40), 20, "S2 : puits au fond du grand bassin de la colonnade, tunnel submergé vers une salle cachée à l'air libre"),
+    (5, (14, 52), (30, 56, 40), 20, "S2 : puits au fond du grand bassin de la Colonnade, tunnel submergé vers une salle cachée d'air"),
     (6, (82, 54), (96, 58, 38), 20, "S3 : puits dans la première citerne, tunnel submergé"),
     (7, (106, 94), (124, 98, 36), 20, "S5 : puits dans le bassin de la bibliothèque, tunnel submergé"),
     (8, (126, 138), (120, 142, 18), 20, "S10 : galerie sous le bord du bassin du Cœur, tunnel submergé"),
@@ -190,7 +205,7 @@ for (n_, (bx, bz), (px, pz, fp), yt, acces) in HID_EAU:
     else:
         som = [(px, fp, pz), (px, yt, pz), (rx, yt, pz), (rx, yt, rz), (rx, FLH - 1, rz)]
     LONG[f"H{n_}"] = tube(som)
-    CACHEES[n_] = {"boite": (bx, bx + 8, FLH + 1, FLH + 5, bz, bz + 8), "acces": acces, "voile": True, "coffre": (bx + 1, FLH + 1, bz + 7), "mobs": (bx + 6, FLH + 1, bz + 2),
+    CACHEES[n_] = {"boite": (bx, bx + 8, FLH + 1, FLH + 5, bz, bz + 8), "acces": acces, "voile": True, "eau": False, "coffre": (bx + 1, FLH + 1, bz + 7), "mobs": (bx + 6, FLH + 1, bz + 2),
                    "puits": (px, fp, pz)}
 print("[1b] volumes :", int(C.sum()), "cases creuses,", int(W.sum()), "cases d'eau", flush=True)
 
@@ -206,8 +221,7 @@ for _ in range(4):
     n[:, :, :-1] |= d[:, :, 1:]
     d = n
 COQUE = d & ~C
-PAL = [(S("prismarine_bricks"), 3), (S("stone_bricks"), 3), (S("mossy_stone_bricks"), 3), (S("cracked_stone_bricks"), 2), (S("dark_prismarine"), 1), (S("mossy_cobblestone"), 1),
-       (S("sandstone"), 1), (S("calcite"), 1)]
+PAL = [(S("prismarine_bricks"), 6), (S("prismarine"), 3), (S("dark_prismarine"), 2)]                  # palette du monument oceanique
 for x, y, z in zip(*np.nonzero(COQUE)):
     put(x, y, z, pick(PAL, bruit(x + y * .5, z - y * .3, 3, 800) * .7 + h01(x, y, z, 801) * .3))
 for x, y, z in zip(*np.nonzero(C & W)):
@@ -220,8 +234,9 @@ def vide(p):
     return 0 <= x < SX and 0 <= y < SY and 0 <= z < SZ and C[x, y, z] and p not in blocs
 
 
-def porte(n, cases, s=BARRES):
-    PORTES[n] = {"cases": [list(c) for c in cases], "bloc": s[0], "props": dict(s[1]), "eau": s[1] and dict(s[1]).get("waterlogged") == "true"}
+def porte(n, cases, s=BARRES_E, eau_=None):
+    """Une porte par defaut est une herse de barres noyees ; eau_=True pour un mur plein qui, ouvert, laisse place a de l'eau."""
+    PORTES[n] = {"cases": [list(c) for c in cases], "bloc": s[0], "props": dict(s[1]), "eau": (dict(s[1]).get("waterlogged") == "true") if eau_ is None else eau_}
     for c in cases:
         put(*c, s)
 

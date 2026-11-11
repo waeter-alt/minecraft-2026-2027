@@ -5,7 +5,7 @@ ils sont immerges pour ne pas laisser fuir l'eau). Execute par donjon_aqua.py ap
 import numpy as np
 
 TRANSP = {"air", "water", "light", "lever", "stone_button", "stone_pressure_plate", "oak_wall_sign", "ladder", "kelp", "kelp_plant", "seagrass", "tall_seagrass", "sea_pickle",
-          "glow_lichen", "vine", "moss_carpet", "iron_bars"}
+          "glow_lichen", "vine", "moss_carpet", "iron_bars", "oak_trapdoor"}
 SEUIL = 5
 EMET = {"sea_lantern": 15, "glow_lichen": 7, "light": 15}
 

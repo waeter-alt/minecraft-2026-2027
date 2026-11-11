@@ -1,29 +1,18 @@
 # [claude-build]
-"""donjon_aqua_decor.py - decor du Sanctuaire des Marees : lanternes de mer dans les murs, algues, herbiers, coraux, pickles, lichen lumineux,
-colonnes brisees dans les bassins, mousse et lianes dans les salles seches, totems. Execute par donjon_aqua.py avant l'eclairage et l'ecriture."""
+"""donjon_aqua_decor.py - decor du Sanctuaire des Marees dans le style des monuments oceaniques de Minecraft : briques de prismarine, prismarine sombre en bandeaux,
+lanternes de mer encastrees (murs, sols, plafonds), pilastres, eponges mouillees dans les salles cachees, noyau d'or de la salle du boss. Un petit herbier pousse
+dans la Colonnade seulement. Execute par donjon_aqua.py avant l'eclairage et l'ecriture."""
 import numpy as np
 
-SHELL = {"prismarine_bricks", "stone_bricks", "mossy_stone_bricks", "cracked_stone_bricks", "dark_prismarine", "mossy_cobblestone", "sandstone", "calcite"}
-SPECIAUX = {"lever", "stone_button", "stone_pressure_plate", "oak_wall_sign", "ladder", "lodestone", "iron_bars"}
+SHELL = {"prismarine_bricks", "prismarine", "dark_prismarine"}
+SPECIAUX = {"lever", "stone_button", "stone_pressure_plate", "oak_wall_sign", "oak_trapdoor", "ladder", "lodestone", "iron_bars"}
 PORTE_CASES = {tuple(c) for p in PORTES.values() for c in p["cases"]}
-DIL = np.zeros((SX, SY, SZ), dtype=bool)
-for (x0, x1, y0, y1, z0, z1) in PRESSION:
-    DIL[max(x0 - 3, 0):x1 + 4, max(y0 - 3, 0):y1 + 4, max(z0 - 3, 0):z1 + 4] = True     # abords des tunnels : on n'y met rien de solide
-CORAUX = ["tube", "brain", "bubble", "fire", "horn"]
+P_B, P_R, P_N, LANTERNE = S("prismarine_bricks"), S("prismarine"), S("dark_prismarine"), S("sea_lantern")
 cb = Counter()
 
 
-def eau_(q):
-    s_ = blocs.get(q)
-    return s_ is not None and (s_[0] == "minecraft:water" or dict(s_[1]).get("waterlogged") == "true")
-
-
-def pres_proche(p, r=2):
-    x, y, z = p
-    for q in ((x + r, y, z), (x - r, y, z), (x, y, z + r), (x, y, z - r), (x, y + r, z), (x, y - r, z)):
-        if q in PORTE_CASES:
-            return True
-    return False
+def dans(q):
+    return 0 <= q[0] < SX and 0 <= q[1] < SY and 0 <= q[2] < SZ
 
 
 def voisins6(p):
@@ -31,132 +20,113 @@ def voisins6(p):
     return ((x + 1, y, z), (x - 1, y, z), (x, y + 1, z), (x, y - 1, z), (x, y, z + 1), (x, y, z - 1))
 
 
-# ---------------------------------------------------------------- lanternes de mer encastrees dans les murs (une par case de 6 x 6 x 6, la mieux placee)
-meilleur = {}
-for (x, y, z), s in list(blocs.items()):
-    if nom((x, y, z)) not in SHELL:
-        continue
-    adj_int = [q for q in voisins6((x, y, z)) if 0 <= q[0] < SX and 0 <= q[1] < SY and 0 <= q[2] < SZ and C[q] and (q not in blocs or eau_(q))]
-    if not adj_int:
-        continue
-    if any(nom(q) in SPECIAUX or q in PORTE_CASES for q in voisins6((x, y, z))) or pres_proche((x, y, z), 2):
-        continue
-    k = (x // 6, y // 6, z // 6)
-    v = h01(x, y, z, 910)
-    if k not in meilleur or v > meilleur[k][0]:
-        meilleur[k] = (v, (x, y, z))
-for _, p in meilleur.values():
-    put(*p, S("sea_lantern"))
-    cb["lanternes"] += 1
+def pres_porte(p, r=2):
+    x, y, z = p
+    return any(q in PORTE_CASES for q in ((x + r, y, z), (x - r, y, z), (x, y, z + r), (x, y, z - r), (x, y + r, z), (x, y - r, z)))
 
-# ---------------------------------------------------------------- herbier et recif au fond de chaque bassin (eau libre, hors tunnels)
-eau_cases = [p for p, s in blocs.items() if s == EAU]
-for (x, y, z) in eau_cases:
+
+SALLES_NOYEES = [n_ for n_ in SALLES if n_ not in ("S1", "S10")]
+EPONGE = {c["boite"] for c in CACHEES.values() if c["eau"]}
+
+
+def boite_de(p):
+    x, y, z = p
+    for (x0, x1, y0, y1, z0, z1) in EPONGE:
+        if x0 - 1 <= x <= x1 + 1 and y0 - 1 <= y <= y1 + 1 and z0 - 1 <= z <= z1 + 1:
+            return True
+    return False
+
+
+# ---------------------------------------------------------------- restyler la coque : sols en damier, bandeaux sombres, lanternes de mer encastrees, plafond a grille de lanternes
+for p in list(blocs):
+    if nom(p) not in SHELL or p in PORTE_CASES:
+        continue
+    x, y, z = p
+    ints = [q for q in voisins6(p) if dans(q) and C[q]]
+    if not ints:
+        continue
+    pres_special = any(nom(q) in SPECIAUX for q in voisins6(p)) or pres_porte(p, 1)
+    dessus, dessous = (x, y + 1, z) in ints, (x, y - 1, z) in ints
+    if dessus:                                                     # sol
+        if boite_de(p):
+            b = S("wet_sponge")
+            cb["eponges"] += 1
+        elif x % 8 == 4 and z % 8 == 4 and not pres_special:
+            b = LANTERNE
+            cb["lanternes_sol"] += 1
+        else:
+            b = P_N if (x // 3 + z // 3) % 2 == 0 else P_B
+    elif dessous:                                                  # plafond
+        if x % 6 == 3 and z % 6 == 3 and not pres_special:
+            b = LANTERNE
+            cb["lanternes_plafond"] += 1
+        else:
+            b = P_R if h01(x, y, z, 910) < .25 else P_B
+    else:                                                          # mur
+        if (x + z) % 8 == 0 and y in (47, 53) and not pres_special:
+            b = LANTERNE
+            cb["lanternes_mur"] += 1
+        elif (y - SOL) % 6 in (1, 2):
+            b = P_N                                                # bandeau sombre
+        else:
+            b = P_R if h01(x, y, z, 911) < .2 else P_B
+    put(x, y, z, b)
+
+# ---------------------------------------------------------------- pilastres le long des murs des salles noyees (prismarine, bague sombre, lanterne de mer a mi-hauteur)
+for n_ in SALLES_NOYEES:
+    x0, x1, z0, z1, top = SALLES[n_]
+    cotes = [((x, z0), (0, -1)) for x in range(x0 + 3, x1 - 2, 8)] + [((x, z1), (0, 1)) for x in range(x0 + 3, x1 - 2, 8)] + \
+            [((x0, z), (-1, 0)) for z in range(z0 + 3, z1 - 2, 8)] + [((x1, z), (1, 0)) for z in range(z0 + 3, z1 - 2, 8)]
+    for ((x, z), (dx, dz)) in cotes:
+        if any(blocs.get((x, y, z)) != EAU for y in range(SOL + 1, top + 1)) or any(nom((x + dx, y, z + dz)) not in SHELL for y in range(SOL + 1, top + 1)):
+            continue
+        if any(nom((x + a, y, z + b)) in SPECIAUX for a in (-1, 0, 1) for b in (-1, 0, 1) for y in range(SOL + 1, top + 1)):
+            continue
+        for y in range(SOL + 1, top + 1):
+            k = y - SOL
+            put(x, y, z, LANTERNE if k == 7 else (P_N if k in (1, 2, top - SOL - 1, top - SOL) else P_B))
+        cb["pilastres"] += 1
+
+# ---------------------------------------------------------------- noyau d'or de la salle du boss : un cube de 2 x 2 x 2 dans le mur nord, entre deux lanternes de mer
+for (x, y, z) in [(x_, y_, z_) for x_ in (100, 101) for y_ in (SOL + 1, SOL + 2) for z_ in (118, 119)]:
+    if (x, y, z) in blocs:
+        put(x, y, z, S("gold_block"))
+        cb["or"] += 1
+for (x, y, z) in ((99, SOL + 1, 119), (102, SOL + 1, 119), (99, SOL + 2, 119), (102, SOL + 2, 119)):
+    if (x, y, z) in blocs:
+        put(x, y, z, LANTERNE)
+for x in (100, 101):                                               # un cadre de prismarine sombre autour
+    for z in (118, 119):
+        for y in (SOL + 3,):
+            if (x, y, z) in blocs:
+                put(x, y, z, P_N)
+
+# ---------------------------------------------------------------- herbier de la Colonnade (S2) : algues, herbes, quelques coraux ; ailleurs, rien ne pousse
+CORAUX = ["tube", "brain", "bubble", "fire", "horn"]
+x0, x1, z0, z1, top = SALLES["S2"]
+for (x, y, z) in [p for p, s in blocs.items() if s == EAU and x0 <= p[0] <= x1 and z0 <= p[2] <= z1 and p[1] <= 60]:
     sous = (x, y - 1, z)
-    if nom(sous) not in SHELL or DIL[x, y, z]:
+    if nom(sous) not in SHELL or sous[1] > 41 or any(nom((x + a, y, z + b)) in ("oak_trapdoor", "oak_wall_sign") for a in (-1, 0, 1) for b in (-1, 0, 1)):
         continue
     haut = 0
-    while blocs.get((x, y + haut, z)) == EAU and haut < 20:
+    while blocs.get((x, y + haut, z)) == EAU and haut < 14:
         haut += 1
-    if haut < 3:
+    if haut < 5:
         continue
     n = bruit(x, z, 7, 900)
     r = h01(x, y, z, 901)
-    if n > .6 and r < .55:                                         # forets d'algues
-        h = min(2 + int(h01(x, y, z, 902) * 8), haut - 2)
+    if n > .66 and r < .4:
+        h = min(2 + int(h01(x, y, z, 902) * 6), haut - 3)
         for k in range(h - 1):
             put(x, y + k, z, S("kelp_plant"))
         put(x, y + h - 1, z, S("kelp", age=int(10 + h01(x, y, z, 903) * 14)))
         cb["algues"] += 1
-    elif n > .45 and r < .7:
-        if h01(x, y, z, 904) < .35 and haut >= 3:
-            put(x, y, z, S("tall_seagrass", half="lower"))
-            put(x, y + 1, z, S("tall_seagrass", half="upper"))
-        else:
-            put(x, y, z, S("seagrass"))
+    elif n > .5 and r < .55:
+        put(x, y, z, S("seagrass"))
         cb["herbe"] += 1
-    elif r > .975:                                                 # petit recif : un bloc de corail et ce qui pousse dessus
+    elif r > .985:
         c = CORAUX[int(h01(x, y, z, 905) * 5)]
         put(x, y, z, S(f"{c}_coral_block"))
-        t = h01(x, y, z, 906)
-        if t < .4:
-            put(x, y + 1, z, S(f"{c}_coral_fan", waterlogged=True))
-        elif t < .75:
-            put(x, y + 1, z, S(f"{CORAUX[int(h01(x, y, z, 907) * 5)]}_coral", waterlogged=True))
-        else:
-            put(x, y + 1, z, S("sea_pickle", pickles=1 + int(h01(x, y, z, 908) * 4), waterlogged=True))
+        put(x, y + 1, z, S(f"{CORAUX[int(h01(x, y, z, 907) * 5)]}_coral_fan", waterlogged=True))
         cb["coraux"] += 1
-    elif r < .02:
-        put(x, y, z, S("sea_pickle", pickles=1 + int(h01(x, y, z, 909) * 4), waterlogged=True))
-        cb["pickles"] += 1
-
-# ---------------------------------------------------------------- lichen lumineux sur les parois immergees
-FACES = {(1, 0, 0): "east", (-1, 0, 0): "west", (0, 0, 1): "south", (0, 0, -1): "north"}
-for (x, y, z) in eau_cases:
-    if blocs.get((x, y, z)) != EAU or DIL[x, y, z] or h01(x, y, z, 920) > .035:
-        continue
-    for d, f_ in FACES.items():
-        q = (x + d[0], y, z + d[2])
-        if nom(q) in SHELL and not pres_proche((x, y, z), 2):
-            prop = {k: False for k in ("down", "up", "east", "west", "north", "south")}
-            prop[f_] = True
-            put(x, y, z, S("glow_lichen", waterlogged=True, **prop))
-            cb["lichen_eau"] += 1
-            break
-
-# ---------------------------------------------------------------- colonnes brisees au milieu des grands bassins
-for nm_, (x0, x1, z0, z1, fond) in POOLS.items():
-    if nm_ in ("P1", "P8a", "P8b", "P9", "B"):
-        continue
-    for essai in range(26):
-        x = x0 + 2 + int(h01(x0, z0, essai, 930) * (x1 - x0 - 3))
-        z = z0 + 2 + int(h01(x1, z1, essai, 931) * (z1 - z0 - 3))
-        if any(blocs.get((x + a, SOL, z + b)) != EAU for a in (-1, 0, 1) for b in (-1, 0, 1)) or DIL[x, SOL, z] or DIL[x, fond + 2, z]:
-            continue
-        if any(nom((x + a, y, z + b)) not in (None, "water", "kelp", "kelp_plant", "seagrass", "tall_seagrass") for a in (-1, 0, 1) for b in (-1, 0, 1) for y in range(fond + 1, SOL + 2)):
-            continue
-        ht = fond + 3 + int(h01(x, z, essai, 932) * (SOL + 3 - fond - 3))
-        if nm_ == "S5" and abs(x - 120) < 4:                        # on laisse libre la sortie du tunnel T1
-            continue
-        for y in range(fond + 1, ht + 1):
-            put(x, y, z, S("mossy_stone_bricks") if y < ht else S("chiseled_stone_bricks") if h01(x, y, z, 933) > .5 else S("cracked_stone_bricks"))
-        cb["colonnes"] += 1
-
-# ---------------------------------------------------------------- salles seches : mousse au sol, lianes au plafond, totems
-secs = [p for p, s in blocs.items() if nom(p) in ("mossy_stone_bricks", "prismarine_bricks", "stone_bricks", "cracked_stone_bricks") and p[1] == SOL]
-for (x, y, z) in secs:
-    p = (x, y + 1, z)
-    if p in blocs or not C[p] or any(blocs.get((x + a, y + 1, z + b)) is not None and nom((x + a, y + 1, z + b)) != "air" for a in (-1, 0, 1) for b in (-1, 0, 1)):
-        continue
-    if p in PORTE_CASES or pres_proche(p, 1):
-        continue
-    n = bruit(x, z, 5, 940)
-    if n > .6 and h01(x, y, z, 941) < .55:
-        put(*p, S("moss_carpet"))
-        cb["mousse"] += 1
-    elif h01(x, y, z, 942) < .006:
-        put(*p, S("dead_" + CORAUX[int(h01(x, y, z, 943) * 5)] + "_coral_fan", waterlogged=False))
-        cb["coraux_secs"] += 1
-for (x, y, z), s in list(blocs.items()):                          # lianes sous les plafonds secs
-    if nom((x, y, z)) in SHELL and y >= SOL + 4 and h01(x, y, z, 950) < .045 and (x, y - 1, z) not in blocs and C[x, y - 1, z] and not W[x, y - 1, z]:
-        if any(nom(q) in SPECIAUX for q in voisins6((x, y - 1, z))) or (x, y - 1, z) in PORTE_CASES:
-            continue
-        for k in range(1, 2 + int(h01(x, y, z, 951) * 4)):
-            q = (x, y - k, z)
-            if q in blocs or not C[q] or W[q]:
-                break
-            put(*q, S("vine", up=True, down=False, north=False, south=False, east=False, west=False))
-            cb["lianes"] += 1
-TOTEMS = [(16, 10), (40, 34), (14, 48), (68, 46), (82, 46), (138, 46), (104, 88), (138, 88), (14, 124), (44, 148), (68, 124), (138, 150)]
-for (tx, tz) in TOTEMS:
-    if not all(blocs.get((tx + a, SOL, tz + b)) is not None and nom((tx + a, SOL, tz + b)) in SHELL and nom((tx + a, SOL + 1, tz + b)) in (None, "air") for a in (0, 1) for b in (0, 1)):
-        continue
-    if not all(C[tx + a, SOL + 1, tz + b] for a in (0, 1) for b in (0, 1)):
-        continue
-    for a in (0, 1):
-        for b in (0, 1):
-            put(tx + a, SOL + 1, tz + b, S("chiseled_stone_bricks"))
-    for k, bl in enumerate(("dark_prismarine", "prismarine_bricks", "dark_prismarine", "sea_lantern")):
-        put(tx, SOL + 2 + k, tz, S(bl))
-    cb["totems"] += 1
 print("[4] decor :", dict(cb), flush=True)
