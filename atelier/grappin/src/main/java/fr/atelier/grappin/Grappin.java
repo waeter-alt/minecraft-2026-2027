@@ -65,6 +65,9 @@ public class Grappin {
     /** Le Voile des Profondeurs : un casque qui fait respirer sous l'eau, a reserve limitee qui se recharge en surface. */
     public static final DeferredItem<VoileItem> VOILE = ITEMS.register("voile", () -> new VoileItem(MATERIAU_VOILE, new Item.Properties()));
 
+    /** La Paravoile : voile de planeur (comme dans Breath of the Wild). Tenue en main, ESPACE en l'air la deploie ; la jauge d'endurance se vide en vol. */
+    public static final DeferredItem<ParavoileItem> PARAVOILE = ITEMS.register("paravoile", () -> new ParavoileItem(new Item.Properties()));
+
     /** Le crochet lance par le grappin. */
     public static final DeferredHolder<EntityType<?>, EntityType<Crochet>> CROCHET = ENTITES.register("crochet",
             () -> EntityType.Builder.<Crochet>of(Crochet::new, MobCategory.MISC)
@@ -81,6 +84,7 @@ public class Grappin {
                 sortie.accept(GRAPPIN.get());
                 sortie.accept(ANCRAGE_ITEM.get());
                 sortie.accept(VOILE.get());
+                sortie.accept(PARAVOILE.get());
             })
             .build());
 
@@ -95,6 +99,8 @@ public class Grappin {
     }
 
     private void reseau(RegisterPayloadHandlersEvent event) {
-        event.registrar("1").playToServer(LacherPayload.TYPE, LacherPayload.CODEC, LacherPayload::traiter);
+        var registrar = event.registrar("1");
+        registrar.playToServer(LacherPayload.TYPE, LacherPayload.CODEC, LacherPayload::traiter);
+        registrar.playBidirectional(PlaneurPayload.TYPE, PlaneurPayload.CODEC, PlaneurPayload::traiter);
     }
 }

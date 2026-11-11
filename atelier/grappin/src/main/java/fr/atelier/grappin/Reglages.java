@@ -23,6 +23,11 @@ public final class Reglages {
     public static final ModConfigSpec.IntValue VOILE_RECHARGE = B.comment("Voile des Profondeurs : temps pour le recharger entierement a la surface, en secondes.").defineInRange("voileRechargeSecondes", 12, 1, 600);
     public static final ModConfigSpec.IntValue VOILE_ALERTE = B.comment("Voile des Profondeurs : il avertit (message et son) quand il lui reste moins de ce nombre de secondes.").defineInRange("voileAlerteSecondes", 10, 1, 60);
 
+    public static final ModConfigSpec.IntValue PARAVOILE_ENDURANCE = B.comment("Paravoile : duree de vol, en secondes (la jauge se vide en vol).").defineInRange("paravoileEnduranceSecondes", 10, 3, 300);
+    public static final ModConfigSpec.IntValue PARAVOILE_RECHARGE = B.comment("Paravoile : temps pour recharger la jauge entierement, au sol ou dans l'eau, en secondes.").defineInRange("paravoileRechargeSecondes", 6, 1, 300);
+    public static final ModConfigSpec.DoubleValue PARAVOILE_VITESSE = B.comment("Paravoile : vitesse de vol en avant, en blocs par tick (0,36 = 7 blocs/s).").defineInRange("paravoileVitesse", 0.36, 0.1, 1.0);
+    public static final ModConfigSpec.DoubleValue PARAVOILE_DESCENTE = B.comment("Paravoile : vitesse de descente a plat, en blocs par tick (0,09 = 1,8 bloc/s).").defineInRange("paravoileDescente", 0.09, 0.0, 0.5);
+
     public static final ModConfigSpec SPEC = B.build();
 
     private Reglages() {

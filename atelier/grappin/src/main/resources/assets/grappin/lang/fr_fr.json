@@ -10,6 +10,13 @@
   "item.grappin.voile.reserve": "Réserve : %s s sur %s s",
   "item.grappin.voile.alerte": "Voile : %s s d'air",
   "item.grappin.voile.epuise": "Voile épuisé !",
+  "item.grappin.paravoile": "Paravoile",
+  "item.grappin.paravoile.aide1": "Dans la main (principale ou secondaire) : en l'air, Espace déploie la voile et on plane",
+  "item.grappin.paravoile.aide2": "Le regard dirige : tête baissée on pique, tête haute on freine ; Espace ou s'accroupir range la voile",
+  "item.grappin.paravoile.aide3": "Vol de %s s, jauge rechargée en %s s au sol",
+  "item.grappin.paravoile.reserve": "Jauge : %s s sur %s s",
+  "item.grappin.paravoile.alerte": "Paravoile : %s s de vol",
+  "item.grappin.paravoile.epuisee": "Paravoile épuisée !",
   "block.grappin.ancrage": "Point d'ancrage",
   "entity.grappin.crochet": "Crochet de grappin"
 }
