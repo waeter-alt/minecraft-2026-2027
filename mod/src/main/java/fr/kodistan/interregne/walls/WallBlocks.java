@@ -142,15 +142,21 @@ public final class WallBlocks
             gate(level, steps, gate, style, ground);
             wayUp(overrides, gate, wallLevel, columns, faces, inside);
         }
-        // The ways up are carved into the wall: they replace what was laid there
+        // The ways up are carved into the wall: they replace what was laid there — every step at that position, not
+        // just the first, since clear() lays an air step before the body block wherever grass or a tree stood: replacing
+        // only that one let the body block land after the stair and fill it back in (see docs/GOTCHA.md)
+        final java.util.Set<Long> matched = new java.util.HashSet<>();
         for (int i = 0; i < steps.size(); i++)
         {
-            final Step carved = overrides.remove(steps.get(i).pos().asLong());
+            final long key = steps.get(i).pos().asLong();
+            final Step carved = overrides.get(key);
             if (carved != null)
             {
+                matched.add(key);
                 steps.set(i, new Step(carved.pos(), carved.state(), steps.get(i).order()));
             }
         }
+        overrides.keySet().removeAll(matched);
         steps.addAll(overrides.values());
         steps.sort(Comparator.comparingInt(Step::order).thenComparingInt(step -> step.state().isAir() ? 0 : 1).thenComparingInt(step -> step.pos().getY()));
         // Ladders go up last, once every block they hang on stands: set earlier, a later neighbour update would knock them off
