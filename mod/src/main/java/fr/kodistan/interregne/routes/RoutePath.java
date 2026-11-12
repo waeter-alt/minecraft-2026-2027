@@ -3,10 +3,13 @@ package fr.kodistan.interregne.routes;
 import fr.kodistan.interregne.walls.Terrain;
 import fr.kodistan.interregne.walls.WallRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LanternBlock;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -17,9 +20,11 @@ import java.util.Map;
 import java.util.PriorityQueue;
 
 /**
- * Traces a route between two points on the ground: a 2D search picks the way around what it can go around, then a
- * graded height profile turns the gentle stretches into a surface path, the steep ones into a tunnel, and the gaps
- * (water, a chasm) into a bridge. A prototype, tuned to be tested in game and adjusted from there, not a final style.
+ * Traces a route between two points on the ground: a 2D search picks the way around what it can go around (4
+ * directions only — a route that cuts diagonally reads as jagged), then a graded height profile turns the gentle
+ * stretches into a surface path (with stairs where the grade steps up), the steep ones into a tunnel, and the gaps
+ * (water, a chasm) into a bridge. Laid out {@link #WIDTH} blocks wide, with the shoulders terraformed to match and
+ * trees cleared a little further out still. A prototype, tuned to be tested in game and adjusted from there.
  */
 public final class RoutePath
 {
@@ -32,9 +37,9 @@ public final class RoutePath
 
     /**
      * @param steps   every block to set, in building order
-     * @param length  number of ground cells the route crosses (its real walking length, not vol d'oiseau)
-     * @param tunnels number of cells carved through a slope too steep to climb
-     * @param bridges number of cells spanning water or a drop too steep to descend
+     * @param length  number of ground cells the route's centre line crosses (its walking length, not vol d'oiseau)
+     * @param tunnels number of centre cells carved through a slope too steep to climb
+     * @param bridges number of centre cells spanning water or a drop too steep to descend
      */
     public record Result(List<Step> steps, int length, int tunnels, int bridges)
     {
@@ -45,8 +50,11 @@ public final class RoutePath
         SURFACE, TUNNEL, BRIDGE
     }
 
+    public static final int WIDTH = 7;
+    private static final int HALF = WIDTH / 2;
+    private static final int TREE_MARGIN = 3;
+
     private static final int MAX_SEARCH_DISTANCE = 400;
-    private static final int SEARCH_MARGIN = 24;
     private static final int MAX_NODES = 60_000;
     private static final double SLOPE_WEIGHT = 2.5;
     private static final double WATER_PENALTY = 3.0;
@@ -58,8 +66,11 @@ public final class RoutePath
     private static final int TUNNEL_HEADROOM = 2;
     private static final int LIGHT_EVERY = 6;
     private static final int PILLAR_EVERY = 6;
+    private static final int EMBANKMENT_LIMIT = 6;
 
     private static final BlockState PATH = Blocks.DIRT_PATH.defaultBlockState();
+    private static final BlockState EMBANKMENT = Blocks.DIRT.defaultBlockState();
+    private static final BlockState STAIR = Blocks.COBBLESTONE_STAIRS.defaultBlockState();
     private static final BlockState TUNNEL_FLOOR = Blocks.STONE_BRICKS.defaultBlockState();
     private static final BlockState TUNNEL_LANTERN = Blocks.LANTERN.defaultBlockState().setValue(LanternBlock.HANGING, true);
     private static final BlockState BRIDGE_FLOOR = Blocks.OAK_PLANKS.defaultBlockState();
@@ -82,7 +93,7 @@ public final class RoutePath
         {
             return null;
         }
-        final List<long[]> cells = search(level, a.getX(), a.getZ(), b.getX(), b.getZ());
+        final List<int[]> cells = search(level, a.getX(), a.getZ(), b.getX(), b.getZ());
         if (cells == null || cells.isEmpty())
         {
             return null;
@@ -91,11 +102,12 @@ public final class RoutePath
     }
 
     /**
-     * A* over the (x, z) grid: cost per step grows with the slope, with water, and with anything already standing
-     * there (a building goes around, at a price, rather than being treated as a wall).
+     * A* over the (x, z) grid, 4-connected only (no diagonal step — a route that cuts corners looks wrong). Cost per
+     * step grows with the slope, with water, and with anything already standing there (a building goes around, at a
+     * price, rather than being treated as a wall).
      */
     @Nullable
-    private static List<long[]> search(final ServerLevel level, final int ax, final int az, final int bx, final int bz)
+    private static List<int[]> search(final ServerLevel level, final int ax, final int az, final int bx, final int bz)
     {
         final Terrain.Probe start = Terrain.probe(level, ax, az);
         final Terrain.Probe goal = Terrain.probe(level, bx, bz);
@@ -130,37 +142,29 @@ public final class RoutePath
             final int z = (int) current;
             final double currentG = gScore.getOrDefault(current, Double.MAX_VALUE);
             final Terrain.Probe currentProbe = probes.get(current);
-            for (int dx = -1; dx <= 1; dx++)
+            for (final Direction dir : Direction.Plane.HORIZONTAL)
             {
-                for (int dz = -1; dz <= 1; dz++)
+                final int nx = x + dir.getStepX();
+                final int nz = z + dir.getStepZ();
+                final long neighbor = WallRegistry.cell(nx, nz);
+                Terrain.Probe probe = probes.get(neighbor);
+                if (probe == null)
                 {
-                    if (dx == 0 && dz == 0)
+                    probe = Terrain.probe(level, nx, nz);
+                    if (!probe.loaded())
                     {
                         continue;
                     }
-                    final int nx = x + dx;
-                    final int nz = z + dz;
-                    final long neighbor = WallRegistry.cell(nx, nz);
-                    Terrain.Probe probe = probes.get(neighbor);
-                    if (probe == null)
-                    {
-                        probe = Terrain.probe(level, nx, nz);
-                        if (!probe.loaded())
-                        {
-                            continue;
-                        }
-                        probes.put(neighbor, probe);
-                    }
-                    final double step = (dx != 0 && dz != 0) ? 1.4142 : 1.0;
-                    final double slope = Math.abs(probe.ground() - currentProbe.ground()) * SLOPE_WEIGHT;
-                    final double penalty = (probe.water() ? WATER_PENALTY : 0) + (probe.blocked() ? BLOCKED_PENALTY : 0);
-                    final double tentative = currentG + step + slope + penalty;
-                    if (tentative < gScore.getOrDefault(neighbor, Double.MAX_VALUE))
-                    {
-                        gScore.put(neighbor, tentative);
-                        parent.put(neighbor, current);
-                        open.add(new long[] {neighbor, Double.doubleToLongBits(tentative + heuristic(nx, nz, bx, bz))});
-                    }
+                    probes.put(neighbor, probe);
+                }
+                final double slope = Math.abs(probe.ground() - currentProbe.ground()) * SLOPE_WEIGHT;
+                final double penalty = (probe.water() ? WATER_PENALTY : 0) + (probe.blocked() ? BLOCKED_PENALTY : 0);
+                final double tentative = currentG + 1.0 + slope + penalty;
+                if (tentative < gScore.getOrDefault(neighbor, Double.MAX_VALUE))
+                {
+                    gScore.put(neighbor, tentative);
+                    parent.put(neighbor, current);
+                    open.add(new long[] {neighbor, Double.doubleToLongBits(tentative + heuristic(nx, nz, bx, bz))});
                 }
             }
         }
@@ -169,40 +173,42 @@ public final class RoutePath
 
     private static double heuristic(final int x, final int z, final int bx, final int bz)
     {
-        return Math.hypot(bx - x, bz - z);
+        return Math.abs(bx - x) + Math.abs(bz - z);
     }
 
-    private static List<long[]> reconstruct(final Map<Long, Long> parent, final long goal)
+    private static List<int[]> reconstruct(final Map<Long, Long> parent, final long goal)
     {
-        final List<long[]> cells = new ArrayList<>();
+        final List<int[]> cells = new ArrayList<>();
         long current = goal;
-        cells.add(new long[] {current >> 32, (int) current});
+        cells.add(new int[] {(int) (current >> 32), (int) current});
         while (parent.containsKey(current))
         {
             current = parent.get(current);
-            cells.add(new long[] {current >> 32, (int) current});
+            cells.add(new int[] {(int) (current >> 32), (int) current});
         }
         java.util.Collections.reverse(cells);
         return cells;
     }
 
     /**
-     * Turns the 2D trace into real blocks: a graded height profile decides, cell by cell, whether the route walks
-     * the surface, tunnels through what rises too fast, or bridges what drops away.
+     * Turns the 2D centre line into real blocks, {@link #WIDTH} wide: a graded height profile decides, cell by
+     * cell, whether the route walks the surface (flat, or stepped where the grade climbs), tunnels through what
+     * rises too fast, or bridges what drops away.
      */
-    private static Result build(final ServerLevel level, final List<long[]> cells)
+    private static Result build(final ServerLevel level, final List<int[]> cells)
     {
-        final int[] ground = new int[cells.size()];
-        final boolean[] water = new boolean[cells.size()];
-        for (int i = 0; i < cells.size(); i++)
+        final int n = cells.size();
+        final int[] ground = new int[n];
+        final boolean[] water = new boolean[n];
+        for (int i = 0; i < n; i++)
         {
-            final Terrain.Probe probe = Terrain.probe(level, (int) cells.get(i)[0], (int) cells.get(i)[1]);
+            final Terrain.Probe probe = Terrain.probe(level, cells.get(i)[0], cells.get(i)[1]);
             ground[i] = probe.ground();
             water[i] = probe.water();
         }
-        final int[] roadY = new int[cells.size()];
+        final int[] roadY = new int[n];
         roadY[0] = ground[0];
-        for (int i = 1; i < cells.size(); i++)
+        for (int i = 1; i < n; i++)
         {
             roadY[i] = Math.max(ground[i] - TUNNEL_MARGIN, Math.min(ground[i] + BRIDGE_MARGIN,
               Math.max(roadY[i - 1] - MAX_GRADE, Math.min(roadY[i - 1] + MAX_GRADE, ground[i]))));
@@ -211,40 +217,144 @@ public final class RoutePath
         final List<Step> steps = new ArrayList<>();
         int tunnels = 0;
         int bridges = 0;
-        for (int i = 0; i < cells.size(); i++)
+        for (int i = 0; i < n; i++)
         {
-            final int x = (int) cells.get(i)[0];
-            final int z = (int) cells.get(i)[1];
+            final int x = cells.get(i)[0];
+            final int z = cells.get(i)[1];
             final int y = roadY[i];
             final int diff = ground[i] - y;
             final Mode mode = water[i] || diff < -BRIDGE_MARGIN ? Mode.BRIDGE : diff > TUNNEL_MARGIN ? Mode.TUNNEL : Mode.SURFACE;
+            final int[] from = i + 1 < n ? cells.get(i) : cells.get(Math.max(0, i - 1));
+            final int[] to = i + 1 < n ? cells.get(i + 1) : cells.get(i);
+            final Direction dir = directionOf(to[0] - from[0], to[1] - from[1]);
+            final Direction perp = dir.getClockWise();
+            final boolean climbing = mode == Mode.SURFACE && i > 0 && roadY[i] != roadY[i - 1];
             switch (mode)
             {
                 case TUNNEL ->
                 {
                     tunnels++;
-                    carveTunnel(level, steps, x, y, z, i);
+                    carveTunnel(level, steps, x, y, z, perp, i);
                 }
                 case BRIDGE ->
                 {
                     bridges++;
-                    bridgeAt(level, steps, x, y, z, ground[i], i);
+                    bridgeAt(level, steps, x, y, z, ground[i], perp, i);
                 }
-                default -> surfaceAt(level, steps, x, y, z, ground[i]);
+                default -> surfaceAt(level, steps, x, y, z, perp, climbing ? (roadY[i] > roadY[i - 1] ? dir : dir.getOpposite()) : null);
             }
+            clearTreesAround(level, steps, x, y, z, perp);
         }
-        return new Result(steps, cells.size(), tunnels, bridges);
+        return new Result(steps, n, tunnels, bridges);
+    }
+
+    private static Direction directionOf(final int dx, final int dz)
+    {
+        final Direction found = Direction.fromDelta(dx, 0, dz);
+        return found == null ? Direction.NORTH : found;
     }
 
     /**
-     * Gentle ground: a path block at the surface, with whatever grass or sapling stood over it cleared away.
+     * Gentle ground: a flat shelf {@link #WIDTH} wide at the road's grade (an embankment where the ground is lower,
+     * cut back where it is higher), a stair step across the whole width where the grade itself climbs.
      */
-    private static void surfaceAt(final ServerLevel level, final List<Step> steps, final int x, final int y, final int z, final int ground)
+    private static void surfaceAt(final ServerLevel level, final List<Step> steps, final int x, final int y, final int z, final Direction perp,
+      @Nullable final Direction climb)
     {
-        steps.add(new Step(new BlockPos(x, ground, z), PATH));
+        final BlockState cap = climb == null ? PATH : STAIR.setValue(StairBlock.FACING, climb);
+        for (int o = -HALF; o <= HALF; o++)
+        {
+            final int lx = x + perp.getStepX() * o;
+            final int lz = z + perp.getStepZ() * o;
+            levelColumn(level, steps, lx, lz, y, cap);
+        }
+    }
+
+    /**
+     * A hill in the way: a corridor {@link #WIDTH} wide carved through at the road's grade, floored and lit from
+     * its walls.
+     */
+    private static void carveTunnel(final ServerLevel level, final List<Step> steps, final int x, final int y, final int z, final Direction perp,
+      final int order)
+    {
+        for (int o = -HALF; o <= HALF; o++)
+        {
+            final int lx = x + perp.getStepX() * o;
+            final int lz = z + perp.getStepZ() * o;
+            steps.add(new Step(new BlockPos(lx, y, lz), TUNNEL_FLOOR));
+            for (int dy = 1; dy <= TUNNEL_HEADROOM; dy++)
+            {
+                final BlockPos pos = new BlockPos(lx, y + dy, lz);
+                if (!level.getBlockState(pos).isAir())
+                {
+                    steps.add(new Step(pos, AIR));
+                }
+            }
+            if (Math.abs(o) == HALF && order % LIGHT_EVERY == 0)
+            {
+                steps.add(new Step(new BlockPos(lx, y + TUNNEL_HEADROOM, lz), TUNNEL_LANTERN));
+            }
+        }
+    }
+
+    /**
+     * Water or a drop too steep to walk down: a deck {@link #WIDTH} wide at the road's grade, a rail along both
+     * edges, and pillars down to solid ground every few blocks so it does not read as floating.
+     */
+    private static void bridgeAt(final ServerLevel level, final List<Step> steps, final int x, final int y, final int z, final int ground,
+      final Direction perp, final int order)
+    {
+        for (int o = -HALF; o <= HALF; o++)
+        {
+            final int lx = x + perp.getStepX() * o;
+            final int lz = z + perp.getStepZ() * o;
+            steps.add(new Step(new BlockPos(lx, y, lz), BRIDGE_FLOOR));
+            if (Math.abs(o) == HALF)
+            {
+                steps.add(new Step(new BlockPos(lx, y + 1, lz), BRIDGE_RAIL));
+            }
+            if ((o == -HALF || o == 0 || o == HALF) && order % PILLAR_EVERY == 0)
+            {
+                final int bed = Terrain.probe(level, lx, lz).ground();
+                for (int py = y - 1; py > bed && y - py < 48; py--)
+                {
+                    steps.add(new Step(new BlockPos(lx, py, lz), BRIDGE_PILLAR));
+                }
+            }
+        }
+    }
+
+    /**
+     * Brings one column of the shelf to the target height: fills the gap with an embankment where the ground sits
+     * lower, cuts back what grows or rises above where it sits higher, then caps it.
+     */
+    private static void levelColumn(final ServerLevel level, final List<Step> steps, final int x, final int z, final int target, final BlockState cap)
+    {
+        final Terrain.Probe probe = Terrain.probe(level, x, z);
+        final int ground = probe.loaded() ? probe.ground() : target;
+        if (ground < target && target - ground <= EMBANKMENT_LIMIT)
+        {
+            for (int y = ground + 1; y < target; y++)
+            {
+                steps.add(new Step(new BlockPos(x, y, z), EMBANKMENT));
+            }
+        }
+        else if (ground > target)
+        {
+            for (int y = target + 1; y <= ground; y++)
+            {
+                final BlockPos pos = new BlockPos(x, y, z);
+                final BlockState state = level.getBlockState(pos);
+                if (!state.isAir() && Terrain.clearable(level, pos, state))
+                {
+                    steps.add(new Step(pos, AIR));
+                }
+            }
+        }
+        steps.add(new Step(new BlockPos(x, target, z), cap));
         for (int dy = 1; dy <= 2; dy++)
         {
-            final BlockPos above = new BlockPos(x, ground + dy, z);
+            final BlockPos above = new BlockPos(x, target + dy, z);
             final BlockState state = level.getBlockState(above);
             if (!state.isAir() && Terrain.clearable(level, above, state))
             {
@@ -254,41 +364,28 @@ public final class RoutePath
     }
 
     /**
-     * A hill in the way: a one-wide corridor carved through at the road's grade, floored and lit.
+     * Trees a little further out than the shelf itself: cleared from the shelf's edge to the heightmap, like a
+     * wall's own clearing, so a route through a forest does not leave half a canopy floating over it.
      */
-    private static void carveTunnel(final ServerLevel level, final List<Step> steps, final int x, final int y, final int z, final int order)
+    private static void clearTreesAround(final ServerLevel level, final List<Step> steps, final int x, final int y, final int z, final Direction perp)
     {
-        steps.add(new Step(new BlockPos(x, y, z), TUNNEL_FLOOR));
-        for (int dy = 1; dy <= TUNNEL_HEADROOM; dy++)
+        for (int o = HALF + 1; o <= HALF + TREE_MARGIN; o++)
         {
-            final BlockPos pos = new BlockPos(x, y + dy, z);
-            if (!level.getBlockState(pos).isAir())
+            for (final int sign : new int[] {1, -1})
             {
-                steps.add(new Step(pos, AIR));
-            }
-        }
-        if (order % LIGHT_EVERY == 0)
-        {
-            steps.add(new Step(new BlockPos(x, y + TUNNEL_HEADROOM, z), TUNNEL_LANTERN));
-        }
-    }
-
-    /**
-     * Water or a drop too steep to walk down: a deck at the road's grade, a rail along its edge, and a pillar down to
-     * solid ground every few blocks so it does not read as floating.
-     */
-    private static void bridgeAt(final ServerLevel level, final List<Step> steps, final int x, final int y, final int z, final int ground, final int order)
-    {
-        steps.add(new Step(new BlockPos(x, y, z), BRIDGE_FLOOR));
-        if (order % 2 == 0)
-        {
-            steps.add(new Step(new BlockPos(x, y + 1, z), BRIDGE_RAIL));
-        }
-        if (order % PILLAR_EVERY == 0)
-        {
-            for (int py = y - 1; py > ground && y - py < 48; py--)
-            {
-                steps.add(new Step(new BlockPos(x, py, z), BRIDGE_PILLAR));
+                final int lx = x + perp.getStepX() * o * sign;
+                final int lz = z + perp.getStepZ() * o * sign;
+                final int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING, lx, lz);
+                final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(lx, y + 1, lz);
+                for (int py = y + 1; py <= top; py++)
+                {
+                    pos.setY(py);
+                    final BlockState state = level.getBlockState(pos);
+                    if (!state.isAir() && Terrain.clearable(level, pos, state))
+                    {
+                        steps.add(new Step(pos.immutable(), AIR));
+                    }
+                }
             }
         }
     }

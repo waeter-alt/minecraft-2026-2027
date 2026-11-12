@@ -95,7 +95,7 @@ public final class PosteCommercialBlock extends Block
             return;
         }
         BUILDING.add(key);
-        final int seconds = Math.min(150, 15 + route.length() / 4);
+        final int seconds = Math.min(150, 15 + route.steps().size() / 25);
         RouteSite.launch(level, route.steps(), seconds, Component.literal("⚒ Route commerciale"), () -> BUILDING.remove(key));
         player.sendSystemMessage(Component.literal("Chantier de la route lancé : " + route.length() + " blocs, " + seconds + " s.")
                                    .withStyle(ChatFormatting.GOLD));
