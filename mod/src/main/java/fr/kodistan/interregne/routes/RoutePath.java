@@ -14,18 +14,17 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.PriorityQueue;
 
 /**
- * Traces a route between two points on the ground. Everything hangs on one reference: the relief smoothed over a wide
- * window (the baseline, see {@link Relief}). The 2D search pays for every cell that stands out of it, so it slips
- * through a pass rather than over the hump next to it; then, along the chosen line, the stretches where the ground
- * still stands well above or sinks well below that baseline are measured as whole features — a hill, a ravine, a
- * river — and only the deep and long enough ones become a tunnel or a bridge, held straight between their two real
- * edges. Everything else is walked on the surface, graded, with stairs where it climbs. Laid out {@link #WIDTH}
- * blocks wide, shoulders terraformed to match, trees cleared a little further out. A prototype, tuned in game.
+ * Traces a route between two points on the ground, the way Baritone finds its paths: no smoothed relief, no feature
+ * detection, no tunnel/bridge decision taken ahead of time. The A* state is (x, z, road height), so the height of the
+ * road is known at every step of the search instead of being rebuilt afterwards; a step goes to one of the four
+ * neighbours at the same height or one block up or down, which bounds the grade by construction. Each step costs the
+ * real work of laying the road {@link #WIDTH} blocks wide at that height: earth and rock to dig, embankment to fill,
+ * or a bridge deck or a tunnel bore when either is cheaper than the open cut or the fill. A tunnel or a bridge is
+ * nothing but what the cheapest path turned out to be; the block style of each cell is read back on the chosen path
+ * with the very same cost function. Shoulders terraformed to match, trees cleared a little further out.
  */
 public final class RoutePath
 {
@@ -58,50 +57,50 @@ public final class RoutePath
     private static final int HALF = WIDTH / 2;
     private static final int TREE_MARGIN = 3;
 
-    // Computed in one go on the server thread. The search runs on flat arrays over a box around the two ends (no boxed
-    // maps), the node budget bounds the freeze, the slightly greedy heuristic keeps long routes under it. Further than
-    // this wants an asynchronous, chunk-by-chunk search, not a bigger budget.
+    // Computed in one go on the server thread. The state is (x, z, y): only the states actually reached are stored
+    // (open-addressed hash, primitive arrays), the expansion and node budgets bound the freeze, the slightly greedy
+    // horizontal heuristic keeps long routes under them. Further than this wants an asynchronous search.
     private static final int MAX_SEARCH_DISTANCE = 1200;
-    private static final int MAX_NODES = 400_000;
+    private static final int MAX_EXPANSIONS = 700_000;
+    private static final int MAX_NODES = 2_500_000;
     private static final int SEARCH_PAD = 64;
     private static final double SEARCH_PAD_RATIO = 0.25;
     private static final double HEURISTIC_WEIGHT = 1.3;
-    private static final double SLOPE_WEIGHT = 2.5;
-    private static final double WATER_PENALTY = 3.0;
-    private static final double BLOCKED_PENALTY = 20.0;
 
-    // The baseline: terrain sampled every SAMPLE_STEP blocks, averaged over a square of BASELINE_RADIUS around each
-    // sample. Wide enough that a hill or a ravine is a bump or a hole in it, not part of it.
+    // Costs, in blocks of work (one block dug or placed = 1). STEP is the deck or path of one cell plus the walk;
+    // CLIMB is a level gained or lost — stairs to lay and, mostly, a caravan's effort, so a pass beside a hump beats
+    // the hump and a deck already level across a valley does not sag into it to save a few pillar blocks.
+    private static final double STEP = WIDTH + 1;
+    private static final double CLIMB = 20;
+    private static final double DIG = 1;
+    private static final double FILL = 1;
+    // A bore lined and lit, over its headroom only: dearer per cell than digging those blocks, so a tunnel only wins
+    // where the open cut would be much deeper — never on an open slope where the road only lags a few blocks.
+    private static final double TUNNEL_PREMIUM = 35;
+    // A deck with its rails, plus its pillars (every PILLAR_EVERY cells, three of them, cheap cobblestone): beats a
+    // full embankment past three or four blocks of drop, so a real gap gets a bridge and a ditch gets filled.
+    private static final double BRIDGE_PREMIUM = 20;
+    private static final double PILLAR_WEIGHT = 0.2;
+    private static final double WATER_PENALTY = 3 * STEP;
+    private static final double BLOCKED_PENALTY = 20 * STEP;
+
+    // The heights the search may try at a cell: between the lowest and highest ground within RANGE_RADIUS of it
+    // (sampled every SAMPLE_STEP blocks), so a deck can stay at rim level across a ravine and a bore at foot level
+    // under a hill, without exploring heights the local relief gives no reason for.
     private static final int SAMPLE_STEP = 4;
-    private static final int BASELINE_RADIUS = 16;
-    // Search cost of standing out of the baseline: free within ROUGH_FREE, then per block above (a hump to go around)
-    // and, cheaper, below (a hollow — crossing it is often unavoidable, the search should only pick a narrow spot).
-    private static final double ROUGH_FREE = 2.0;
-    private static final double ROUGH_UP_WEIGHT = 0.6;
-    private static final double ROUGH_DOWN_WEIGHT = 0.3;
+    private static final int RANGE_RADIUS = 32;
+    private static final int MAX_DEPTH = 48;
+    private static final int MAX_LIFT = 40;
 
-    private static final int MAX_GRADE = 1;
-    // A feature along the line: its cells stand at least DIP_DEV / BUMP_DEV off the baseline AND inside a real trough /
-    // crest of the route's own profile (the "rope" stretched over ROPE_SPAN cells either side) — a valley walked along
-    // its floor sits below the baseline but is no ravine to bridge.
-    private static final int ROPE_SPAN = 40;
-    private static final int DIP_DEV = 3;
-    private static final int BUMP_DEV = 4;
-    private static final int MERGE_GAP = 3;
-    private static final int EXPAND_MAX = 24;
-    private static final int BRIDGE_MIN_DEPTH = 4;
-    private static final int BRIDGE_MIN_LEN = 4;
     private static final int WATER_CLEARANCE = 4;
     // Free height above the tunnel floor: on a road 7 wide, 2 read as a slot; 3 reads as a tunnel
     private static final int TUNNEL_HEADROOM = 3;
     private static final int TUNNEL_MIN_ROOF = 3;
     private static final int TUNNEL_COVER = TUNNEL_HEADROOM + TUNNEL_MIN_ROOF;
-    private static final int TUNNEL_MIN_RUN = 4;
     private static final int MAX_CUT = 24;
     private static final int LIGHT_EVERY = 6;
     private static final int PILLAR_EVERY = 6;
     private static final int EMBANKMENT_LIMIT = 6;
-    private static final int NO_REQ = Integer.MIN_VALUE;
 
     private static final int[] DX = {1, -1, 0, 0};
     private static final int[] DZ = {0, 0, 1, -1};
@@ -124,7 +123,7 @@ public final class RoutePath
 
     /**
      * Null when the two ends are too far apart, a chunk along the way is not loaded, or no way through was found
-     * within the node budget.
+     * within the search budget.
      */
     @Nullable
     public static Result compute(final ServerLevel level, final BlockPos a, final BlockPos b)
@@ -145,11 +144,9 @@ public final class RoutePath
     }
 
     /**
-     * The ground over the search box: every cell's probe, cached as the search reaches it, and the baseline — the
-     * relief averaged over a window {@link #BASELINE_RADIUS} wide. The baseline is computed on a coarse grid (one
-     * probe every {@link #SAMPLE_STEP} blocks) with a summed-area table, so each window average costs four lookups
-     * whatever its size, then read back bilinearly: a box over a 1200-block route stays around a hundred thousand
-     * probes, not millions.
+     * The ground over the search box: every cell's probe, cached as the search reaches it, and the band of heights
+     * worth trying at each cell (lowest and highest ground around it). The band comes from a coarse grid, one probe
+     * every {@link #SAMPLE_STEP} blocks, its min and max taken over a square window with a separable pass.
      */
     private static final class Relief
     {
@@ -163,11 +160,14 @@ public final class RoutePath
         private final int z0;
         private final int w;
         private final int h;
+        private final int minY;
+        private final int maxY;
         private final int[] ground;
         private final byte[] info;
         private final int sw;
         private final int sh;
-        private final double[] base;
+        private final int[] low;
+        private final int[] high;
 
         Relief(final ServerLevel level, final int minX, final int minZ, final int maxX, final int maxZ)
         {
@@ -176,15 +176,15 @@ public final class RoutePath
             this.z0 = minZ;
             this.w = maxX - minX + 1;
             this.h = maxZ - minZ + 1;
+            this.minY = level.getMinBuildHeight();
+            this.maxY = level.getMaxBuildHeight() - 1;
             this.ground = new int[w * h];
             this.info = new byte[w * h];
             this.sw = (w - 1) / SAMPLE_STEP + 1;
             this.sh = (h - 1) / SAMPLE_STEP + 1;
-            this.base = new double[sw * sh];
 
-            final int stride = sw + 1;
-            final double[] sum = new double[stride * (sh + 1)];
-            final int[] count = new int[stride * (sh + 1)];
+            final int[] sampleLow = new int[sw * sh];
+            final int[] sampleHigh = new int[sw * sh];
             for (int sj = 0; sj < sh; sj++)
             {
                 for (int si = 0; si < sw; si++)
@@ -192,23 +192,43 @@ public final class RoutePath
                     final int x = x0 + si * SAMPLE_STEP;
                     final int z = z0 + sj * SAMPLE_STEP;
                     final boolean loaded = probe(x, z);
-                    final int at = (sj + 1) * stride + si + 1;
-                    sum[at] = (loaded ? groundAt(x, z) : 0) + sum[at - 1] + sum[at - stride] - sum[at - stride - 1];
-                    count[at] = (loaded ? 1 : 0) + count[at - 1] + count[at - stride] - count[at - stride - 1];
+                    sampleLow[sj * sw + si] = loaded ? groundAt(x, z) : Integer.MAX_VALUE;
+                    sampleHigh[sj * sw + si] = loaded ? groundAt(x, z) : Integer.MIN_VALUE;
                 }
             }
-            final int r = Math.max(1, BASELINE_RADIUS / SAMPLE_STEP);
+            final int r = Math.max(1, RANGE_RADIUS / SAMPLE_STEP);
+            final int[] rowLow = new int[sw * sh];
+            final int[] rowHigh = new int[sw * sh];
             for (int sj = 0; sj < sh; sj++)
             {
                 for (int si = 0; si < sw; si++)
                 {
-                    final int i0 = Math.max(0, si - r);
-                    final int i1 = Math.min(sw, si + r + 1);
-                    final int j0 = Math.max(0, sj - r);
-                    final int j1 = Math.min(sh, sj + r + 1);
-                    final int c = count[j1 * stride + i1] - count[j0 * stride + i1] - count[j1 * stride + i0] + count[j0 * stride + i0];
-                    final double s = sum[j1 * stride + i1] - sum[j0 * stride + i1] - sum[j1 * stride + i0] + sum[j0 * stride + i0];
-                    base[sj * sw + si] = c == 0 ? Double.NaN : s / c;
+                    int lo = Integer.MAX_VALUE;
+                    int hi = Integer.MIN_VALUE;
+                    for (int i = Math.max(0, si - r); i <= Math.min(sw - 1, si + r); i++)
+                    {
+                        lo = Math.min(lo, sampleLow[sj * sw + i]);
+                        hi = Math.max(hi, sampleHigh[sj * sw + i]);
+                    }
+                    rowLow[sj * sw + si] = lo;
+                    rowHigh[sj * sw + si] = hi;
+                }
+            }
+            this.low = new int[sw * sh];
+            this.high = new int[sw * sh];
+            for (int sj = 0; sj < sh; sj++)
+            {
+                for (int si = 0; si < sw; si++)
+                {
+                    int lo = Integer.MAX_VALUE;
+                    int hi = Integer.MIN_VALUE;
+                    for (int j = Math.max(0, sj - r); j <= Math.min(sh - 1, sj + r); j++)
+                    {
+                        lo = Math.min(lo, rowLow[j * sw + si]);
+                        hi = Math.max(hi, rowHigh[j * sw + si]);
+                    }
+                    low[sj * sw + si] = lo;
+                    high[sj * sw + si] = hi;
                 }
             }
         }
@@ -224,10 +244,14 @@ public final class RoutePath
         }
 
         /**
-         * Probes the cell once (cached); false when its chunk is not loaded.
+         * Probes the cell once (cached); false when it lies outside the box or its chunk is not loaded.
          */
         boolean probe(final int x, final int z)
         {
+            if (!inside(x, z))
+            {
+                return false;
+            }
             final int i = index(x, z);
             if (info[i] == 0)
             {
@@ -253,51 +277,291 @@ public final class RoutePath
             return (info[index(x, z)] & BLOCKED) != 0;
         }
 
-        /**
-         * The smoothed relief at this cell, NaN where nothing around it is loaded.
-         */
-        double baseline(final int x, final int z)
+        private int sample(final int x, final int z)
         {
-            final double fx = (double) (x - x0) / SAMPLE_STEP;
-            final double fz = (double) (z - z0) / SAMPLE_STEP;
-            final int i0 = Math.min(sw - 1, (int) Math.floor(fx));
-            final int j0 = Math.min(sh - 1, (int) Math.floor(fz));
-            final int i1 = Math.min(sw - 1, i0 + 1);
-            final int j1 = Math.min(sh - 1, j0 + 1);
-            final double tx = Math.min(1, Math.max(0, fx - i0));
-            final double tz = Math.min(1, Math.max(0, fz - j0));
-            double acc = 0;
-            double weight = 0;
-            final int[][] corners = {{i0, j0}, {i1, j0}, {i0, j1}, {i1, j1}};
-            final double[] weights = {(1 - tx) * (1 - tz), tx * (1 - tz), (1 - tx) * tz, tx * tz};
-            for (int k = 0; k < 4; k++)
-            {
-                final double v = base[corners[k][1] * sw + corners[k][0]];
-                if (!Double.isNaN(v) && weights[k] > 0)
-                {
-                    acc += v * weights[k];
-                    weight += weights[k];
-                }
-            }
-            return weight > 0 ? acc / weight : Double.NaN;
+            final int si = Math.min(sw - 1, Math.max(0, Math.round((float) (x - x0) / SAMPLE_STEP)));
+            final int sj = Math.min(sh - 1, Math.max(0, Math.round((float) (z - z0) / SAMPLE_STEP)));
+            return sj * sw + si;
         }
 
         /**
-         * How far the cell stands above (positive) or below (negative) the baseline; 0 when unknown.
+         * Lowest road height worth trying at a probed cell.
          */
-        double deviation(final int x, final int z)
+        int lowest(final int x, final int z)
         {
-            final double b = baseline(x, z);
-            return Double.isNaN(b) ? 0 : groundAt(x, z) - b;
+            final int g = groundAt(x, z);
+            final int around = low[sample(x, z)];
+            return Math.max(minY + 1, Math.max(g - MAX_DEPTH, Math.min(g, around) - 1));
+        }
+
+        /**
+         * Highest road height worth trying at a probed cell.
+         */
+        int highest(final int x, final int z)
+        {
+            final int g = groundAt(x, z);
+            final int around = high[sample(x, z)];
+            return Math.min(maxY - TUNNEL_HEADROOM - 1, Math.min(g + MAX_LIFT, Math.max(g, around) + WATER_CLEARANCE));
         }
     }
 
     /**
-     * A* over the (x, z) grid inside the relief's box, 4-connected only (no diagonal step — a route that cuts corners
-     * looks wrong). Cost per step grows with the slope to the next cell, with water, with anything already standing
-     * there (a building goes around, at a price, rather than being treated as a wall), and with how far the next cell
-     * stands out of the baseline: a crest costs for every cell of it, so a pass a little to the side wins over going
-     * straight over the hump — the slope alone only sees one cell ahead and could not tell.
+     * The real work of laying the road across one cell at height y, its {@link #WIDTH} columns spread along (px, pz):
+     * the cheapest of an open shelf (dig what stands above, embank what lies below), a tunnel bore (only where every
+     * column leaves a roof) and a bridge deck (only where something lies below it). Infinite when nothing fits —
+     * water under a deck too low, a fill too high to embank with no bridge reason. The same function labels the
+     * cells of the chosen path, so the block style is exactly what the search paid for.
+     *
+     * @param mode receives the cheapest mode when not null
+     */
+    private static double work(final Relief relief, final int x, final int z, final int y, final int px, final int pz, @Nullable final Mode[] mode)
+    {
+        double cut = 0;
+        double fill = 0;
+        int maxFill = 0;
+        int maxCut = 0;
+        int minCover = Integer.MAX_VALUE;
+        boolean water = false;
+        for (int o = -HALF; o <= HALF; o++)
+        {
+            final int cx = x + px * o;
+            final int cz = z + pz * o;
+            if (!relief.probe(cx, cz))
+            {
+                continue;
+            }
+            final int g = relief.groundAt(cx, cz);
+            if (relief.water(cx, cz))
+            {
+                if (y < g + WATER_CLEARANCE)
+                {
+                    return Double.POSITIVE_INFINITY;
+                }
+                water = true;
+                continue;
+            }
+            final int d = y - g;
+            if (d > 0)
+            {
+                fill += d;
+                maxFill = Math.max(maxFill, d);
+            }
+            else if (d < 0)
+            {
+                cut += -d;
+                maxCut = Math.max(maxCut, -d);
+            }
+            minCover = Math.min(minCover, -d);
+        }
+
+        double best = Double.POSITIVE_INFINITY;
+        Mode bestMode = Mode.SURFACE;
+        if (!water && maxFill <= EMBANKMENT_LIMIT && maxCut <= MAX_CUT)
+        {
+            best = cut * DIG + fill * FILL;
+        }
+        if (!water && minCover != Integer.MAX_VALUE && minCover >= TUNNEL_COVER)
+        {
+            final double bore = TUNNEL_HEADROOM * WIDTH * DIG + TUNNEL_PREMIUM;
+            if (bore < best)
+            {
+                best = bore;
+                bestMode = Mode.TUNNEL;
+            }
+        }
+        if ((water || maxFill > 0) && maxCut <= MAX_CUT)
+        {
+            final int centre = relief.probe(x, z) ? relief.groundAt(x, z) : y;
+            final double deck = BRIDGE_PREMIUM + 2 + PILLAR_WEIGHT * Math.max(0, y - centre) + cut * DIG + (water ? WATER_PENALTY : 0);
+            if (deck < best)
+            {
+                best = deck;
+                bestMode = Mode.BRIDGE;
+            }
+        }
+        if (mode != null)
+        {
+            mode[0] = bestMode;
+        }
+        return best;
+    }
+
+    /**
+     * The states reached so far, keyed by (cell, height, "just climbed"): an open-addressed hash over primitive
+     * arrays, so a long route's millions of states stay a few tens of megabytes, not boxed maps.
+     */
+    private static final class Nodes
+    {
+        private final int minY;
+        private int[] table = new int[1 << 16];
+        long[] key = new long[1 << 15];
+        float[] g = new float[1 << 15];
+        int[] parent = new int[1 << 15];
+        boolean[] closed = new boolean[1 << 15];
+        int count;
+
+        Nodes(final int minY)
+        {
+            this.minY = minY;
+        }
+
+        long key(final int cell, final int y, final boolean climbed)
+        {
+            return ((long) cell << 11) | ((long) (y - minY) << 1) | (climbed ? 1 : 0);
+        }
+
+        static int cell(final long key)
+        {
+            return (int) (key >>> 11);
+        }
+
+        int y(final long key)
+        {
+            return (int) ((key >>> 1) & 0x3FF) + minY;
+        }
+
+        static boolean climbed(final long key)
+        {
+            return (key & 1) != 0;
+        }
+
+        private static int hash(final long k)
+        {
+            final long h = k * 0x9E3779B97F4A7C15L;
+            return (int) (h ^ (h >>> 32));
+        }
+
+        int find(final long k)
+        {
+            final int mask = table.length - 1;
+            int slot = hash(k) & mask;
+            while (table[slot] != 0)
+            {
+                final int id = table[slot] - 1;
+                if (key[id] == k)
+                {
+                    return id;
+                }
+                slot = (slot + 1) & mask;
+            }
+            return -1;
+        }
+
+        int add(final long k, final int parentId, final float cost)
+        {
+            if (count == key.length)
+            {
+                final int cap = key.length * 2;
+                key = Arrays.copyOf(key, cap);
+                g = Arrays.copyOf(g, cap);
+                parent = Arrays.copyOf(parent, cap);
+                closed = Arrays.copyOf(closed, cap);
+            }
+            if ((count + 1) * 2 > table.length)
+            {
+                rehash(table.length * 2);
+            }
+            final int id = count++;
+            key[id] = k;
+            g[id] = cost;
+            parent[id] = parentId;
+            insert(id);
+            return id;
+        }
+
+        private void insert(final int id)
+        {
+            final int mask = table.length - 1;
+            int slot = hash(key[id]) & mask;
+            while (table[slot] != 0)
+            {
+                slot = (slot + 1) & mask;
+            }
+            table[slot] = id + 1;
+        }
+
+        private void rehash(final int size)
+        {
+            table = new int[size];
+            for (int id = 0; id < count; id++)
+            {
+                insert(id);
+            }
+        }
+    }
+
+    /**
+     * Binary min-heap of node ids by priority; stale entries are skipped when popped (the node is already closed).
+     */
+    private static final class Heap
+    {
+        private int[] ids = new int[1 << 15];
+        private float[] keys = new float[1 << 15];
+        int size;
+
+        void push(final int id, final float priority)
+        {
+            if (size == ids.length)
+            {
+                ids = Arrays.copyOf(ids, size * 2);
+                keys = Arrays.copyOf(keys, size * 2);
+            }
+            int i = size++;
+            while (i > 0)
+            {
+                final int up = (i - 1) >>> 1;
+                if (keys[up] <= priority)
+                {
+                    break;
+                }
+                ids[i] = ids[up];
+                keys[i] = keys[up];
+                i = up;
+            }
+            ids[i] = id;
+            keys[i] = priority;
+        }
+
+        int pop()
+        {
+            final int top = ids[0];
+            final int lastId = ids[--size];
+            final float last = keys[size];
+            int i = 0;
+            while (true)
+            {
+                int child = 2 * i + 1;
+                if (child >= size)
+                {
+                    break;
+                }
+                if (child + 1 < size && keys[child + 1] < keys[child])
+                {
+                    child++;
+                }
+                if (keys[child] >= last)
+                {
+                    break;
+                }
+                ids[i] = ids[child];
+                keys[i] = keys[child];
+                i = child;
+            }
+            ids[i] = lastId;
+            keys[i] = last;
+            return top;
+        }
+    }
+
+    /**
+     * A* over (x, z, road height), 4-connected (no diagonal: a route that cuts corners looks wrong). From height y the
+     * next cell is entered at y - 1, y or y + 1 — staying at y however far the ground drops or rises is what carries a
+     * deck across a ravine or a bore through a hill. A one-cell hump (up then straight down) is never generated: its
+     * middle cell would need a stair facing both ways (docs/GOTCHA.md), hence the "just climbed" bit in the state.
+     * Each step pays {@link #STEP}, {@link #CLIMB} if it changes level, the {@link #work} of laying that cell and a
+     * penalty for anything a player built there (gone around, at a price, rather than treated as a wall).
+     *
+     * @return the centre line as {x, z, y} cells, start to end
      */
     @Nullable
     private static List<int[]> search(final Relief relief, final int ax, final int az, final int bx, final int bz)
@@ -306,298 +570,149 @@ public final class RoutePath
         {
             return null;
         }
-        final int size = relief.w * relief.h;
-        final float[] g = new float[size];
-        Arrays.fill(g, Float.POSITIVE_INFINITY);
-        final byte[] via = new byte[size];
-        final boolean[] closed = new boolean[size];
-        final int startIdx = relief.index(ax, az);
-        final int goalIdx = relief.index(bx, bz);
-        final PriorityQueue<long[]> open = new PriorityQueue<>(Comparator.comparingDouble(node -> Double.longBitsToDouble(node[1])));
-        g[startIdx] = 0;
-        open.add(new long[] {startIdx, Double.doubleToLongBits(HEURISTIC_WEIGHT * heuristic(ax, az, bx, bz))});
-        int visited = 0;
-        while (!open.isEmpty() && visited++ < MAX_NODES)
+        final int startY = relief.groundAt(ax, az);
+        final int goalY = relief.groundAt(bx, bz);
+        final int goalCell = relief.index(bx, bz);
+        final Nodes nodes = new Nodes(relief.minY);
+        final Heap open = new Heap();
+        final int start = nodes.add(nodes.key(relief.index(ax, az), startY, false), -1, 0f);
+        open.push(start, (float) heuristic(ax, az, startY, bx, bz, goalY));
+        int expanded = 0;
+        while (open.size > 0 && expanded < MAX_EXPANSIONS && nodes.count < MAX_NODES)
         {
-            final int current = (int) open.poll()[0];
-            if (closed[current])
+            final int current = open.pop();
+            if (nodes.closed[current])
             {
                 continue;
             }
-            closed[current] = true;
-            final int x = relief.x0 + current % relief.w;
-            final int z = relief.z0 + current / relief.w;
-            if (current == goalIdx)
+            nodes.closed[current] = true;
+            expanded++;
+            final long key = nodes.key[current];
+            final int cell = Nodes.cell(key);
+            final int y = nodes.y(key);
+            if (cell == goalCell && y == goalY)
             {
-                return reconstruct(relief, via, x, z, startIdx);
+                return reconstruct(relief, nodes, current);
             }
-            final int currentGround = relief.groundAt(x, z);
+            final int x = relief.x0 + cell % relief.w;
+            final int z = relief.z0 + cell / relief.w;
+            final boolean climbed = Nodes.climbed(key);
+            final int parent = nodes.parent[current];
+            final int parentCell = parent < 0 ? -1 : Nodes.cell(nodes.key[parent]);
+            final float base = nodes.g[current];
             for (int k = 0; k < 4; k++)
             {
                 final int nx = x + DX[k];
                 final int nz = z + DZ[k];
-                if (!relief.inside(nx, nz))
+                if (!relief.probe(nx, nz))
                 {
                     continue;
                 }
-                final int neighbor = relief.index(nx, nz);
-                if (closed[neighbor] || !relief.probe(nx, nz))
+                final int neighbour = relief.index(nx, nz);
+                if (neighbour == parentCell)
                 {
                     continue;
                 }
-                final double slope = Math.abs(relief.groundAt(nx, nz) - currentGround) * SLOPE_WEIGHT;
-                final double penalty = (relief.water(nx, nz) ? WATER_PENALTY : 0) + (relief.blocked(nx, nz) ? BLOCKED_PENALTY : 0);
-                final double dev = relief.deviation(nx, nz);
-                final double rough = dev > ROUGH_FREE ? (dev - ROUGH_FREE) * ROUGH_UP_WEIGHT
-                                       : dev < -ROUGH_FREE ? (-dev - ROUGH_FREE) * ROUGH_DOWN_WEIGHT : 0;
-                final double tentative = g[current] + 1.0 + slope + penalty + rough;
-                if (tentative < g[neighbor])
+                final int lo = relief.lowest(nx, nz);
+                final int hi = relief.highest(nx, nz);
+                // Columns spread across the direction of travel
+                final int px = DZ[k] != 0 ? 1 : 0;
+                final int pz = DX[k] != 0 ? 1 : 0;
+                final double penalty = relief.blocked(nx, nz) ? BLOCKED_PENALTY : 0;
+                for (int dy = -1; dy <= 1; dy++)
                 {
-                    g[neighbor] = (float) tentative;
-                    via[neighbor] = (byte) (k + 1);
-                    open.add(new long[] {neighbor, Double.doubleToLongBits(tentative + HEURISTIC_WEIGHT * heuristic(nx, nz, bx, bz))});
+                    if (dy < 0 && climbed)
+                    {
+                        continue;
+                    }
+                    final int ny = y + dy;
+                    if (ny < lo || ny > hi)
+                    {
+                        continue;
+                    }
+                    final long nkey = nodes.key(neighbour, ny, dy > 0);
+                    final int existing = nodes.find(nkey);
+                    if (existing >= 0 && nodes.closed[existing])
+                    {
+                        continue;
+                    }
+                    final double work = work(relief, nx, nz, ny, px, pz, null);
+                    if (work == Double.POSITIVE_INFINITY)
+                    {
+                        continue;
+                    }
+                    final float tentative = (float) (base + STEP + (dy != 0 ? CLIMB : 0) + work + penalty);
+                    final int id;
+                    if (existing < 0)
+                    {
+                        id = nodes.add(nkey, current, tentative);
+                    }
+                    else if (tentative < nodes.g[existing])
+                    {
+                        id = existing;
+                        nodes.g[id] = tentative;
+                        nodes.parent[id] = current;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                    open.push(id, (float) (tentative + heuristic(nx, nz, ny, bx, bz, goalY)));
                 }
             }
         }
         return null;
     }
 
-    private static double heuristic(final int x, final int z, final int bx, final int bz)
+    /**
+     * At least one {@link #STEP} per cell left and one {@link #CLIMB} per level left; the horizontal part is
+     * weighted a little so long routes do not flood the search box.
+     */
+    private static double heuristic(final int x, final int z, final int y, final int bx, final int bz, final int by)
     {
-        return Math.abs(bx - x) + Math.abs(bz - z);
+        return HEURISTIC_WEIGHT * STEP * (Math.abs(bx - x) + Math.abs(bz - z)) + CLIMB * Math.abs(by - y);
     }
 
-    private static List<int[]> reconstruct(final Relief relief, final byte[] via, final int gx, final int gz, final int startIdx)
+    private static List<int[]> reconstruct(final Relief relief, final Nodes nodes, final int goal)
     {
         final List<int[]> cells = new ArrayList<>();
-        int x = gx;
-        int z = gz;
-        cells.add(new int[] {x, z});
-        int idx = relief.index(x, z);
-        while (idx != startIdx && via[idx] != 0)
+        for (int id = goal; id >= 0; id = nodes.parent[id])
         {
-            final int k = via[idx] - 1;
-            x -= DX[k];
-            z -= DZ[k];
-            cells.add(new int[] {x, z});
-            idx = relief.index(x, z);
+            final long key = nodes.key[id];
+            final int cell = Nodes.cell(key);
+            cells.add(new int[] {relief.x0 + cell % relief.w, relief.z0 + cell / relief.w, nodes.y(key)});
         }
         Collections.reverse(cells);
         return cells;
     }
 
     /**
-     * Turns the 2D centre line into real blocks, {@link #WIDTH} wide. The height profile is decided feature by
-     * feature, not cell by cell: a hollow (water, a ravine) found along the line is bridged with a deck held on the
-     * straight line between its two rims, a crest is cut through on the straight line between its two feet — in a
-     * tunnel where the rock above leaves a real roof, in an open cut elsewhere. Only then is the whole profile
-     * graded (one block per cell at most) and stepped with stairs.
+     * Turns the centre line, heights included, into real blocks {@link #WIDTH} wide. Each cell's style is the mode
+     * {@link #work} finds cheapest at the height the search chose, across the direction the search entered it from —
+     * the same columns it paid for.
      */
     private static Result build(final ServerLevel level, final Relief relief, final List<int[]> cells)
     {
         final int n = cells.size();
-        final int[] ground = new int[n];
-        final boolean[] water = new boolean[n];
-        final double[] dev = new double[n];
-        for (int i = 0; i < n; i++)
-        {
-            final int x = cells.get(i)[0];
-            final int z = cells.get(i)[1];
-            relief.probe(x, z);
-            ground[i] = relief.groundAt(x, z);
-            water[i] = relief.water(x, z);
-            dev[i] = relief.deviation(x, z);
-        }
-
-        // The rope over the route's own profile: upper is the level a hollow would fill to between the highest ground
-        // on either side (rain trapped in a trough), lower the level a crest would be shaved down to. Unlike the
-        // baseline, both follow the line itself: they tell a trough crossed from one walked along.
-        final int[] upper = new int[n];
-        final int[] lower = new int[n];
-        for (int i = 0; i < n; i++)
-        {
-            int leftMax = ground[i];
-            int leftMin = ground[i];
-            for (int j = Math.max(0, i - ROPE_SPAN); j < i; j++)
-            {
-                leftMax = Math.max(leftMax, ground[j]);
-                leftMin = Math.min(leftMin, ground[j]);
-            }
-            int rightMax = ground[i];
-            int rightMin = ground[i];
-            for (int j = i + 1; j <= Math.min(n - 1, i + ROPE_SPAN); j++)
-            {
-                rightMax = Math.max(rightMax, ground[j]);
-                rightMin = Math.min(rightMin, ground[j]);
-            }
-            upper[i] = Math.min(leftMax, rightMax);
-            lower[i] = Math.max(leftMin, rightMin);
-        }
-
-        final Mode[] modes = new Mode[n];
-        final int[] target = ground.clone();
-        final int[] floorReq = new int[n];
-        Arrays.fill(floorReq, NO_REQ);
-
-        // Hollows: bridged rim to rim, or simply filled when shallow and short
-        final boolean[] dipCandidate = new boolean[n];
-        final boolean[] inDip = new boolean[n];
-        final boolean[] dipInside = new boolean[n];
-        for (int i = 0; i < n; i++)
-        {
-            dipCandidate[i] = water[i] || (dev[i] < -DIP_DEV && upper[i] - ground[i] >= DIP_DEV);
-            dipInside[i] = water[i] || upper[i] > ground[i];
-        }
-        for (final int[] span : spans(dipCandidate, dipInside, null, n))
-        {
-            final int a = span[0];
-            final int b = span[1];
-            boolean wet = false;
-            int maxDepth = 0;
-            for (int i = a + 1; i < b; i++)
-            {
-                wet |= water[i];
-                maxDepth = Math.max(maxDepth, lineAt(ground, a, b, i) - ground[i]);
-            }
-            final boolean bridge = wet || maxDepth > EMBANKMENT_LIMIT || (maxDepth >= BRIDGE_MIN_DEPTH && b - a - 1 >= BRIDGE_MIN_LEN);
-            for (int i = a + 1; i < b; i++)
-            {
-                final int line = lineAt(ground, a, b, i);
-                inDip[i] = true;
-                target[i] = line;
-                floorReq[i] = water[i] ? Math.max(line, ground[i] + WATER_CLEARANCE) : line;
-                modes[i] = bridge ? Mode.BRIDGE : Mode.SURFACE;
-            }
-        }
-        for (int i = 0; i < n; i++)
-        {
-            if (water[i] && !inDip[i])
-            {
-                floorReq[i] = ground[i] + WATER_CLEARANCE;
-                modes[i] = Mode.BRIDGE;
-            }
-        }
-
-        // Crests: cut through foot to foot, as a tunnel where the rock leaves a real roof
-        final boolean[] bumpCandidate = new boolean[n];
-        final boolean[] bumpInside = new boolean[n];
-        for (int i = 0; i < n; i++)
-        {
-            bumpCandidate[i] = !inDip[i] && dev[i] > BUMP_DEV && ground[i] - lower[i] >= BUMP_DEV;
-            bumpInside[i] = ground[i] > lower[i];
-        }
-        for (final int[] span : spans(bumpCandidate, bumpInside, inDip, n))
-        {
-            final int a = span[0];
-            final int b = span[1];
-            final boolean[] deep = new boolean[n];
-            for (int i = a + 1; i < b; i++)
-            {
-                final int line = lineAt(ground, a, b, i);
-                target[i] = line;
-                modes[i] = Mode.SURFACE;
-                deep[i] = ground[i] - line >= TUNNEL_COVER;
-            }
-            mergeGaps(deep, null, a + 1, b);
-            for (int s = a + 1; s < b; s++)
-            {
-                if (!deep[s])
-                {
-                    continue;
-                }
-                int e = s;
-                int maxCover = 0;
-                while (e < b && deep[e])
-                {
-                    maxCover = Math.max(maxCover, ground[e] - target[e]);
-                    e++;
-                }
-                if (e - s >= TUNNEL_MIN_RUN || maxCover > MAX_CUT)
-                {
-                    Arrays.fill(modes, s, e, Mode.TUNNEL);
-                }
-                s = e;
-            }
-        }
-
-        // The deck of a bridge never sinks below its line, and reaches it at grade from either side
-        for (int i = n - 2; i >= 0; i--)
-        {
-            if (floorReq[i + 1] != NO_REQ)
-            {
-                floorReq[i] = Math.max(floorReq[i], floorReq[i + 1] - MAX_GRADE);
-            }
-        }
-        for (int i = 1; i < n; i++)
-        {
-            if (floorReq[i - 1] != NO_REQ)
-            {
-                floorReq[i] = Math.max(floorReq[i], floorReq[i - 1] - MAX_GRADE);
-            }
-        }
-
-        // Grade: never more than one block per cell. Features are already straightened, so this only shapes the
-        // open stretches between them; chased from both ends and averaged, so a climb steeper than the grade is half
-        // cut into, half built up instead of lagging a hillside behind.
-        final int[] forward = new int[n];
-        final int[] backward = new int[n];
-        forward[0] = Math.max(target[0], floorReq[0]);
-        for (int i = 1; i < n; i++)
-        {
-            forward[i] = Math.max(forward[i - 1] - MAX_GRADE, Math.min(forward[i - 1] + MAX_GRADE, Math.max(target[i], floorReq[i])));
-        }
-        backward[n - 1] = Math.max(target[n - 1], floorReq[n - 1]);
-        for (int i = n - 2; i >= 0; i--)
-        {
-            backward[i] = Math.max(backward[i + 1] - MAX_GRADE, Math.min(backward[i + 1] + MAX_GRADE, Math.max(target[i], floorReq[i])));
-        }
         final int[] roadY = new int[n];
+        final Direction[] along = new Direction[n];
+        final Mode[] modes = new Mode[n];
+        final Mode[] out = new Mode[1];
         for (int i = 0; i < n; i++)
         {
-            roadY[i] = Math.max(floorReq[i], Math.floorDiv(forward[i] + backward[i], 2));
-        }
-        // A one-cell bump would need a stair facing both ways on the same cell: flatten it
-        for (int i = 1; i + 1 < n; i++)
-        {
-            if (roadY[i - 1] == roadY[i + 1] && roadY[i] == roadY[i - 1] + 1 && roadY[i - 1] >= floorReq[i])
-            {
-                roadY[i] = roadY[i - 1];
-            }
-        }
-
-        // What no feature claimed: open ground, except a ramp too high to embank (the approach of a high bridge) or a
-        // long climb steep enough to leave a roof over the graded road
-        for (int i = 0; i < n; i++)
-        {
-            if (modes[i] == null && roadY[i] - ground[i] > EMBANKMENT_LIMIT)
-            {
-                modes[i] = Mode.BRIDGE;
-            }
-        }
-        for (int i = 0; i < n; i++)
-        {
-            int j = i;
-            while (j < n && modes[j] == null && ground[j] - roadY[j] >= TUNNEL_COVER)
-            {
-                j++;
-            }
-            if (j - i >= TUNNEL_MIN_RUN)
-            {
-                Arrays.fill(modes, i, j, Mode.TUNNEL);
-            }
-            i = Math.max(i, j);
-        }
-        for (int i = 0; i < n; i++)
-        {
-            if (modes[i] == null)
-            {
-                modes[i] = Mode.SURFACE;
-            }
+            roadY[i] = cells.get(i)[2];
+            final int[] from = i > 0 ? cells.get(i - 1) : cells.get(i);
+            final int[] to = i > 0 ? cells.get(i) : cells.get(Math.min(n - 1, 1));
+            along[i] = directionOf(to[0] - from[0], to[1] - from[1]);
+            final Direction perp = along[i].getClockWise();
+            out[0] = Mode.SURFACE;
+            final double cost = work(relief, cells.get(i)[0], cells.get(i)[1], roadY[i], Math.abs(perp.getStepX()), Math.abs(perp.getStepZ()), out);
+            modes[i] = cost == Double.POSITIVE_INFINITY ? Mode.SURFACE : out[0];
         }
 
         // Where the road changes level by one block, the stair goes on the HIGHER of the two cells, at that cell's
         // height, facing toward the climb (away from the lower cell) — see docs/GOTCHA.md: on a descent that is the
-        // cell before the drop, not the one after it.
+        // cell before the drop, not the one after it. The search never makes a one-cell hump, so no cell needs two.
         final Direction[] stairs = new Direction[n];
         for (int i = 1; i < n; i++)
         {
@@ -605,17 +720,16 @@ public final class RoutePath
             {
                 continue;
             }
-            final Direction along = directionOf(cells.get(i)[0] - cells.get(i - 1)[0], cells.get(i)[1] - cells.get(i - 1)[1]);
             if (roadY[i] > roadY[i - 1])
             {
                 if (stairs[i] == null)
                 {
-                    stairs[i] = along;
+                    stairs[i] = along[i];
                 }
             }
             else if (stairs[i - 1] == null)
             {
-                stairs[i - 1] = along.getOpposite();
+                stairs[i - 1] = along[i].getOpposite();
             }
         }
 
@@ -629,10 +743,7 @@ public final class RoutePath
             final int x = cells.get(i)[0];
             final int z = cells.get(i)[1];
             final int y = roadY[i];
-            final int[] from = i + 1 < n ? cells.get(i) : cells.get(Math.max(0, i - 1));
-            final int[] to = i + 1 < n ? cells.get(i + 1) : cells.get(i);
-            final Direction dir = directionOf(to[0] - from[0], to[1] - from[1]);
-            final Direction perp = dir.getClockWise();
+            final Direction perp = along[i].getClockWise();
             switch (modes[i])
             {
                 case TUNNEL ->
@@ -651,101 +762,6 @@ public final class RoutePath
             chunkSizes.add(steps.size() - before);
         }
         return new Result(steps, chunkSizes, n, tunnels, bridges);
-    }
-
-    /**
-     * The features along the line, as {anchor before, anchor after} pairs (the anchors themselves stay outside): the
-     * candidate cells, joined across gaps of {@link #MERGE_GAP} or less (a rock in the middle of a ravine), then
-     * widened while still inside the trough or crest, up to {@link #EXPAND_MAX} cells either way, so the anchors land on
-     * the real rims or feet. Overlapping features become one.
-     */
-    private static List<int[]> spans(final boolean[] candidate, final boolean[] inside, @Nullable final boolean[] forbidden, final int n)
-    {
-        final boolean[] cand = candidate.clone();
-        mergeGaps(cand, forbidden, 0, n);
-        final List<int[]> spans = new ArrayList<>();
-        for (int s = 0; s < n; s++)
-        {
-            if (!cand[s])
-            {
-                continue;
-            }
-            int e = s;
-            while (e + 1 < n && cand[e + 1])
-            {
-                e++;
-            }
-            int left = s;
-            while (left - 1 >= 0 && s - (left - 1) <= EXPAND_MAX && inside[left - 1] && (forbidden == null || !forbidden[left - 1]))
-            {
-                left--;
-            }
-            int right = e;
-            while (right + 1 < n && (right + 1) - e <= EXPAND_MAX && inside[right + 1] && (forbidden == null || !forbidden[right + 1]))
-            {
-                right++;
-            }
-            int a = Math.max(left - 1, 0);
-            int b = Math.min(right + 1, n - 1);
-            // Never anchor on a cell another feature already holds (its rim is the next cell in)
-            if (forbidden != null && forbidden[a])
-            {
-                a++;
-            }
-            if (forbidden != null && forbidden[b])
-            {
-                b--;
-            }
-            if (b - a >= 2)
-            {
-                final int[] last = spans.isEmpty() ? null : spans.get(spans.size() - 1);
-                if (last != null && a < last[1])
-                {
-                    last[1] = Math.max(last[1], b);
-                }
-                else
-                {
-                    spans.add(new int[] {a, b});
-                }
-            }
-            s = e;
-        }
-        return spans;
-    }
-
-    /**
-     * Fills the gaps of {@link #MERGE_GAP} cells or less between two runs of the mask, within [from, to), unless a
-     * forbidden cell lies in the gap.
-     */
-    private static void mergeGaps(final boolean[] mask, @Nullable final boolean[] forbidden, final int from, final int to)
-    {
-        for (int i = from + 1; i < to; i++)
-        {
-            if (mask[i] || !mask[i - 1])
-            {
-                continue;
-            }
-            int j = i;
-            boolean clean = true;
-            while (j < to && !mask[j] && j - i < MERGE_GAP)
-            {
-                clean &= forbidden == null || !forbidden[j];
-                j++;
-            }
-            if (j < to && mask[j] && clean)
-            {
-                Arrays.fill(mask, i, j, true);
-            }
-            i = j;
-        }
-    }
-
-    /**
-     * Height at i of the straight line from cell a's ground to cell b's ground.
-     */
-    private static int lineAt(final int[] ground, final int a, final int b, final int i)
-    {
-        return (int) Math.round(ground[a] + (ground[b] - ground[a]) * (double) (i - a) / (b - a));
     }
 
     /**
