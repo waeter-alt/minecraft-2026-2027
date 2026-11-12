@@ -10,6 +10,7 @@ Le monde est designe par son nom en jeu (--monde, « Donjon 3 » par defaut) ; i
 """
 import argparse
 import json
+import sys
 import math
 from collections import Counter, deque
 from pathlib import Path
@@ -19,23 +20,15 @@ from nbtlib import Byte, Compound, Double, Float, Int, List, String
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--monde", default="Donjon 3", help="nom du monde tel qu'il s'affiche en jeu")
+ap.add_argument("--zip", action="store_true", help="ecrit aussi atelier/mondes/<monde>.zip : un monde pret a copier dans saves/")
 args = ap.parse_args()
 RACINE = Path(__file__).resolve().parent.parent                      # atelier/
 SAVES = RACINE.parent / "mod/run/client/saves"
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import monde_atelier                                                  # cree le monde de test s'il n'existe pas
 
-def dossier_du_monde(nom_):
-    """Le monde est designe par son nom en jeu (LevelName de level.dat) : le dossier peut porter un autre nom. A defaut de monde de ce nom, on prend le dossier de ce nom."""
-    for d_ in (sorted(SAVES.iterdir()) if SAVES.exists() else []):
-        try:
-            if str(nbtlib.load(d_ / "level.dat")["Data"]["LevelName"]) == nom_:
-                return d_
-        except Exception:
-            continue
-    return SAVES / nom_
-
-
-SAVE = dossier_du_monde(args.monde)
+SAVE = monde_atelier.trouver_ou_creer_monde(args.monde, SAVES)
 print(f"[0] monde « {args.monde} » -> dossier {SAVE.name}", flush=True)
 NOM = "ciel"
 SX, SY, SZ = 280, 120, 280
