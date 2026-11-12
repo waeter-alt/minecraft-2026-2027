@@ -21,6 +21,7 @@ from nbtlib import Byte, Compound, Int, List, String
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--monde", default="Donjon 2", help="nom du monde tel qu'il s'affiche en jeu")
+ap.add_argument("--zip", action="store_true", help="ecrit aussi atelier/mondes/<monde>.zip : un monde pret a copier dans saves/")
 args = ap.parse_args()
 RACINE = Path(__file__).resolve().parent.parent                      # atelier/
 SAVES = RACINE.parent / "mod/run/client/saves"

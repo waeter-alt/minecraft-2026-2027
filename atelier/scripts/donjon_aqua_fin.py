@@ -247,3 +247,5 @@ conf = {"_marque": "[claude-build]", "taille": [SX, SY, SZ], "origine": ORIGINE,
 (RACINE / "exports" / f"{NOM}_cibles.json").write_text(json.dumps(conf, ensure_ascii=False), encoding="utf-8")
 np.savez_compressed(RACINE / "exports" / f"{NOM}_vide.npz", C=np.packbits(C.ravel()), W=np.packbits(W.ravel()), taille=np.array([SX, SY, SZ]))
 print(f"Ecrit : {n_total} blocs | commandes {len(CMD)} | portes {list(PORTES)}")
+if args.zip:
+    monde_atelier.zipper_monde(SAVE, args.monde, RACINE / "mondes")

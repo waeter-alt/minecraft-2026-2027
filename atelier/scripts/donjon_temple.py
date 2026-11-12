@@ -20,6 +20,7 @@ from nbtlib import Byte, Compound, Int, List, String
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--monde", default="Donjon 2")
+ap.add_argument("--zip", action="store_true", help="ecrit aussi atelier/mondes/<monde>.zip : un monde pret a copier dans saves/")
 args = ap.parse_args()
 RACINE = Path(__file__).resolve().parent.parent                      # atelier/
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -1070,3 +1071,5 @@ conf = {"_marque": "[claude-build]", "taille": [SX, SY, SZ], "origine": ORIGINE,
 np.savez_compressed(RACINE / "exports" / f"{NOM}_vide.npz", C=np.packbits(C.ravel()), taille=np.array([SX, SY, SZ]))     # masque des volumes creux, pour le verificateur
 (RACINE / "exports" / f"{NOM}_cibles.json").write_text(json.dumps(conf, ensure_ascii=False), encoding="utf-8")
 print(f"Ecrit : {n_total} blocs | commandes {len(CMD)} | portes {list(PORTES)} | ancrages {len(ANCRAGES)}")
+if args.zip:
+    monde_atelier.zipper_monde(SAVE, args.monde, RACINE / "mondes")

@@ -429,3 +429,5 @@ conf = {"_marque": "[claude-build]", "taille": [SX, SY, SZ], "origine": ORIGINE,
         "eclats": {k_: {"nom": e_["nom"], "levier": list(e_["levier"]), "ile": e_["ile"]} for k_, e_ in ECLATS.items()}, "cp": {k_: list(v_) for k_, v_ in CP.items()}}
 (RACINE / "exports" / f"{NOM}_cibles.json").write_text(json.dumps(conf, ensure_ascii=False), encoding="utf-8")
 print(f"Ecrit : {n_total} blocs | commandes {nb_cmd} | portes {list(PORTES)}")
+if args.zip:
+    monde_atelier.zipper_monde(SAVE, args.monde, RACINE / "mondes")

@@ -66,5 +66,23 @@ class TestMondeAtelier(unittest.TestCase):
         self.assertEqual(clic["value"], "/tp @s 215 22 -3 0 0")
 
 
+    def test_le_zip_est_un_monde_propre_et_complet(self):
+        import zipfile
+        with tempfile.TemporaryDirectory() as tmp:
+            save = monde.trouver_ou_creer_monde("Donjon Z", Path(tmp) / "saves")
+            (save / "playerdata").mkdir()
+            (save / "playerdata" / "x.dat").write_bytes(b"joueur")                                 # ne doit pas partir dans le zip
+            monde.installer_pose_auto(save, "z_pose", "z")
+            (monde.datapack(save) / "data/atelier/structure/z.nbt").write_bytes(b"structure")
+            cible = monde.zipper_monde(save, "Donjon Z", Path(tmp) / "mondes")
+            with zipfile.ZipFile(cible) as z:
+                noms = set(z.namelist())
+            self.assertIn("Donjon Z/level.dat", noms)
+            self.assertIn("Donjon Z/datapacks/atelier/pack.mcmeta", noms)
+            self.assertIn("Donjon Z/datapacks/atelier/data/atelier/structure/z.nbt", noms)
+            self.assertIn("Donjon Z/datapacks/atelier/data/minecraft/tags/function/load.json", noms)
+            self.assertFalse([n for n in noms if "playerdata" in n or "session.lock" in n])
+
+
 if __name__ == "__main__":
     unittest.main()

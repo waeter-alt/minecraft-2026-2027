@@ -5,7 +5,9 @@ Le modele de monde (atelier/modeles/level_superflat.dat) vient d'un monde superf
 La pose automatique (installer_pose_auto) fait poser la structure une seule fois, a la premiere ouverture du monde : plus de /function a taper ni d'etiquette load a ajouter a la main."""
 import json
 import random
+import tempfile
 import time
+import zipfile
 from pathlib import Path
 
 import nbtlib
@@ -45,19 +47,24 @@ def datapack(save):
     return dp
 
 
+def level_neuf(nom):
+    """level.dat d'un monde superflat neuf, au nom `nom`, tire du modele."""
+    f = nbtlib.load(MODELE)
+    d = f["Data"]
+    d["LevelName"] = String(nom)
+    d["LastPlayed"] = Long(int(time.time() * 1000))
+    d["WorldGenSettings"]["seed"] = Long(random.randint(-2 ** 62, 2 ** 62))
+    return f
+
+
 def trouver_ou_creer_monde(nom, saves):
     """Renvoie le dossier du monde `nom` : celui qui existe, sinon un monde superflat neuf cree dans `saves / nom`."""
     saves = Path(saves)
     save = dossier_du_monde(nom, saves)
     if (save / "level.dat").exists():
         return save
-    f = nbtlib.load(MODELE)
-    d = f["Data"]
-    d["LevelName"] = String(nom)
-    d["LastPlayed"] = Long(int(time.time() * 1000))
-    d["WorldGenSettings"]["seed"] = Long(random.randint(-2 ** 62, 2 ** 62))
     save.mkdir(parents=True, exist_ok=True)
-    f.save(save / "level.dat")
+    level_neuf(nom).save(save / "level.dat")
     datapack(save)
     print(f"Monde « {nom} » cree (superflat) dans {save}", flush=True)
     return save
@@ -84,3 +91,20 @@ def message_entree(phrase, coords):
     tp = f"/tp @s {coords} 0 0"
     return ('tellraw @a [{"text":"' + phrase + ' Entrée : ","color":"green"},{"text":"[' + tp + ']","color":"aqua","underlined":true,'
             '"clickEvent":{"action":"run_command","value":"' + tp + '"},"hoverEvent":{"action":"show_text","contents":"Cliquer pour y aller"}}]')
+
+
+def zipper_monde(save, nom, dossier_zip):
+    """Ecrit `dossier_zip / <nom>.zip` : un monde propre, pret a copier dans saves/ (le dossier du zip porte le nom du monde). Il contient un level.dat neuf et le datapack de `save`,
+    rien d'autre : pas de joueur, pas de drapeau de pose, donc la structure se pose toute seule a la premiere ouverture. Renvoie le chemin du zip."""
+    dossier_zip = Path(dossier_zip)
+    dossier_zip.mkdir(parents=True, exist_ok=True)
+    cible = dossier_zip / f"{nom}.zip"
+    dp = datapack(save)
+    with tempfile.TemporaryDirectory() as tmp, zipfile.ZipFile(cible, "w", zipfile.ZIP_DEFLATED) as z:
+        level_neuf(nom).save(Path(tmp) / "level.dat")
+        z.write(Path(tmp) / "level.dat", f"{nom}/level.dat")
+        for fichier in sorted(dp.rglob("*")):
+            if fichier.is_file():
+                z.write(fichier, f"{nom}/datapacks/atelier/{fichier.relative_to(dp).as_posix()}")
+    print(f"Monde pret a copier : {cible}", flush=True)
+    return cible
