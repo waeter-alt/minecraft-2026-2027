@@ -2,7 +2,7 @@
 """
 donjon_ciel.py - Donjon n°3 « L'Archipel des Nuees » (2026-11-11) : un temple celeste en ruine, eclate en iles flottantes, ~32 min.
 La Paravoile (mod Grappin 2.6.0) est donnee a l'entree. On monte a l'interieur des tours (escaliers, leviers), on redescend en planant d'ile en ile ;
-tomber dans le vide ramene au dernier point de passage. Pas de grappin, ni elytres, ni autre moyen de voler. Pas de coffre, de monstre ni de boss.
+tomber dans le vide ramene au dernier point de passage. Pas de grappin, ni elytres, ni autre moyen de voler. Pas de coffre ni de monstre ; le boss (le Seraphin, mod Grappin 2.7.0) apparait sur la plateforme centrale 10 s apres les trois eclats.
 Gabarit 280 x 120 x 280. Plan : docs/donjon_ciel_plan.md.
   test-local\\venv\\Scripts\\python.exe atelier\\scripts\\donjon_ciel.py
 En jeu : /reload puis /function atelier:ciel_pose ; remise a zero : /function atelier:ciel_reset
