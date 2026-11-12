@@ -28,6 +28,14 @@ public final class Reglages {
     public static final ModConfigSpec.DoubleValue PARAVOILE_VITESSE = B.comment("Paravoile : vitesse de vol en avant, en blocs par tick (0,36 = 7 blocs/s).").defineInRange("paravoileVitesse", 0.36, 0.1, 1.0);
     public static final ModConfigSpec.DoubleValue PARAVOILE_DESCENTE = B.comment("Paravoile : vitesse de descente a plat, en blocs par tick (0,09 = 1,8 bloc/s).").defineInRange("paravoileDescente", 0.09, 0.0, 0.5);
 
+    public static final ModConfigSpec.DoubleValue SERAPHIN_VIE = B.comment("Seraphin : points de vie du boss.").defineInRange("seraphinVie", 300.0, 20.0, 5000.0);
+    public static final ModConfigSpec.DoubleValue RAYON_DEGATS = B.comment("Seraphin : degats du rayon de l'oeil.").defineInRange("seraphinRayonDegats", 14.0, 0.0, 100.0);
+    public static final ModConfigSpec.DoubleValue PLUME_DEGATS = B.comment("Seraphin : degats d'une plume.").defineInRange("seraphinPlumeDegats", 7.0, 0.0, 100.0);
+    public static final ModConfigSpec.DoubleValue BALAYAGE_DEGATS = B.comment("Seraphin : degats du balayage d'ailes.").defineInRange("seraphinBalayageDegats", 10.0, 0.0, 100.0);
+    public static final ModConfigSpec.DoubleValue AILES_FERMEES = B.comment("Seraphin : part des degats recus quand ses ailes sont fermees (1 = pas de reduction, l'oeil ouvert prend toujours tout).").defineInRange("seraphinAilesFermees", 0.3, 0.0, 1.0);
+    public static final ModConfigSpec.IntValue OEIL_OUVERT = B.comment("Seraphin : duree pendant laquelle l'oeil reste ouvert apres le tir du rayon, en ticks (20 = 1 s) : c'est la fenetre ou il prend tous les degats.").defineInRange("seraphinOeilOuvert", 100, 10, 600);
+    public static final ModConfigSpec.IntValue RAYON_CHARGE = B.comment("Seraphin : duree d'avertissement avant le rayon, en ticks (20 = 1 s).").defineInRange("seraphinRayonCharge", 30, 5, 200);
+
     public static final ModConfigSpec SPEC = B.build();
 
     private Reglages() {

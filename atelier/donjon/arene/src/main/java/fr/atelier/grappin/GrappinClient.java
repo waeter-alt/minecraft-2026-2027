@@ -31,8 +31,15 @@ public final class GrappinClient {
     @EventBusSubscriber(modid = Grappin.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static final class Rendus {
         @SubscribeEvent
+        static void couches(EntityRenderersEvent.RegisterLayerDefinitions event) {
+            event.registerLayerDefinition(SeraphinModele.COUCHE, SeraphinModele::creerCouche);
+        }
+
+        @SubscribeEvent
         static void rendus(EntityRenderersEvent.RegisterRenderers event) {
             event.registerEntityRenderer(Grappin.CROCHET.get(), RenduCrochet::new);
+            event.registerEntityRenderer(Grappin.PLUME.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);   // la plume n'est que sa traînee de particules
+            event.registerEntityRenderer(Grappin.SERAPHIN.get(), SeraphinRendu::new);
         }
     }
 

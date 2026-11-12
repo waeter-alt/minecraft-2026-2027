@@ -26,6 +26,8 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.common.DeferredSpawnEggItem;
+import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -76,6 +78,24 @@ public class Grappin {
                     .updateInterval(1)
                     .build("crochet"));
 
+    /** Le Seraphin, boss volant du donjon n°3 (3 x 3 blocs), et son oeuf d'apparition. */
+    public static final DeferredHolder<EntityType<?>, EntityType<Seraphin>> SERAPHIN = ENTITES.register("seraphin",
+            () -> EntityType.Builder.<Seraphin>of(Seraphin::new, MobCategory.MONSTER)
+                    .sized(3.0F, 3.0F)
+                    .fireImmune()
+                    .clientTrackingRange(10)
+                    .build("seraphin"));
+    /** Une plume lancee par le Seraphin. */
+    public static final DeferredHolder<EntityType<?>, EntityType<Plume>> PLUME = ENTITES.register("plume",
+            () -> EntityType.Builder.<Plume>of(Plume::new, MobCategory.MISC)
+                    .sized(0.3F, 0.3F)
+                    .clientTrackingRange(8)
+                    .updateInterval(1)
+                    .noSave()
+                    .build("plume"));
+    public static final DeferredItem<DeferredSpawnEggItem> SERAPHIN_OEUF = ITEMS.register("seraphin_spawn_egg",
+            () -> new DeferredSpawnEggItem(SERAPHIN, 0xE8E8E8, 0x202020, new Item.Properties()));
+
     /** Onglet creatif dedie aux objets de donjon (le grappin et son point d'ancrage ; la place des futurs objets : voile, amulette...). */
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> ONGLET = ONGLETS.register("donjon", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.grappin.donjon"))
@@ -85,6 +105,7 @@ public class Grappin {
                 sortie.accept(ANCRAGE_ITEM.get());
                 sortie.accept(VOILE.get());
                 sortie.accept(PARAVOILE.get());
+                sortie.accept(SERAPHIN_OEUF.get());
             })
             .build());
 
@@ -96,6 +117,11 @@ public class Grappin {
         ONGLETS.register(modBus);
         container.registerConfig(ModConfig.Type.COMMON, Reglages.SPEC);
         modBus.addListener(this::reseau);
+        modBus.addListener(this::attributs);
+    }
+
+    private void attributs(EntityAttributeCreationEvent event) {
+        event.put(SERAPHIN.get(), Seraphin.attributs().build());
     }
 
     private void reseau(RegisterPayloadHandlersEvent event) {

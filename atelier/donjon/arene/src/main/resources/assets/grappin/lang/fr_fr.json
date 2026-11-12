@@ -18,5 +18,9 @@
   "item.grappin.paravoile.alerte": "Paravoile : %s s de vol",
   "item.grappin.paravoile.epuisee": "Paravoile épuisée !",
   "block.grappin.ancrage": "Point d'ancrage",
-  "entity.grappin.crochet": "Crochet de grappin"
+  "entity.grappin.crochet": "Crochet de grappin",
+  "entity.grappin.seraphin": "Séraphin",
+  "entity.grappin.seraphin.phase2": "Le Séraphin se déchaîne !",
+  "entity.grappin.plume": "Plume du Séraphin",
+  "item.grappin.seraphin_spawn_egg": "Œuf d'apparition de Séraphin"
 }
