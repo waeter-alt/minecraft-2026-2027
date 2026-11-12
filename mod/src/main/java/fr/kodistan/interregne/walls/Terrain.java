@@ -116,7 +116,7 @@ public final class Terrain
     /**
      * A log belongs to a natural tree when natural (non persistent) leaves grow around the top of its trunk.
      */
-    private static boolean treeLog(final LevelReader level, final BlockPos pos)
+    public static boolean treeLog(final LevelReader level, final BlockPos pos)
     {
         final BlockPos.MutableBlockPos cursor = pos.mutable();
         int climbed = 0;

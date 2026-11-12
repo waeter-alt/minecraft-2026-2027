@@ -36,12 +36,15 @@ public final class RoutePath
     }
 
     /**
-     * @param steps   every block to set, in building order
-     * @param length  number of ground cells the route's centre line crosses (its walking length, not vol d'oiseau)
-     * @param tunnels number of centre cells carved through a slope too steep to climb
-     * @param bridges number of centre cells spanning water or a drop too steep to descend
+     * @param steps      every block to set, in the order the route's centre line runs (start to end) — see
+     *                   {@link #interleaved} for the order the site actually builds in
+     * @param chunkSizes how many of {@code steps} belong to each centre-line cell, in the same order, so the two
+     *                   ends can be built toward the middle without re-running the whole layout
+     * @param length     number of ground cells the route's centre line crosses (its walking length, not vol d'oiseau)
+     * @param tunnels    number of centre cells carved through a slope too steep to climb
+     * @param bridges    number of centre cells spanning water or a drop too steep to descend
      */
-    public record Result(List<Step> steps, int length, int tunnels, int bridges)
+    public record Result(List<Step> steps, List<Integer> chunkSizes, int length, int tunnels, int bridges)
     {
     }
 
@@ -63,6 +66,7 @@ public final class RoutePath
     private static final int MAX_GRADE = 1;
     private static final int TUNNEL_MARGIN = 3;
     private static final int BRIDGE_MARGIN = 2;
+    private static final int WATER_CLEARANCE = 4;
     private static final int TUNNEL_HEADROOM = 2;
     private static final int LIGHT_EVERY = 6;
     private static final int PILLAR_EVERY = 6;
@@ -206,19 +210,51 @@ public final class RoutePath
             ground[i] = probe.ground();
             water[i] = probe.water();
         }
-        final int[] roadY = new int[n];
-        roadY[0] = ground[0];
+        // How high the road must be to clear the water, spread out over the distance the grade needs to climb there
+        // and back down, so the climb starts well before the bank and the deck never comes near the surface.
+        final int NO_REQ = Integer.MIN_VALUE;
+        final int[] req = new int[n];
+        java.util.Arrays.fill(req, NO_REQ);
+        for (int i = 0; i < n; i++)
+        {
+            if (water[i])
+            {
+                req[i] = ground[i] + WATER_CLEARANCE;
+            }
+        }
+        for (int i = n - 2; i >= 0; i--)
+        {
+            if (req[i + 1] != NO_REQ)
+            {
+                req[i] = Math.max(req[i], req[i + 1] - MAX_GRADE);
+            }
+        }
         for (int i = 1; i < n; i++)
         {
-            roadY[i] = Math.max(ground[i] - TUNNEL_MARGIN, Math.min(ground[i] + BRIDGE_MARGIN,
-              Math.max(roadY[i - 1] - MAX_GRADE, Math.min(roadY[i - 1] + MAX_GRADE, ground[i]))));
+            if (req[i - 1] != NO_REQ)
+            {
+                req[i] = Math.max(req[i], req[i - 1] - MAX_GRADE);
+            }
+        }
+
+        // A grade-limited chase of the ground (or the water clearance where that asks for more height): never more
+        // than one block of slope per cell, so a cliff the grade cannot keep up with becomes a bridge on its own,
+        // rather than the road diving to meet it.
+        final int[] roadY = new int[n];
+        roadY[0] = Math.max(ground[0], req[0] == NO_REQ ? ground[0] : req[0]);
+        for (int i = 1; i < n; i++)
+        {
+            final int target = Math.max(ground[i], req[i] == NO_REQ ? ground[i] : req[i]);
+            roadY[i] = Math.max(roadY[i - 1] - MAX_GRADE, Math.min(roadY[i - 1] + MAX_GRADE, target));
         }
 
         final List<Step> steps = new ArrayList<>();
+        final List<Integer> chunkSizes = new ArrayList<>(n);
         int tunnels = 0;
         int bridges = 0;
         for (int i = 0; i < n; i++)
         {
+            final int before = steps.size();
             final int x = cells.get(i)[0];
             final int z = cells.get(i)[1];
             final int y = roadY[i];
@@ -244,8 +280,40 @@ public final class RoutePath
                 default -> surfaceAt(level, steps, x, y, z, perp, climbing ? (roadY[i] > roadY[i - 1] ? dir : dir.getOpposite()) : null);
             }
             clearTreesAround(level, steps, x, y, z, perp);
+            chunkSizes.add(steps.size() - before);
         }
-        return new Result(steps, n, tunnels, bridges);
+        return new Result(steps, chunkSizes, n, tunnels, bridges);
+    }
+
+    /**
+     * The blocks of a route, reordered so the site builds outward from both ends toward the middle instead of one
+     * sweep from start to end.
+     */
+    public static List<Step> interleaved(final Result result)
+    {
+        final List<Step> steps = result.steps();
+        final List<Integer> sizes = result.chunkSizes();
+        final int[] starts = new int[sizes.size()];
+        int offset = 0;
+        for (int i = 0; i < sizes.size(); i++)
+        {
+            starts[i] = offset;
+            offset += sizes.get(i);
+        }
+        final List<Step> ordered = new ArrayList<>(steps.size());
+        int lo = 0;
+        int hi = sizes.size() - 1;
+        while (lo <= hi)
+        {
+            ordered.addAll(steps.subList(starts[lo], starts[lo] + sizes.get(lo)));
+            if (hi != lo)
+            {
+                ordered.addAll(steps.subList(starts[hi], starts[hi] + sizes.get(hi)));
+            }
+            lo++;
+            hi--;
+        }
+        return ordered;
     }
 
     private static Direction directionOf(final int dx, final int dz)
@@ -326,7 +394,8 @@ public final class RoutePath
 
     /**
      * Brings one column of the shelf to the target height: fills the gap with an embankment where the ground sits
-     * lower, cuts back what grows or rises above where it sits higher, then caps it.
+     * lower, then caps it and clears whatever stood above — terrain, grass, a whole tree's trunk and canopy — up to
+     * the heightmap, so nothing from a tree that stood in the road's way is left floating.
      */
     private static void levelColumn(final ServerLevel level, final List<Step> steps, final int x, final int z, final int target, final BlockState cap)
     {
@@ -339,28 +408,8 @@ public final class RoutePath
                 steps.add(new Step(new BlockPos(x, y, z), EMBANKMENT));
             }
         }
-        else if (ground > target)
-        {
-            for (int y = target + 1; y <= ground; y++)
-            {
-                final BlockPos pos = new BlockPos(x, y, z);
-                final BlockState state = level.getBlockState(pos);
-                if (!state.isAir() && Terrain.clearable(level, pos, state))
-                {
-                    steps.add(new Step(pos, AIR));
-                }
-            }
-        }
         steps.add(new Step(new BlockPos(x, target, z), cap));
-        for (int dy = 1; dy <= 2; dy++)
-        {
-            final BlockPos above = new BlockPos(x, target + dy, z);
-            final BlockState state = level.getBlockState(above);
-            if (!state.isAir() && Terrain.clearable(level, above, state))
-            {
-                steps.add(new Step(above, AIR));
-            }
-        }
+        clearAbove(level, steps, x, z, target);
     }
 
     /**
@@ -373,19 +422,26 @@ public final class RoutePath
         {
             for (final int sign : new int[] {1, -1})
             {
-                final int lx = x + perp.getStepX() * o * sign;
-                final int lz = z + perp.getStepZ() * o * sign;
-                final int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING, lx, lz);
-                final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(lx, y + 1, lz);
-                for (int py = y + 1; py <= top; py++)
-                {
-                    pos.setY(py);
-                    final BlockState state = level.getBlockState(pos);
-                    if (!state.isAir() && Terrain.clearable(level, pos, state))
-                    {
-                        steps.add(new Step(pos.immutable(), AIR));
-                    }
-                }
+                clearAbove(level, steps, x + perp.getStepX() * o * sign, z + perp.getStepZ() * o * sign, y);
+            }
+        }
+    }
+
+    /**
+     * Clears everything clearable from just above fromY up to the heightmap: grass, a sapling, a whole natural
+     * tree's trunk and canopy, whatever is in the way — never leaves a floating remnant above the route.
+     */
+    private static void clearAbove(final ServerLevel level, final List<Step> steps, final int x, final int z, final int fromY)
+    {
+        final int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
+        final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, fromY + 1, z);
+        for (int y = fromY + 1; y <= Math.max(top, fromY + 2); y++)
+        {
+            pos.setY(y);
+            final BlockState state = level.getBlockState(pos);
+            if (!state.isAir() && Terrain.clearable(level, pos, state))
+            {
+                steps.add(new Step(pos.immutable(), AIR));
             }
         }
     }
