@@ -360,22 +360,11 @@ def ecrire(cases, nbt_, nom_, taille):
                      "blocks": List[Compound](liste), "entities": List[Compound]([entite_anneau(*e) for e in ENTITES])}, gzipped=True)
     (RACINE / "exports").mkdir(exist_ok=True)
     f.save(RACINE / "exports" / f"{nom_}.nbt")
-    D = SAVE / "datapacks/atelier/data/atelier/structure"
-    if D.exists():
-        f.save(D / f"{nom_}.nbt")
+    f.save(monde_atelier.datapack(SAVE) / "data/atelier/structure" / f"{nom_}.nbt")
     return len(liste)
 
 
-# le script cree lui-meme le datapack du monde vise (dossiers et pack.mcmeta) : il ne suppose aucun etat local deja en place
-DP = SAVE / "datapacks/atelier"
-if SAVE.exists():
-    (DP / "data/atelier/structure").mkdir(parents=True, exist_ok=True)
-    (DP / "data/atelier/function").mkdir(parents=True, exist_ok=True)
-    if not (DP / "pack.mcmeta").exists():
-        (DP / "pack.mcmeta").write_text(json.dumps({"pack": {"pack_format": 48, "description": "Atelier - structures generees"}}, indent=2), encoding="utf-8")
-else:
-    print(f"ATTENTION : le monde « {args.monde} » n'existe pas dans {SAVE.parent} ; seuls les fichiers de atelier/exports sont ecrits. "
-          "Cree le monde dans le client de test (ou passe --monde) puis relance.", flush=True)
+DP = monde_atelier.datapack(SAVE)
 n_total = ecrire(blocs, NBT, NOM, (SX, SY, SZ))
 
 
@@ -388,8 +377,9 @@ def plage(cases):
     return (min(xs), min(ys), min(zs)), (max(xs), max(ys), max(zs))
 
 
-FN = SAVE / "datapacks/atelier/data/atelier/function"
-if FN.exists():
+FN = DP / "data/atelier/function"
+monde_atelier.installer_pose_auto(SAVE, "ciel_pose", "ciel")
+if True:
     moitie = SZ // 2
     fl = [f"forceload add {ORIGINE[0]} {ORIGINE[2]} {ORIGINE[0] + SX - 1} {ORIGINE[2] + moitie - 1}",
           f"forceload add {ORIGINE[0]} {ORIGINE[2] + moitie} {ORIGINE[0] + SX - 1} {ORIGINE[2] + SZ - 1}"]

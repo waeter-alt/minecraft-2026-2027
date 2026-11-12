@@ -188,22 +188,11 @@ def ecrire(cases, nbt_, nom_, taille):
                      "blocks": List[Compound](liste), "entities": List[Compound]([])}, gzipped=True)
     (RACINE / "exports").mkdir(exist_ok=True)
     f.save(RACINE / "exports" / f"{nom_}.nbt")
-    D = SAVE / "datapacks/atelier/data/atelier/structure"
-    if D.exists():
-        f.save(D / f"{nom_}.nbt")
+    f.save(monde_atelier.datapack(SAVE) / "data/atelier/structure" / f"{nom_}.nbt")
     return len(liste)
 
 
-# le script cree lui-meme le datapack du monde vise (dossiers et pack.mcmeta) : il ne suppose aucun etat local deja en place
-DP = SAVE / "datapacks/atelier"
-if SAVE.exists():
-    (DP / "data/atelier/structure").mkdir(parents=True, exist_ok=True)
-    (DP / "data/atelier/function").mkdir(parents=True, exist_ok=True)
-    if not (DP / "pack.mcmeta").exists():
-        (DP / "pack.mcmeta").write_text(json.dumps({"pack": {"pack_format": 48, "description": "Atelier - structures generees"}}, indent=2), encoding="utf-8")
-else:
-    print(f"ATTENTION : le monde « {args.monde} » n'existe pas dans {SAVE.parent} ; seuls les fichiers de atelier/exports sont ecrits. "
-          "Cree le monde dans le client de test (ou passe --monde) puis relance.", flush=True)
+DP = monde_atelier.datapack(SAVE)
 n_total = ecrire(blocs, NBT, NOM, (SX, SY, SZ))
 
 
@@ -211,8 +200,9 @@ def w(p):
     return " ".join(str(v) for v in (ORIGINE[0] + p[0], ORIGINE[1] + p[1], ORIGINE[2] + p[2]))
 
 
-FN = SAVE / "datapacks/atelier/data/atelier/function"
-if FN.exists():
+FN = DP / "data/atelier/function"
+monde_atelier.installer_pose_auto(SAVE, "aqua_pose", "aqua")
+if True:
     fl = f"forceload add {ORIGINE[0]} {ORIGINE[2]} {ORIGINE[0] + SX - 1} {ORIGINE[2] + SZ - 1}"
     (FN / "aqua_pose.mcfunction").write_text("\n".join([
         "# [claude-build] Pose le Sanctuaire des Marees (sans pause).", fl,

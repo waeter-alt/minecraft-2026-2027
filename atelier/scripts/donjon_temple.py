@@ -10,6 +10,7 @@ Controle : atelier\\scripts\\verif_donjon_temple.py
 import argparse
 import json
 import math
+import sys
 from collections import Counter
 from pathlib import Path
 
@@ -21,7 +22,10 @@ ap = argparse.ArgumentParser()
 ap.add_argument("--monde", default="Donjon 2")
 args = ap.parse_args()
 RACINE = Path(__file__).resolve().parent.parent                      # atelier/
-SAVE = RACINE.parent / "mod/run/client/saves" / args.monde                  # monde du client de test du depot (mod/ runClient)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import monde_atelier                                                  # cree le monde de test s'il n'existe pas
+
+SAVE = monde_atelier.trouver_ou_creer_monde(args.monde, RACINE.parent / "mod/run/client/saves")   # monde du client de test du depot (mod/ runClient)
 NOM = "temple"
 SX, SY, SZ = 130, 100, 216
 ORIGINE = (150, -61, -65)
@@ -992,15 +996,14 @@ def ecrire(cases, nbt_, nom_, taille):
                      "blocks": List[Compound](liste), "entities": List[Compound]([])}, gzipped=True)
     (RACINE / "exports").mkdir(exist_ok=True)
     f.save(RACINE / "exports" / f"{nom_}.nbt")
-    D = SAVE / "datapacks/atelier/data/atelier/structure"
-    if D.exists():
-        f.save(D / f"{nom_}.nbt")
+    f.save(monde_atelier.datapack(SAVE) / "data/atelier/structure" / f"{nom_}.nbt")
     return len(liste)
 
 
 n_total = ecrire(blocs, NBT, NOM, (SX, SY, SZ))
-FN = SAVE / "datapacks/atelier/data/atelier/function"
-if FN.exists():
+FN = monde_atelier.datapack(SAVE) / "data/atelier/function"
+monde_atelier.installer_pose_auto(SAVE, "temple_pose", "temple")
+if True:
     def w(p):
         return " ".join(str(v) for v in (ORIGINE[0] + p[0], ORIGINE[1] + p[1], ORIGINE[2] + p[2]))
 
