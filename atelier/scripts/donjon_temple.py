@@ -1020,7 +1020,7 @@ if True:
         "function atelier:temple_reset", "schedule function atelier:temple_pose_3 100t"]) + "\n", encoding="utf-8")
     (FN / "temple_pose_3.mcfunction").write_text("\n".join([
         "# [claude-build] Nettoie et decharge.", "kill @e[type=item]", "forceload remove all",
-        f'tellraw @a {{"text":"Le temple est pret. Entree : /tp @s {w((65, 83, 62))} 0 0","color":"green"}}']) + "\n", encoding="utf-8")
+        monde_atelier.message_entree("Le temple est prêt.", w((65, 83, 62)))]) + "\n", encoding="utf-8")
     sx_, sy_, sz_ = POINTS["S12"]
     (FN / "temple_decrocher.mcfunction").write_text("# [claude-build] Supprime le crochet du grappin du joueur dont l identifiant est passe en parametre.\n"
                                                     "$kill @e[type=grappin:crochet,nbt={Owner:$(uuid)}]\n", encoding="utf-8")

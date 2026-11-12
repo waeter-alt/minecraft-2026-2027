@@ -53,9 +53,17 @@ class TestMondeAtelier(unittest.TestCase):
             valeurs = json.loads((dp / "minecraft/tags/function/load.json").read_text(encoding="utf-8"))["values"]
             self.assertEqual(sorted(valeurs), ["atelier:charger_aqua", "atelier:charger_ciel"])
             f = (dp / "atelier/function/charger_ciel.mcfunction").read_text(encoding="utf-8")
-            self.assertIn("execute unless score #ciel atelier matches 1 run function atelier:ciel_pose", f)
+            self.assertIn("execute unless score #ciel atelier matches 1 run schedule function atelier:ciel_pose 100t", f)
             self.assertIn("scoreboard players set #ciel atelier 1", f)     # le drapeau est leve juste apres la pose : jamais deux poses
             self.assertLess(f.index("function atelier:ciel_pose"), f.index("scoreboard players set #ciel atelier 1"))   # sinon la condition serait deja fausse
+
+
+    def test_le_message_d_entree_a_un_tp_cliquable(self):
+        cmd = monde.message_entree("Le temple est prêt.", "215 22 -3")
+        data = json.loads(cmd.removeprefix("tellraw @a "))                 # JSON valide
+        clic = data[1]["clickEvent"]
+        self.assertEqual(clic["action"], "run_command")
+        self.assertEqual(clic["value"], "/tp @s 215 22 -3 0 0")
 
 
 if __name__ == "__main__":

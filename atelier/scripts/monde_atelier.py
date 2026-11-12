@@ -64,12 +64,12 @@ def trouver_ou_creer_monde(nom, saves):
 
 
 def installer_pose_auto(save, fonction_pose, drapeau):
-    """A l'ouverture du monde, pose la structure une seule fois : une fonction `charger_<drapeau>` leve un drapeau puis appelle `fonction_pose`, et l'etiquette minecraft:load l'appelle.
+    """A l'ouverture du monde, pose la structure une seule fois : une fonction `charger_<drapeau>` appelle `fonction_pose` 5 s plus tard (le temps que le joueur soit connecte, sinon son message n.est vu de personne) puis leve un drapeau, et l'etiquette minecraft:load l'appelle.
     Plusieurs generateurs peuvent partager un monde (un drapeau chacun). Pour reposer : /scoreboard players set #<drapeau> atelier 0 puis /reload."""
     dp = datapack(save)
     (dp / "data/atelier/function" / f"charger_{drapeau}.mcfunction").write_text(
         f"# [claude-build] Pose automatique, une seule fois (drapeau #{drapeau}).\nscoreboard objectives add atelier dummy\n"
-        f"execute unless score #{drapeau} atelier matches 1 run function atelier:{fonction_pose}\n"
+        f"execute unless score #{drapeau} atelier matches 1 run schedule function atelier:{fonction_pose} 100t\n"
         f"scoreboard players set #{drapeau} atelier 1\n", encoding="utf-8")
     etiquette = dp / "data/minecraft/tags/function/load.json"
     etiquette.parent.mkdir(parents=True, exist_ok=True)
@@ -77,3 +77,10 @@ def installer_pose_auto(save, fonction_pose, drapeau):
     if f"atelier:charger_{drapeau}" not in valeurs:
         valeurs.append(f"atelier:charger_{drapeau}")
     etiquette.write_text(json.dumps({"values": valeurs}, indent=2), encoding="utf-8")
+
+
+def message_entree(phrase, coords):
+    """Commande tellraw « <phrase> Entree : [/tp ...] » dont le /tp est cliquable (inutile de le recopier)."""
+    tp = f"/tp @s {coords} 0 0"
+    return ('tellraw @a [{"text":"' + phrase + ' Entrée : ","color":"green"},{"text":"[' + tp + ']","color":"aqua","underlined":true,'
+            '"clickEvent":{"action":"run_command","value":"' + tp + '"},"hoverEvent":{"action":"show_text","contents":"Cliquer pour y aller"}}]')

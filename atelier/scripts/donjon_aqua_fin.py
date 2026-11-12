@@ -215,7 +215,7 @@ if True:
         "schedule function atelier:aqua_pose_3 100t"]) + "\n", encoding="utf-8")
     (FN / "aqua_pose_3.mcfunction").write_text("\n".join([
         "# [claude-build] Nettoie et decharge.", "kill @e[type=item]", "forceload remove all",
-        f'tellraw @a {{"text":"Le sanctuaire est pret. Entree : /tp @s {w(POINTS["S1"])} 0 0","color":"green"}}']) + "\n", encoding="utf-8")
+        monde_atelier.message_entree("Le sanctuaire est prêt.", w(POINTS["S1"]))]) + "\n", encoding="utf-8")
     pc_ = [tuple(c) for c in PORTES["SORTIE"]["cases"]]
     (a, b, c), (d_, e, f_) = plage(pc_)
     (FN / "aqua_ouvrir_sortie_boss.mcfunction").write_text(

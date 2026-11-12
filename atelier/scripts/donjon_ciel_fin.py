@@ -395,7 +395,7 @@ if True:
         "schedule function atelier:ciel_pose_3 200t"]) + "\n", encoding="utf-8")
     (FN / "ciel_pose_3.mcfunction").write_text("\n".join([
         "# [claude-build] Nettoie et decharge.", "kill @e[type=item]", "forceload remove all",
-        f'tellraw @a {{"text":"L\'archipel est pret. Entree : /tp @s {w(POINTS["D"])} 0 0","color":"green"}}']) + "\n", encoding="utf-8")
+        monde_atelier.message_entree("L'archipel est prêt.", w(POINTS["D"]))]) + "\n", encoding="utf-8")
     (a, b, c), (d_, e, f_) = plage(PORTES["SORTIE"]["cases"])
     (FN / "ciel_ouvrir_sortie_boss.mcfunction").write_text(
         f"# [claude-build] Ouvre la sortie du boss (a relier a la mort du boss).\nfill {w((a, b, c))} {w((d_, e, f_))} minecraft:air\n"
