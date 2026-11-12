@@ -87,6 +87,7 @@ public class InterregneMod
         RegionalBanks.register(modEventBus);
         Crates.register(modEventBus);
         fr.kodistan.interregne.war.WarEntities.register(modEventBus);
+        fr.kodistan.interregne.routes.Routes.register(modEventBus);
     }
 
     private void registerPayloads(final RegisterPayloadHandlersEvent event)
