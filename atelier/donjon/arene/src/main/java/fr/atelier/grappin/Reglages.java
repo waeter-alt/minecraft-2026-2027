@@ -36,6 +36,15 @@ public final class Reglages {
     public static final ModConfigSpec.IntValue OEIL_OUVERT = B.comment("Seraphin : duree pendant laquelle l'oeil reste ouvert apres le tir du rayon, en ticks (20 = 1 s) : c'est la fenetre ou il prend tous les degats.").defineInRange("seraphinOeilOuvert", 100, 10, 600);
     public static final ModConfigSpec.IntValue RAYON_CHARGE = B.comment("Seraphin : duree d'avertissement avant le rayon, en ticks (20 = 1 s).").defineInRange("seraphinRayonCharge", 30, 5, 200);
 
+    public static final ModConfigSpec.DoubleValue GOLEM_VIE = B.comment("Gardien des Racines : points de vie du boss.").defineInRange("golemVie", 240.0, 20.0, 1024.0);
+    public static final ModConfigSpec.DoubleValue GOLEM_FACTEUR_POINT = B.comment("Gardien : multiplicateur des degats d'une fleche sur un point faible ouvert.").defineInRange("golemFacteurPoint", 3.0, 0.1, 50.0);
+    public static final ModConfigSpec.DoubleValue GOLEM_FACTEUR_CORPS = B.comment("Gardien : part des degats recus sur le reste du corps (0,15 = 15 %).").defineInRange("golemFacteurCorps", 0.15, 0.0, 1.0);
+    public static final ModConfigSpec.IntValue GOLEM_OUVERTURE = B.comment("Gardien : duree d'ouverture d'un point faible, en ticks (20 = 1 s).").defineInRange("golemOuverture", 160, 20, 1200);
+    public static final ModConfigSpec.IntValue GOLEM_DEMI_TOUR = B.comment("Gardien : temps qu'il met a faire un demi-tour vers le joueur, en ticks.").defineInRange("golemDemiTour", 300, 10, 1200);
+    public static final ModConfigSpec.DoubleValue GRAINE_DEGATS = B.comment("Gardien : degats de l'explosion d'une graine.").defineInRange("graineDegats", 10.0, 0.0, 100.0);
+    public static final ModConfigSpec.DoubleValue GRAINE_ZONE = B.comment("Gardien : rayon de l'explosion d'une graine, en blocs.").defineInRange("graineZone", 3.0, 0.5, 16.0);
+    public static final ModConfigSpec.IntValue GRAINE_CADENCE = B.comment("Gardien : delai entre deux graines, en ticks.").defineInRange("graineCadence", 70, 10, 600);
+
     public static final ModConfigSpec SPEC = B.build();
 
     private Reglages() {

@@ -186,7 +186,7 @@ ETAPES = [
     (["H2", "H3"], ["H2", "H3"]),
     (["H2", "H3", "G6"], ["S7", "S7sud", "serrure", "S8", "S8fin", "S9", "S9fin", "S10", "S10cle", "plaque_cle", "H6", "H7", "bouton_H8"]),
     (["H2", "H3", "G6", "H8"], ["H8"]),
-    (["H2", "H3", "G6", "H8", "G7"], ["S11", "S12"] + [f"B{i}" for i in range(1, 10)]),
+    (["H2", "H3", "G6", "H8", "G7"], ["S11", "S12"] + sorted(c for c in CIB if c[0] == "B" and c[1:].isdigit())),
     (["H2", "H3", "G6", "H8", "G7", "SORTIE"], ["sortie"]),
 ]
 ok = True
@@ -236,6 +236,15 @@ for a_ in ANC:
 for n_, v in voisins.items():
     print("plateforme", n_, "(dessus", PL[n_]["dessus"], ") -> peut rejoindre", sorted(v), "-> OK" if len(v) >= 2 else "-> ECHEC (moins de 2 voisines)")
     ok &= len(v) >= 2
+# empreinte du golem : chaque plateforme (sous la hauteur de ses bras et cornes) reste a 4 blocs au moins de ses bras ecartes
+G = conf["golem"]
+for n_, d in PL.items():
+    x0, x1, z0, z1 = d["bbox"]
+    dist = float(np.hypot(max(x0 - G["centre"][0], 0, G["centre"][0] - x1), max(z0 - G["centre"][2], 0, G["centre"][2] - z1)))
+    marge = dist - G["rayon_bras"]
+    bon = d["dessus"] > G["haut"] or marge >= 4
+    ok &= bon
+    print("plateforme", n_, "-> marge avec les bras du golem", round(marge, 1), "blocs ->", "OK" if bon else "ECHEC (moins de 4)")
 manque_sans = [c for c in WINGS if c not in sans]
 print("ailes : cibles non atteintes sans grappin :", manque_sans)
 for nom_ in ("chaine_p", "chaine_g"):

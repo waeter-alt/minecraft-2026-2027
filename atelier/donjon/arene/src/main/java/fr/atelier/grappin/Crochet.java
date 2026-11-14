@@ -160,6 +160,12 @@ public class Crochet extends ThrowableItemProjectile {
         level().playSound(null, getX(), getY(), getZ(), SoundEvents.CHAIN_PLACE, SoundSource.PLAYERS, 1.0F, 0.8F);
     }
 
+    /** Le golem du boss est trop grand pour qu'on tire autour : le crochet le traverse (il ne s'accroche qu'aux points d'ancrage). */
+    @Override
+    protected boolean canHitEntity(Entity cible) {
+        return !(cible instanceof Golem) && !(cible instanceof GolemPiece) && super.canHitEntity(cible);
+    }
+
     @Override
     protected void onHitEntity(EntityHitResult touche) {
         if (!level().isClientSide) {

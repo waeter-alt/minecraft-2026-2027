@@ -64,6 +64,8 @@ for x in range(HX0 + 2, HX1 - 1):
     for z in range(HZ0 + 2, HZ1 - 1):
         if h01(x, z, 0, 460) > .0055 or not (nom((x, 6, z)) == "lava" and nom((x, 7, z)) == "lava"):
             continue
+        if math.hypot(x - GX, z - GZ) <= G_RAYON_BRAS + 3:
+            continue                                                # pas de roche dans le volume du Gardien
         h_ = 3 + int(h01(x, z, 1, 461) * 11)
         for y in range(6, 8 + h_):
             r_ = 1 if y < 8 + h_ // 2 else 0
