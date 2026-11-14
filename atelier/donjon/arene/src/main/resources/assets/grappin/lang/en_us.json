@@ -18,5 +18,9 @@
   "item.grappin.paravoile.alerte": "Paraglider: %s s of flight",
   "item.grappin.paravoile.epuisee": "Paraglider exhausted!",
   "block.grappin.ancrage": "Anchor Point",
-  "entity.grappin.crochet": "Grappling Hook"
+  "entity.grappin.crochet": "Grappling Hook",
+  "entity.grappin.seraphin": "Seraph",
+  "entity.grappin.seraphin.phase2": "The Seraph unleashes its fury!",
+  "entity.grappin.plume": "Seraph Feather",
+  "item.grappin.seraphin_spawn_egg": "Seraph Spawn Egg"
 }
