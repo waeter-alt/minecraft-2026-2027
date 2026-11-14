@@ -54,6 +54,9 @@ public class VoileItem extends ArmorItem {
     public void appendHoverText(ItemStack pile, TooltipContext contexte, List<Component> lignes, TooltipFlag drapeau) {
         lignes.add(Component.translatable("item.grappin.voile.aide1"));
         lignes.add(Component.translatable("item.grappin.voile.aide2", Reglages.VOILE_RESERVE.get(), Reglages.VOILE_RECHARGE.get()));
+        if (Reglages.VOILE_VISION_NOCTURNE.get() || Reglages.VOILE_NAGE_RAPIDE.get()) {
+            lignes.add(Component.translatable("item.grappin.voile.aide3"));
+        }
         lignes.add(Component.translatable("item.grappin.voile.reserve", Math.round(secondesRestantes(pile)), Reglages.VOILE_RESERVE.get()));
     }
 }

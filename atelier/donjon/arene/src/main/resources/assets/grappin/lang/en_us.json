@@ -7,6 +7,7 @@
   "item.grappin.voile": "Veil of the Deep",
   "item.grappin.voile.aide1": "Helmet: lets you breathe underwater",
   "item.grappin.voile.aide2": "%s s of air underwater, recharged in %s s at the surface",
+  "item.grappin.voile.aide3": "Worn, while the reserve lasts: night vision and fast swimming",
   "item.grappin.voile.reserve": "Reserve: %s s of %s s",
   "item.grappin.voile.alerte": "Veil: %s s of air",
   "item.grappin.voile.epuise": "Veil exhausted!",
