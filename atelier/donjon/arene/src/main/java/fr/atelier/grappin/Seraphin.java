@@ -96,6 +96,17 @@ public class Seraphin extends Monster {
         return this.damageSources().magic();
     }
 
+    /** Un monstre invoque par /summon perd son drapeau « persistant » (Mob le relit depuis ses donnees) : sans cela il disparait tout seul, inactif ou loin des joueurs. */
+    @Override
+    public boolean removeWhenFarAway(double distanceCarree) {
+        return false;
+    }
+
+    @Override
+    public boolean requiresCustomPersistence() {
+        return true;
+    }
+
     @Override
     public boolean shouldDespawnInPeaceful() {
         return false;
