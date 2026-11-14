@@ -15,7 +15,7 @@ import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * Registry of the Poste commercial, the test fixture for {@link RoutePath} (see "Avant de coder" in CLAUDE.md:
+ * Registry of the Poste commercial, the test fixture for the route planner ({@link RoutePlanning}) (see "Avant de coder" in CLAUDE.md:
  * this is deliberately the smallest thing that lets the algorithm be tried in game before anything is wired to
  * contracts, caravans or colonies).
  */

@@ -57,7 +57,8 @@ En montée vers l'est `[64, 65, 66]` : escaliers sur B (Y=65) et C (Y=66), tous 
 ### Autres pièges liés
 
 - **Bosse d'une seule case** (`L, L+1, L`) : la case du milieu devrait monter d'un côté et descendre de l'autre, un
-  escalier ne peut pas faire les deux. On aplatit ces bosses dans le profil avant de poser les escaliers.
+  escalier ne peut pas faire les deux. Pour les routes, le profil ne peut pas en produire : `ProfileSolver` interdit
+  de redescendre moins de deux cases après une montée (et l'inverse).
 - **Direction à prendre** : celle de la transition entre les deux cases concernées (case basse → case haute), pas la
   direction de la case suivante — elles diffèrent dans un virage.
 - **Virages** : deux escaliers voisins à angle droit prennent tout seuls une forme `INNER`/`OUTER` (`updateShape`
@@ -71,8 +72,48 @@ En montée vers l'est `[64, 65, 66]` : escaliers sur B (Y=65) et C (Y=66), tous 
 
 ### Fichiers concernés
 
-- `src/main/java/fr/kodistan/interregne/routes/RoutePath.java` — `build()`, tableau `stairs` (routes : chemin, tunnel,
-  pont).
+- `src/main/java/fr/kodistan/interregne/routes/RouteBuilder.java` — constructeur, tableau `stairs` (routes : chemin,
+  tunnel, pont).
 - `src/main/java/fr/kodistan/interregne/walls/WallBlocks.java` — `stairs()` (volées des montées de muraille, qui
   posent déjà l'escalier au niveau haut de chaque marche, `FACING` vers le haut) et l'application des surcharges dans
   `of()`.
+
+
+## Routes : lire le monde sans le charger, sans bloquer le serveur
+
+Rencontrés en réécrivant le tracé des routes (`routes/`, `routes/plan/`). Chacun a coûté un essai en jeu.
+
+- **`level.getHeight(type, x, z)` sur un chunk non chargé répond le bas du monde** (-64), sans erreur ni chargement.
+  Une route dont une extrémité est loin de tout joueur se retrouvait avec un sol à -65 et « aucun tracé possible ».
+  Passer par le chunk : `level.getChunk(x >> 4, z >> 4).getHeight(type, x & 15, z & 15)` (qui, lui, le charge), ou
+  `RouteProbe.of`.
+- **`ServerChunkCache.getChunkFuture` appelé sur le thread serveur attend le chunk** (`managedBlock`) : ce n'est une
+  vraie promesse que demandé depuis un autre thread. Pour charger sans bloquer le tick : poser un ticket
+  (`addRegionTicket`), puis `CompletableFuture.supplyAsync(() -> chunks.getChunkFuture(...), Util.backgroundExecutor())
+  .thenCompose(f -> f)`, et relever les résultats au tick suivant. Sans ticket à soi, le chunk est relâché avant la fin.
+- **Charger un chunk coûte ~25 ms de thread serveur** sur ce modpack (désérialisation), qu'il soit généré ou non :
+  arpenter une bande de 1 400 chunks en les chargeant prenait 39 s. `RouteSurvey` lit donc les chunks déjà sauvés
+  directement dans leur fichier de région (`chunks.chunkMap.read(pos)` + `RouteProbe.read`, palettes décodées sur des
+  threads de travail) : 1 400 chunks en moins d'une seconde, sans rien charger. Seuls les chunks jamais générés
+  passent par le vrai chargement (il faut bien les générer).
+- **Ne jamais poser une route d'après un relevé ancien** : `RouteBuilder.slice` relit le monde au moment de poser
+  chaque case. C'est ce qui permet au chantier de ne garder chargés que les chunks autour de ses deux fronts, et
+  c'est ce qui évite qu'un chunk généré entre-temps (arbres, structures) ne soit ignoré.
+- **Feuilles en l'air après un abattage** : retirer les feuilles « connectées » à un arbre déshabille les arbres
+  voisins (les houppiers d'une forêt se touchent) ; n'en retirer qu'à courte distance en laisse flotter. La règle
+  juste est celle du jeu : une feuille vit à 6 feuilles au plus d'un tronc. `TreeFelling.orphans` la recalcule tout de
+  suite pour l'ensemble des troncs abattus d'un coup.
+- **`dirt_path` redevient de la terre sous un bloc plein** (une barrière compte) : toujours dégager au-dessus avant de
+  poser le chemin, et ne pas poser de garde-corps sur du chemin.
+
+### Régler ou vérifier le tracé sans lancer le jeu
+
+Le planificateur (`routes/plan/`) est du Java pur, sans aucune classe Minecraft : il se teste en quelques secondes.
+
+- `./gradlew test` : `RoutePlannerTest` (canyon → tablier de niveau d'une rive à l'autre, rivière, crête → tunnel,
+  lac contourné, règles de marche).
+- Sur du vrai relief : `dev/TerrainDump` écrit le relief d'une zone dans un fichier (`routedev/request.properties`
+  côté serveur), `RouteBench` (dans `src/test`) trace des routes dessus et rend une image carte + profil par route.
+- En jeu, sans personne au clavier : `client/dev/RouteShot` ouvre un monde, construit les routes demandées, se place
+  aux points de vue que chaque route propose (ponts, tunnels, volées de marches) et capture
+  (`routeshot/request.properties` côté client, détail dans la javadoc de la classe).
