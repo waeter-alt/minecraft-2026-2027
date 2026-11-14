@@ -231,8 +231,7 @@ for k_, e_ in ECLATS.items():
     C4.ajoute(lambda r, e_=e_: f"execute if score #ec ciel matches 1 positioned {r(*ZONE_AUTEL)} as @a[dx=6,dy=4,dz=6] run clear @s {item_eclat(e_['nom'])} 1")
     C4.ajoute(lambda r, k_=k_: f"execute if score #ec ciel matches 1 positioned {r(*ZONE_AUTEL)} as @a[dx=6,dy=4,dz=6] run tag @s remove {TAGS_E[k_]}")
 C4.ajoute(lambda r: f"execute if score #ec ciel matches 1 positioned {r(*ALTAR)} run playsound minecraft:block.beacon.activate master @a[distance=..40] ~ ~ ~ 1 1")
-C4.ajoute(lambda r: "execute if score #ec ciel matches 1 run " + ouvre(r, "SORTIE"))
-C4.ajoute(lambda r: "execute if score #ec ciel matches 1 run scoreboard players set #ec ciel 2")
+C4.ajoute(lambda r: "execute if score #ec ciel matches 1 run function atelier:ciel_boss_annonce")                 # #ec passe a 2 : annonce, 10 s, puis le Seraphin (voir ciel_boss_*)
 
 # -- le retour au Debarcadere : le levier de l'ile du Coeur ramene les joueurs proches au depart, sans leurs eclats (ils devront les reprendre)
 C4.ajoute(lambda r: f"execute positioned {r(LEV_RETOUR[0] - 4, LEV_RETOUR[1] - 1, LEV_RETOUR[2] - 4)} run tag @a[dx=8,dy=5,dz=8] add retour")
@@ -410,6 +409,33 @@ if FN.exists():
     (FN / "ciel_ouvrir_sortie_boss.mcfunction").write_text(
         f"# [claude-build] Ouvre la sortie du boss (a relier a la mort du boss).\nfill {w((a, b, c))} {w((d_, e, f_))} minecraft:air\n"
         f"playsound minecraft:block.iron_door.open master @a {w((a, b, c))} 2 0.6\n", encoding="utf-8")
+    bx, by, bz = (ORIGINE[0] + BOSS["boss_pos"][0], ORIGINE[1] + BOSS["boss_pos"][1], ORIGINE[2] + BOSS["boss_pos"][2])
+    arene = f"execute positioned {bx} {by} {bz} run"
+    DELAI_BOSS = 200                                               # 10 s entre l'annonce et l'apparition du boss
+    (FN / "ciel_boss_annonce.mcfunction").write_text("\n".join([
+        "# [claude-build] Les trois eclats sont sur l'autel : annonce, puis le Seraphin apparait apres 10 s (appelee par la chaine de l'arene, une seule fois).",
+        "scoreboard players set #ec ciel 2",
+        f"{arene} title @a[distance=..90] times 10 60 20",
+        f'{arene} title @a[distance=..90] subtitle {{"text":"Tenez-vous prets","color":"gray"}}',
+        f'{arene} title @a[distance=..90] title {{"text":"L\'ange arrive...","color":"gold"}}',
+        f"{arene} playsound minecraft:block.beacon.power_select master @a[distance=..90] ~ ~ ~ 3 0.6",
+        f"schedule function atelier:ciel_boss_invoque {DELAI_BOSS}t"]) + "\n", encoding="utf-8")
+    # positioned en premier : une fonction programmee s'execute a l'origine du monde, pas a l'arene
+    (FN / "ciel_boss_invoque.mcfunction").write_text("\n".join([
+        "# [claude-build] Fait apparaitre le Seraphin au-dessus de la plateforme centrale (jamais deux a la fois).",
+        f"execute positioned {bx} {by} {bz} unless entity @e[type=grappin:seraphin,distance=..150] run summon grappin:seraphin {bx + 0.5} {by + 5} {bz + 0.5}",
+        "scoreboard players set #ec ciel 3",
+        f"{arene} playsound minecraft:entity.ender_dragon.growl master @a[distance=..90] ~ ~ ~ 5 0.8"]) + "\n", encoding="utf-8")
+    (DP / "data/grappin/tags/function").mkdir(parents=True, exist_ok=True)
+    (DP / "data/grappin/tags/function/seraphin_mort.json").write_text(json.dumps({"values": ["atelier:ciel_boss_mort"]}, indent=2), encoding="utf-8")     # le mod appelle ce tag a la mort du Seraphin
+    (FN / "ciel_boss_mort.mcfunction").write_text(
+        "# [claude-build] Appelee par le mod a la mort du Seraphin : la sortie ne s'ouvre que si l'archipel est bien en etat « boss invoque » (pas lors d'une remise a zero).\n"
+        "execute if score #ec ciel matches 3 run function atelier:ciel_boss_vaincu\n", encoding="utf-8")
+    (FN / "ciel_boss_vaincu.mcfunction").write_text("\n".join([
+        "# [claude-build] Le Seraphin est mort : la sortie du boss s'ouvre.",
+        "scoreboard players set #ec ciel 4",
+        "function atelier:ciel_ouvrir_sortie_boss",
+        f'{arene} title @a[distance=..90] title {{"text":"Le Séraphin est vaincu","color":"green"}}']) + "\n", encoding="utf-8")
     (FN / "ciel_fermer_sortie_boss.mcfunction").write_text(
         f"# [claude-build] Referme la sortie du boss.\nfill {w((a, b, c))} {w((d_, e, f_))} minecraft:iron_bars\n", encoding="utf-8")
     reset = ["# [claude-build] Remet l'archipel a zero : herses refermees, leviers rabaisses, dalles des salles cachees remises, cle et variables remises."]
@@ -425,6 +451,7 @@ if FN.exists():
     for cases_ in ANNEAUX_CASES:
         (a, b, c), (d_, e, f_) = plage(cases_)
         reset.append(f"fill {w((a, b, c))} {w((d_, e, f_))} minecraft:ochre_froglight replace minecraft:verdant_froglight")
+    reset += ["kill @e[type=grappin:seraphin]", "schedule clear atelier:ciel_boss_invoque"]
     reset += [f"tag @a remove {tg_}" for tg_ in TAGS_E.values()]
     reset += [f"clear @a {CLE}", "clear @a minecraft:amethyst_shard", 'tellraw @a {"text":"Archipel remis a zero.","color":"gray"}']
     (FN / "ciel_reset.mcfunction").write_text("\n".join(reset) + "\n", encoding="utf-8")
