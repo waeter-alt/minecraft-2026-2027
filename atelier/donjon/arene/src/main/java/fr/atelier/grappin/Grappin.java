@@ -85,6 +85,24 @@ public class Grappin {
                     .fireImmune()
                     .clientTrackingRange(10)
                     .build("seraphin"));
+    /** Le Gardien des Racines, boss du Donjon 1 (boite du corps de 6 x 40 blocs), et son oeuf d'apparition. */
+    public static final DeferredHolder<EntityType<?>, EntityType<Golem>> GOLEM = ENTITES.register("golem",
+            () -> EntityType.Builder.<Golem>of(Golem::new, MobCategory.MONSTER)
+                    .sized(6.0F, 40.0F)          // etroit : les pieces faibles (autour de 6,5 blocs de l'axe) depassent du corps et arretent les fleches avant lui
+                    .fireImmune()
+                    .clientTrackingRange(16)
+                    .build("golem"));
+    /** Une graine explosive lancee par le Gardien des Racines. */
+    public static final DeferredHolder<EntityType<?>, EntityType<Graine>> GRAINE = ENTITES.register("graine",
+            () -> EntityType.Builder.<Graine>of(Graine::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .noSave()
+                    .build("graine"));
+    public static final DeferredItem<DeferredSpawnEggItem> GOLEM_OEUF = ITEMS.register("golem_spawn_egg",
+            () -> new DeferredSpawnEggItem(GOLEM, 0x6B4423, 0x9C1B1B, new Item.Properties()));
+
     /** Une plume lancee par le Seraphin. */
     public static final DeferredHolder<EntityType<?>, EntityType<Plume>> PLUME = ENTITES.register("plume",
             () -> EntityType.Builder.<Plume>of(Plume::new, MobCategory.MISC)
@@ -106,6 +124,7 @@ public class Grappin {
                 sortie.accept(VOILE.get());
                 sortie.accept(PARAVOILE.get());
                 sortie.accept(SERAPHIN_OEUF.get());
+                sortie.accept(GOLEM_OEUF.get());
             })
             .build());
 
@@ -122,6 +141,7 @@ public class Grappin {
 
     private void attributs(EntityAttributeCreationEvent event) {
         event.put(SERAPHIN.get(), Seraphin.attributs().build());
+        event.put(GOLEM.get(), Golem.attributs().build());
     }
 
     private void reseau(RegisterPayloadHandlersEvent event) {

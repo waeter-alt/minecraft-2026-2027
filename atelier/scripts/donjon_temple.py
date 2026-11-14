@@ -521,13 +521,23 @@ for x in range(HX0, HX1 + 1):
         put(x, 5, z, S("stone") if h01(x, 5, z, 7) < .55 else S("andesite"))
         for y in (6, 7):
             put(x, y, z, LAVE)
+# Le Gardien des Racines occupe le centre de la salle (GX, GZ), enfonce dans la lave ; les huit plateformes forment un anneau autour de lui : depart D au nord,
+# sortie P8 au sud (a 70, devant la porte), et six autres a l'est et a l'ouest, de hauteurs echelonnees pour que le grappin enchaine de l'une a l'autre.
+GX, GZ = 47, 166                                                   # axe du golem (coordonnees du gabarit)
+G_SURFACE = 8                                                      # surface de la lave : le golem y a les pieds
+G_RAYON_CORPS, G_RAYON_BRAS, G_HAUT = 7, 12, 64                    # empreinte : torse, bras ecartes, et hauteur (en y) jusqu'ou il y a des bras ou des cornes
 PLATS = {                                                          # nom: (x0, x1, z0, z1, dessus, ruine)
     "D": (36, 58, 134, 146, 40, False),
-    "P1": (18, 27, 154, 163, 46, False), "P2": (40, 47, 156, 163, 50, False), "P3": (62, 73, 153, 164, 48, True),
-    "P4": (30, 35, 170, 175, 56, False), "P5": (50, 59, 172, 182, 58, True), "P6": (66, 72, 174, 179, 62, False),
-    "P7": (20, 29, 182, 191, 60, True), "P8": (36, 45, 188, 196, 70, False), "P9": (58, 68, 190, 196, 60, True),
+    "P1": (21, 29, 151, 159, 40, False), "P2": (65, 73, 151, 159, 44, False),      # sud-ouest, sud-est
+    "P3": (22, 30, 168, 176, 46, True), "P4": (64, 72, 168, 176, 52, True),        # ouest, est
+    "P5": (20, 28, 183, 191, 58, False), "P6": (64, 72, 183, 191, 62, False),      # nord-ouest, nord-est
+    "P8": (36, 45, 188, 196, 70, False),
 }
 noms_p = list(PLATS)
+for n_, (x0, x1, z0, z1, top, _) in PLATS.items():                 # aucune plateforme dans l'empreinte du golem : 4 blocs de marge entre elle et ses bras
+    if top <= G_HAUT:
+        dx, dz = max(x0 - GX, 0, GX - x1), max(z0 - GZ, 0, GZ - z1)
+        assert math.hypot(dx, dz) >= G_RAYON_BRAS + 4, ("plateforme dans l'empreinte du golem", n_, round(math.hypot(dx, dz), 1))
 for i, a_ in enumerate(noms_p):                                    # aucune paire de plateformes a moins de 6 blocs (pas de saut possible)
     for b_ in noms_p[i + 1:]:
         A_, B_ = PLATS[a_], PLATS[b_]
@@ -603,8 +613,8 @@ for (px, pz, h_) in PILIERS:                                       # piliers gea
                 put(px + dx, haut + 1, pz + dz, MCB)
         if vide((px + 1, haut + 1, pz + 1)):
             put(px + 1, haut + 1, pz + 1, LUM)
-EDGES = [("D", "P1"), ("D", "P2"), ("D", "P3"), ("P1", "P2"), ("P2", "P3"), ("P1", "P4"), ("P2", "P4"), ("P2", "P5"), ("P3", "P5"), ("P5", "P6"),
-         ("P4", "P7"), ("P5", "P8"), ("P5", "P9"), ("P6", "P9"), ("P7", "P8"), ("P8", "P9")]
+EDGES = [("D", "P1"), ("P1", "P3"), ("P3", "P5"), ("P5", "P8"), ("P8", "P6"), ("P6", "P4"), ("P4", "P2"), ("P2", "D"),      # l'anneau, de proche en proche autour du golem
+         ("P3", "P8"), ("P4", "P8")]                                  # raccourcis vers la sortie (P8, a 70), depuis l'ouest et l'est
 
 
 def colonne_libre(x, y, z):
@@ -642,7 +652,8 @@ for (ea, eb) in EDGES:
     xs = range(min(PLATS[ea][0], PLATS[eb][0]) - 2, max(PLATS[ea][1], PLATS[eb][1]) + 3)
     zs = range(min(PLATS[ea][2], PLATS[eb][2]) - 2, max(PLATS[ea][3], PLATS[eb][3]) + 3)
     cand = np.array([(x, y, z) for x in xs for z in zs for y in range(ymin, ymin + 7)
-                     if HX0 <= x <= HX1 and HZ0 <= z <= HZ1 and C[x, y, z] and (x, y, z) not in blocs])
+                     if HX0 <= x <= HX1 and HZ0 <= z <= HZ1 and C[x, y, z] and (x, y, z) not in blocs
+                     and not (math.hypot(x - GX, z - GZ) <= G_RAYON_BRAS + 3 and y <= G_HAUT)])      # jamais d'ancrage dans le volume du golem
     p = cand + .5
     dA = np.sqrt(((p[:, None, :] - ca[None, :, :]) ** 2).sum(-1)).min(1)
     dB = np.sqrt(((p[:, None, :] - cb[None, :, :]) ** 2).sum(-1)).min(1)
@@ -660,6 +671,61 @@ for (ea, eb) in EDGES:
             break
     else:
         raise SystemExit(f"pas d'ancrage pour {ea}-{eb}")
+# seconds ancrages, bien plus hauts : un pendule plus long est plus tolerant (balancement ample, lacher plus loin) ; un par liaison de l'anneau
+for (ea, eb) in EDGES:
+    ca, cb = centres_de(ea), centres_de(eb)
+    ymin = (PLATS[ea][4] + PLATS[eb][4]) // 2 + 11                 # au-dessus des deux plateformes, d'autant plus haut qu'elles sont hautes
+    xs = range(min(PLATS[ea][0], PLATS[eb][0]) - 2, max(PLATS[ea][1], PLATS[eb][1]) + 3)
+    zs = range(min(PLATS[ea][2], PLATS[eb][2]) - 2, max(PLATS[ea][3], PLATS[eb][3]) + 3)
+    cand = np.array([(x, y, z) for x in xs for z in zs for y in range(ymin, ymin + 11)
+                     if HX0 <= x <= HX1 and HZ0 <= z <= HZ1 and C[x, y, z] and (x, y, z) not in blocs
+                     and not (math.hypot(x - GX, z - GZ) <= G_RAYON_BRAS + 3 and y <= G_HAUT)])
+    if not len(cand):
+        continue
+    p = cand + .5
+    dA = np.sqrt(((p[:, None, :] - ca[None, :, :]) ** 2).sum(-1)).min(1)
+    dB = np.sqrt(((p[:, None, :] - cb[None, :, :]) ** 2).sum(-1)).min(1)
+    for i in np.argsort(np.maximum(dA, dB) + .02 * (cand[:, 1] - ymin)):
+        x, y, z = (int(v) for v in cand[i])
+        if max(dA[i], dB[i]) > 17.5:
+            continue
+        if colonne_libre(x, y, z) and all(abs(x - o[1]) + abs(z - o[3]) >= 4 or abs(y - o[2]) >= 4 for o in ANCR_B):
+            n_ = f"V{len(ANCR_B) + 1}"
+            ancrage_chaine(n_, x, y, z)
+            ANCR_B.append((n_, x, y, z))
+            print("  ancrage haut", ea, eb, (x, y, z), round(float(max(dA[i], dB[i])), 1), flush=True)
+            break
+    else:
+        print("  ! pas d'ancrage haut pour", ea, eb, flush=True)
+# P8 (la sortie) est la plus haute : pour l'atteindre en montant il faut s'accrocher plus haut qu'elle ; ancrages tres hauts, au plus pres de P8 (<= 12,5 blocs) et a portee de la plateforme de depart du balancement
+XP8 = PLATS["P8"]
+for (ea, eb) in [e for e in EDGES if "P8" in e]:
+    autre = eb if ea == "P8" else ea
+    ca, cb = centres_de("P8"), centres_de(autre)
+    ymin = XP8[4] + 6
+    xs = range(min(XP8[0], PLATS[autre][0]) - 2, max(XP8[1], PLATS[autre][1]) + 3)
+    zs = range(min(XP8[2], PLATS[autre][2]) - 2, max(XP8[3], PLATS[autre][3]) + 3)
+    cand = np.array([(x, y, z) for x in xs for z in zs for y in range(ymin, ymin + 11)
+                     if HX0 <= x <= HX1 and HZ0 <= z <= HZ1 and C[x, y, z] and (x, y, z) not in blocs
+                     and not (math.hypot(x - GX, z - GZ) <= G_RAYON_BRAS + 3 and y <= G_HAUT)])
+    if not len(cand):
+        print("  ! aucune case libre tres haute pour", ea, eb, flush=True)
+        continue
+    p = cand + .5
+    dP8 = np.sqrt(((p[:, None, :] - ca[None, :, :]) ** 2).sum(-1)).min(1)
+    dX = np.sqrt(((p[:, None, :] - cb[None, :, :]) ** 2).sum(-1)).min(1)
+    for i in np.argsort(dP8 + .3 * dX):
+        x, y, z = (int(v) for v in cand[i])
+        if dP8[i] > 12.5 or dX[i] > 19.5:
+            continue
+        if colonne_libre(x, y, z) and all(abs(x - o[1]) + abs(z - o[3]) >= 4 or abs(y - o[2]) >= 4 for o in ANCR_B):
+            n_ = f"V{len(ANCR_B) + 1}"
+            ancrage_chaine(n_, x, y, z)
+            ANCR_B.append((n_, x, y, z))
+            print("  ancrage tres haut", autre, "P8", (x, y, z), "a", round(float(dP8[i]), 1), "de P8 et", round(float(dX[i]), 1), "de", autre, flush=True)
+            break
+    else:
+        print("  ! pas d'ancrage tres haut pour", autre, "P8", flush=True)
 BOSS = {}
 for n_ in PLATS:
     cx_, cz_ = CENTRES[n_]
@@ -827,7 +893,7 @@ CLE_DON = "minecraft:tripwire_hook[minecraft:custom_name='\"Clé de racine\"',mi
 CMD.append("gamerule commandBlockOutput false")
 CMD.append("gamerule doMobSpawning false")
 CMD.append("scoreboard objectives add temple dummy")
-for v_ in ("#se", "#ss", "#porte", "#t1", "#t2", "#fe", "#fw", "#fp"):
+for v_ in ("#se", "#ss", "#porte", "#t1", "#t2", "#fe", "#fw", "#fp", "#boss"):
     CMD.append(f"scoreboard players add {v_} temple 0")
 CMD.append(f"execute positioned {rel(54, 83, 54)} as @a[dx=22,dy=10,dz=22] unless items entity @s container.* grappin:grappin run give @s grappin:grappin")
 # aile des Serpents : six dalles dans l'ordre du serpent peint ; une erreur ramene a l'entree de l'aile
@@ -891,6 +957,9 @@ assert ZB[1] + ZB_D[1] + 1.5 <= min(BAS.values()), "la zone de chute touche une 
 assert ZB[1] + ZB_D[1] + 1.5 <= POINTS["S12"][1], "la zone de chute englobe le point d'arrivee"
 CMD.append(f"execute positioned {rel(*ZB)} as @a[dx={ZB_D[0]},dy={ZB_D[1]},dz={ZB_D[2]}] run function atelier:temple_chute_boss")
 CMD.append(f"execute positioned {rel(*ZB)} run kill @e[type=item,dx={ZB_D[0]},dy={ZB_D[1]},dz={ZB_D[2]}]")
+# le Gardien des Racines : quand un joueur arrive sur la plateforme de depart de la salle du boss (derriere la porte G7, donc apres toutes les salles precedentes), annonce puis apparition
+XD0, XD1, ZD0, ZD1 = PLATS["D"][0], PLATS["D"][1], PLATS["D"][2], PLATS["D"][3]
+CMD.append(f"execute if score #boss temple matches 0 positioned {rel(XD0, PLATS['D'][4] + 1, ZD0)} if entity @a[dx={XD1 - XD0},dy=5,dz={ZD1 - ZD0}] run function atelier:temple_boss_annonce")
 # salles cachees 2, 3 et 8
 CMD.append(f"execute if block {rel(*LEVIERS['LH2'][:3])} minecraft:lever[powered=true] run " + fill([tuple(c) for c in PORTES["H2"]["cases"]], "minecraft:air"))
 CMD.append(f"execute if block {rel(*BOUTON_H3)} minecraft:stone_button[powered=true] run " + fill([tuple(c) for c in PORTES["H3"]["cases"]], "minecraft:air"))
@@ -998,6 +1067,16 @@ def ecrire(cases, nbt_, nom_, taille):
     return len(liste)
 
 
+# le script cree lui-meme le datapack du monde vise (dossiers et pack.mcmeta) : il ne suppose aucun etat local deja en place
+DP = SAVE / "datapacks/atelier"
+if SAVE.exists():
+    (DP / "data/atelier/structure").mkdir(parents=True, exist_ok=True)
+    (DP / "data/atelier/function").mkdir(parents=True, exist_ok=True)
+    if not (DP / "pack.mcmeta").exists():
+        (DP / "pack.mcmeta").write_text(json.dumps({"pack": {"pack_format": 48, "description": "Atelier - structures generees"}}, indent=2), encoding="utf-8")
+else:
+    print(f"ATTENTION : le monde « {args.monde} » n'existe pas dans {SAVE.parent} ; seuls les fichiers de atelier/exports sont ecrits. "
+          "Cree le monde dans le client de test (ou passe --monde) puis relance.", flush=True)
 n_total = ecrire(blocs, NBT, NOM, (SX, SY, SZ))
 FN = SAVE / "datapacks/atelier/data/atelier/function"
 if FN.exists():
@@ -1033,6 +1112,34 @@ if FN.exists():
     (FN / "temple_ouvrir_sortie_boss.mcfunction").write_text(
         f"# [claude-build] Ouvre la sortie du boss (a relier a la mort du boss).\nfill {w((a, b, c))} {w((d_, e, f))} minecraft:air\n"
         f"playsound minecraft:block.iron_door.open master @a {w((a, b, c))} 2 0.6\n", encoding="utf-8")
+    bx, by, bz = ORIGINE[0] + GX, ORIGINE[1] + G_SURFACE, ORIGINE[2] + GZ
+    arene = f"execute positioned {bx} {by} {bz} run"
+    DELAI_BOSS = 100                                               # 5 s entre l'annonce et l'apparition du golem
+    (FN / "temple_boss_annonce.mcfunction").write_text("\n".join([
+        "# [claude-build] Un joueur est arrive dans la salle du boss : annonce, puis le Gardien des Racines apparait apres 5 s (appelee par la chaine, une seule fois).",
+        "scoreboard players set #boss temple 1",
+        f"{arene} title @a[distance=..90] times 10 60 20",
+        f'{arene} title @a[distance=..90] subtitle {{"text":"Tenez-vous prets","color":"gray"}}',
+        f'{arene} title @a[distance=..90] title {{"text":"Le Gardien se reveille...","color":"gold"}}',
+        f"{arene} playsound minecraft:block.beacon.power_select master @a[distance=..90] ~ ~ ~ 3 0.6",
+        f"schedule function atelier:temple_boss_invoque {DELAI_BOSS}t"]) + "\n", encoding="utf-8")
+    # positioned en premier : une fonction programmee s'execute a l'origine du monde, pas dans la salle ; Rotation 180 : le golem regarde vers la plateforme de depart (au nord de lui)
+    (FN / "temple_boss_invoque.mcfunction").write_text("\n".join([
+        "# [claude-build] Fait surgir le Gardien des Racines de la lave, au centre de la salle (jamais deux a la fois).",
+        f"execute positioned {bx} {by} {bz} unless entity @e[type=grappin:golem,distance=..150] run summon grappin:golem {bx + 0.5} {by} {bz + 0.5} {{Rotation:[180f,0f]}}",
+        f"execute positioned {bx} {by} {bz} if entity @e[type=grappin:golem,distance=..150] run scoreboard players set #boss temple 2",
+        f"execute positioned {bx} {by} {bz} unless entity @e[type=grappin:golem,distance=..150] run scoreboard players set #boss temple 0",
+        f"{arene} playsound minecraft:entity.ender_dragon.growl master @a[distance=..90] ~ ~ ~ 5 0.6"]) + "\n", encoding="utf-8")
+    (SAVE / "datapacks/atelier/data/grappin/tags/function").mkdir(parents=True, exist_ok=True)
+    (SAVE / "datapacks/atelier/data/grappin/tags/function/golem_mort.json").write_text(json.dumps({"values": ["atelier:temple_boss_mort"]}, indent=2), encoding="utf-8")     # le mod appelle ce tag a la mort du golem
+    (FN / "temple_boss_mort.mcfunction").write_text(
+        "# [claude-build] Appelee par le mod a la mort du golem : la sortie ne s'ouvre que si le boss a bien ete invoque (pas lors d'une remise a zero).\n"
+        "execute if score #boss temple matches 2 run function atelier:temple_boss_vaincu\n", encoding="utf-8")
+    (FN / "temple_boss_vaincu.mcfunction").write_text("\n".join([
+        "# [claude-build] Le Gardien des Racines est mort : la sortie du boss s'ouvre.",
+        "scoreboard players set #boss temple 3",
+        "function atelier:temple_ouvrir_sortie_boss",
+        f'{arene} title @a[distance=..90] title {{"text":"Le Gardien est vaincu","color":"green"}}']) + "\n", encoding="utf-8")
     (FN / "temple_fermer_sortie_boss.mcfunction").write_text(
         f"# [claude-build] Referme la sortie du boss (remise a zero de la salle).\nfill {w((a, b, c))} {w((d_, e, f))} minecraft:iron_bars[waterlogged=false]\n", encoding="utf-8")
     reset = ["# [claude-build] Remet le temple a zero : portes fermees, leviers baisses, enigmes et cle remises, pieges rearmes."]
@@ -1052,7 +1159,8 @@ if FN.exists():
         reset.append(f"fill {w((a, b, c))} {w((d_, e, f))} minecraft:spruce_planks")
     for p in BALISES.values():
         reset.append(f"setblock {w(p)} minecraft:chiseled_stone_bricks")
-    reset += ["scoreboard objectives add temple dummy"] + [f"scoreboard players set {v_} temple 0" for v_ in ("#se", "#ss", "#porte", "#t1", "#t2", "#fe", "#fw", "#fp")]
+    reset += ["scoreboard objectives add temple dummy"] + [f"scoreboard players set {v_} temple 0" for v_ in ("#se", "#ss", "#porte", "#t1", "#t2", "#fe", "#fw", "#fp", "#boss")]
+    reset += ["kill @e[type=grappin:golem]", "schedule clear atelier:temple_boss_invoque"]
     reset += [f"clear @a {CLE}", 'tellraw @a {"text":"Temple remis a zero.","color":"gray"}']
     (FN / "temple_reset.mcfunction").write_text("\n".join(reset) + "\n", encoding="utf-8")
 conf = {"_marque": "[claude-build]", "taille": [SX, SY, SZ], "origine": ORIGINE, "zones": ZONES, "portes": PORTES, "ancrages": ANCRAGES,
@@ -1061,6 +1169,7 @@ conf = {"_marque": "[claude-build]", "taille": [SX, SY, SZ], "origine": ORIGINE,
         "entree": [65, 83, 62],
         "plateformes": {n_: {"bbox": PLATS[n_][:4], "dessus": PLATS[n_][4], "boss": list(BOSS[n_]) if n_ in BOSS else None, "cases": len(PC[n_]), "dessous": BAS[n_]} for n_ in PLATS},
         "ancrages_boss": ANCR_B, "aretes": EDGES, "zone_chute": [list(ZB), list(ZB_D)], "debut_boss": list(POINTS["S12"]),
+        "golem": {"centre": [GX, G_SURFACE, GZ], "rayon_corps": G_RAYON_CORPS, "rayon_bras": G_RAYON_BRAS, "haut": G_HAUT},
         "cibles": {**{k: list(v) for k, v in POINTS.items()}, **{k: list(v[:3]) for k, v in LEVIERS.items()}, "bouton_H3": BOUTON_H3, "bouton_H8": BOUTON_H8,
                    **{"socle_" + k: v for k, v in SOCLES.items()}, "plaque_cle": PLAQUE_CLE, "serrure": CLE_ZONE, "plaque_idole": PLAQUE_IDOLE,
                    **{f"dalle{i + 1}": p for i, p in enumerate(PLAQUES_E)}, **{f"H{k}": v["coffre"] for k, v in CACHEES.items()}, **{"B" + n_[1:]: list(v) for n_, v in BOSS.items()}}}

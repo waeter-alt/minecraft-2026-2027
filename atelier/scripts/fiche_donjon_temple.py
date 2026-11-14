@@ -57,7 +57,7 @@ SECT = [
     ("9", "Le Grand Gouffre Intérieur", "Caverne : 6 ancrages en arc (A1 à A6) au-dessus de la fosse, jusqu'à la corniche d'en face. Chute : retour à la corniche d'arrivée.", "4 min"),
     ("10", "La Crypte des Racines", "On plonge dans la fosse d'eau, on prend la Clé de racine sur l'îlot, on remonte avec 3 ancrages (K1 à K3), puis retour en arrière jusqu'à la salle 7.", "3 min"),
     ("11", "L'Antichambre", "Porte à clé de la salle 7 (serrure en pierre magnétique), couloir de statues, long couloir droit vers l'aile du boss.", "1 min"),
-    ("12", "La Salle du Gardien (aile du boss)", "Hall de 63 × 63 au-dessus d'un gouffre de lave : 9 plateformes suspendues, atteintes au grappin ; sortie fermée. Vide, le boss viendra plus tard.", "1 min (hors combat)"),
+    ("12", "La Salle du Gardien (aile du boss)", "Hall de 63 × 63 au-dessus d'un gouffre de lave : 8 plateformes en anneau autour du Gardien des Racines (golem d'arbre qui émerge de la lave), atteintes au grappin ; sortie fermée jusqu'à la mort du Gardien.", "1 min (hors combat)"),
 ]
 for s in SECT:
     a("| " + " | ".join(s) + " |")
