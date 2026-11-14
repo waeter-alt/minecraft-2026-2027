@@ -34,6 +34,7 @@ public final class GrappinClient {
         static void couches(EntityRenderersEvent.RegisterLayerDefinitions event) {
             event.registerLayerDefinition(SeraphinModele.COUCHE, SeraphinModele::creerCouche);
             event.registerLayerDefinition(GolemModele.COUCHE, GolemModele::creerCouche);
+            event.registerLayerDefinition(LeviathanModele.COUCHE, LeviathanModele::creerCouche);
         }
 
         @SubscribeEvent
@@ -43,6 +44,7 @@ public final class GrappinClient {
             event.registerEntityRenderer(Grappin.SERAPHIN.get(), SeraphinRendu::new);
             event.registerEntityRenderer(Grappin.GRAINE.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);   // la graine n'est que sa traînee de particules
             event.registerEntityRenderer(Grappin.GOLEM.get(), GolemRendu::new);
+            event.registerEntityRenderer(Grappin.LEVIATHAN.get(), LeviathanRendu::new);
         }
     }
 

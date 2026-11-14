@@ -120,10 +120,14 @@ SALLES = {
     "S6": (60, 96, 86, 116, HAUT), "S8": (10, 45, 86, 116, HAUT), "S9": (10, 45, 122, 150, HAUT), "S10": (62, 140, 120, 166, 66),
 }
 for n_, (x0, x1, z0, z1, top) in SALLES.items():
-    if n_ in ("S1", "S10"):
-        boite(x0, x1, SOL + 1, top, z0, z1)                        # le depart et la salle du boss gardent leur volume d'air ; les bassins sont creuses dessous
+    if n_ == "S1":
+        boite(x0, x1, SOL + 1, top, z0, z1)                        # seul le depart garde son volume d'air ; les bassins sont creuses dessous
     else:
-        eau(x0, x1, SOL + 1, top, z0, z1)                          # toutes les autres salles sont noyees jusqu'au plafond
+        eau(x0, x1, SOL + 1, top, z0, z1)                          # toutes les autres salles, celle du boss comprise, sont noyees jusqu'au plafond
+# la sortie du boss : un couloir et une petite salle de fin, noyes eux aussi (l'eau reste confinee) ; la salle de fin garde une rangee d'air sous son plafond, comme les salles cachees
+eau(141, 147, SOL + 1, SOL + 4, 142, 144)
+eau(143, 147, SOL + 1, SOL + 4, 140, 146)
+boite(143, 147, SOL + 5, SOL + 5, 140, 146)
 POOLS = {                                                          # nom: (x0, x1, z0, z1, fond du bassin) ; l'eau va du fond + 1 a 43
     "P1": (24, 31, 18, 25, 36), "S2": (14, 66, 48, 76, 40), "C1": (80, 97, 48, 76, 38), "C2": (102, 118, 48, 76, 38), "C3": (122, 138, 48, 76, 38),
     "S5": (104, 136, 90, 112, 36), "A": (62, 78, 90, 112, 34), "B": (82, 94, 90, 112, 40), "P8a": (36, 44, 90, 98, 38), "P8b": (36, 44, 104, 112, 38),

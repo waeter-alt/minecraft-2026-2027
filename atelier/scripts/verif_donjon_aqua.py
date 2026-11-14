@@ -197,7 +197,7 @@ def plus_court(a, b):
 
 # trajets : de la case d'eau juste au dessus de l'entree du tunnel a la case juste au dessus de sa sortie (ou, pour les salles cachees, au milieu de la salle)
 TRAJETS = {"T1": ((131, 40, 74), (120, 38, 95)), "T2": ((66, 36, 100), (40, 40, 94)), "T3": ((40, 40, 108), (40, 40, 130)), "G7": ((46, 45, 136), (84, 43, 136))}
-SORTIES_AIR = {"G7": True}                                                # la galerie du Coeur debouche dans le bassin du boss, a l'air libre
+SORTIES_AIR = {}                                                         # la galerie du Coeur debouche dans la salle du boss, noyee : une cloche d'air est posee au-dessus de sa sortie
 for n_, c in conf["cachees_detail"].items():
     if c.get("puits"):
         px, fp, pz = c["puits"]
@@ -265,6 +265,29 @@ mauvais = [k for k, v in LOIN.items() if v is None or v > MAX_PAS]
 print(f"distance cloche -> vanne ou salle cachee : au plus {pires[-1][0]} pas ({pires[-1][1]}) ; les plus eloignees : {pires} ; trop loin (> {MAX_PAS}) : {mauvais or 'aucune'} ->", "OK" if not mauvais else "ECHEC")
 ok_ &= not mauvais
 BILAN["_cloches"] = {"nombre": len(CLOCHES), "pires": {k: v for v, k in pires}}
+# la salle du boss est noyee : aucune case d'air hors des cloches, chaque cloche garde ses 18 cases d'air (3 x 3 x 2), et il y en a au moins 7
+AIR_I = np.array([n == "air" for n in pal])
+AIR_ = INT & ((ETAT < 0) | AIR_I[np.clip(ETAT, 0, None)])
+BS = conf["boss_salle"]
+interieurs = set()
+for (cx, yb, cz) in BS["cloches"]:
+    for x in range(cx - 1, cx + 2):
+        for z in range(cz - 1, cz + 2):
+            for y in (yb, yb + 1):
+                interieurs.add((x, y, z))
+air_salle = {tuple(int(v) for v in p) for p in np.argwhere(AIR_[62:141, 15:67, 120:167]) + np.array([62, 15, 120])}
+CACHEES_BOITES = [tuple(c["boite"]) for c in conf["cachees_detail"].values()]                  # les salles cachees d'air (la 8 est sous la cuvette) sont des volumes d'air voulus
+hors = sorted(q for q in air_salle - interieurs if not any(x0 <= q[0] <= x1 and y0 <= q[1] <= y1 and z0 <= q[2] <= z1 for (x0, x1, y0, y1, z0, z1) in CACHEES_BOITES))
+manquent = [c for c in BS["cloches"] if any((c[0] + dx, y, c[2] + dz) not in air_salle for dx in (-1, 0, 1) for dz in (-1, 0, 1) for y in (c[1], c[1] + 1))]
+bon_salle = not hors and not manquent and len(BS["cloches"]) >= 7
+ok_ &= bon_salle
+print(f"salle du boss noyee : {len(BS['cloches'])} cloches, {len(BS['piliers'])} piliers | air hors des cloches {len(hors)} | cloches sans leur air {manquent} -> {'OK' if bon_salle else 'ECHEC'}")
+# la sortie : le couloir et la salle de fin sont noyes (plein d'eau), seule la rangee y 48 de la salle de fin garde de l'air
+air_sortie = {tuple(int(v) for v in p) for p in np.argwhere(AIR_[141:148, 44:49, 140:147]) + np.array([141, 44, 140])}
+attendu_air = {(x, 48, z) for x in range(143, 148) for z in range(140, 147)}
+bon_sortie = air_sortie == attendu_air
+ok_ &= bon_sortie
+print(f"sortie noyee : air hors de la rangee de la salle de fin {len(air_sortie - attendu_air)} | rangee d'air manquante {len(attendu_air - air_sortie)} -> {'OK' if bon_sortie else 'ECHEC'}")
 (RACINE / "exports/aqua_verif.json").write_text(json.dumps({"_marque": "[claude-build]", "resultat": "OK" if ok_ else "ECHEC", "sans_voile": sans, "trajets": BILAN,
                                                             "reserve_s": RES, "air_s": AIR}, ensure_ascii=False), encoding="utf-8")
 print("RESULTAT :", "OK" if ok_ else "ECHEC")

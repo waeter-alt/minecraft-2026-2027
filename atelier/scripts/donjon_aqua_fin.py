@@ -3,7 +3,7 @@
 
 CHAINES = [(14, 61, 50), (14, 61, 54), (14, 61, 58), (14, 61, 62)]
 CMD = []
-VARS = ("#s4", "#cle", "#kp", "#t")
+VARS = ("#s4", "#cle", "#kp", "#t", "#boss", "#phase", "#inond") + ("#cd",) + tuple(f"#c{i}" for i in range(1, len(CLOCHES_BOSS) + 1))
 
 
 def rel(x, y, z):
@@ -94,6 +94,17 @@ for n_, c in CACHEES.items():
         CMD.append(f"execute {ouverte(f'h{n_}')} run " + ouvrir(f"H{n_}"))
     else:
         CMD.append(f"execute if block {rel(*c['bouton'])} minecraft:stone_button[powered=true] run " + ouvrir(f"H{n_}"))
+# le Leviathan : quand un joueur debouche dans la cuvette de la salle du boss (apres la galerie noyee et la herse a cle), annonce puis apparition
+CMD.append(f"execute if score #boss aqua matches 0 positioned {rel(90, 15, 130)} if entity @a[dx=30,dy=51,dz=26,gamemode=!spectator] run function atelier:aqua_boss_annonce")
+# phase 2 : une cloche d'air dont le serpent s'approche se remplit d'eau 20 s puis se reforme ; au plus le tiers des cloches de la salle est inonde en meme temps (il en reste toujours, au moins la moitie)
+PLAFOND_CLOCHES = max(1, len(CLOCHES_BOSS) // 3)                    # au plus le tiers des cloches inondees a la fois ; delai de 15 s (#cd) entre deux inondations
+CMD.append("execute if score #cd aqua matches 1.. run scoreboard players remove #cd aqua 1")
+assert PLAFOND_CLOCHES >= 1 and len(CLOCHES_BOSS) - PLAFOND_CLOCHES >= 1, "au moins une cloche doit rester utilisable"
+for i, (cx, yb, cz) in enumerate(CLOCHES_BOSS, 1):
+    CMD.append(f"execute if score #phase aqua matches 1 if score #cd aqua matches 0 if score #c{i} aqua matches 0 if score #inond aqua matches ..{PLAFOND_CLOCHES - 1} positioned {rel(cx, yb, cz)} "
+               f"if entity @e[type=grappin:leviathan,distance=..8] run function atelier:aqua_cloche_inonde_{i}")
+    CMD.append(f"execute if score #c{i} aqua matches 2.. run scoreboard players remove #c{i} aqua 1")
+    CMD.append(f"execute if score #c{i} aqua matches 1 run function atelier:aqua_cloche_regen_{i}")
 assert len(CMD) <= 32 * len(CHAINES), len(CMD)
 for i, c in enumerate(CMD):
     ch = CHAINES[i // 32]
@@ -229,10 +240,51 @@ if FN.exists():
     pc_ = [tuple(c) for c in PORTES["SORTIE"]["cases"]]
     (a, b, c), (d_, e, f_) = plage(pc_)
     (FN / "aqua_ouvrir_sortie_boss.mcfunction").write_text(
-        f"# [claude-build] Ouvre la sortie du boss (a relier a la mort du boss).\nfill {w((a, b, c))} {w((d_, e, f_))} minecraft:air\n"
+        f"# [claude-build] Ouvre la sortie du boss (a la mort du Leviathan) : la grille cede la place a de l'eau, le couloir derriere est noye.\nfill {w((a, b, c))} {w((d_, e, f_))} minecraft:water\n"
         f"playsound minecraft:block.iron_door.open master @a {w((a, b, c))} 2 0.6\n", encoding="utf-8")
     (FN / "aqua_fermer_sortie_boss.mcfunction").write_text(
-        f"# [claude-build] Referme la sortie du boss.\nfill {w((a, b, c))} {w((d_, e, f_))} minecraft:iron_bars[waterlogged=false]\n", encoding="utf-8")
+        f"# [claude-build] Referme la sortie du boss.\nfill {w((a, b, c))} {w((d_, e, f_))} minecraft:iron_bars[waterlogged=true]\n", encoding="utf-8")
+    bx, by, bz = ORIGINE[0] + 108, ORIGINE[1] + 24, ORIGINE[2] + 143          # au fond de la cuvette, a l'est : le serpent surgit loin de l'entree
+    arene = f"execute positioned {bx} {by} {bz} run"
+    DELAI_BOSS = 100                                                  # 5 s entre l'annonce et l'apparition
+    (FN / "aqua_boss_annonce.mcfunction").write_text("\n".join([
+        "# [claude-build] Un joueur est arrive dans la salle du boss : annonce, puis le Leviathan surgit apres 5 s (appelee par la chaine, une seule fois).",
+        "scoreboard players set #boss aqua 1",
+        f"{arene} title @a[distance=..90] times 10 60 20",
+        f'{arene} title @a[distance=..90] subtitle {{"text":"Respirez dans les cloches","color":"aqua"}}',
+        f'{arene} title @a[distance=..90] title {{"text":"Le Léviathan se réveille...","color":"gold"}}',
+        f"{arene} playsound minecraft:block.beacon.power_select master @a[distance=..90] ~ ~ ~ 3 0.6",
+        f"schedule function atelier:aqua_boss_invoque {DELAI_BOSS}t"]) + "\n", encoding="utf-8")
+    # positioned en premier : une fonction programmee s'execute a l'origine du monde, pas dans la salle
+    (FN / "aqua_boss_invoque.mcfunction").write_text("\n".join([
+        "# [claude-build] Fait surgir le Leviathan au fond de la cuvette (jamais deux a la fois).",
+        f"execute positioned {bx} {by} {bz} unless entity @e[type=grappin:leviathan,distance=..150] run summon grappin:leviathan {bx + 0.5} {by} {bz + 0.5} {{Rotation:[90f,0f]}}",
+        f"execute positioned {bx} {by} {bz} if entity @e[type=grappin:leviathan,distance=..150] run scoreboard players set #boss aqua 2",
+        f"execute positioned {bx} {by} {bz} unless entity @e[type=grappin:leviathan,distance=..150] run scoreboard players set #boss aqua 0",
+        f"{arene} playsound minecraft:entity.ender_dragon.growl master @a[distance=..90] ~ ~ ~ 5 0.5"]) + "\n", encoding="utf-8")
+    (DP / "data/grappin/tags/function").mkdir(parents=True, exist_ok=True)
+    (DP / "data/grappin/tags/function/leviathan_mort.json").write_text(json.dumps({"values": ["atelier:aqua_boss_mort"]}, indent=2), encoding="utf-8")        # le mod appelle ce tag a la mort du serpent
+    (DP / "data/grappin/tags/function/leviathan_phase2.json").write_text(json.dumps({"values": ["atelier:aqua_boss_phase2"]}, indent=2), encoding="utf-8")   # et celui-ci quand il passe en phase 2
+    (FN / "aqua_boss_mort.mcfunction").write_text(
+        "# [claude-build] Appelee par le mod a la mort du serpent : la sortie ne s'ouvre que si le boss a bien ete invoque (pas lors d'une remise a zero).\n"
+        "execute if score #boss aqua matches 2 run function atelier:aqua_boss_vaincu\n", encoding="utf-8")
+    (FN / "aqua_boss_vaincu.mcfunction").write_text("\n".join([
+        "# [claude-build] Le Leviathan est mort : la sortie du boss s'ouvre.",
+        "scoreboard players set #boss aqua 3",
+        "function atelier:aqua_ouvrir_sortie_boss",
+        f'{arene} title @a[distance=..90] title {{"text":"Le Léviathan est vaincu","color":"green"}}']) + "\n", encoding="utf-8")
+    (FN / "aqua_boss_phase2.mcfunction").write_text("# [claude-build] Appelee par le mod quand le Leviathan passe en phase 2 : il peut desormais inonder les cloches d'air.\nscoreboard players set #phase aqua 1\n", encoding="utf-8")
+    for i, (cx, yb, cz) in enumerate(CLOCHES_BOSS, 1):
+        interieur = f"{w((cx - 1, yb, cz - 1))} {w((cx + 1, yb + 1, cz + 1))}"
+        centre = f"execute positioned {w((cx, yb, cz))} run"
+        (FN / f"aqua_cloche_inonde_{i}.mcfunction").write_text("\n".join([
+            f"# [claude-build] Le Leviathan attaque la cloche {i} : son interieur (3 x 3 x 2) se remplit d'eau pendant 20 s.",
+            f"fill {interieur} minecraft:water", f"scoreboard players add #inond aqua 1", f"scoreboard players set #c{i} aqua 400", "scoreboard players set #cd aqua 300",
+            f"{centre} playsound minecraft:entity.generic.explode master @a[distance=..40] ~ ~ ~ 2 0.7"]) + "\n", encoding="utf-8")
+        (FN / f"aqua_cloche_regen_{i}.mcfunction").write_text("\n".join([
+            f"# [claude-build] La cloche {i} se reforme : l'eau de son interieur redevient de l'air.",
+            f"fill {interieur} minecraft:air replace minecraft:water", "scoreboard players remove #inond aqua 1", f"scoreboard players set #c{i} aqua 0",
+            f"{centre} playsound minecraft:block.beacon.activate master @a[distance=..40] ~ ~ ~ 2 1.4"]) + "\n", encoding="utf-8")
     reset = ["# [claude-build] Remet le sanctuaire a zero : portes fermees, vannes refermees et cle remise."]
     for n_, p in PORTES.items():
         props = ",".join(f"{k}={v}" for k, v in p["props"].items())
@@ -241,10 +293,12 @@ if FN.exists():
     for n_, (p, f_) in VANNES.items():
         reset.append(f"setblock {w(p)} minecraft:oak_trapdoor[half=bottom,facing={f_},open=false,powered=false,waterlogged=true]")
     reset += ["scoreboard objectives add aqua dummy"] + [f"scoreboard players set {v_} aqua 0" for v_ in VARS]
+    reset += ["kill @e[type=grappin:leviathan]", "schedule clear atelier:aqua_boss_invoque"]
+    reset += [f"fill {w((cx - 1, yb, cz - 1))} {w((cx + 1, yb + 1, cz + 1))} minecraft:air replace minecraft:water" for (cx, yb, cz) in CLOCHES_BOSS]
     reset += [f"clear @a {CLE}", 'tellraw @a {"text":"Sanctuaire remis a zero.","color":"gray"}']
     (FN / "aqua_reset.mcfunction").write_text("\n".join(reset) + "\n", encoding="utf-8")
 conf = {"_marque": "[claude-build]", "taille": [SX, SY, SZ], "origine": ORIGINE, "portes": PORTES, "points": POINTS, "entree": list(POINTS["S1"]), "tunnels": {k: v for k, v in TUNNELS.items()},
-        "longueurs": LONG, "pression": PRESSION, "cachees_detail": {str(k): v for k, v in CACHEES.items()}, "boss": BOSS, "niveau_eau": SOL,
+        "boss_salle": {"cloches": [list(c) for c in CLOCHES_BOSS], "piliers": [list(p) for p in PILIERS_BOSS]}, "longueurs": LONG, "pression": PRESSION, "cachees_detail": {str(k): v for k, v in CACHEES.items()}, "boss": BOSS, "niveau_eau": SOL,
         "cloches": [list(c_) for c_ in CLOCHES], "vannes": {k_: list(v_[0]) for k_, v_ in VANNES.items()},
         "cibles": {"S1": list(POINTS["S1"]), "vanne_G1": list(VANNE_G1), "vanne_G2": list(VANNE_G2), "vanne_3a": list(VANNE_3A), "vanne_3b": list(VANNE_3B),
                    "glyphe_poulpe": list(VANNES_G4["poulpe"]), "glyphe_raie": list(VANNES_G4["raie"]), "glyphe_crabe": list(VANNES_G4["crabe"]),

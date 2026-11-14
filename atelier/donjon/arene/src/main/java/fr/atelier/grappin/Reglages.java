@@ -45,6 +45,15 @@ public final class Reglages {
     public static final ModConfigSpec.DoubleValue GRAINE_ZONE = B.comment("Gardien : rayon de l'explosion d'une graine, en blocs.").defineInRange("graineZone", 3.0, 0.5, 16.0);
     public static final ModConfigSpec.IntValue GRAINE_CADENCE = B.comment("Gardien : delai entre deux graines, en ticks.").defineInRange("graineCadence", 70, 10, 600);
 
+    public static final ModConfigSpec.DoubleValue LEVIATHAN_VIE = B.comment("Leviathan : points de vie du boss.").defineInRange("leviathanVie", 150.0, 20.0, 1024.0);
+    public static final ModConfigSpec.DoubleValue LEVIATHAN_FACTEUR_PERLE = B.comment("Leviathan : multiplicateur des degats sur la perle ouverte.").defineInRange("leviathanFacteurPerle", 3.0, 0.1, 50.0);
+    public static final ModConfigSpec.DoubleValue LEVIATHAN_FACTEUR_CORPS = B.comment("Leviathan : part des degats recus sur le corps (0,15 = 15 %).").defineInRange("leviathanFacteurCorps", 0.15, 0.0, 1.0);
+    public static final ModConfigSpec.IntValue LEVIATHAN_PERLE = B.comment("Leviathan : duree pendant laquelle la perle reste exposee apres le rayon, en ticks (20 = 1 s).").defineInRange("leviathanPerle", 120, 20, 1200);
+    public static final ModConfigSpec.DoubleValue MORSURE_DEGATS = B.comment("Leviathan : degats de la morsure.").defineInRange("leviathanMorsure", 8.0, 0.0, 100.0);
+    public static final ModConfigSpec.DoubleValue RAYON_LEVIATHAN_DEGATS = B.comment("Leviathan : degats du rayon de l'oeil.").defineInRange("leviathanRayon", 12.0, 0.0, 100.0);
+    public static final ModConfigSpec.DoubleValue QUEUE_DEGATS = B.comment("Leviathan : degats du coup de queue.").defineInRange("leviathanQueue", 6.0, 0.0, 100.0);
+    public static final ModConfigSpec.IntValue RAYON_LEVIATHAN_CHARGE = B.comment("Leviathan : duree d'avertissement avant le rayon, en ticks.").defineInRange("leviathanRayonCharge", 40, 10, 200);
+
     public static final ModConfigSpec SPEC = B.build();
 
     private Reglages() {

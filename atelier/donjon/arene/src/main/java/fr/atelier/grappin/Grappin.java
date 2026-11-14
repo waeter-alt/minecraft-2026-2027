@@ -92,6 +92,17 @@ public class Grappin {
                     .fireImmune()
                     .clientTrackingRange(16)
                     .build("golem"));
+    /** Le Leviathan, serpent de mer du Donjon 2 (boite de la tete de 5 x 5 blocs), et son oeuf d'apparition. */
+    public static final DeferredHolder<EntityType<?>, EntityType<Leviathan>> LEVIATHAN = ENTITES.register("leviathan",
+            () -> EntityType.Builder.<Leviathan>of(Leviathan::new, MobCategory.MONSTER)
+                    .sized(5.0F, 5.0F)
+                    .fireImmune()
+                    .clientTrackingRange(16)
+                    .updateInterval(1)                        // le corps suit le chemin de la tete : des mises a jour a chaque tick evitent un retard visible
+                    .build("leviathan"));
+    public static final DeferredItem<DeferredSpawnEggItem> LEVIATHAN_OEUF = ITEMS.register("leviathan_spawn_egg",
+            () -> new DeferredSpawnEggItem(LEVIATHAN, 0x1B6B6B, 0xC9B458, new Item.Properties()));
+
     /** Une graine explosive lancee par le Gardien des Racines. */
     public static final DeferredHolder<EntityType<?>, EntityType<Graine>> GRAINE = ENTITES.register("graine",
             () -> EntityType.Builder.<Graine>of(Graine::new, MobCategory.MISC)
@@ -125,6 +136,7 @@ public class Grappin {
                 sortie.accept(PARAVOILE.get());
                 sortie.accept(SERAPHIN_OEUF.get());
                 sortie.accept(GOLEM_OEUF.get());
+                sortie.accept(LEVIATHAN_OEUF.get());
             })
             .build());
 
@@ -142,6 +154,7 @@ public class Grappin {
     private void attributs(EntityAttributeCreationEvent event) {
         event.put(SERAPHIN.get(), Seraphin.attributs().build());
         event.put(GOLEM.get(), Golem.attributs().build());
+        event.put(LEVIATHAN.get(), Leviathan.attributs().build());
     }
 
     private void reseau(RegisterPayloadHandlersEvent event) {
