@@ -124,14 +124,8 @@ for n_, c in CACHEES.items():
     else:
         put(*c["bouton"], BOUTON(c["fb"]))
 # ---------------------------------------------------------------- le Coeur du Temple : ilot central, bassin profond, sortie scellee
-ilot(99, 103, 141, 145, 14)
-for y in range(15, SOL + 1):
-    for (x, z) in ((99, 141), (103, 141), (99, 145), (103, 145)):
-        put(x, y, z, PIERRE)
-creuser(141, 147, SOL + 1, SOL + 4, 142, 144)
-creuser(143, 147, SOL + 1, SOL + 5, 140, 146)
-porte("SORTIE", [(141, y, z) for z in (142, 143, 144) for y in range(SOL + 1, SOL + 5)], BARRES)
-BOSS = {"B1": (101, SOL + 1, 143), "B2": (72, SOL + 1, 143), "B3": (132, SOL + 1, 143), "B4": (90, 28, 143), "B5": (112, 28, 143)}
+porte("SORTIE", [(141, y, z) for z in (142, 143, 144) for y in range(SOL + 1, SOL + 5)])        # grille noyee : le couloir derriere est noye lui aussi
+BOSS = {"B1": (101, 56, 143), "B2": (72, 50, 143), "B3": (132, 50, 143), "B4": (90, 28, 143), "B5": (112, 28, 143)}
 POINTS["S1"] = (28, SOL + 1, 12)
 POINTS["arrivee_T1"] = (120, SOL + 1, 100)
 POINTS["arrivee_T2"] = (40, SOL + 1, 90)
@@ -179,6 +173,31 @@ for n_ in ("S2", "S3", "S5", "S6", "S8", "S9"):
     cloches_salle(n_)
 for (cx, cz) in ((131, 74), (120, 95), (66, 100), (40, 94), (40, 108), (40, 130)):            # basses, au dessus des entrees et sorties des tunnels : on y respire avant de plonger
     cloche(cx, cz, 44)
+# ---------------------------------------------------------------- le Coeur du Temple, noye : piliers ruines (abris contre le rayon du Leviathan) et cloches d'air (refuges)
+PILIERS_BOSS = [(90, 139, 38), (112, 139, 34), (90, 150, 44), (112, 150, 36), (101, 144, 50),                  # dans la cuvette (fond a 14)
+                (68, 127, 58), (68, 160, 52), (133, 127, 56), (133, 160, 60), (76, 143, 50), (126, 143, 46)]    # sur l'etagere (43)
+
+
+def pilier_ruine(cx, cz, haut):
+    """Colonne ruinee de 3 x 3, du fond de la cuvette ou de l'etagere jusqu'a `haut`, au sommet irregulier ; ne remplace que de l'eau."""
+    x0b, x1b, z0b, z1b, fond = POOLS["S10"]
+    base = fond if x0b <= cx <= x1b and z0b <= cz <= z1b else SOL
+    for x in range(cx - 1, cx + 2):
+        for z in range(cz - 1, cz + 2):
+            h_ = haut - int(h01(x, z, 0, 931) * 5)
+            for y in range(base + 1, h_ + 1):
+                if blocs.get((x, y, z)) == EAU:
+                    put(x, y, z, MOUSSE if h01(x, y, z, 932) < .3 else PIERRE)
+
+
+for (px_, pz_, ph_) in PILIERS_BOSS:
+    pilier_ruine(px_, pz_, ph_)
+CLOCHES_BOSS = []                                                  # (cx, yb, cz) ; celle de (86, 44, 136) est au-dessus de la sortie de la galerie d'entree : on y respire en arrivant
+for (cx_, cz_, yb_) in [(86, 136, 44), (72, 136, 60), (72, 152, 56), (100, 126, 62), (100, 162, 58), (130, 136, 60), (130, 153, 56), (113, 143, 52)]:
+    if cloche(cx_, cz_, yb_):
+        CLOCHES_BOSS.append((cx_, yb_, cz_))
+assert len(CLOCHES_BOSS) >= 7, ("cloches de la salle du boss", CLOCHES_BOSS)
+print("[3b] salle du boss noyee :", len(PILIERS_BOSS), "piliers,", len(CLOCHES_BOSS), "cloches", flush=True)
 print("[3] missions :", len(blocs), "| cloches d'air :", len(CLOCHES), flush=True)
 
 

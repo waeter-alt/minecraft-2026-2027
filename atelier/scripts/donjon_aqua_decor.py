@@ -25,7 +25,7 @@ def pres_porte(p, r=2):
     return any(q in PORTE_CASES for q in ((x + r, y, z), (x - r, y, z), (x, y, z + r), (x, y, z - r), (x, y + r, z), (x, y - r, z)))
 
 
-SALLES_NOYEES = [n_ for n_ in SALLES if n_ not in ("S1", "S10")]
+SALLES_NOYEES = [n_ for n_ in SALLES if n_ != "S1"]
 EPONGE = {c["boite"] for c in CACHEES.values() if c["eau"]}
 
 
