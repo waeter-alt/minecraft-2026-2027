@@ -20,6 +20,7 @@ Contexte : mod NeoForge custom (`mod/`) pour un serveur Minecraft communautaire 
 
 ## Build & test (depuis `mod/`, en Git Bash — pas PowerShell pour les commandes Gradle)
 
+- Outils de test (JUnit, GameTests, captures UiShot, scénarios de colonie) : mode d'emploi dans `mod/docs/outils-de-test.md`.
 - Build : `./gradlew build --console=plain -q`
   - Ferme le client Minecraft avant de builder : Gradle ne peut pas réécrire les classes si le jeu tient les fichiers ouverts (verrou Windows).
 - Serveur de test : `./gradlew runServer`
