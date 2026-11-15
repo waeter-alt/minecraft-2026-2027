@@ -26,6 +26,8 @@ public final class Reglages {
     public static final ModConfigSpec.BooleanValue VOILE_VISION_NOCTURNE = B.comment("Voile des Profondeurs : donne la vision nocturne tant qu'il est porte.").define("voileVisionNocturne", true);
     public static final ModConfigSpec.BooleanValue VOILE_NAGE_RAPIDE = B.comment("Voile des Profondeurs : donne la nage rapide (grace du dauphin) tant qu'il est porte.").define("voileNageRapide", true);
 
+    public static final ModConfigSpec.BooleanValue VOILE_BOTTES_LOURDES = B.comment("Voile des Profondeurs : permet d'activer les bottes lourdes (marcher au fond) avec une touche, tant qu'il reste de la reserve.").define("voileBottesLourdes", true);
+
     public static final ModConfigSpec.IntValue PARAVOILE_ENDURANCE = B.comment("Paravoile : duree de vol, en secondes (la jauge se vide en vol).").defineInRange("paravoileEnduranceSecondes", 10, 3, 300);
     public static final ModConfigSpec.IntValue PARAVOILE_RECHARGE = B.comment("Paravoile : temps pour recharger la jauge entierement, au sol ou dans l'eau, en secondes.").defineInRange("paravoileRechargeSecondes", 6, 1, 300);
     public static final ModConfigSpec.DoubleValue PARAVOILE_VITESSE = B.comment("Paravoile : vitesse de vol en avant, en blocs par tick (0,36 = 7 blocs/s).").defineInRange("paravoileVitesse", 0.36, 0.1, 1.0);

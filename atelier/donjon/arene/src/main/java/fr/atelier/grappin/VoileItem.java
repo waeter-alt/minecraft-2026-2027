@@ -57,6 +57,9 @@ public class VoileItem extends ArmorItem {
         if (Reglages.VOILE_VISION_NOCTURNE.get() || Reglages.VOILE_NAGE_RAPIDE.get()) {
             lignes.add(Component.translatable("item.grappin.voile.aide3"));
         }
+        if (Reglages.VOILE_BOTTES_LOURDES.get()) {
+            lignes.add(Component.translatable("item.grappin.voile.aide4", Component.keybind("key.grappin.bottes_lourdes")));
+        }
         lignes.add(Component.translatable("item.grappin.voile.reserve", Math.round(secondesRestantes(pile)), Reglages.VOILE_RESERVE.get()));
     }
 }
