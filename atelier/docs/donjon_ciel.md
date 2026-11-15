@@ -1,11 +1,11 @@
 <!-- [claude-build] genere par scripts/fiche_donjon_ciel.py -->
-# Donjon n°3 — L'Archipel des Nuées (paravoile)
+# Ancien donjon 3 — L'Archipel des Nuées (paravoile)
 
-Monde « Donjon 3 » (superflat, sol à Y-61). Structure `ciel` de 280 × 120 × 280, posée en 100 -61 100. Il faut le mod Grappin 2.6.1 (NeoForge 21.1.216).
+Monde « Ancien donjon 3 » (superflat, sol à Y-61). Structure `ciel` de 280 × 120 × 280, posée en 100 -61 100. Il faut le mod Grappin 2.6.1 (NeoForge 21.1.216).
 
 ## Pose
 
-Le générateur écrit la structure et le datapack dans le monde « Donjon 3 » (il doit exister : à créer dans le client de test, en superflat). Ensuite, en jeu : `/reload`, puis
+Le générateur écrit la structure et le datapack dans le monde « Ancien donjon 3 » (il doit exister : à créer dans le client de test, en superflat). Ensuite, en jeu : `/reload`, puis
 
 ```
 /function atelier:ciel_pose

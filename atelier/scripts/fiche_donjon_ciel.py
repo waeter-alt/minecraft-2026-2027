@@ -26,13 +26,13 @@ def vol(k):
 
 
 a("<!-- [claude-build] genere par scripts/fiche_donjon_ciel.py -->")
-a("# Donjon n°3 — L'Archipel des Nuées (paravoile)")
+a("# Ancien donjon 3 — L'Archipel des Nuées (paravoile)")
 a("")
-a(f"Monde « Donjon 3 » (superflat, sol à Y-61). Structure `ciel` de {SX} × {SY} × {SZ}, posée en {w([0, 0, 0])}. Il faut le mod Grappin 2.6.1 (NeoForge 21.1.216).")
+a(f"Monde « Ancien donjon 3 » (superflat, sol à Y-61). Structure `ciel` de {SX} × {SY} × {SZ}, posée en {w([0, 0, 0])}. Il faut le mod Grappin 2.6.1 (NeoForge 21.1.216).")
 a("")
 a("## Pose")
 a("")
-a("Le générateur écrit la structure et le datapack dans le monde « Donjon 3 » (il doit exister : à créer dans le client de test, en superflat). Ensuite, en jeu : `/reload`, puis")
+a("Le générateur écrit la structure et le datapack dans le monde « Ancien donjon 3 » (il doit exister : à créer dans le client de test, en superflat). Ensuite, en jeu : `/reload`, puis")
 a("")
 a("```")
 a("/function atelier:ciel_pose")

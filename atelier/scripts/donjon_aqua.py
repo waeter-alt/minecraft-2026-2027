@@ -1,6 +1,6 @@
 # [claude-build]
 """
-donjon_aqua.py - Donjon aquatique « Le Sanctuaire des Marees » (2026-11-10) : un monument oceanique englouti, ~31 min. Les salles sont noyees jusqu'au plafond ;
+donjon_aqua.py - Ancien donjon 2 (aquatique) « Le Sanctuaire des Marees » (2026-11-10) : un monument oceanique englouti, ~31 min. Les salles sont noyees jusqu'au plafond ;
 seuls le Debarcadere (depart), la salle du boss et les cloches d'air (points de recharge du voile) contiennent de l'air.
 Le Voile des Profondeurs (mod Grappin 2.5.0) est donne a l'entree ; les tunnels submerges ne se traversent qu'avec lui (« pression des profondeurs »).
 Pas de grappin, pas de conduit, pas de lave, ni coffre ni mob ni boss. Eau confinee (controlee). Gabarit 150 x 70 x 170, pose en (150, -61, 260).
@@ -19,15 +19,14 @@ import numpy as np
 from nbtlib import Byte, Compound, Int, List, String
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--monde", default="Donjon 2", help="nom du monde tel qu'il s'affiche en jeu")
+ap.add_argument("--monde", default="Ancien donjon 2", help="nom du monde tel qu'il s'affiche en jeu")
 args = ap.parse_args()
 RACINE = Path(__file__).resolve().parent.parent                      # atelier/
 SAVES = RACINE.parent / "mod/run/client/saves"
 
 
 def dossier_du_monde(nom_):
-    """Le monde est designe par son nom en jeu (LevelName de level.dat) : le dossier peut porter un autre nom (le monde « Donjon 2 » est dans « Donjon 2 (1) »,
-    et le dossier « Donjon 2 » contient le monde « Donjon 1 »). A defaut de monde de ce nom, on prend le dossier de ce nom."""
+    """Le monde est designe par son nom en jeu (LevelName de level.dat) : le dossier peut porter un autre nom (par exemple « Ancien donjon 2 » dans un dossier d'un autre nom). A defaut de monde de ce nom, on prend le dossier de ce nom."""
     for d_ in (sorted(SAVES.iterdir()) if SAVES.exists() else []):
         try:
             if str(nbtlib.load(d_ / "level.dat")["Data"]["LevelName"]) == nom_:
