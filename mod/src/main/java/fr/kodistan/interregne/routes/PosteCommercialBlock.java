@@ -1,5 +1,6 @@
 package fr.kodistan.interregne.routes;
 
+import com.minecolonies.api.colony.IColony;
 import fr.kodistan.interregne.InterregneMod;
 import fr.kodistan.interregne.colony.RouteSite;
 import fr.kodistan.interregne.routes.plan.RoutePlan;
@@ -96,9 +97,24 @@ public final class PosteCommercialBlock extends Block
         }
         final double flight = Math.sqrt(pos.distSqr(other));
         final UUID who = player.getUUID();
-        // Each end snaps to its colony's gate facing the other one (or to the edge of its land), never inside a town
-        final RouteEnds.End endA = RouteEnds.of(level, pos, other);
-        final RouteEnds.End endB = RouteEnds.of(level, other, pos);
+        // Each post stands for the colony nearest it: the end snaps to that colony's gate facing the other one (or
+        // its town hall's door, or the edge of its land). When both posts are nearest the same colony, only the
+        // closer one takes it and the other end stays at its post.
+        IColony colonyA = RouteEnds.nearest(level, pos);
+        IColony colonyB = RouteEnds.nearest(level, other);
+        if (colonyA != null && colonyB != null && colonyA.getID() == colonyB.getID())
+        {
+            if (colonyA.getCenter().distSqr(pos) <= colonyA.getCenter().distSqr(other))
+            {
+                colonyB = null;
+            }
+            else
+            {
+                colonyA = null;
+            }
+        }
+        final RouteEnds.End endA = RouteEnds.of(level, colonyA, pos, other);
+        final RouteEnds.End endB = RouteEnds.of(level, colonyB, other, pos);
         BUSY.add(pair);
         final boolean started = RoutePlanning.study(level, endA, endB, player, plan -> {
             BUSY.remove(pair);

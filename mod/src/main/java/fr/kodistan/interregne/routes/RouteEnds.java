@@ -69,7 +69,14 @@ public final class RouteEnds
      */
     public static End of(final ServerLevel level, final BlockPos post, final BlockPos toward)
     {
-        final IColony colony = IColonyManager.getInstance().getColonyByPosFromWorld(level, post);
+        return of(level, IColonyManager.getInstance().getColonyByPosFromWorld(level, post), post, toward);
+    }
+
+    /**
+     * Same, for the given colony whether or not the post stands on its land; a bare end at the post when null.
+     */
+    public static End of(final ServerLevel level, @Nullable final IColony colony, final BlockPos post, final BlockPos toward)
+    {
         if (colony == null)
         {
             return new End(post.below(), null, 0, -1, false);
@@ -92,6 +99,26 @@ public final class RouteEnds
             }
         }
         return atBorder(level, colony, toward);
+    }
+
+    /**
+     * @return the colony of this dimension whose centre lies nearest the position, null when there is none
+     */
+    @Nullable
+    public static IColony nearest(final ServerLevel level, final BlockPos pos)
+    {
+        IColony best = null;
+        double bestD = Double.MAX_VALUE;
+        for (final IColony colony : IColonyManager.getInstance().getColonies(level))
+        {
+            final double d = colony.getCenter().distSqr(pos);
+            if (d < bestD)
+            {
+                bestD = d;
+                best = colony;
+            }
+        }
+        return best;
     }
 
     private static WallLayout layout(final ServerLevel level, final IColony colony, final WallRegistry.Wall wall)
