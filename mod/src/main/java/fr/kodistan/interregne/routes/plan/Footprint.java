@@ -28,8 +28,9 @@ public final class Footprint
     }
 
     /**
-     * @param half  per cell, the half-width of the road there (1 to 3; null: 3 everywhere). A narrow cell has no
-     *              shoulders, so a road funnels into a gate without touching the wall around it.
+     * @param half  per cell, the half-width of the road there (1 to 3; null: 3 everywhere; 0: a street two blocks
+     *              wide, the line and the column on its +x/+z side). A narrow cell has no shoulders, so a road
+     *              funnels into a gate or a town without touching what stands around it.
      * @param field when given, its {@link HeightField#FOREIGN} columns belong to no cell: nothing is built there
      */
     Footprint(final int[] xs, final int[] zs, final byte[] half, final HeightField field)
@@ -78,8 +79,8 @@ public final class Footprint
         for (int i = 0; i < xs.length; i++)
         {
             final int k = half == null ? 3 : half[i];
-            roadCap[i] = (byte) (k * k + k);
-            reachCap[i] = (byte) (k <= 1 ? 2 : k == 2 ? 20 : REACH * REACH);
+            roadCap[i] = (byte) (k == 0 ? 1 : k * k + k);
+            reachCap[i] = (byte) (k == 0 ? 1 : k <= 1 ? 2 : k == 2 ? 20 : REACH * REACH);
         }
         for (int at = 0; at < owner.length; at++)
         {
@@ -90,7 +91,8 @@ public final class Footprint
             }
             final int x = x0 + at % w;
             final int z = z0 + at / w;
-            if (d2[at] > reachCap[i] || field != null && field.inside(x, z) && (field.flags(x, z) & HeightField.FOREIGN) != 0)
+            final boolean street = half != null && half[i] == 0 && d2[at] == 1 && x - xs[i] + z - zs[i] < 0;
+            if (street || d2[at] > reachCap[i] || field != null && field.inside(x, z) && (field.flags(x, z) & HeightField.FOREIGN) != 0)
             {
                 owner[at] = -1;
                 d2[at] = Byte.MAX_VALUE;

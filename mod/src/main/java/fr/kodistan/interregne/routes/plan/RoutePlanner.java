@@ -97,10 +97,30 @@ public final class RoutePlanner
             guide[i] = eased.get(i)[2];
         }
         final boolean[] bend = bends(xs, zs);
+        // How far each cell lies from a town's land along the line: the road funnels down to a street there
+        final int[] town = new int[n];
+        int last = -n - TOWN_FUNNEL;
+        for (int i = 0; i < n; i++)
+        {
+            if ((field.flags(xs[i], zs[i]) & HeightField.TOWN) != 0)
+            {
+                last = i;
+            }
+            town[i] = i - last;
+        }
+        last = 2 * n + TOWN_FUNNEL;
+        for (int i = n - 1; i >= 0; i--)
+        {
+            if ((field.flags(xs[i], zs[i]) & HeightField.TOWN) != 0)
+            {
+                last = i;
+            }
+            town[i] = Math.min(town[i], last - i);
+        }
         final byte[] half = new byte[n];
         for (int i = 0; i < n; i++)
         {
-            half[i] = 3;
+            half[i] = (byte) (town[i] == 0 ? 0 : town[i] <= TOWN_FUNNEL / 2 ? 1 : town[i] <= TOWN_FUNNEL ? 2 : 3);
             if (leadA != null)
             {
                 half[i] = (byte) Math.min(half[i], narrowing(i));
@@ -129,6 +149,9 @@ public final class RoutePlanner
         }
         return new RoutePlan(xs, zs, profile.y(), profile.mode(), bend, footprint, profile.cost());
     }
+
+    /** Cells over which a road narrows from its full width to a street before a town's land. */
+    private static final int TOWN_FUNNEL = 8;
 
     /**
      * Half-width of the road this many cells from a gate's threshold: the three-wide passage, then five, then seven.

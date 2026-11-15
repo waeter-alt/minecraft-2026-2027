@@ -88,7 +88,9 @@ final class LatticeSearch
         int wetCount = 0;
         int blockedCount = 0;
         int hardCount = 0;
-        for (int o = -HALF; o <= HALF; o++)
+        // In a town the road is a street two blocks wide: only its own columns need to be clear
+        final int half = (field.flags(x, z) & HeightField.TOWN) != 0 ? 1 : HALF;
+        for (int o = -half; o <= half; o++)
         {
             final int cx = axis == 0 ? x : x + o;
             final int cz = axis == 0 ? z + o : z;
@@ -149,7 +151,7 @@ final class LatticeSearch
         final boolean centreWet = (flag & (HeightField.WATER | HeightField.ICE)) != 0;
         final int gc = field.ground[i];
         final int nWet = wet[axis][i];
-        final int nDry = 2 * HALF + 1 - nWet;
+        final int nDry = ((flag & HeightField.TOWN) != 0 ? 3 : 2 * HALF + 1) - nWet;
         final int nBlocked = blocked[axis][i];
         final int min = lo[axis][i];
         final int max = hi[axis][i];
@@ -243,13 +245,50 @@ final class LatticeSearch
     }
 
     /**
+     * The lines, plus every one from {@code from} to {@code to} that falls between the first and the last of them.
+     */
+    private static int[] dense(final int[] lines, final int from, final int to)
+    {
+        if (from > to || lines.length == 0)
+        {
+            return lines;
+        }
+        final java.util.TreeSet<Integer> all = new java.util.TreeSet<>();
+        for (final int line : lines)
+        {
+            all.add(line);
+        }
+        for (int v = Math.max(from, lines[0]); v <= Math.min(to, lines[lines.length - 1]); v++)
+        {
+            all.add(v);
+        }
+        return all.stream().mapToInt(Integer::intValue).toArray();
+    }
+
+    /**
      * @return the centre line cell by cell as {x, z, guide height, 1 when the road turns there}, start to end, or
      * null when no way was found in time
      */
     List<int[]> search(final int ax, final int az, final int bx, final int bz, final float greed, final long deadlineNanos)
     {
-        final int[] xs = lines(ax, bx, field.x0 + HALF + 1, field.x0 + field.w - HALF - 2);
-        final int[] zs = lines(az, bz, field.z0 + HALF + 1, field.z0 + field.h - HALF - 2);
+        // In a town the street threads between buildings a few blocks apart: every line there, not one in four,
+        // or a gap off the lattice sends it round the whole town
+        int tx0 = Integer.MAX_VALUE, tx1 = Integer.MIN_VALUE, tz0 = Integer.MAX_VALUE, tz1 = Integer.MIN_VALUE;
+        for (int z = field.z0; z < field.z0 + field.h; z++)
+        {
+            for (int x = field.x0; x < field.x0 + field.w; x++)
+            {
+                if ((field.flags[field.index(x, z)] & HeightField.TOWN) != 0)
+                {
+                    tx0 = Math.min(tx0, x);
+                    tx1 = Math.max(tx1, x);
+                    tz0 = Math.min(tz0, z);
+                    tz1 = Math.max(tz1, z);
+                }
+            }
+        }
+        final int[] xs = dense(lines(ax, bx, field.x0 + HALF + 1, field.x0 + field.w - HALF - 2), tx0, tx1);
+        final int[] zs = dense(lines(az, bz, field.z0 + HALF + 1, field.z0 + field.h - HALF - 2), tz0, tz1);
         final int nx = xs.length;
         final int nz = zs.length;
         final int ai = Arrays.binarySearch(xs, ax);

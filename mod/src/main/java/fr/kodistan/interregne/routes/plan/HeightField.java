@@ -25,6 +25,8 @@ public final class HeightField
     public static final int ROAD = 32;
     /** Another colony's land, or a town's own wall and streets: a route goes around, never through. */
     public static final int FOREIGN = 64;
+    /** The land of an end colony without a wall: the road goes in to its town hall's door, two blocks wide. */
+    public static final int TOWN = 128;
 
     private static final int MAGIC = 0x52544552;
 
