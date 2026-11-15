@@ -228,6 +228,72 @@ public final class WallLayout
         return null;
     }
 
+    /**
+     * The gates a trace gets on its own where it crosses a road (Manor Lords style): one in the middle of each run of
+     * trace cells a road's centre line passes through or beside, unless the player already set a gate near there.
+     * Where the crossing falls on a corner or a tower, the gate shows red like any misplaced one.
+     */
+    public static List<WallTrace.Point> crossings(final List<WallTrace.Point> points, final boolean closed, final List<WallTrace.Point> userGates,
+                                                  final java.util.function.LongPredicate onRoad)
+    {
+        final List<WallTrace.Point> out = new ArrayList<>();
+        if (points.size() < 2)
+        {
+            return out;
+        }
+        final List<WallTrace.Point> center = centerline(points, closed);
+        final int n = center.size();
+        final boolean[] hit = new boolean[n];
+        boolean all = true;
+        for (int i = 0; i < n; i++)
+        {
+            final WallTrace.Point c = center.get(i);
+            for (int dz = -1; dz <= 1 && !hit[i]; dz++)
+            {
+                for (int dx = -1; dx <= 1 && !hit[i]; dx++)
+                {
+                    hit[i] = onRoad.test(WallRegistry.cell(c.x() + dx, c.z() + dz));
+                }
+            }
+            all &= hit[i];
+        }
+        if (all)
+        {
+            return out;
+        }
+        // On a ring, start the walk on a cell off any road so no run is cut in two at index 0
+        int start = 0;
+        if (closed)
+        {
+            while (hit[start])
+            {
+                start++;
+            }
+        }
+        int k = 0;
+        while (k < n)
+        {
+            final int i = (start + k) % n;
+            if (!hit[i])
+            {
+                k++;
+                continue;
+            }
+            int length = 0;
+            while (k + length < n && hit[(start + k + length) % n])
+            {
+                length++;
+            }
+            final WallTrace.Point middle = center.get((start + k + length / 2) % n);
+            if (clearOf(middle, userGates) && clearOf(middle, out))
+            {
+                out.add(middle);
+            }
+            k += length;
+        }
+        return out;
+    }
+
     private static boolean clearOf(final WallTrace.Point cell, final List<WallTrace.Point> others)
     {
         for (final WallTrace.Point other : others)
@@ -410,6 +476,11 @@ public final class WallLayout
             if (floor == Integer.MAX_VALUE)
             {
                 floor = g[index];
+            }
+            // Past the most a wall may have (automatic gates where the trace crosses roads), a gate shows red
+            if (gates.size() >= WallLevels.MAX_GATES)
+            {
+                status = Status.BLOCKED;
             }
             gates.add(new Gate(point.x(), point.z(), u[0], u[1], depth, floor, Math.max(floor + level.height(), w[index]), status, index));
         }

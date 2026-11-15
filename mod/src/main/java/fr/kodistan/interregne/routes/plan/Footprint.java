@@ -18,8 +18,21 @@ public final class Footprint
     private final int h;
     private final int[] owner;
     private final byte[] d2;
+    /** Per cell of the centre line: how far its road reaches, and how far anything of the route does. */
+    private final byte[] roadCap;
+    private final byte[] reachCap;
 
     Footprint(final int[] xs, final int[] zs)
+    {
+        this(xs, zs, null, null);
+    }
+
+    /**
+     * @param half  per cell, the half-width of the road there (1 to 3; null: 3 everywhere). A narrow cell has no
+     *              shoulders, so a road funnels into a gate without touching the wall around it.
+     * @param field when given, its {@link HeightField#FOREIGN} columns belong to no cell: nothing is built there
+     */
+    Footprint(final int[] xs, final int[] zs, final byte[] half, final HeightField field)
     {
         int minX = Integer.MAX_VALUE;
         int minZ = Integer.MAX_VALUE;
@@ -60,6 +73,29 @@ public final class Footprint
                 }
             }
         }
+        this.roadCap = new byte[xs.length];
+        this.reachCap = new byte[xs.length];
+        for (int i = 0; i < xs.length; i++)
+        {
+            final int k = half == null ? 3 : half[i];
+            roadCap[i] = (byte) (k * k + k);
+            reachCap[i] = (byte) (k <= 1 ? 2 : k == 2 ? 20 : REACH * REACH);
+        }
+        for (int at = 0; at < owner.length; at++)
+        {
+            final int i = owner[at];
+            if (i < 0)
+            {
+                continue;
+            }
+            final int x = x0 + at % w;
+            final int z = z0 + at / w;
+            if (d2[at] > reachCap[i] || field != null && field.inside(x, z) && (field.flags(x, z) & HeightField.FOREIGN) != 0)
+            {
+                owner[at] = -1;
+                d2[at] = Byte.MAX_VALUE;
+            }
+        }
     }
 
     /**
@@ -78,8 +114,13 @@ public final class Footprint
         return x < x0 || z < z0 || x >= x0 + w || z >= z0 + h ? Integer.MAX_VALUE : d2[(z - z0) * w + (x - x0)];
     }
 
-    public static boolean road(final int distanceSq)
+    /**
+     * Whether this column is part of the road itself (not a shoulder): seven wide on an open run, narrower where
+     * the route funnels into a gate.
+     */
+    public boolean road(final int x, final int z)
     {
-        return distanceSq <= Tuning.ROAD_D2;
+        final int i = owner(x, z);
+        return i >= 0 && d2[(z - z0) * w + (x - x0)] <= roadCap[i];
     }
 }

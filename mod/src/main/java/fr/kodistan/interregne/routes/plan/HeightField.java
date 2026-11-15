@@ -23,6 +23,8 @@ public final class HeightField
     public static final int UNKNOWN = 16;
     /** An existing road or bridge deck, its {@link #ground} the level one walks on: a new route may follow it. */
     public static final int ROAD = 32;
+    /** Another colony's land, or a town's own wall and streets: a route goes around, never through. */
+    public static final int FOREIGN = 64;
 
     private static final int MAGIC = 0x52544552;
 
@@ -66,6 +68,14 @@ public final class HeightField
         ground[i] = (short) groundY;
         bed[i] = (short) bedY;
         flags[i] = (byte) flag;
+    }
+
+    /**
+     * Adds a flag to a column, leaving its heights as they are.
+     */
+    public void mark(final int x, final int z, final int flag)
+    {
+        flags[index(x, z)] |= (byte) flag;
     }
 
     public int ground(final int x, final int z)

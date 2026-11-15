@@ -99,7 +99,7 @@ final class LatticeSearch
             }
             final int i = field.index(cx, cz);
             final int flag = field.flags[i];
-            if ((flag & (HeightField.UNKNOWN | HeightField.LAVA)) != 0)
+            if ((flag & (HeightField.UNKNOWN | HeightField.LAVA | HeightField.FOREIGN)) != 0)
             {
                 hardCount++;
             }

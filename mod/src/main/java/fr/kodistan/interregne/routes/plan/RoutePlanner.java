@@ -1,6 +1,7 @@
 package fr.kodistan.interregne.routes.plan;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -30,6 +31,25 @@ public final class RoutePlanner
      */
     public static RoutePlan plan(final HeightField field, final int ax, final int az, final int bx, final int bz, final long budgetMillis)
     {
+        return plan(field, ax, az, bx, bz, budgetMillis, null, null);
+    }
+
+    /**
+     * @param leadA when given, the route starts at its threshold and runs straight out along it first ({@code ax},
+     *              {@code az} are then ignored); same for {@code leadB} at the other end
+     */
+    public static RoutePlan plan(final HeightField field, int ax, int az, int bx, int bz, final long budgetMillis, final Lead leadA, final Lead leadB)
+    {
+        if (leadA != null)
+        {
+            ax = leadA.outX();
+            az = leadA.outZ();
+        }
+        if (leadB != null)
+        {
+            bx = leadB.outX();
+            bz = leadB.outZ();
+        }
         if (!usable(field, ax, az) || !usable(field, bx, bz) || (ax == bx && az == bz))
         {
             return null;
@@ -51,6 +71,20 @@ public final class RoutePlanner
         {
             return null;
         }
+        line = new ArrayList<>(line);
+        if (leadA != null)
+        {
+            line.addAll(0, stub(leadA));
+            junction(line, leadA.length());
+        }
+        if (leadB != null)
+        {
+            final List<int[]> tail = stub(leadB);
+            Collections.reverse(tail);
+            final int at = line.size() - 1;
+            line.addAll(tail);
+            junction(line, at);
+        }
         final List<int[]> eased = ease(line);
         final int n = eased.size();
         final int[] xs = new int[n];
@@ -63,10 +97,23 @@ public final class RoutePlanner
             guide[i] = eased.get(i)[2];
         }
         final boolean[] bend = bends(xs, zs);
-        final Footprint footprint = new Footprint(xs, zs);
+        final byte[] half = new byte[n];
+        for (int i = 0; i < n; i++)
+        {
+            half[i] = 3;
+            if (leadA != null)
+            {
+                half[i] = (byte) Math.min(half[i], narrowing(i));
+            }
+            if (leadB != null)
+            {
+                half[i] = (byte) Math.min(half[i], narrowing(n - 1 - i));
+            }
+        }
+        final Footprint footprint = new Footprint(xs, zs, half, field);
         final ProfileSolver solver = new ProfileSolver(field, footprint, xs, zs);
-        final int startY = field.ground(ax, az);
-        final int endY = field.ground(bx, bz);
+        final int startY = leadA != null ? leadA.y() : field.ground(ax, az);
+        final int endY = leadB != null ? leadB.y() : field.ground(bx, bz);
         ProfileSolver.Result profile = solver.solve(guide, bend, WINDOW, startY, endY);
         if (profile == null)
         {
@@ -81,6 +128,48 @@ public final class RoutePlanner
             return null;
         }
         return new RoutePlan(xs, zs, profile.y(), profile.mode(), bend, footprint, profile.cost());
+    }
+
+    /**
+     * Half-width of the road this many cells from a gate's threshold: the three-wide passage, then five, then seven.
+     */
+    private static int narrowing(final int fromThreshold)
+    {
+        return fromThreshold <= 2 ? 1 : fromThreshold <= 4 ? 2 : 3;
+    }
+
+    /**
+     * The straight cells of a lead, threshold first, up to (not including) the point where the search starts.
+     */
+    private static List<int[]> stub(final Lead lead)
+    {
+        final List<int[]> out = new ArrayList<>(lead.length());
+        for (int k = 0; k < lead.length(); k++)
+        {
+            final int x = lead.x() + lead.nx() * k;
+            final int z = lead.z() + lead.nz() * k;
+            out.add(new int[] {x, z, lead.y(), 0});
+        }
+        return out;
+    }
+
+    /**
+     * Marks the cell where a lead meets the searched line as a corner when the line turns there, so the turn is
+     * eased like any other.
+     */
+    private static void junction(final List<int[]> line, final int at)
+    {
+        if (at <= 0 || at >= line.size() - 1)
+        {
+            return;
+        }
+        final int[] p = line.get(at - 1);
+        final int[] c = line.get(at);
+        final int[] q = line.get(at + 1);
+        if (c[0] - p[0] != q[0] - c[0] || c[1] - p[1] != q[1] - c[1])
+        {
+            line.set(at, new int[] {c[0], c[1], c[2], 1});
+        }
     }
 
     private static boolean usable(final HeightField field, final int x, final int z)

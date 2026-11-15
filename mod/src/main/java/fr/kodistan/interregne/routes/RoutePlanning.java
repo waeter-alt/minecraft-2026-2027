@@ -2,6 +2,7 @@ package fr.kodistan.interregne.routes;
 
 import fr.kodistan.interregne.InterregneMod;
 import fr.kodistan.interregne.routes.plan.HeightField;
+import fr.kodistan.interregne.routes.plan.Lead;
 import fr.kodistan.interregne.routes.plan.RoutePlan;
 import fr.kodistan.interregne.routes.plan.RoutePlanner;
 import net.minecraft.Util;
@@ -42,6 +43,11 @@ public final class RoutePlanning
     {
         private final BlockPos a;
         private final BlockPos b;
+        private final ServerLevel level;
+        @Nullable
+        private final RouteEnds.End endA;
+        @Nullable
+        private final RouteEnds.End endB;
         private final Consumer<RoutePlan> done;
         private final ServerBossEvent bar;
         @Nullable
@@ -50,10 +56,14 @@ public final class RoutePlanning
         private CompletableFuture<RoutePlan> planning;
         private int ticks;
 
-        private Study(final ServerLevel level, final BlockPos a, final BlockPos b, @Nullable final ServerPlayer watcher, final Consumer<RoutePlan> done)
+        private Study(final ServerLevel level, final BlockPos a, final BlockPos b, @Nullable final RouteEnds.End endA,
+          @Nullable final RouteEnds.End endB, @Nullable final ServerPlayer watcher, final Consumer<RoutePlan> done)
         {
             this.a = a;
             this.b = b;
+            this.level = level;
+            this.endA = endA;
+            this.endB = endB;
             this.done = done;
             this.survey = new RouteSurvey(level, a, b);
             this.bar = new ServerBossEvent(Component.literal("Étude de la route : arpentage du terrain"), BossEvent.BossBarColor.BLUE,
@@ -81,11 +91,27 @@ public final class RoutePlanning
     public static boolean study(final ServerLevel level, final BlockPos a, final BlockPos b, @Nullable final ServerPlayer watcher,
       final Consumer<RoutePlan> done)
     {
+        return study(level, a, b, null, null, watcher, done);
+    }
+
+    /**
+     * Same, between two colony ends: the route keeps off the towns, their walls and every other colony's land, and
+     * leaves straight out of the gates it is hooked to.
+     */
+    public static boolean study(final ServerLevel level, final RouteEnds.End endA, final RouteEnds.End endB, @Nullable final ServerPlayer watcher,
+      final Consumer<RoutePlan> done)
+    {
+        return study(level, endA.at(), endB.at(), endA, endB, watcher, done);
+    }
+
+    private static boolean study(final ServerLevel level, final BlockPos a, final BlockPos b, @Nullable final RouteEnds.End endA,
+      @Nullable final RouteEnds.End endB, @Nullable final ServerPlayer watcher, final Consumer<RoutePlan> done)
+    {
         if (a.distSqr(b) > (double) MAX_DISTANCE * MAX_DISTANCE)
         {
             return false;
         }
-        STUDIES.add(new Study(level, a, b, watcher, done));
+        STUDIES.add(new Study(level, a, b, endA, endB, watcher, done));
         return true;
     }
 
@@ -113,11 +139,17 @@ public final class RoutePlanning
                     {
                         field.set(end.getX(), end.getZ(), end.getY(), end.getY(), 0);
                     }
+                    if (study.endA != null && study.endB != null)
+                    {
+                        RouteEnds.exclude(study.level, field, study.endA, study.endB);
+                    }
+                    final Lead leadA = study.endA == null ? null : study.endA.lead();
+                    final Lead leadB = study.endB == null ? null : study.endB.lead();
                     study.bar.setName(Component.literal("Étude de la route : calcul du tracé"));
                     final BlockPos a = study.a;
                     final BlockPos b = study.b;
                     study.planning = CompletableFuture.supplyAsync(
-                      () -> RoutePlanner.plan(field, a.getX(), a.getZ(), b.getX(), b.getZ(), PLAN_BUDGET_MILLIS), Util.backgroundExecutor());
+                      () -> RoutePlanner.plan(field, a.getX(), a.getZ(), b.getX(), b.getZ(), PLAN_BUDGET_MILLIS, leadA, leadB), Util.backgroundExecutor());
                 }
             }
             else if (study.planning != null && study.planning.isDone())

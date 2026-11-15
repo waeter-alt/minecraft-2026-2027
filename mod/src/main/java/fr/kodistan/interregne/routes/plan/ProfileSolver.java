@@ -64,7 +64,7 @@ final class ProfileSolver
                 {
                     final int x = xs[i] + dx;
                     final int z = zs[i] + dz;
-                    if (footprint.owner(x, z) != i || !Footprint.road(footprint.distanceSq(x, z)))
+                    if (footprint.owner(x, z) != i || !footprint.road(x, z))
                     {
                         continue;
                     }
