@@ -1,1 +1,7 @@
-{ "parent": "minecolonies:item/blockhutmysticalsite" }
+{
+  "parent": "interregne:block/relais_commercial",
+  "display": {
+    "gui": { "rotation": [ 30, 225, 0 ], "scale": 0.625 },
+    "fixed": { "scale": 0.5 }
+  }
+}

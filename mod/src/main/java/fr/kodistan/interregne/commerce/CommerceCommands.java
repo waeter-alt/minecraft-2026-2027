@@ -43,7 +43,8 @@ public final class CommerceCommands
         final var root = literal("commerce").requires(source -> source.hasPermission(2));
         root.then(literal("relais").then(argument("colonie", IntegerArgumentType.integer(1)).then(argument("niveau", IntegerArgumentType.integer(1, 5))
           .executes(CommerceCommands::relais))));
-        root.then(literal("chantier").then(argument("colonie", IntegerArgumentType.integer(1)).executes(CommerceCommands::site)));
+        root.then(literal("chantier").then(argument("colonie", IntegerArgumentType.integer(1)).executes(ctx -> site(ctx, 1))
+          .then(argument("niveau", IntegerArgumentType.integer(1, 5)).executes(ctx -> site(ctx, IntegerArgumentType.getInteger(ctx, "niveau"))))));
         root.then(literal("caisses").then(argument("colonie", IntegerArgumentType.integer(1)).then(argument("type", StringArgumentType.word())
           .then(argument("nombre", IntegerArgumentType.integer(1, 4096)).executes(CommerceCommands::crates)))));
         root.then(literal("tresor").then(argument("colonie", IntegerArgumentType.integer(1)).then(argument("montant", LongArgumentType.longArg(0))
@@ -112,9 +113,9 @@ public final class CommerceCommands
     }
 
     /**
-     * Places an unbuilt Relais commercial with the blueprint pack and asks for its construction, the way the build tool does.
+     * Places an unbuilt Relais commercial with the blueprint pack and asks for its construction, the way the build tool does. The level (1 by default) picks which blueprint is built, for testing the five looks.
      */
-    private static int site(final CommandContext<CommandSourceStack> ctx)
+    private static int site(final CommandContext<CommandSourceStack> ctx, final int wanted)
     {
         final IColony colony = colony(ctx, "colonie");
         if (colony == null)
@@ -133,13 +134,21 @@ public final class CommerceCommands
         if (level.getBlockEntity(pos) instanceof com.minecolonies.api.tileentities.AbstractTileEntityColonyBuilding hut)
         {
             hut.setStructurePack(com.ldtteam.structurize.storage.StructurePacks.getStructurePack("Couronne Vacante"));
-            hut.setBlueprintPath("commerce/relais1.blueprint");
+            hut.setBlueprintPath("commerce/relais" + wanted + ".blueprint");
         }
         Commerce.RELAIS_BLOCK.get().setPlacedBy(level, pos, state, player, ItemStack.EMPTY);
         final IBuilding building = colony.getBuildingManager().getBuilding(pos);
         if (building == null)
         {
             return fail(ctx, "Le Relais n'a pas été reconnu par la colonie en " + pos.toShortString());
+        }
+        // the work order builds the blueprint of the level after the current one: start just below the wanted level
+        building.setBuildingLevel(wanted - 1);
+        // a building cannot outgrow the town hall: test shortcut, raise it when it is too low
+        final var townHall = colony.getBuildingManager().getTownHall();
+        if (townHall != null && townHall.getBuildingLevel() < wanted)
+        {
+            townHall.setBuildingLevel(wanted);
         }
         building.requestUpgrade(player, BlockPos.ZERO);
         return say(ctx, "Chantier du Relais demandé en " + pos.toShortString() + " (niveau actuel " + building.getBuildingLevel() + ").");

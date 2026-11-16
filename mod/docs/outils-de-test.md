@@ -150,12 +150,12 @@ Pour tester contrats et caravanes sans client, sur un serveur de test (`./gradle
 /commerce offre 1 2 bois 10 5   # la colonie 1 propose 10 caisses de bois à 5 pièce à la colonie 2
 /commerce accepter 2 1          # la colonie 2 accepte le contrat n° 1 : la caravane part
 /commerce etat                  # stocks, trésors et contrats (progression sur la route)
-/commerce chantier 1            # pose un Relais non construit et demande son chantier (blueprint commun)
+/commerce chantier 1 [niveau]   # pose un Relais non construit et construit le niveau voulu (1 par défaut, hôtel de ville relevé si besoin)
 ```
 
 Une caravane parcourt la route à `caravanBlocksPerSecond` (3 par défaut). Sans joueur à moins de `caravanShowDistance` blocs, elle n'avance que sur le papier ; l'animal n'apparaît que près d'un joueur (couvert par `CommerceTests`, lancés avec `runGameTestServer`). `/diplomatie rompre 1 2` pendant le trajet rend les caisses au vendeur et le prix à l'acheteur.
 
-Le Relais commercial se construit depuis un pack de blueprints à nous, `Couronne Vacante`, ajouté à tous les styles du catalogue. Ses blueprints sont générés par `python -I -X utf8 mod/tools/gen_relais_blueprints.py` (`pip install nbtlib`) ; `RelaisBlueprintTest` (JUnit) vérifie qu'ils se chargent et contiennent la hutte. Écran : `screen=block:relais` dans UiShot.
+Le Relais commercial se construit depuis un pack de blueprints à nous, `Couronne Vacante`, ajouté à tous les styles du catalogue. Ses blueprints sont générés par `python -I -X utf8 mod/tools/gen_relais_blueprints.py` (`pip install nbtlib`), rendus en PNG isométriques (voxels, pas des captures en jeu) par `mod/tools/render_relais.py` vers `screenshots/relais/` ; `RelaisBlueprintTest` (JUnit) vérifie qu'ils se chargent et contiennent la hutte. Écran : `screen=block:relais` dans UiShot.
 
 ---
 
