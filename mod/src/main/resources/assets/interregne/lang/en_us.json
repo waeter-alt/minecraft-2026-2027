@@ -193,5 +193,9 @@
   "block.interregne.banner.tour.green": "Green Castle Tower",
   "block.interregne.banner.tour.red": "Red Castle Tower",
   "block.interregne.banner.tour.black": "Black Castle Tower",
-  "block.interregne.trone_imperial": "Imperial Throne"
+  "block.interregne.trone_imperial": "Imperial Throne",
+  "key.categories.interregne": "Interregne",
+  "key.interregne.carte": "Kingdom map",
+  "entity.interregne.conducteur": "Caravan driver",
+  "entity.interregne.escorte": "Escort soldier"
 }

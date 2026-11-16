@@ -197,5 +197,9 @@
   "block.interregne.banner.tour.green": "Tour verte",
   "block.interregne.banner.tour.red": "Tour rouge",
   "block.interregne.banner.tour.black": "Tour noire",
-  "block.interregne.trone_imperial": "Trône impérial"
+  "block.interregne.trone_imperial": "Trône impérial",
+  "key.categories.interregne": "Interrègne",
+  "key.interregne.carte": "Carte du royaume",
+  "entity.interregne.conducteur": "Conducteur de caravane",
+  "entity.interregne.escorte": "Soldat d'escorte"
 }

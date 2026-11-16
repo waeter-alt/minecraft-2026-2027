@@ -62,7 +62,7 @@ public abstract class BOWindowMixin
             {
                 // The Relais commercial has its own window: the server answers with the state it shows
                 net.neoforged.neoforge.network.PacketDistributor.sendToServer(new fr.kodistan.interregne.commerce.RelaisActionPayload(
-                  fr.kodistan.interregne.commerce.RelaisActionPayload.OPEN, building.getColony().getID(), 0, 0, 0, 0, 0));
+                  fr.kodistan.interregne.commerce.RelaisActionPayload.OPEN, building.getColony().getID(), 0, 0, 0, 0, 0, 0));
             }
             else
             {

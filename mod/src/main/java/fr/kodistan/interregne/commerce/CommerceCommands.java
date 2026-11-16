@@ -28,7 +28,7 @@ import static net.minecraft.commands.Commands.literal;
 
 /**
  * Admin and test shortcuts for trade, bypassing membership and the player's purse:
- * {@code /commerce relais|caisses|tresor|offre|accepter|etat}, colonies given by number.
+ * {@code /commerce relais|caisses|tresor|offre|accepter|etat}; the offer takes an escort tier (0 to 5) as a last argument, colonies given by number.
  */
 @EventBusSubscriber(modid = InterregneMod.MODID)
 public final class CommerceCommands
@@ -50,7 +50,8 @@ public final class CommerceCommands
           .executes(CommerceCommands::treasury))));
         root.then(literal("offre").then(argument("vendeur", IntegerArgumentType.integer(1)).then(argument("acheteur", IntegerArgumentType.integer(1))
           .then(argument("type", StringArgumentType.word()).then(argument("nombre", IntegerArgumentType.integer(1, Contracts.MAX_QUANTITY))
-            .then(argument("prix", LongArgumentType.longArg(1)).executes(CommerceCommands::offer)))))));
+            .then(argument("prix", LongArgumentType.longArg(1)).executes(CommerceCommands::offer)
+              .then(argument("escorte", IntegerArgumentType.integer(0, Escort.MAX_TIER)).executes(CommerceCommands::offer))))))));
         root.then(literal("accepter").then(argument("acheteur", IntegerArgumentType.integer(1)).then(argument("contrat", LongArgumentType.longArg(1))
           .executes(CommerceCommands::accept))));
         root.then(literal("etat").executes(CommerceCommands::state));
@@ -181,8 +182,20 @@ public final class CommerceCommands
             return fail(ctx, "Colonie ou type de caisse inconnu.");
         }
         final String refusal = Contracts.get(ctx.getSource().getServer()).offer(null, ctx.getSource().getServer(), seller, buyer, crate,
-          IntegerArgumentType.getInteger(ctx, "nombre"), LongArgumentType.getLong(ctx, "prix"));
+          IntegerArgumentType.getInteger(ctx, "nombre"), LongArgumentType.getLong(ctx, "prix"), optional(ctx, "escorte"));
         return refusal == null ? say(ctx, "Offre faite.") : fail(ctx, refusal);
+    }
+
+    private static int optional(final CommandContext<CommandSourceStack> ctx, final String name)
+    {
+        try
+        {
+            return IntegerArgumentType.getInteger(ctx, name);
+        }
+        catch (final IllegalArgumentException e)
+        {
+            return 0;
+        }
     }
 
     private static int accept(final CommandContext<CommandSourceStack> ctx)
@@ -217,7 +230,8 @@ public final class CommerceCommands
         {
             final String progress = c.path.length < 2 ? "-" : String.format("%.0f/%d", c.progress, c.path.length - 1);
             say(ctx, "#" + c.id + " " + c.seller + "→" + c.buyer + " " + c.quantity + "×" + c.crate + " à " + c.unitPrice + " état " + c.state + " route " + progress
-                       + " animal " + (c.puppet != null));
+                       + " animal " + (c.puppet != null) + " conducteur " + (c.driver != null) + " escorte palier " + c.escort + " (" + c.swordsmenLeft + " épéistes, " + c.archersLeft
+                       + " archers, " + c.escorts.size() + " sur la route)" + (c.engaged ? " EN COMBAT" : ""));
         }
         return contracts.all().size();
     }

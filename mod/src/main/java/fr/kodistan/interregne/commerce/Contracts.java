@@ -144,6 +144,17 @@ public final class Contracts extends SavedData
     public String offer(@Nullable final ServerPlayer player, final MinecraftServer server, final IColony seller, final IColony buyer, final Crate crate, final int quantity,
       final long unitPrice)
     {
+        return offer(player, server, seller, buyer, crate, quantity, unitPrice, 0);
+    }
+
+    /**
+     * @param escort the escort tier the seller buys for this contract, 0 for none; paid now, refunded if the offer is withdrawn
+     * @return a refusal for the player, or null once the offer is made.
+     */
+    @Nullable
+    public String offer(@Nullable final ServerPlayer player, final MinecraftServer server, final IColony seller, final IColony buyer, final Crate crate, final int quantity,
+      final long unitPrice, final int escort)
+    {
         if (player != null && !seller.getPermissions().isColonyMember(player))
         {
             return "Vous ne faites pas partie de cette colonie.";
@@ -172,7 +183,26 @@ public final class Contracts extends SavedData
         {
             return "L'entrepôt n'a pas assez de " + crate.displayName().toLowerCase() + ".";
         }
-        contracts.add(new Contract(nextId++, seller.getID(), buyer.getID(), crate.id(), quantity, unitPrice));
+        if (escort < 0 || escort > Escort.maxTier(relaisLevel(seller)))
+        {
+            return "Votre Relais commercial ne permet pas cette escorte (palier " + Escort.maxTier(relaisLevel(seller)) + " au plus).";
+        }
+        final Contract contract = new Contract(nextId++, seller.getID(), buyer.getID(), crate.id(), quantity, unitPrice);
+        if (escort > 0)
+        {
+            final long cost = Escort.cost(escort);
+            final TreasuryPayment payment = player != null ? TreasuryPayment.pay(player, seller, cost)
+                                              : RegionalTreasury.get(server).spend(seller, cost) ? new TreasuryPayment(cost, 0) : null;
+            if (payment == null)
+            {
+                nextId--;
+                return "L'escorte de palier " + escort + " coûte " + cost + " (trésor régional et couronnes sur vous).";
+            }
+            contract.escort = escort;
+            contract.escortFromTreasury = payment.fromTreasury();
+            contract.escortFromPurse = payment.fromPurse();
+        }
+        contracts.add(contract);
         setDirty();
         Diplomacy.notifyMembers(server, buyer, seller.getName() + " vous propose un contrat : " + quantity + " × " + crate.displayName().toLowerCase()
                                                  + " pour " + quantity * unitPrice + ". Répondez-lui depuis votre Relais commercial.");
@@ -249,6 +279,8 @@ public final class Contracts extends SavedData
         contract.escrow = contract.total();
         contract.progress = 0;
         contract.left = contract.quantity;
+        contract.swordsmenLeft = Escort.swordsmen(contract.escort);
+        contract.archersLeft = Escort.archers(contract.escort);
         contract.state = Contract.TRANSIT;
         setDirty();
         final String what = contract.quantity + " × " + crate.displayName().toLowerCase();
@@ -273,8 +305,36 @@ public final class Contracts extends SavedData
             return "Vous ne faites pas partie de cette colonie.";
         }
         contracts.remove(contract);
+        refundEscort(player, colony, contract, colony.getWorld() instanceof ServerLevel level ? level.getServer() : null);
         setDirty();
         return null;
+    }
+
+    /**
+     * An offer that never left gives its escort money back: to the seller's purse and treasury as they paid it when the
+     * seller himself withdraws, to the seller's treasury in every other case (the buyer declines, the alliance breaks).
+     */
+    private static void refundEscort(@Nullable final ServerPlayer player, @Nullable final IColony answering, final Contract contract, @Nullable final MinecraftServer server)
+    {
+        if (contract.escortPaid() <= 0 || server == null)
+        {
+            return;
+        }
+        final IColony seller = IColonyManager.getInstance().getColonyByWorld(contract.seller, server.overworld());
+        if (seller == null)
+        {
+            return;
+        }
+        if (player != null && answering != null && answering.getID() == contract.seller)
+        {
+            new TreasuryPayment(contract.escortFromTreasury, contract.escortFromPurse).refund(player, seller);
+        }
+        else
+        {
+            RegionalTreasury.get(server).credit(seller, contract.escortPaid());
+        }
+        contract.escortFromTreasury = 0;
+        contract.escortFromPurse = 0;
     }
 
     public static int stockOf(final IColony colony, final Crate crate)
@@ -335,6 +395,9 @@ public final class Contracts extends SavedData
 
     private static final int CHECK_EVERY = 20;
 
+    /** The soldiers of an escort; PUPPET_TAG marks the mule and its driver. */
+    public static final String ESCORT_TAG = "interregne_escort";
+
     @SubscribeEvent
     public static void onServerTick(final ServerTickEvent.Post event)
     {
@@ -359,6 +422,7 @@ public final class Contracts extends SavedData
             {
                 if (check && !mayTrade(server, contract.seller, contract.buyer))
                 {
+                    refundEscort(null, null, contract, server);
                     it.remove();
                     changed = true;
                 }
@@ -373,7 +437,12 @@ public final class Contracts extends SavedData
             }
             if (contract.state == Contract.TRANSIT)
             {
-                contract.progress = Math.min(contract.path.length - 1, contract.progress + step);
+                contract.engaged = contracts.updateEngaged(level, contract);
+                // A soldier is fighting: the caravan waits for the fight to end
+                if (!contract.engaged)
+                {
+                    contract.progress = Math.min(contract.path.length - 1, contract.progress + step);
+                }
                 if (contract.progress >= contract.path.length - 1)
                 {
                     contract.state = Contract.WAITING;
@@ -423,69 +492,263 @@ public final class Contracts extends SavedData
     public void showOrHide(final MinecraftServer server, final ServerLevel level, final Contract contract, final boolean near)
     {
         final BlockPos at = contract.cell((int) contract.progress);
-        final Entity existing = contract.puppet == null ? null : level.getEntity(contract.puppet);
         if (!near || !level.isLoaded(at))
         {
-            if (existing != null)
-            {
-                existing.discard();
-            }
-            contract.puppet = null;
-            return;
-        }
-        if (existing != null && existing.isAlive())
-        {
+            removePuppet(level, contract);
             return;
         }
         final IColony seller = IColonyManager.getInstance().getColonyByWorld(contract.seller, level);
         final IColony buyer = IColonyManager.getInstance().getColonyByWorld(contract.buyer, level);
-        final net.minecraft.world.entity.animal.horse.TraderLlama llama = EntityType.TRADER_LLAMA.create(level);
-        if (llama == null)
+        final String name = "Caravane " + (seller == null ? "?" : seller.getName()) + " → " + (buyer == null ? "?" : buyer.getName());
+        boolean added = false;
+
+        final Entity mule = contract.puppet == null ? null : level.getEntity(contract.puppet);
+        if (mule == null || !mule.isAlive())
         {
-            return;
+            final net.minecraft.world.entity.animal.horse.Mule fresh = EntityType.MULE.create(level);
+            if (fresh == null)
+            {
+                return;
+            }
+            fresh.setNoAi(true);
+            fresh.setSilent(true);
+            fresh.setPersistenceRequired();
+            fresh.setTamed(true);
+            fresh.setChest(true);
+            fresh.getSlot(400).set(new ItemStack(net.minecraft.world.item.Items.SADDLE));
+            fresh.addTag(PUPPET_TAG);
+            fresh.setCustomName(net.minecraft.network.chat.Component.literal(name));
+            fresh.setCustomNameVisible(true);
+            contract.puppet = fresh.getUUID();
+            level.addFreshEntity(fresh);
+            added = true;
         }
-        llama.setNoAi(true);
-        llama.setSilent(true);
-        llama.setPersistenceRequired();
-        llama.addTag(PUPPET_TAG);
-        llama.setGlowingTag(true);
-        llama.setCustomName(net.minecraft.network.chat.Component.literal("Caravane " + (seller == null ? "?" : seller.getName()) + " → " + (buyer == null ? "?" : buyer.getName())));
-        llama.setCustomNameVisible(true);
-        llama.setDespawnDelay(Integer.MAX_VALUE);
-        contract.puppet = llama.getUUID();
-        level.addFreshEntity(llama);
-        movePuppet(level, contract);
+
+        final Entity driver = contract.driver == null ? null : level.getEntity(contract.driver);
+        if (driver == null || !driver.isAlive())
+        {
+            final EntConducteur fresh = CaravanEntities.CONDUCTEUR.get().create(level);
+            if (fresh != null)
+            {
+                fresh.setNoAi(true);
+                fresh.setSilent(true);
+                fresh.addTag(PUPPET_TAG);
+                contract.driver = fresh.getUUID();
+                level.addFreshEntity(fresh);
+                added = true;
+            }
+        }
+
+        // The soldiers still alive: the dead stay dead, the missing (a chunk unloaded) are put back
+        contract.escorts.removeIf(id -> {
+            final Entity soldier = level.getEntity(id);
+            return soldier == null || !soldier.isAlive();
+        });
+        int swordsmen = 0;
+        int archers = 0;
+        for (final UUID id : contract.escorts)
+        {
+            if (level.getEntity(id) instanceof EntEscorte soldier)
+            {
+                if (soldier.isArcher())
+                {
+                    archers++;
+                }
+                else
+                {
+                    swordsmen++;
+                }
+            }
+        }
+        for (int i = swordsmen; i < contract.swordsmenLeft; i++)
+        {
+            added |= spawnSoldier(level, contract, false);
+        }
+        for (int i = archers; i < contract.archersLeft; i++)
+        {
+            added |= spawnSoldier(level, contract, true);
+        }
+        if (added)
+        {
+            movePuppet(level, contract);
+        }
     }
 
-    private void movePuppet(final ServerLevel level, final Contract contract)
+    private static boolean spawnSoldier(final ServerLevel level, final Contract contract, final boolean archer)
     {
-        if (contract.puppet == null)
+        final EntEscorte soldier = CaravanEntities.ESCORTE.get().create(level);
+        if (soldier == null)
         {
-            return;
+            return false;
         }
-        final Entity puppet = level.getEntity(contract.puppet);
-        if (puppet == null)
-        {
-            return;
-        }
-        final int index = (int) contract.progress;
-        final BlockPos at = contract.cell(index);
-        final BlockPos next = contract.cell(index + 1);
-        final float yaw = (float) (Math.toDegrees(Math.atan2(-(next.getX() - at.getX()), next.getZ() - at.getZ())));
-        final double t = contract.progress - index;
-        puppet.moveTo(at.getX() + 0.5 + (next.getX() - at.getX()) * t, at.getY() + 1.0, at.getZ() + 0.5 + (next.getZ() - at.getZ()) * t, yaw, 0);
+        soldier.equip(contract.escort, archer, contract.seller, contract.buyer);
+        soldier.addTag(ESCORT_TAG);
+        contract.escorts.add(soldier.getUUID());
+        level.addFreshEntity(soldier);
+        return true;
     }
 
+    /**
+     * The soldiers of the escort that exist now, in formation order: swordsmen first, then archers.
+     */
+    private List<EntEscorte> soldiers(final ServerLevel level, final Contract contract)
+    {
+        final List<EntEscorte> list = new ArrayList<>();
+        for (final UUID id : contract.escorts)
+        {
+            if (level.getEntity(id) instanceof EntEscorte soldier && soldier.isAlive())
+            {
+                list.add(soldier);
+            }
+        }
+        list.sort(Comparator.comparing(EntEscorte::isArcher));
+        return list;
+    }
+
+    /**
+     * Whether a soldier is fighting; the others join in on the same enemy.
+     */
+    private boolean updateEngaged(final ServerLevel level, final Contract contract)
+    {
+        if (contract.escorts.isEmpty())
+        {
+            return false;
+        }
+        final List<EntEscorte> soldiers = soldiers(level, contract);
+        net.minecraft.world.entity.LivingEntity enemy = null;
+        for (final EntEscorte soldier : soldiers)
+        {
+            if (soldier.engaged())
+            {
+                enemy = soldier.getTarget();
+                break;
+            }
+        }
+        if (enemy == null)
+        {
+            return false;
+        }
+        for (final EntEscorte soldier : soldiers)
+        {
+            if (!soldier.engaged())
+            {
+                soldier.setTarget(enemy);
+            }
+        }
+        return true;
+    }
+
+    /** The mule's place at this progress along the road, and the way it faces. */
+    private record Spot(double x, double y, double z, float yaw)
+    {
+        /** A point beside or ahead of this one: {@code along} blocks forward, {@code side} blocks to the right. */
+        double[] offset(final double along, final double side)
+        {
+            final double fx = -Math.sin(Math.toRadians(yaw));
+            final double fz = Math.cos(Math.toRadians(yaw));
+            return new double[] {x + fx * along - fz * side, z + fz * along + fx * side};
+        }
+    }
+
+    private static Spot spotAt(final Contract contract, final double progress)
+    {
+        final double p = Math.clamp(progress, 0, Math.max(0, contract.path.length - 1));
+        final int index = (int) p;
+        final BlockPos a = contract.cell(index);
+        final BlockPos b = contract.cell(index + 1);
+        // At the very end there is no next cell: keep the heading of the last stretch
+        final BlockPos from = a.equals(b) ? contract.cell(index - 1) : a;
+        final double t = p - index;
+        final float yaw = (float) Math.toDegrees(Math.atan2(-(b.getX() - from.getX()), b.getZ() - from.getZ()));
+        return new Spot(a.getX() + 0.5 + (b.getX() - a.getX()) * t, a.getY() + 1.0, a.getZ() + 0.5 + (b.getZ() - a.getZ()) * t, yaw);
+    }
+
+    /**
+     * Where the paper says the caravan is: x, z and the way it faces (Minecraft degrees).
+     */
+    public static double[] where(final Contract contract)
+    {
+        final Spot spot = spotAt(contract, contract.progress);
+        return new double[] {spot.x, spot.z, spot.yaw};
+    }
+
+    /**
+     * Sets an entity down without teleporting its old position, so the walking animation plays.
+     */
+    private static void place(final Entity entity, final double x, final double y, final double z, final float yaw)
+    {
+        entity.setPos(x, y, z);
+        entity.setYRot(yaw);
+        entity.setXRot(0);
+        entity.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+        entity.fallDistance = 0;
+        if (entity instanceof net.minecraft.world.entity.LivingEntity living)
+        {
+            living.setYHeadRot(yaw);
+            living.setYBodyRot(yaw);
+        }
+    }
+
+    /**
+     * Puts the mule, its driver (one block beside it) and the soldiers (in rows ahead of and behind them, alternating
+     * sides) where the road says the caravan is.
+     */
+    public void movePuppet(final ServerLevel level, final Contract contract)
+    {
+        final Spot spot = spotAt(contract, contract.progress);
+        final Entity mule = contract.puppet == null ? null : level.getEntity(contract.puppet);
+        if (mule != null)
+        {
+            place(mule, spot.x, spot.y, spot.z, spot.yaw);
+        }
+        final Entity driver = contract.driver == null ? null : level.getEntity(contract.driver);
+        if (driver != null)
+        {
+            final double[] xz = spot.offset(0, 1.3);
+            place(driver, xz[0], spot.y, xz[1], spot.yaw);
+        }
+        if (contract.engaged)
+        {
+            return;
+        }
+        int slot = 0;
+        for (final EntEscorte soldier : soldiers(level, contract))
+        {
+            final int row = slot / 2;
+            final double side = slot % 2 == 0 ? -1.6 : 1.6;
+            final Spot there = spotAt(contract, contract.progress + 3.0 - 2.5 * row);
+            final double[] xz = there.offset(0, side);
+            place(soldier, xz[0], there.y, xz[1], there.yaw);
+            slot++;
+        }
+    }
+
+    /**
+     * Takes the whole caravan off the road: mule, driver and soldiers.
+     */
     private void removePuppet(final ServerLevel level, final Contract contract)
     {
-        if (contract.puppet != null)
+        discard(level, contract.puppet);
+        discard(level, contract.driver);
+        for (final UUID id : contract.escorts)
         {
-            final Entity puppet = level.getEntity(contract.puppet);
-            if (puppet != null)
+            discard(level, id);
+        }
+        contract.puppet = null;
+        contract.driver = null;
+        contract.escorts.clear();
+        contract.engaged = false;
+    }
+
+    private static void discard(final ServerLevel level, @Nullable final UUID id)
+    {
+        if (id != null)
+        {
+            final Entity entity = level.getEntity(id);
+            if (entity != null)
             {
-                puppet.discard();
+                entity.discard();
             }
-            contract.puppet = null;
         }
     }
 
@@ -562,12 +825,15 @@ public final class Contracts extends SavedData
 
     // ------------------------------------------------------------------ pillage
 
+    /**
+     * The contract a caravan entity (mule, driver or soldier) belongs to.
+     */
     @Nullable
     private Contract ofPuppet(final Entity entity)
     {
         for (final Contract contract : contracts)
         {
-            if (entity.getUUID().equals(contract.puppet))
+            if (entity.getUUID().equals(contract.puppet) || entity.getUUID().equals(contract.driver) || contract.escorts.contains(entity.getUUID()))
             {
                 return contract;
             }
@@ -575,35 +841,59 @@ public final class Contracts extends SavedData
         return null;
     }
 
+    private static boolean isCaravanEntity(final Entity entity)
+    {
+        return entity.getTags().contains(PUPPET_TAG) || entity.getTags().contains(ESCORT_TAG);
+    }
+
     /**
-     * Only a colony at open war with the seller or the buyer may hurt a caravan.
+     * Only a colony at open war with the seller or the buyer may hurt a caravan, and while soldiers of its escort live,
+     * the mule and its driver cannot be touched: the player must go through them first.
      */
     @SubscribeEvent
     public static void onDamage(final LivingIncomingDamageEvent event)
     {
         final Entity target = event.getEntity();
-        if (!target.getTags().contains(PUPPET_TAG) || !(target.level() instanceof ServerLevel level))
+        if (!isCaravanEntity(target) || !(target.level() instanceof ServerLevel level))
         {
             return;
         }
-        final Contract contract = get(level.getServer()).ofPuppet(target);
+        final Contracts all = get(level.getServer());
+        final Contract contract = all.ofPuppet(target);
         final Entity source = event.getSource().getEntity();
         if (event.getSource().is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY))
         {
             return;
         }
-        if (contract == null || !(source instanceof Player player) || !atWarWith(level, player, contract))
+        if (contract == null || !(source instanceof Player player) || !hostile(level, player, contract.seller, contract.buyer))
         {
+            event.setCanceled(true);
+            return;
+        }
+        // The escort takes up arms for whoever strikes the caravan
+        for (final EntEscorte soldier : all.soldiers(level, contract))
+        {
+            if (soldier != target && !soldier.engaged())
+            {
+                soldier.setTarget(player);
+            }
+        }
+        if (target.getTags().contains(PUPPET_TAG) && contract.swordsmenLeft + contract.archersLeft > 0)
+        {
+            player.displayClientMessage(net.minecraft.network.chat.Component.literal("L'escorte de la caravane la protège : abattez ses soldats d'abord."), true);
             event.setCanceled(true);
         }
     }
 
-    private static boolean atWarWith(final ServerLevel level, final Player player, final Contract contract)
+    /**
+     * Whether this player is at open war with the seller's or the buyer's colony (as a member of a colony that may assault one).
+     */
+    public static boolean hostile(final ServerLevel level, final Player player, final int seller, final int buyer)
     {
         for (final IColony colony : IColonyManager.getInstance().getColonies(level))
         {
-            if (colony.getID() != contract.seller && colony.getID() != contract.buyer && colony.getPermissions().isColonyMember(player)
-                  && (Diplomacy.mayAssault(level.getServer(), colony.getID(), contract.seller) || Diplomacy.mayAssault(level.getServer(), colony.getID(), contract.buyer)))
+            if (colony.getID() != seller && colony.getID() != buyer && colony.getPermissions().isColonyMember(player)
+                  && (Diplomacy.mayAssault(level.getServer(), colony.getID(), seller) || Diplomacy.mayAssault(level.getServer(), colony.getID(), buyer)))
             {
                 return true;
             }
@@ -612,13 +902,14 @@ public final class Contracts extends SavedData
     }
 
     /**
-     * Killing a caravan loses the contract: the crates drop where it fell, the price goes back to the buyer.
+     * Killing the mule or its driver loses the contract: the crates drop where it fell, the price goes back to the buyer.
+     * Killing a soldier only thins the escort, for good.
      */
     @SubscribeEvent
     public static void onDeath(final LivingDeathEvent event)
     {
         final Entity target = event.getEntity();
-        if (!target.getTags().contains(PUPPET_TAG) || !(target.level() instanceof ServerLevel level))
+        if (!isCaravanEntity(target) || !(target.level() instanceof ServerLevel level))
         {
             return;
         }
@@ -626,6 +917,20 @@ public final class Contracts extends SavedData
         final Contract contract = contracts.ofPuppet(target);
         if (contract == null)
         {
+            return;
+        }
+        if (target instanceof EntEscorte soldier)
+        {
+            contract.escorts.remove(soldier.getUUID());
+            if (soldier.isArcher())
+            {
+                contract.archersLeft = Math.max(0, contract.archersLeft - 1);
+            }
+            else
+            {
+                contract.swordsmenLeft = Math.max(0, contract.swordsmenLeft - 1);
+            }
+            contracts.setDirty();
             return;
         }
         final Crate crate = Crate.byId(contract.crate);
@@ -645,23 +950,61 @@ public final class Contracts extends SavedData
             Diplomacy.notifyMembers(level.getServer(), seller, "§cVotre caravane vers " + (buyer == null ? "?" : buyer.getName()) + " a été pillée§r : les caisses sont perdues.");
         }
         contracts.contracts.remove(contract);
+        // The rest of the caravan (the other half of the pair, the soldiers) goes with it
+        final UUID dead = target.getUUID();
+        if (!dead.equals(contract.puppet))
+        {
+            discard(level, contract.puppet);
+        }
+        if (!dead.equals(contract.driver))
+        {
+            discard(level, contract.driver);
+        }
+        for (final UUID id : contract.escorts)
+        {
+            discard(level, id);
+        }
+        contract.puppet = null;
+        contract.driver = null;
+        contract.escorts.clear();
         contracts.setDirty();
     }
 
     /**
-     * A caravan animal saved in a world without its contract (or reloaded after a restart) is just removed: the
+     * A caravan entity saved in a world without its contract (or reloaded after a restart) is just removed: the
      * road tick spawns a fresh one when a player is near.
      */
     @SubscribeEvent
     public static void onJoin(final EntityJoinLevelEvent event)
     {
-        if (event.getLevel() instanceof ServerLevel level && event.getEntity().getTags().contains(PUPPET_TAG))
+        if (event.getLevel() instanceof ServerLevel level && isCaravanEntity(event.getEntity()))
         {
             final Contract contract = get(level.getServer()).ofPuppet(event.getEntity());
             if (contract == null)
             {
                 event.setCanceled(true);
             }
+        }
+    }
+
+    /**
+     * Nobody mounts the mule, opens its chest or talks to the driver: they belong to the road.
+     */
+    @SubscribeEvent
+    public static void onInteract(final net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteract event)
+    {
+        if (isCaravanEntity(event.getTarget()))
+        {
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onInteractAt(final net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteractSpecific event)
+    {
+        if (isCaravanEntity(event.getTarget()))
+        {
+            event.setCanceled(true);
         }
     }
 
