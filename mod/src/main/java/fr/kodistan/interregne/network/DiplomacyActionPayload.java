@@ -19,6 +19,9 @@ public record DiplomacyActionPayload(int colony, int action, int target) impleme
     /** Refuses a received proposal or withdraws a sent one. */
     public static final int WITHDRAW = 3;
     public static final int BREAK = 4;
+    public static final int DECLARE_WAR = 5;
+    /** Ends a war this colony declared. */
+    public static final int MAKE_PEACE = 6;
 
     public static final Type<DiplomacyActionPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "diplomacy_action"));
 

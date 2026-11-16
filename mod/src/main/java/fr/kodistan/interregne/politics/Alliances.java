@@ -34,6 +34,14 @@ public final class Alliances extends SavedData
     public static final int SENT = 2;
     /** The other colony proposed to this one. */
     public static final int RECEIVED = 3;
+    /** This colony declared war, the notice still runs. */
+    public static final int WAR_OUT_NOTICE = 4;
+    /** This colony is at war as the attacker. */
+    public static final int WAR_OUT = 5;
+    /** The other colony declared war on this one, the notice still runs. */
+    public static final int WAR_IN_NOTICE = 6;
+    /** The other colony is at war with this one as the attacker. */
+    public static final int WAR_IN = 7;
 
     private final Set<Long> allied = new HashSet<>();
     /** Proposals as {@code from << 32 | to}. */
@@ -130,58 +138,31 @@ public final class Alliances extends SavedData
         {
             return;
         }
-        final Alliances alliances = get(player.server);
         final IColony other = IColonyManager.getInstance().getColonyByWorld(payload.target(), player.serverLevel());
         final boolean mayAct = colony.getPermissions().hasPermission(player, Action.EDIT_PERMISSIONS);
         if (payload.action() != DiplomacyActionPayload.REFRESH && mayAct && other != null && other.getID() != colony.getID())
         {
-            final int me = colony.getID();
-            final int you = other.getID();
-            final int before = alliances.status(me, you);
-            switch (payload.action())
+            final String refusal = Diplomacy.apply(player, colony, other, payload.action());
+            if (refusal != null)
             {
-                case DiplomacyActionPayload.PROPOSE -> alliances.propose(me, you);
-                case DiplomacyActionPayload.ACCEPT -> alliances.accept(me, you);
-                case DiplomacyActionPayload.WITHDRAW -> alliances.withdraw(me, you);
-                case DiplomacyActionPayload.BREAK -> alliances.breakOff(me, you);
-                default ->
-                {
-                }
-            }
-            final int after = alliances.status(me, you);
-            if (after != before)
-            {
-                tell(player.server, colony, other, after);
-                PacketDistributor.sendToAllPlayers(alliances.syncOf(colony, player.serverLevel()));
-                PacketDistributor.sendToAllPlayers(alliances.syncOf(other, player.serverLevel()));
-                return;
+                player.sendSystemMessage(Component.literal(refusal).withStyle(net.minecraft.ChatFormatting.RED));
             }
         }
-        PacketDistributor.sendToPlayer(player, alliances.syncOf(colony, player.serverLevel()));
+        PacketDistributor.sendToPlayer(player, syncOf(player.server, colony, player.serverLevel()));
     }
 
     /**
-     * Tells the other colony's online members what just happened between the two.
+     * Sends both colonies' views to every player, after something changed between them.
      */
-    private static void tell(final MinecraftServer server, final IColony colony, final IColony other, final int status)
+    static void broadcast(final MinecraftServer server, final IColony a, final IColony b)
     {
-        final String text = switch (status)
-        {
-            case SENT -> colony.getName() + " vous propose une alliance. Répondez-lui depuis l'onglet Diplomatie de l'hôtel de ville.";
-            case ALLIED -> "Alliance conclue entre " + colony.getName() + " et " + other.getName() + ".";
-            default -> "Les liens avec " + colony.getName() + " ont changé : plus d'alliance ni de proposition.";
-        };
-        for (final ServerPlayer member : server.getPlayerList().getPlayers())
-        {
-            if (other.getPermissions().isColonyMember(member))
-            {
-                member.sendSystemMessage(Component.literal(text));
-            }
-        }
+        PacketDistributor.sendToAllPlayers(syncOf(server, a, server.overworld()));
+        PacketDistributor.sendToAllPlayers(syncOf(server, b, server.overworld()));
     }
 
-    private DiplomacySyncPayload syncOf(final IColony colony, final net.minecraft.server.level.ServerLevel level)
+    static DiplomacySyncPayload syncOf(final MinecraftServer server, final IColony colony, final net.minecraft.server.level.ServerLevel level)
     {
+        final Alliances alliances = get(server);
         final List<DiplomacySyncPayload.Entry> entries = new ArrayList<>();
         for (final IColony other : IColonyManager.getInstance().getColonies(level))
         {
@@ -189,11 +170,46 @@ public final class Alliances extends SavedData
             {
                 continue;
             }
+            final int[] relation = Diplomacy.relation(server, alliances, colony.getID(), other.getID());
             entries.add(new DiplomacySyncPayload.Entry(other.getID(), other.getName(), other.getPermissions().getOwnerName(),
-              other.getCitizenManager().getCurrentCitizenCount(), other.getCenter().getX(), other.getCenter().getZ(),
-              status(colony.getID(), other.getID())));
+              other.getCitizenManager().getCurrentCitizenCount(), other.getCenter().getX(), other.getCenter().getZ(), relation[0], relation[1]));
         }
         return new DiplomacySyncPayload(colony.getID(), entries);
+    }
+
+    // Package-private moves for Diplomacy, which holds the rules.
+    void doPropose(final int me, final int other)
+    {
+        propose(me, other);
+    }
+
+    void doAccept(final int me, final int other)
+    {
+        accept(me, other);
+    }
+
+    void doWithdraw(final int me, final int other)
+    {
+        withdraw(me, other);
+    }
+
+    boolean doBreak(final int me, final int other)
+    {
+        final boolean was = allied.contains(pair(me, other));
+        breakOff(me, other);
+        return was;
+    }
+
+    /**
+     * Clears an alliance and any proposal between the two, e.g. when one declares war on the other.
+     */
+    void clearBetween(final int a, final int b)
+    {
+        final boolean changed = allied.remove(pair(a, b)) | proposals.remove(directed(a, b)) | proposals.remove(directed(b, a));
+        if (changed)
+        {
+            setDirty();
+        }
     }
 
     @Override

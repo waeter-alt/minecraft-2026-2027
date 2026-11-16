@@ -16,7 +16,7 @@ import java.util.List;
  */
 public record DiplomacySyncPayload(int colony, List<Entry> entries) implements CustomPacketPayload
 {
-    public record Entry(int id, String name, String owner, int citizens, int x, int z, int status)
+    public record Entry(int id, String name, String owner, int citizens, int x, int z, int status, int noticeSeconds)
     {
     }
 
@@ -34,6 +34,7 @@ public record DiplomacySyncPayload(int colony, List<Entry> entries) implements C
             ByteBufCodecs.INT.encode(buf, entry.x());
             ByteBufCodecs.INT.encode(buf, entry.z());
             ByteBufCodecs.VAR_INT.encode(buf, entry.status());
+            ByteBufCodecs.VAR_INT.encode(buf, entry.noticeSeconds());
         }
     }, buf -> {
         final int colony = ByteBufCodecs.VAR_INT.decode(buf);
@@ -42,7 +43,7 @@ public record DiplomacySyncPayload(int colony, List<Entry> entries) implements C
         for (int i = 0; i < count; i++)
         {
             entries.add(new Entry(ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf),
-              ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.INT.decode(buf), ByteBufCodecs.INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf)));
+              ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.INT.decode(buf), ByteBufCodecs.INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf)));
         }
         return new DiplomacySyncPayload(colony, entries);
     });

@@ -122,7 +122,7 @@ public final class RouteEnds
     }
 
     /**
-     * @return the colony of this dimension nearest the given one that is not the colony itself and that no road joins
+     * @return the colony of this dimension nearest the given one that is not the colony itself, is allied to it and that no road joins
      * to it yet, null when there is none
      */
     @Nullable
@@ -132,7 +132,8 @@ public final class RouteEnds
         double bestD = Double.MAX_VALUE;
         for (final IColony colony : IColonyManager.getInstance().getColonies(level))
         {
-            if (colony.getID() == from.getID() || registry.areLinked(from.getID(), colony.getID()))
+            if (colony.getID() == from.getID() || registry.areLinked(from.getID(), colony.getID())
+                  || !fr.kodistan.interregne.politics.Alliances.get(level.getServer()).areAllied(from.getID(), colony.getID()))
             {
                 continue;
             }

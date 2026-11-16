@@ -489,7 +489,6 @@ public final class ColonyHubScreen extends ParchmentScreen
           new Tool("Statistiques", Icon.module("stats"), false, () -> StatsScreen.openColony(townHall, this)),
           new Tool("Réglages", Icon.module("settings"), false, () -> SettingsScreen.open(townHall, view.getModuleView(BuildingModules.TOWNHALL_SETTINGS), this)),
           new Tool("Permissions", Icon.module("scepter"), false, () -> PermissionsScreen.open(view, this)),
-          new Tool("Alliances", Icon.of(Items.WHITE_BANNER), false, () -> AlliancesScreen.open(view, this)),
           new Tool("Apparence", Icon.module("domum"), false, () -> AppearanceScreen.open(view, this)));
     }
 

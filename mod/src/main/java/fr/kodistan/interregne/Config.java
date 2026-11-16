@@ -252,6 +252,18 @@ public final class Config
       .comment("Influence lost when killed by a player (never below zero)")
       .defineInRange("pvpInfluenceLoss", 5L, 0L, Long.MAX_VALUE);
 
+    public static final ModConfigSpec.LongValue WAR_DECLARATION_COST = BUILDER
+      .comment("Influence the player who declares war on another colony pays (refused if they cannot)")
+      .defineInRange("warDeclarationCost", 20L, 0L, Long.MAX_VALUE);
+
+    public static final ModConfigSpec.IntValue WAR_NOTICE_SECONDS = BUILDER
+      .comment("Seconds between a declaration of war and the war being open (assaults allowed)")
+      .defineInRange("warNoticeSeconds", 180, 0, 86400);
+
+    public static final ModConfigSpec.IntValue ROAD_DECAY_SECONDS = BUILDER
+      .comment("Seconds a road takes to vanish once the alliance it served is broken")
+      .defineInRange("roadDecaySeconds", 300, 10, 86400);
+
     static
     {
         BUILDER.pop();

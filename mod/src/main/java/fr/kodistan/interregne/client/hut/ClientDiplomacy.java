@@ -12,6 +12,7 @@ import java.util.Map;
 public final class ClientDiplomacy
 {
     private static final Map<Integer, DiplomacySyncPayload> BY_COLONY = new HashMap<>();
+    private static final Map<Integer, Long> RECEIVED_AT = new HashMap<>();
 
     private ClientDiplomacy()
     {
@@ -20,12 +21,19 @@ public final class ClientDiplomacy
     public static void put(final DiplomacySyncPayload payload)
     {
         BY_COLONY.put(payload.colony(), payload);
+        RECEIVED_AT.put(payload.colony(), System.currentTimeMillis());
     }
 
     @Nullable
     public static DiplomacySyncPayload of(final int colony)
     {
         return BY_COLONY.get(colony);
+    }
+
+    /** Seconds since the colony's last sync arrived, to run a war notice's countdown between two syncs. */
+    public static int secondsSince(final int colony)
+    {
+        return (int) ((System.currentTimeMillis() - RECEIVED_AT.getOrDefault(colony, System.currentTimeMillis())) / 1000);
     }
 
     public static void refresh(final int colony)

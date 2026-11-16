@@ -13,7 +13,6 @@ import fr.kodistan.interregne.client.blocks.MarketScreen;
 import fr.kodistan.interregne.client.blocks.RegionalBankScreen;
 import fr.kodistan.interregne.client.blocks.ThroneScreen;
 import fr.kodistan.interregne.client.catalogue.CatalogueScreen;
-import fr.kodistan.interregne.client.hut.AlliancesScreen;
 import fr.kodistan.interregne.client.hut.AppearanceScreen;
 import fr.kodistan.interregne.client.hut.CitizenScreen;
 import fr.kodistan.interregne.client.hut.ClipboardScreen;
@@ -49,7 +48,7 @@ import java.util.Map;
  * <ul>
  * <li>{@code hub:<page>|all}: the town hall hub (overview, buildings, citizens, intendance, walls). The Intendance comes
  * in fake states: payable, short, empty, list, loading.</li>
- * <li>{@code hubtool:<tool>|all}: the hub's other pages (clipboard, permissions, alliances, appearance, mercenary, stats).</li>
+ * <li>{@code hubtool:<tool>|all}: the hub's other pages (clipboard, permissions, appearance, mercenary, stats).</li>
  * <li>{@code building:<type>|all}: a hut window and every page of its left column, the colony's first building of that
  * type ({@code list} names the types present).</li>
  * <li>{@code citizen:<n>}: the n-th citizen's sheet (0 by default).</li>
@@ -167,11 +166,13 @@ public final class UiScenarios
             {
                 targets.add(new Target("hub-diplomacy", () -> {
                     final var fake = new java.util.ArrayList<fr.kodistan.interregne.network.DiplomacySyncPayload.Entry>();
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(11, "Port-Sombrebois", "Alix", 14, 410, -120, 3));
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(12, "Haute-Garde", "Brenn", 31, -300, 260, 1));
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(13, "Les Trois Moulins", "Cassandre", 8, 150, 520, 2));
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(14, "Val-de-Cendre", "Dorian", 22, -640, -90, 0));
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(15, "Fort-Écarlate avec un nom très long", "Eloïse", 40, 900, 900, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(11, "Port-Sombrebois", "Alix", 14, 410, -120, 3, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(12, "Haute-Garde", "Brenn", 31, -300, 260, 1, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(13, "Les Trois Moulins", "Cassandre", 8, 150, 520, 2, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(14, "Val-de-Cendre", "Dorian", 22, -640, -90, 0, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(15, "Fort-Écarlate avec un nom très long", "Eloïse", 40, 900, 900, 0, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(16, "Rive-Noire", "Fenn", 12, 200, 700, 4, 150));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(17, "Mont-Cuivre", "Gaël", 19, -500, 400, 7, 0));
                     fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), fake));
                     ColonyHubScreen.openDev(colony.getTownHall(), "diplomacy", 0);
                 }));
@@ -235,7 +236,6 @@ public final class UiScenarios
         final BuildingTownHall.View view = (BuildingTownHall.View) townHall;
         tools.put("clipboard", () -> ClipboardScreen.open(colony));
         tools.put("permissions", () -> PermissionsScreen.open(view, null));
-        tools.put("alliances", () -> AlliancesScreen.open(view, null));
         tools.put("appearance", () -> AppearanceScreen.open(view, null));
         tools.put("mercenary", () -> MercenaryScreen.open(townHall, null));
         tools.put("stats", () -> StatsScreen.openColony(townHall, null));

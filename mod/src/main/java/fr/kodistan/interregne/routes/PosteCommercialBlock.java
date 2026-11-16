@@ -1,6 +1,7 @@
 package fr.kodistan.interregne.routes;
 
 import com.minecolonies.api.colony.IColony;
+import com.minecolonies.api.colony.IColonyManager;
 import fr.kodistan.interregne.InterregneMod;
 import fr.kodistan.interregne.colony.RouteSite;
 import fr.kodistan.interregne.routes.plan.RoutePlan;
@@ -80,6 +81,26 @@ public final class PosteCommercialBlock extends Block
             return;
         }
         final IColony colonyB = RouteEnds.nearestUnlinked(level, colonyA, registry);
+        if (colonyB == null)
+        {
+            // The post is the far end of a road only when there is no other colony at all, or every ally is already joined
+            boolean others = false;
+            boolean allies = false;
+            final fr.kodistan.interregne.politics.Alliances alliances = fr.kodistan.interregne.politics.Alliances.get(level.getServer());
+            for (final IColony colony : IColonyManager.getInstance().getColonies(level))
+            {
+                if (colony.getID() != colonyA.getID())
+                {
+                    others = true;
+                    allies |= alliances.areAllied(colonyA.getID(), colony.getID());
+                }
+            }
+            if (others && !allies)
+            {
+                say(player, "Aucune colonie alliée à relier : concluez une alliance depuis l'onglet Diplomatie de l'hôtel de ville.", ChatFormatting.RED);
+                return;
+            }
+        }
         // No other colony to reach: the post itself is the far end of the road, which runs to this colony
         final boolean toPost = colonyB == null;
         if (toPost)
