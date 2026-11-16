@@ -25,6 +25,8 @@ import fr.kodistan.interregne.client.hut.StatsScreen;
 import fr.kodistan.interregne.network.IntendanceQuotePayload;
 import fr.kodistan.interregne.network.OpenBankPayload;
 import fr.kodistan.interregne.commerce.Contract;
+import fr.kodistan.interregne.client.routes.RoadScreen;
+import fr.kodistan.interregne.routes.RoadStatePayload;
 import fr.kodistan.interregne.commerce.RelaisStatePayload;
 import fr.kodistan.interregne.client.commerce.KingdomMapScreen;
 import fr.kodistan.interregne.client.commerce.RelaisScreen;
@@ -348,6 +350,13 @@ public final class UiScenarios
         blocks.put("relais-chantier", () -> RelaisScreen.preview(new RelaisStatePayload(1, "Vielle Ville", 0, 0, 0, "", List.of(), List.of(), tiers), 0));
         blocks.put("carte", () -> Minecraft.getInstance().setScreen(KingdomMapScreen.preview(fakeMap(), fakeRoads())));
         blocks.put("carte-vide", () -> Minecraft.getInstance().setScreen(KingdomMapScreen.preview(new MapStatePayload(List.of(), List.of()), List.of())));
+        final var perks = List.of("+10 % de vitesse", "+20 % de vitesse · chute de +0 bloc sans dégât", "+30 % de vitesse · +5 % de saut · chute de +1 bloc sans dégât",
+          "+40 % de vitesse · +10 % de saut · chute de +2 blocs sans dégât · régénération",
+          "+50 % de vitesse · +15 % de saut · monte les marches sans sauter · chute de +3 blocs sans dégât · régénération et résistance");
+        blocks.put("route", () -> RoadScreen.preview(new RoadStatePayload(NOWHERE, "Vielle Ville", "Ville Neuve", 481, 2, false, 1_500, 2_300, 120, "", perks)));
+        blocks.put("route-pauvre", () -> RoadScreen.preview(new RoadStatePayload(NOWHERE, "Vielle Ville", "Ville Neuve", 481, 3, false, 4_000, 650, 120, "", perks)));
+        blocks.put("route-travaux", () -> RoadScreen.preview(new RoadStatePayload(NOWHERE, "Vielle Ville", "Ville Neuve", 481, 1, true, 500, 5_000, 120, "", perks)));
+        blocks.put("route-max", () -> RoadScreen.preview(new RoadStatePayload(NOWHERE, "Vielle Ville", "Ville Neuve", 481, 5, false, -1, 5_000, 120, "", perks)));
         // The field variant: the farm one would cancel a construction when closed
         blocks.put("crops", () -> CropChoiceScreen.openForField(() -> { }, stack -> { }));
         for (final Map.Entry<String, Runnable> block : blocks.entrySet())

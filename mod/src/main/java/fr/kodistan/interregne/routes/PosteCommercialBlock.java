@@ -49,7 +49,7 @@ public final class PosteCommercialBlock extends Block
     private static final int MIN_SECONDS = 3;
     private static final int MAX_SECONDS = 10;
     /** A post this close to one of its colony's roads raises it once the colony has nothing new to join. */
-    private static final int UPGRADE_REACH = 16;
+    static final int UPGRADE_REACH = 16;
 
     private record Studied(RoutePlan plan, long at, RouteEnds.End endA, RouteEnds.End endB)
     {
@@ -92,7 +92,7 @@ public final class PosteCommercialBlock extends Block
             final int road = registry.nearestRoad(colonyA.getID(), pos, UPGRADE_REACH);
             if (road >= 0)
             {
-                upgrade(level, player, colonyA, road, build);
+                upgrade(level, player, colonyA, pos, road, build);
                 return;
             }
             // The post is the far end of a road only when there is no other colony at all, or every ally is already joined
@@ -293,52 +293,21 @@ public final class PosteCommercialBlock extends Block
     }
 
     /**
-     * Click: the road's level and what the next one costs. Sneak + click: pays (treasury first, then purse) and starts
-     * the works, refunded if they could not start.
+     * Click: opens the road screen (level, what each level gives, price of the next). Sneak + click: pays and starts the
+     * works at once, as the screen's button does.
      */
-    private static void upgrade(final ServerLevel level, final ServerPlayer player, final IColony colony, final int road, final boolean build)
+    private static void upgrade(final ServerLevel level, final ServerPlayer player, final IColony colony, final BlockPos post, final int road, final boolean build)
     {
-        final RouteRegistry registry = RouteRegistry.get(level.getServer());
-        final int from = registry.level(road);
-        if (from >= RoadLevels.MAX)
-        {
-            say(player, "Route de niveau " + from + "/" + RoadLevels.MAX + " : voie romaine, rien au-dessus.", ChatFormatting.GOLD);
-            return;
-        }
-        if (RoadUpgrade.underWay(road))
-        {
-            say(player, "Cette route est déjà en travaux (niveau " + (from + 1) + ").", ChatFormatting.GRAY);
-            return;
-        }
-        final long cost = player.isCreative() ? 0 : RoadLevels.upgradeCost(Config.ROAD_UPGRADE_COSTS.get(), from);
-        if (cost < 0)
-        {
-            say(player, "Aucun coût configuré pour passer cette route au niveau " + (from + 1) + " (roadUpgradeCosts).", ChatFormatting.RED);
-            return;
-        }
-        final String price = Wallet.couronnes(cost, null);
         if (!build)
         {
-            say(player, "Route de niveau " + from + "/" + RoadLevels.MAX + ". Niveau " + (from + 1) + " : " + price + " (disponible : "
-                          + Wallet.couronnes(TreasuryPayment.available(player, colony), null) + "). Sneak + clic droit pour l'améliorer.", ChatFormatting.YELLOW);
+            RoadDesk.send(player, colony, road, post, null);
             return;
         }
-        final TreasuryPayment paid = TreasuryPayment.pay(player, colony, cost);
-        if (paid == null)
+        final String refusal = RoadDesk.raise(level, player, colony, road);
+        if (refusal != null)
         {
-            say(player, "Il faut " + price + " pour le niveau " + (from + 1) + ", vous n'avez que "
-                          + Wallet.couronnes(TreasuryPayment.available(player, colony), null) + ".", ChatFormatting.RED);
-            return;
+            say(player, refusal, ChatFormatting.RED);
         }
-        if (!RoadUpgrade.start(level, road))
-        {
-            paid.refund(player, colony);
-            say(player, "Les travaux n'ont pas pu commencer : remboursé.", ChatFormatting.RED);
-            return;
-        }
-        level.playSound(null, player.blockPosition(), SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 0.6f, 1.2f);
-        say(player, "Travaux lancés : route au niveau " + (from + 1) + " d'ici " + Config.ROAD_UPGRADE_SECONDS.get() + " s"
-                      + (cost > 0 ? ", payé " + paid.describe() : "") + ".", ChatFormatting.GREEN);
     }
 
     private static void say(final ServerPlayer player, final String text, final ChatFormatting colour)
