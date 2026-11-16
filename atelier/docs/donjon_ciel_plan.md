@@ -1,5 +1,5 @@
-<!-- [claude-build] plan du donjon n°3 « L'Archipel des Nuées », cadré avec Luca le 2026-11-11 ; validé par Luca ; construit par donjon_ciel.py. La fiche de ce qui est construit, avec les écarts avec ce plan, est donjon_ciel.md -->
-# Donjon n°3 — « L'Archipel des Nuées » (plan validé)
+<!-- [claude-build] plan de l'ancien donjon 3 « L'Archipel des Nuées », cadré avec Luca le 2026-11-11 ; validé par Luca ; construit par donjon_ciel.py. La fiche de ce qui est construit, avec les écarts avec ce plan, est donjon_ciel.md -->
+# Ancien donjon 3 — « L'Archipel des Nuées » (plan validé)
 
 Un temple céleste en ruine, éclaté en îles flottantes. L'objet du donjon est la **Paravoile** (mod Grappin 2.6.0, branche `feature/paravoile`), remise à l'entrée : une voile de planeur comme dans Breath of the Wild. On monte à l'intérieur des îles, on redescend en planant de l'une à l'autre.
 
@@ -12,7 +12,7 @@ Un temple céleste en ruine, éclaté en îles flottantes. L'objet du donjon est
 
 ## Cadre
 
-- Monde « Donjon 3 », superflat, sol à Y-61, dans le client de test du dépôt (à créer, comme « Donjon 1 » et « Donjon 2 »). NeoForge 21.1.216.
+- Monde « Ancien donjon 3 », superflat, sol à Y-61, dans le client de test du dépôt (à créer, comme « Ancien donjon 1 » et « Ancien donjon 2 »). NeoForge 21.1.216.
 - Gabarit d'environ 230 × 120 × 230, presque vide : ce sont les îles qui comptent. À ajuster quand le tracé sera posé.
 - Le ciel est le décor : pas de sol de nuages dangereux. Un bloc de commande ramène au dernier point de passage quiconque descend sous le niveau de la plus basse île (même mécanisme que la gorge du donjon 1).
 - Palette : pierre claire et calcite en ruines, quartz, cuivre oxydé, mousse, avec des lanternes à intervalles réguliers. Détails à fixer avec Luca avant le décor.

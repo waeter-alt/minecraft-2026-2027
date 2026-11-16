@@ -1,6 +1,6 @@
 # [claude-build]
 """
-donjon_aqua.py - Donjon aquatique « Le Sanctuaire des Marees » (2026-11-10) : un monument oceanique englouti, ~31 min. Les salles sont noyees jusqu'au plafond ;
+donjon_aqua.py - Ancien donjon 2 (aquatique) « Le Sanctuaire des Marees » (2026-11-10) : un monument oceanique englouti, ~31 min. Les salles sont noyees jusqu'au plafond ;
 seuls le Debarcadere (depart), la salle du boss et les cloches d'air (points de recharge du voile) contiennent de l'air.
 Le Voile des Profondeurs (mod Grappin 2.5.0) est donne a l'entree ; les tunnels submerges ne se traversent qu'avec lui (« pression des profondeurs »).
 Pas de grappin, pas de conduit, pas de lave, ni coffre ni mob ni boss. Eau confinee (controlee). Gabarit 150 x 70 x 170, pose en (150, -61, 260).
@@ -20,7 +20,7 @@ import numpy as np
 from nbtlib import Byte, Compound, Int, List, String
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--monde", default="Donjon 2", help="nom du monde tel qu'il s'affiche en jeu")
+ap.add_argument("--monde", default="Ancien donjon 2", help="nom du monde tel qu'il s'affiche en jeu")
 ap.add_argument("--zip", action="store_true", help="ecrit aussi atelier/mondes/<monde>.zip : un monde pret a copier dans saves/")
 args = ap.parse_args()
 RACINE = Path(__file__).resolve().parent.parent                      # atelier/

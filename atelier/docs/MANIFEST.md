@@ -294,12 +294,12 @@ Liste de chaque fichier généré par Claude (marque [claude-build]).
 | .venv : paquet pypdf | 2026-11-09 | [claude-build] Installé dans le Python du projet pour lire les PDF (guide du projet Kodistan) |
 | outils/gh/ | 2026-11-09 | [claude-build] GitHub CLI 2.103.3 portable (zip officiel github.com/cli/cli, somme sha256 contrôlée), pour `gh auth login` et les Pull Requests du dépôt Kodistan |
 
-## Donjon n°2 « Le Temple des Mille Racines » (dépôt, 2026-11-09)
+## Ancien donjon 1 « Le Temple des Mille Racines » (dépôt, 2026-11-09 ; ex-« Donjon n°2 »)
 
 | Fichier | Date | Rôle |
 |---|---|---|
 | docs/donjon_temple_plan.md | 2026-11-09 | Plan validé : 12 sections, ≈ 31 min, 8 salles cachées |
-| scripts/donjon_temple.py | 2026-11-09 | Générateur du temple (130 × 100 × 130), monde « Donjon 2 » ; écrit la structure, les fonctions de pose et de remise à zéro, les cibles |
+| scripts/donjon_temple.py | 2026-11-09 | Générateur du temple (130 × 100 × 130), monde « Ancien donjon 1 » ; écrit la structure, les fonctions de pose et de remise à zéro, les cibles |
 | scripts/verif_donjon_temple.py | 2026-11-09 | Contrôle anti-raccourcis (marche, sauts, grappin réaliste et généreux, portes fermées) |
 | scripts/fiche_donjon_temple.py | 2026-11-09 | Écrit docs/donjon_temple.md |
 | docs/donjon_temple.md | 2026-11-09 | Fiche du donjon : pose, grappin 2.4, parcours, solutions, ancrages, salles cachées, écarts |
@@ -315,3 +315,7 @@ Liste de chaque fichier généré par Claude (marque [claude-build]).
 | scripts/fiche_donjon_aqua.py | 2026-11-11 | Écrit docs/donjon_aquatique.md |
 | docs/donjon_aquatique.md | 2026-11-11 | Fiche du donjon aquatique : pose, voile, parcours, passages à voile, solutions, salle du boss, salles cachées, contrôles, écarts |
 | exports/aqua.nbt, aqua_cibles.json, aqua_vide.npz, aqua_verif.json | 2026-11-11 | Structure, points à atteindre, masque des volumes creux, bilan du vérificateur |
+
+## Renommage du 2026-11-15
+
+Les trois donjons actuels sont renommés « Ancien donjon 1 » (Temple des Mille Racines, ex-« Donjon n°2 »), « Ancien donjon 2 » (Sanctuaire des Marées, aquatique) et « Ancien donjon 3 » (Archipel des Nuées, ex-« Donjon n°3 ») : noms de mondes, fiches, plans et mondes par défaut des générateurs. Les identifiants techniques (`temple_*`, `aqua_*`, `ciel_*`) et les noms de fichiers ne changent pas. Le premier donjon, « La Gorge suspendue » (`donjon_grappin.py`, `donjon2.py`), est antérieur et n'est pas concerné.

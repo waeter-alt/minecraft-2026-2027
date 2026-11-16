@@ -1,12 +1,12 @@
 # [claude-build]
 """
-donjon_ciel.py - Donjon n°3 « L'Archipel des Nuees » (2026-11-11) : un temple celeste en ruine, eclate en iles flottantes, ~32 min.
+donjon_ciel.py - Ancien donjon 3 « L'Archipel des Nuees » (2026-11-11) : un temple celeste en ruine, eclate en iles flottantes, ~32 min.
 La Paravoile (mod Grappin 2.6.0) est donnee a l'entree. On monte a l'interieur des tours (escaliers, leviers), on redescend en planant d'ile en ile ;
 tomber dans le vide ramene au dernier point de passage. Pas de grappin, ni elytres, ni autre moyen de voler. Pas de coffre, de monstre ni de boss.
 Gabarit 280 x 120 x 280. Plan : docs/donjon_ciel_plan.md.
   test-local\\venv\\Scripts\\python.exe atelier\\scripts\\donjon_ciel.py
 En jeu : /reload puis /function atelier:ciel_pose ; remise a zero : /function atelier:ciel_reset
-Le monde est designe par son nom en jeu (--monde, « Donjon 3 » par defaut) ; il doit exister (cree dans le client de test) pour recevoir le datapack.
+Le monde est designe par son nom en jeu (--monde, « Ancien donjon 3 » par defaut) ; il doit exister (cree dans le client de test) pour recevoir le datapack.
 """
 import argparse
 import json
@@ -19,7 +19,7 @@ import nbtlib
 from nbtlib import Byte, Compound, Double, Float, Int, List, String
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--monde", default="Donjon 3", help="nom du monde tel qu'il s'affiche en jeu")
+ap.add_argument("--monde", default="Ancien donjon 3", help="nom du monde tel qu'il s'affiche en jeu")
 ap.add_argument("--zip", action="store_true", help="ecrit aussi atelier/mondes/<monde>.zip : un monde pret a copier dans saves/")
 args = ap.parse_args()
 RACINE = Path(__file__).resolve().parent.parent                      # atelier/
