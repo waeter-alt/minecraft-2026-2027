@@ -2,7 +2,10 @@ package fr.kodistan.interregne.routes;
 
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
+import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.InterregneMod;
+import fr.kodistan.interregne.economy.TreasuryPayment;
+import fr.kodistan.interregne.economy.Wallet;
 import fr.kodistan.interregne.colony.RouteSite;
 import fr.kodistan.interregne.routes.plan.RoutePlan;
 import net.minecraft.ChatFormatting;
@@ -45,6 +48,8 @@ public final class PosteCommercialBlock extends Block
     private static final long PLAN_TICKS = 20 * 60 * 5;
     private static final int MIN_SECONDS = 3;
     private static final int MAX_SECONDS = 10;
+    /** A post this close to one of its colony's roads raises it once the colony has nothing new to join. */
+    private static final int UPGRADE_REACH = 16;
 
     private record Studied(RoutePlan plan, long at, RouteEnds.End endA, RouteEnds.End endB)
     {
@@ -83,6 +88,13 @@ public final class PosteCommercialBlock extends Block
         final IColony colonyB = RouteEnds.nearestUnlinked(level, colonyA, registry);
         if (colonyB == null)
         {
+            // Nothing new to join and a road of this colony runs by the post: the post now raises that road
+            final int road = registry.nearestRoad(colonyA.getID(), pos, UPGRADE_REACH);
+            if (road >= 0)
+            {
+                upgrade(level, player, colonyA, road, build);
+                return;
+            }
             // The post is the far end of a road only when there is no other colony at all, or every ally is already joined
             boolean others = false;
             boolean allies = false;
@@ -278,6 +290,55 @@ public final class PosteCommercialBlock extends Block
         final BlockPos base = new BlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z);
         level.setBlockAndUpdate(base, Blocks.OAK_FENCE.defaultBlockState());
         level.setBlockAndUpdate(base.above(), Blocks.LANTERN.defaultBlockState());
+    }
+
+    /**
+     * Click: the road's level and what the next one costs. Sneak + click: pays (treasury first, then purse) and starts
+     * the works, refunded if they could not start.
+     */
+    private static void upgrade(final ServerLevel level, final ServerPlayer player, final IColony colony, final int road, final boolean build)
+    {
+        final RouteRegistry registry = RouteRegistry.get(level.getServer());
+        final int from = registry.level(road);
+        if (from >= RoadLevels.MAX)
+        {
+            say(player, "Route de niveau " + from + "/" + RoadLevels.MAX + " : voie romaine, rien au-dessus.", ChatFormatting.GOLD);
+            return;
+        }
+        if (RoadUpgrade.underWay(road))
+        {
+            say(player, "Cette route est déjà en travaux (niveau " + (from + 1) + ").", ChatFormatting.GRAY);
+            return;
+        }
+        final long cost = player.isCreative() ? 0 : RoadLevels.upgradeCost(Config.ROAD_UPGRADE_COSTS.get(), from);
+        if (cost < 0)
+        {
+            say(player, "Aucun coût configuré pour passer cette route au niveau " + (from + 1) + " (roadUpgradeCosts).", ChatFormatting.RED);
+            return;
+        }
+        final String price = Wallet.couronnes(cost, null);
+        if (!build)
+        {
+            say(player, "Route de niveau " + from + "/" + RoadLevels.MAX + ". Niveau " + (from + 1) + " : " + price + " (disponible : "
+                          + Wallet.couronnes(TreasuryPayment.available(player, colony), null) + "). Sneak + clic droit pour l'améliorer.", ChatFormatting.YELLOW);
+            return;
+        }
+        final TreasuryPayment paid = TreasuryPayment.pay(player, colony, cost);
+        if (paid == null)
+        {
+            say(player, "Il faut " + price + " pour le niveau " + (from + 1) + ", vous n'avez que "
+                          + Wallet.couronnes(TreasuryPayment.available(player, colony), null) + ".", ChatFormatting.RED);
+            return;
+        }
+        if (!RoadUpgrade.start(level, road))
+        {
+            paid.refund(player, colony);
+            say(player, "Les travaux n'ont pas pu commencer : remboursé.", ChatFormatting.RED);
+            return;
+        }
+        level.playSound(null, player.blockPosition(), SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 0.6f, 1.2f);
+        say(player, "Travaux lancés : route au niveau " + (from + 1) + " d'ici " + Config.ROAD_UPGRADE_SECONDS.get() + " s"
+                      + (cost > 0 ? ", payé " + paid.describe() : "") + ".", ChatFormatting.GREEN);
     }
 
     private static void say(final ServerPlayer player, final String text, final ChatFormatting colour)

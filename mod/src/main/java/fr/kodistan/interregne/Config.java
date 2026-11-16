@@ -481,6 +481,45 @@ public final class Config
     static
     {
         BUILDER.pop();
+        BUILDER.push("roads");
+    }
+
+    public static final ModConfigSpec.ConfigValue<String> ROAD_UPGRADE_COSTS = BUILDER
+      .comment("Couronnes to raise a trade road from level 1 to 2, 2 to 3, 3 to 4 and 4 to 5 (level 5 is the Roman road),",
+               "paid at the Poste commercial from the colony treasury; each step should cost more than the one before")
+      .define("roadUpgradeCosts", "500,1500,4000,10000");
+
+    public static final ModConfigSpec.IntValue ROAD_UPGRADE_SECONDS = BUILDER
+      .comment("How long the works raising a road one level last, whatever its length")
+      .defineInRange("roadUpgradeSeconds", 120, 10, 3600);
+
+    public static final ModConfigSpec.BooleanValue ROAD_EFFECTS = BUILDER
+      .comment("Whether walking on a trade road gives the bonuses below, growing with the road level")
+      .define("roadEffects", true);
+
+    public static final ModConfigSpec.ConfigValue<String> ROAD_SPEED = BUILDER
+      .comment("Extra walking speed on a road of level 1 to 5, as a fraction (0.10 = +10%)")
+      .define("roadSpeed", "0.10,0.20,0.30,0.40,0.50");
+
+    public static final ModConfigSpec.ConfigValue<String> ROAD_JUMP = BUILDER
+      .comment("Extra jump strength on a road of level 1 to 5, as a fraction")
+      .define("roadJump", "0,0,0.05,0.10,0.15");
+
+    public static final ModConfigSpec.ConfigValue<String> ROAD_STEP = BUILDER
+      .comment("Extra step height in blocks on a road of level 1 to 5 (0.5 lets a player walk up slabs and steps without jumping)")
+      .define("roadStep", "0,0.1,0.2,0.4,0.5");
+
+    public static final ModConfigSpec.ConfigValue<String> ROAD_SAFE_FALL = BUILDER
+      .comment("Extra blocks a player can fall without damage on a road of level 1 to 5")
+      .define("roadSafeFall", "0,0,1,2,3");
+
+    public static final ModConfigSpec.BooleanValue ROAD_POTIONS = BUILDER
+      .comment("Whether high roads also give light potions: regeneration on level 4, regeneration and resistance on level 5")
+      .define("roadPotions", true);
+
+    static
+    {
+        BUILDER.pop();
     }
 
     static final ModConfigSpec SPEC = BUILDER.build();
