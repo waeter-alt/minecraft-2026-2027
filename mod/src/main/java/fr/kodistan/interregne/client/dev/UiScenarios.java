@@ -160,9 +160,23 @@ public final class UiScenarios
 
     private static void hub(final List<Target> targets, final String arg, final IColonyView colony)
     {
-        final List<String> pages = arg.isEmpty() || arg.equals("all") ? List.of("overview", "buildings", "citizens", "intendance", "walls") : List.of(arg);
+        final List<String> pages = arg.isEmpty() || arg.equals("all") ? List.of("overview", "buildings", "citizens", "intendance", "walls", "diplomacy") : List.of(arg);
         for (final String page : pages)
         {
+            if (page.equals("diplomacy"))
+            {
+                targets.add(new Target("hub-diplomacy", () -> {
+                    final var fake = new java.util.ArrayList<fr.kodistan.interregne.network.DiplomacySyncPayload.Entry>();
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(11, "Port-Sombrebois", "Alix", 14, 410, -120, 3));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(12, "Haute-Garde", "Brenn", 31, -300, 260, 1));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(13, "Les Trois Moulins", "Cassandre", 8, 150, 520, 2));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(14, "Val-de-Cendre", "Dorian", 22, -640, -90, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(15, "Fort-Écarlate avec un nom très long", "Eloïse", 40, 900, 900, 0));
+                    fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), fake));
+                    ColonyHubScreen.openDev(colony.getTownHall(), "diplomacy", 0);
+                }));
+                continue;
+            }
             if (!page.equals("intendance"))
             {
                 targets.add(new Target("hub-" + page, () -> ColonyHubScreen.openDev(colony.getTownHall(), page, 0)));

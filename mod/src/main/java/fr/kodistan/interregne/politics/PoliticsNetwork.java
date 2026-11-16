@@ -11,6 +11,8 @@ public final class PoliticsNetwork
         Net.toClient(r, OpenThronePayload.TYPE, OpenThronePayload.STREAM_CODEC, p -> fr.kodistan.interregne.client.blocks.ThroneScreen.open(p));
         Net.toClient(r, InfluenceSyncPayload.TYPE, InfluenceSyncPayload.STREAM_CODEC,
           p -> fr.kodistan.interregne.client.hud.InterregneHud.setInfluence(p.influence(), p.delta()));
+        r.playToServer(DiplomacyActionPayload.TYPE, DiplomacyActionPayload.STREAM_CODEC, Alliances::onAction);
+        Net.toClient(r, DiplomacySyncPayload.TYPE, DiplomacySyncPayload.STREAM_CODEC, p -> fr.kodistan.interregne.client.hut.ClientDiplomacy.put(p));
     }
 
     private PoliticsNetwork()
