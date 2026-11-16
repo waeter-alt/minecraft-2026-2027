@@ -241,7 +241,7 @@ public final class RouteBuilder
                     case RoutePlan.TUNNEL -> boreColumn(out, i, x, z, d2, side, along == 0);
                     default ->
                     {
-                        if (d2 <= ROAD)
+                        if (plan.footprint.road(x, z))
                         {
                             roadColumn(out, i, x, z, d2);
                         }

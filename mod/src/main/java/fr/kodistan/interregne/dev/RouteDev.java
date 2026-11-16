@@ -80,7 +80,8 @@ public final class RouteDev
                 if (show)
                 {
                     RouteSite.launch(level, builder, 6, Component.literal("Route (test)"), () -> {
-                        RouteRegistry.get(level.getServer()).record(plan);
+                        RouteRegistry.get(level.getServer()).record(plan, null, null);
+                        RouteRegistry.get(level.getServer()).broadcast();
                         final String line = head + "site " + (System.currentTimeMillis() - studied) + " ms, " + poses.size() + " poses";
                         InterregneMod.LOGGER.info("RouteDev: {}", line);
                         result.complete(line);
@@ -102,7 +103,8 @@ public final class RouteDev
                         blocks++;
                     }
                 }
-                RouteRegistry.get(level.getServer()).record(plan);
+                RouteRegistry.get(level.getServer()).record(plan, null, null);
+                RouteRegistry.get(level.getServer()).broadcast();
                 final String line = head + blocks + " blocks laid in " + (System.currentTimeMillis() - studied) + " ms, " + poses.size() + " poses";
                 InterregneMod.LOGGER.info("RouteDev: {}", line);
                 result.complete(line);

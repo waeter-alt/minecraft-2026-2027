@@ -110,6 +110,12 @@ public class InterregneMod
                   ClientPayloads.syncWall(payload);
               }
           })
+          .playToClient(fr.kodistan.interregne.network.RoadLinesPayload.TYPE, fr.kodistan.interregne.network.RoadLinesPayload.STREAM_CODEC, (payload, context) -> {
+              if (FMLEnvironment.dist.isClient())
+              {
+                  ClientPayloads.syncRoads(payload);
+              }
+          })
           .playToClient(OpenFarmCropPayload.TYPE, OpenFarmCropPayload.STREAM_CODEC, (payload, context) -> {
               if (FMLEnvironment.dist.isClient())
               {

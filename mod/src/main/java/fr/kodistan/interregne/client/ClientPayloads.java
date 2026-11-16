@@ -34,6 +34,11 @@ public final class ClientPayloads
         fr.kodistan.interregne.client.walls.ClientWalls.put(payload);
     }
 
+    public static void syncRoads(final fr.kodistan.interregne.network.RoadLinesPayload payload)
+    {
+        fr.kodistan.interregne.client.walls.ClientRoads.put(payload);
+    }
+
     public static void syncWarRuins(final fr.kodistan.interregne.network.WarRuinsSyncPayload payload)
     {
         fr.kodistan.interregne.client.war.ClientWarRuins.put(payload);

@@ -396,7 +396,7 @@ public final class RouteBench
             return 0;
         }
         final int owner = p.footprint.owner(x, z);
-        if (owner >= 0 && Footprint.road(p.footprint.distanceSq(x, z)))
+        if (owner >= 0 && p.footprint.road(x, z))
         {
             final byte m = p.mode[owner];
             if (owner == 0 || owner == p.length() - 1)

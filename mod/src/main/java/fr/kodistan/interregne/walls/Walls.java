@@ -60,6 +60,14 @@ public final class Walls
         return Math.min(150, 30 + layout.length() / 8 + layout.towers().size() * 2 + layout.gates().size() * 4);
     }
 
+    /**
+     * Whether this colony's wall is under construction: caravans wait at its gates until it is done.
+     */
+    public static boolean building(final IColony colony)
+    {
+        return BUILDING.contains(RegionalTreasury.keyOf(colony));
+    }
+
     public static void onBuild(final WallBuildPayload payload, final IPayloadContext context)
     {
         if (!(context.player() instanceof ServerPlayer player))
@@ -79,10 +87,17 @@ public final class Walls
             return;
         }
         final List<WallTrace.Point> points = WallTrace.unflat(payload.points());
-        final List<WallTrace.Point> gates = WallTrace.unflat(payload.gates());
+        final List<WallTrace.Point> gates = new ArrayList<>(WallTrace.unflat(payload.gates()));
         final int count = points.size();
         if (count < 2 || count > MAX_POINTS || (payload.closed() && count < 3) || gates.size() > WallLevels.MAX_GATES)
         {
+            return;
+        }
+        // The planner already adds a gate where the trace crosses a trade road; a road built meanwhile gets one too
+        gates.addAll(WallLayout.crossings(points, payload.closed(), gates, fr.kodistan.interregne.routes.RouteRegistry.get(player.server)::onRoad));
+        if (gates.size() > WallLevels.MAX_GATES)
+        {
+            refuse(player, "Trop de portes : " + WallLevels.MAX_GATES + " au plus, routes commerciales comprises.");
             return;
         }
         if (gates.isEmpty())
@@ -247,6 +262,7 @@ public final class Walls
             BUILDING.remove(key);
             registry.put(colony, wall);
             sync(player.server, key, wall, false);
+            fr.kodistan.interregne.routes.RouteHooks.onWallBuilt(level, colony, layout);
             fr.kodistan.interregne.war.WarAssaults.onWallRepaired(level, colony);
         });
         final String what = old == null ? "Chantier de la muraille lancé" : wallLevel > old.level() ? "Muraille en route vers le niveau " + wallLevel
@@ -512,5 +528,6 @@ public final class Walls
         {
             PacketDistributor.sendToPlayer(player, payloadOf(entry.getKey(), entry.getValue(), false));
         }
+        fr.kodistan.interregne.routes.RouteRegistry.get(player.server).send(player);
     }
 }

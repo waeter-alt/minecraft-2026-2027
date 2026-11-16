@@ -1,5 +1,6 @@
 package fr.kodistan.interregne.routes;
 
+import com.minecolonies.api.colony.IColony;
 import fr.kodistan.interregne.InterregneMod;
 import fr.kodistan.interregne.colony.RouteSite;
 import fr.kodistan.interregne.routes.plan.RoutePlan;
@@ -14,7 +15,9 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.BlockHitResult;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -42,7 +45,7 @@ public final class PosteCommercialBlock extends Block
     private static final int MIN_SECONDS = 3;
     private static final int MAX_SECONDS = 10;
 
-    private record Studied(RoutePlan plan, long at)
+    private record Studied(RoutePlan plan, long at, RouteEnds.End endA, RouteEnds.End endB)
     {
     }
 
@@ -84,7 +87,7 @@ public final class PosteCommercialBlock extends Block
         {
             if (build)
             {
-                build(level, player, pos, other, studied.plan());
+                build(level, player, pos, other, studied);
             }
             else
             {
@@ -94,8 +97,26 @@ public final class PosteCommercialBlock extends Block
         }
         final double flight = Math.sqrt(pos.distSqr(other));
         final UUID who = player.getUUID();
+        // Each post stands for the colony nearest it: the end snaps to that colony's gate facing the other one (or
+        // its town hall's door, or the edge of its land). When both posts are nearest the same colony, only the
+        // closer one takes it and the other end stays at its post.
+        IColony colonyA = RouteEnds.nearest(level, pos);
+        IColony colonyB = RouteEnds.nearest(level, other);
+        if (colonyA != null && colonyB != null && colonyA.getID() == colonyB.getID())
+        {
+            if (colonyA.getCenter().distSqr(pos) <= colonyA.getCenter().distSqr(other))
+            {
+                colonyB = null;
+            }
+            else
+            {
+                colonyA = null;
+            }
+        }
+        final RouteEnds.End endA = RouteEnds.of(level, colonyA, pos, other);
+        final RouteEnds.End endB = RouteEnds.of(level, colonyB, other, pos);
         BUSY.add(pair);
-        final boolean started = RoutePlanning.study(level, pos.below(), other.below(), player, plan -> {
+        final boolean started = RoutePlanning.study(level, endA, endB, player, plan -> {
             BUSY.remove(pair);
             final ServerPlayer asker = level.getServer().getPlayerList().getPlayer(who);
             if (plan == null)
@@ -106,10 +127,11 @@ public final class PosteCommercialBlock extends Block
                 }
                 return;
             }
-            PLANS.put(pair, new Studied(plan, level.getGameTime()));
+            final Studied done = new Studied(plan, level.getGameTime(), endA, endB);
+            PLANS.put(pair, done);
             if (build)
             {
-                build(level, asker, pos, other, plan);
+                build(level, asker, pos, other, done);
             }
             else if (asker != null)
             {
@@ -172,8 +194,9 @@ public final class PosteCommercialBlock extends Block
         return text.toString();
     }
 
-    private static void build(final ServerLevel level, final ServerPlayer player, final BlockPos pos, final BlockPos other, final RoutePlan plan)
+    private static void build(final ServerLevel level, final ServerPlayer player, final BlockPos pos, final BlockPos other, final Studied studied)
     {
+        final RoutePlan plan = studied.plan();
         final RouteRegistry.Pair pair = RouteRegistry.Pair.of(pos, other);
         BUSY.add(pair);
         PLANS.remove(pair);
@@ -183,13 +206,43 @@ public final class PosteCommercialBlock extends Block
             BUSY.remove(pair);
             final RouteRegistry registry = RouteRegistry.get(level.getServer());
             registry.link(pos, other);
-            registry.record(plan);
+            registry.record(plan, studied.endA(), studied.endB());
+            registry.broadcast();
+            if (studied.endA().border())
+            {
+                marker(level, plan, true);
+            }
+            if (studied.endB().border())
+            {
+                marker(level, plan, false);
+            }
         });
         if (player != null)
         {
             say(player, "Chantier de la route lancé : " + plan.length() + " blocs, " + works(plan) + ", " + seconds + " s.", ChatFormatting.GOLD);
         }
         level.playSound(null, pos, SoundEvents.ANVIL_PLACE, SoundSource.BLOCKS, 0.6F, 1.0F);
+    }
+
+    /**
+     * A lantern on a post beside the road's end, where it stops at the edge of a colony without a wall.
+     */
+    private static void marker(final ServerLevel level, final RoutePlan plan, final boolean first)
+    {
+        final int n = plan.length();
+        if (n < 2)
+        {
+            return;
+        }
+        final int i = first ? 0 : n - 1;
+        final int j = first ? 1 : n - 2;
+        final int dx = Integer.signum(plan.x[j] - plan.x[i]);
+        final int dz = Integer.signum(plan.z[j] - plan.z[i]);
+        final int x = plan.x[i] - dz * 4;
+        final int z = plan.z[i] + dx * 4;
+        final BlockPos base = new BlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z);
+        level.setBlockAndUpdate(base, Blocks.OAK_FENCE.defaultBlockState());
+        level.setBlockAndUpdate(base.above(), Blocks.LANTERN.defaultBlockState());
     }
 
     private static void say(final ServerPlayer player, final String text, final ChatFormatting colour)

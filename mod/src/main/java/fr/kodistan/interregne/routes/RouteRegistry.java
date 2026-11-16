@@ -7,8 +7,13 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import fr.kodistan.interregne.network.RoadLinesPayload;
+import fr.kodistan.interregne.walls.WallRegistry;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -44,13 +49,25 @@ public final class RouteRegistry extends SavedData
      * A road already built: the cells of its centre line that one walks on in the open (ground and bridge decks;
      * a tunnel is left out, the ground above it is still ground).
      */
-    private record Road(int[] x, int[] y, int[] z)
+    private record Road(int[] x, int[] y, int[] z, int colonyA, int gateA, int colonyB, int gateB)
     {
     }
 
     private final Set<Long> posts = new HashSet<>();
     private final Set<Pair> links = new HashSet<>();
     private final List<Road> roads = new ArrayList<>();
+    /** The cells of every road's centre line, rebuilt when a road is added or changed. */
+    private Set<Long> centres;
+
+    /**
+     * One end of a road hooked to a colony.
+     *
+     * @param road  the road's index
+     * @param first the road's first cell (its A end), else its last
+     */
+    public record Hook(int road, boolean first, BlockPos at, int gate)
+    {
+    }
 
     public static RouteRegistry get(final MinecraftServer server)
     {
@@ -89,14 +106,15 @@ public final class RouteRegistry extends SavedData
     /**
      * Remembers a route once built, so later ones can see it.
      */
-    public void record(final RoutePlan plan)
+    public void record(final RoutePlan plan, @Nullable final RouteEnds.End endA, @Nullable final RouteEnds.End endB)
     {
         int count = 0;
         for (int i = 0; i < plan.length(); i++)
         {
             count += plan.mode[i] == RoutePlan.TUNNEL ? 0 : 1;
         }
-        final Road road = new Road(new int[count], new int[count], new int[count]);
+        final Road road = new Road(new int[count], new int[count], new int[count], endA == null ? 0 : endA.colony(), endA == null ? -1 : endA.gate(),
+          endB == null ? 0 : endB.colony(), endB == null ? -1 : endB.gate());
         int at = 0;
         for (int i = 0; i < plan.length(); i++)
         {
@@ -108,7 +126,104 @@ public final class RouteRegistry extends SavedData
             }
         }
         roads.add(road);
+        centres = null;
         setDirty();
+    }
+
+    /**
+     * Every road end hooked to this colony.
+     */
+    public List<Hook> hooks(final int colony)
+    {
+        final List<Hook> out = new ArrayList<>();
+        for (int i = 0; i < roads.size(); i++)
+        {
+            final Road road = roads.get(i);
+            final int last = road.x().length - 1;
+            if (last < 0)
+            {
+                continue;
+            }
+            if (road.colonyA() == colony)
+            {
+                out.add(new Hook(i, true, new BlockPos(road.x()[0], road.y()[0], road.z()[0]), road.gateA()));
+            }
+            if (road.colonyB() == colony)
+            {
+                out.add(new Hook(i, false, new BlockPos(road.x()[last], road.y()[last], road.z()[last]), road.gateB()));
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Moves a road end to another gate of the same colony, or unhooks it (colony 0) once a connector has taken over.
+     */
+    public void rehook(final Hook hook, final int colony, final int gate)
+    {
+        final Road road = roads.get(hook.road());
+        roads.set(hook.road(), hook.first() ? new Road(road.x(), road.y(), road.z(), colony, gate, road.colonyB(), road.gateB())
+                                            : new Road(road.x(), road.y(), road.z(), road.colonyA(), road.gateA(), colony, gate));
+        setDirty();
+    }
+
+    /**
+     * The centre-line cells of a road, as {x, z} pairs.
+     */
+    public int[][] cells(final int road)
+    {
+        final Road r = roads.get(road);
+        return new int[][] {r.x(), r.z()};
+    }
+
+    /**
+     * Whether a road's centre line passes through this cell ({@link WallRegistry#cell}).
+     */
+    public boolean onRoad(final long cell)
+    {
+        if (centres == null)
+        {
+            final Set<Long> next = new HashSet<>();
+            for (final Road road : roads)
+            {
+                for (int i = 0; i < road.x().length; i++)
+                {
+                    next.add(WallRegistry.cell(road.x()[i], road.z()[i]));
+                }
+            }
+            centres = next;
+        }
+        return centres.contains(cell);
+    }
+
+    private RoadLinesPayload payload()
+    {
+        final List<Integer> data = new ArrayList<>();
+        for (final Road road : roads)
+        {
+            data.add(road.colonyA());
+            data.add(road.colonyB());
+            data.add(road.x().length);
+            for (int i = 0; i < road.x().length; i++)
+            {
+                data.add(road.x()[i]);
+                data.add(road.z()[i]);
+            }
+        }
+        return new RoadLinesPayload(data);
+    }
+
+    /**
+     * Tells every client where the roads run, for the wall planner.
+     */
+    public void broadcast()
+    {
+        PacketDistributor.sendToAllPlayers(payload());
+    }
+
+    public void send(final ServerPlayer player)
+    {
+        PacketDistributor.sendToPlayer(player, payload());
     }
 
     /**
@@ -178,7 +293,8 @@ public final class RouteRegistry extends SavedData
         for (int i = 0; i < roads.size(); i++)
         {
             final CompoundTag road = roads.getCompound(i);
-            registry.roads.add(new Road(road.getIntArray("x"), road.getIntArray("y"), road.getIntArray("z")));
+            registry.roads.add(new Road(road.getIntArray("x"), road.getIntArray("y"), road.getIntArray("z"), road.getInt("colonyA"),
+              road.contains("gateA") ? road.getInt("gateA") : -1, road.getInt("colonyB"), road.contains("gateB") ? road.getInt("gateB") : -1));
         }
         final long[] low = tag.getLongArray("linksLow");
         final long[] high = tag.getLongArray("linksHigh");
@@ -202,6 +318,10 @@ public final class RouteRegistry extends SavedData
             entry.putIntArray("x", road.x());
             entry.putIntArray("y", road.y());
             entry.putIntArray("z", road.z());
+            entry.putInt("colonyA", road.colonyA());
+            entry.putInt("gateA", road.gateA());
+            entry.putInt("colonyB", road.colonyB());
+            entry.putInt("gateB", road.gateB());
             list.add(entry);
         }
         tag.put("roads", list);
