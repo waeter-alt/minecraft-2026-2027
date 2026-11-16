@@ -3,8 +3,8 @@ package fr.kodistan.interregne.colony;
 import com.minecolonies.api.colony.buildings.IBuilding;
 import fr.kodistan.interregne.InterregneMod;
 import fr.kodistan.interregne.routes.RouteBuilder;
+import fr.kodistan.interregne.routes.RouteWork;
 import fr.kodistan.interregne.routes.RouteStep;
-import fr.kodistan.interregne.routes.plan.RoutePlan;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -46,7 +46,7 @@ public final class RouteSite implements Site
     private static final int MAX_FLYING = 40;
 
     private final ServerLevel level;
-    private final RouteBuilder builder;
+    private final RouteWork builder;
     private final int cells;
     private final int durationTicks;
     private final Component title;
@@ -66,7 +66,7 @@ public final class RouteSite implements Site
     @Nullable
     private RouteStep last;
 
-    private RouteSite(final ServerLevel level, final RouteBuilder builder, final int seconds, final Component title, final Runnable onDone)
+    private RouteSite(final ServerLevel level, final RouteWork builder, final int seconds, final Component title, final Runnable onDone)
     {
         this.level = level;
         this.builder = builder;
@@ -78,11 +78,10 @@ public final class RouteSite implements Site
         this.random = level.getRandom();
         this.bossBar = new ServerBossEvent(title, BossEvent.BossBarColor.GREEN, BossEvent.BossBarOverlay.PROGRESS);
         this.bossBar.setProgress(0);
-        final RoutePlan plan = builder.plan();
         AABB box = null;
         for (int i = 0; i < cells; i++)
         {
-            final AABB one = new AABB(new BlockPos(plan.x[i], plan.y[i], plan.z[i]));
+            final AABB one = new AABB(builder.cell(i));
             box = box == null ? one : box.minmax(one);
         }
         this.area = box == null ? new AABB(BlockPos.ZERO) : box;
@@ -91,7 +90,7 @@ public final class RouteSite implements Site
     /**
      * Starts the site; onDone runs once every block of the route is in place.
      */
-    public static void launch(final ServerLevel level, final RouteBuilder builder, final int seconds, final Component title, final Runnable onDone)
+    public static void launch(final ServerLevel level, final RouteWork builder, final int seconds, final Component title, final Runnable onDone)
     {
         ConstructionManager.start(new RouteSite(level, builder, seconds, title, onDone));
     }
@@ -99,10 +98,9 @@ public final class RouteSite implements Site
     @Override
     public void start()
     {
-        final RoutePlan plan = builder.plan();
         for (final int end : new int[] {0, cells - 1})
         {
-            final BlockPos pos = new BlockPos(plan.x[end], plan.y[end] + 1, plan.z[end]);
+            final BlockPos pos = builder.cell(end).above();
             level.playSound(null, pos, SoundEvents.ANVIL_PLACE, SoundSource.BLOCKS, 0.7F, 0.9F);
             level.playSound(null, pos, SoundEvents.BELL_BLOCK, SoundSource.BLOCKS, 1.0F, 1.1F);
         }
@@ -178,8 +176,7 @@ public final class RouteSite implements Site
 
     private void hold(final int cell)
     {
-        final RoutePlan plan = builder.plan();
-        final ChunkPos chunk = new ChunkPos(plan.x[cell] >> 4, plan.z[cell] >> 4);
+        final ChunkPos chunk = new ChunkPos(builder.cell(cell));
         level.getChunkSource().addRegionTicket(TICKET, chunk, TICKET_RADIUS, chunk);
     }
 

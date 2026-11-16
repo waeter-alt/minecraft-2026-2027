@@ -4,6 +4,8 @@ import com.minecolonies.api.colony.IColonyManager;
 import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.InterregneMod;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
@@ -13,6 +15,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -25,15 +28,23 @@ public final class RoadDecay
 {
     private static final int STEP_TICKS = 40;
 
-    /** Ground of the road: grass once it is gone (air over a gap). */
-    private static final Set<Block> SURFACE = Set.of(Blocks.DIRT_PATH, Blocks.COARSE_DIRT, Blocks.COBBLESTONE, Blocks.MOSSY_COBBLESTONE,
-      Blocks.STONE_BRICKS, Blocks.MOSSY_STONE_BRICKS, Blocks.CRACKED_STONE_BRICKS, Blocks.CHISELED_STONE_BRICKS);
-    /** Steps, decks, rails and lanterns: simply removed. */
-    private static final Set<Block> RAISED = Set.of(Blocks.SPRUCE_PLANKS, Blocks.SPRUCE_LOG, Blocks.SPRUCE_STAIRS, Blocks.SPRUCE_FENCE, Blocks.LANTERN,
-      Blocks.COBBLESTONE_STAIRS, Blocks.MOSSY_COBBLESTONE_STAIRS);
+    /** Ground of the road, whatever its level: grass once it is gone (air over a gap). */
+    private static final Set<Block> SURFACE = blocks(RoadLevels.groundIds());
+    /** Steps, decks, rails, lampposts and lanterns: simply removed. */
+    private static final Set<Block> RAISED = blocks(RoadLevels.raisedIds());
 
     private RoadDecay()
     {
+    }
+
+    private static Set<Block> blocks(final Set<String> ids)
+    {
+        final Set<Block> out = new HashSet<>();
+        for (final String id : ids)
+        {
+            out.add(BuiltInRegistries.BLOCK.get(ResourceLocation.withDefaultNamespace(id)));
+        }
+        return out;
     }
 
     /**
