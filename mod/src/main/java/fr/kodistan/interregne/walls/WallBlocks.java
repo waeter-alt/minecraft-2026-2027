@@ -31,27 +31,28 @@ public final class WallBlocks
      * The blocks of one level's look.
      */
     private record Style(BlockState body, BlockState cap, BlockState spike, BlockState tower, BlockState towerTop, BlockState rail, BlockState pile,
-                         BlockState floor, BlockState portcullis)
+                         BlockState floor, BlockState portcullis, BlockState stair)
     {
     }
 
     private static final Style[] STYLES = {
       new Style(Blocks.SPRUCE_LOG.defaultBlockState(), Blocks.SPRUCE_LOG.defaultBlockState(), Blocks.SPRUCE_FENCE.defaultBlockState(),
         Blocks.SPRUCE_LOG.defaultBlockState(), Blocks.SPRUCE_PLANKS.defaultBlockState(), Blocks.SPRUCE_FENCE.defaultBlockState(), Blocks.SPRUCE_LOG.defaultBlockState(),
-        Blocks.SPRUCE_PLANKS.defaultBlockState(), Blocks.SPRUCE_FENCE.defaultBlockState()),
+        Blocks.SPRUCE_PLANKS.defaultBlockState(), Blocks.SPRUCE_FENCE.defaultBlockState(), Blocks.SPRUCE_STAIRS.defaultBlockState()),
       new Style(Blocks.COBBLESTONE.defaultBlockState(), Blocks.MOSSY_COBBLESTONE.defaultBlockState(), Blocks.COBBLESTONE_WALL.defaultBlockState(),
         Blocks.COBBLESTONE.defaultBlockState(), Blocks.STONE.defaultBlockState(), Blocks.COBBLESTONE_WALL.defaultBlockState(), Blocks.COBBLESTONE.defaultBlockState(),
-        Blocks.ANDESITE.defaultBlockState(), Blocks.IRON_BARS.defaultBlockState()),
+        Blocks.ANDESITE.defaultBlockState(), Blocks.IRON_BARS.defaultBlockState(), Blocks.COBBLESTONE_STAIRS.defaultBlockState()),
       new Style(Blocks.STONE_BRICKS.defaultBlockState(), Blocks.CHISELED_STONE_BRICKS.defaultBlockState(), Blocks.STONE_BRICK_WALL.defaultBlockState(),
         Blocks.STONE_BRICKS.defaultBlockState(), Blocks.SMOOTH_STONE.defaultBlockState(), Blocks.STONE_BRICK_WALL.defaultBlockState(), Blocks.STONE_BRICKS.defaultBlockState(),
-        Blocks.POLISHED_ANDESITE.defaultBlockState(), Blocks.IRON_BARS.defaultBlockState()),
+        Blocks.POLISHED_ANDESITE.defaultBlockState(), Blocks.IRON_BARS.defaultBlockState(), Blocks.STONE_BRICK_STAIRS.defaultBlockState()),
       new Style(Blocks.DEEPSLATE_BRICKS.defaultBlockState(), Blocks.POLISHED_DEEPSLATE.defaultBlockState(), Blocks.DEEPSLATE_BRICK_WALL.defaultBlockState(),
         Blocks.DEEPSLATE_TILES.defaultBlockState(), Blocks.POLISHED_DEEPSLATE.defaultBlockState(), Blocks.DEEPSLATE_BRICK_WALL.defaultBlockState(),
-        Blocks.COBBLED_DEEPSLATE.defaultBlockState(), Blocks.POLISHED_DEEPSLATE.defaultBlockState(), Blocks.IRON_BARS.defaultBlockState()),
+        Blocks.COBBLED_DEEPSLATE.defaultBlockState(), Blocks.POLISHED_DEEPSLATE.defaultBlockState(), Blocks.IRON_BARS.defaultBlockState(),
+        Blocks.DEEPSLATE_BRICK_STAIRS.defaultBlockState()),
       new Style(Blocks.POLISHED_BLACKSTONE_BRICKS.defaultBlockState(), Blocks.GILDED_BLACKSTONE.defaultBlockState(),
         Blocks.POLISHED_BLACKSTONE_BRICK_WALL.defaultBlockState(), Blocks.POLISHED_BLACKSTONE.defaultBlockState(), Blocks.GOLD_BLOCK.defaultBlockState(),
         Blocks.POLISHED_BLACKSTONE_BRICK_WALL.defaultBlockState(), Blocks.BLACKSTONE.defaultBlockState(),
-        Blocks.POLISHED_BLACKSTONE.defaultBlockState(), Blocks.CHAIN.defaultBlockState()),
+        Blocks.POLISHED_BLACKSTONE.defaultBlockState(), Blocks.CHAIN.defaultBlockState(), Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS.defaultBlockState()),
     };
 
     private static final int CLEAR_ABOVE = 24;
@@ -62,14 +63,15 @@ public final class WallBlocks
     public static boolean isWallBlock(final BlockState state)
     {
         if (state.is(Blocks.LANTERN) || state.is(Blocks.WHITE_WALL_BANNER) || state.is(Blocks.LADDER) || state.is(Blocks.GRAVEL) || state.is(Blocks.STONE_BRICK_STAIRS)
-              || state.is(Blocks.DEEPSLATE_BRICK_STAIRS) || state.is(Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS))
+              || state.is(Blocks.DEEPSLATE_BRICK_STAIRS) || state.is(Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS) || state.is(Blocks.SPRUCE_STAIRS)
+              || state.is(Blocks.COBBLESTONE_STAIRS))
         {
             return true;
         }
         for (final Style style : STYLES)
         {
             for (final BlockState part : new BlockState[] {style.body(), style.cap(), style.spike(), style.tower(), style.towerTop(), style.rail(),
-              style.pile(), style.floor(), style.portcullis()})
+              style.pile(), style.floor(), style.portcullis(), style.stair()})
             {
                 if (state.is(part.getBlock()))
                 {
@@ -105,14 +107,20 @@ public final class WallBlocks
     {
         final Style style = STYLES[Math.max(1, Math.min(STYLES.length, wallLevel)) - 1];
         final List<Step> steps = new ArrayList<>();
-        final java.util.Set<Long> body = footprint(layout);
+        // An obstacle (a building, a block the colony doesn't own, terrain too deep to bridge) is never built over:
+        // its column/tower/gate is left out entirely rather than overwriting what stands there. An upgrade is
+        // allowed to go ahead even with such obstacles present (see Walls#apply) — the gap simply stays a gap.
+        final List<WallLayout.Column> buildableColumns = layout.columns().stream().filter(c -> c.status() == WallLayout.Status.OK).toList();
+        final List<WallLayout.Tower> buildableTowers = layout.towers().stream().filter(t -> t.status() == WallLayout.Status.OK).toList();
+        final List<WallLayout.Gate> buildableGates = layout.gates().stream().filter(g -> g.status() == WallLayout.Status.OK).toList();
+        final java.util.Set<Long> body = footprint(buildableColumns, buildableTowers, buildableGates);
         final java.util.Map<Long, WallLayout.Column> columns = new java.util.HashMap<>();
         final java.util.Set<Long> faces = new java.util.HashSet<>();
-        for (final WallLayout.Column column : layout.columns())
+        for (final WallLayout.Column column : buildableColumns)
         {
             columns.put(WallRegistry.cell(column.x(), column.z()), column);
         }
-        for (final WallLayout.Column column : layout.columns())
+        for (final WallLayout.Column column : buildableColumns)
         {
             final int order = column.index() * 2;
             final int x = column.x();
@@ -122,9 +130,12 @@ public final class WallBlocks
             // The two faces carry the parapet; between them the crest is a walkway
             final boolean face = !body.contains(WallRegistry.cell(x + 1, z)) || !body.contains(WallRegistry.cell(x - 1, z))
                                    || !body.contains(WallRegistry.cell(x, z + 1)) || !body.contains(WallRegistry.cell(x, z - 1));
+            final Direction rise = !face && (column.riseDx() != 0 || column.riseDz() != 0)
+                                      ? Direction.fromDelta(column.riseDx(), 0, column.riseDz()) : null;
             for (int y = column.bottom(); y <= column.top(); y++)
             {
-                steps.add(new Step(new BlockPos(x, y, z), y < column.top() ? style.body() : face ? style.cap() : style.floor(), order));
+                final BlockState top = face ? style.cap() : rise != null ? style.stair().setValue(net.minecraft.world.level.block.StairBlock.FACING, rise) : style.floor();
+                steps.add(new Step(new BlockPos(x, y, z), y < column.top() ? style.body() : top, order));
             }
             if (face)
             {
@@ -132,25 +143,31 @@ public final class WallBlocks
                 steps.add(new Step(new BlockPos(x, column.top() + 1, z), ((x + z) & 1) == 0 ? style.spike() : style.cap(), order));
             }
         }
-        for (final WallLayout.Tower tower : layout.towers())
+        for (final WallLayout.Tower tower : buildableTowers)
         {
             tower(level, steps, tower, style, ground, columns, faces);
         }
         final java.util.Map<Long, Step> overrides = new java.util.HashMap<>();
-        for (final WallLayout.Gate gate : layout.gates())
+        for (final WallLayout.Gate gate : buildableGates)
         {
             gate(level, steps, gate, style, ground);
             wayUp(overrides, gate, wallLevel, columns, faces, inside);
         }
-        // The ways up are carved into the wall: they replace what was laid there
+        // The ways up are carved into the wall: they replace what was laid there — every step at that position, not
+        // just the first, since clear() lays an air step before the body block wherever grass or a tree stood: replacing
+        // only that one let the body block land after the stair and fill it back in (see docs/GOTCHA.md)
+        final java.util.Set<Long> matched = new java.util.HashSet<>();
         for (int i = 0; i < steps.size(); i++)
         {
-            final Step carved = overrides.remove(steps.get(i).pos().asLong());
+            final long key = steps.get(i).pos().asLong();
+            final Step carved = overrides.get(key);
             if (carved != null)
             {
+                matched.add(key);
                 steps.set(i, new Step(carved.pos(), carved.state(), steps.get(i).order()));
             }
         }
+        overrides.keySet().removeAll(matched);
         steps.addAll(overrides.values());
         steps.sort(Comparator.comparingInt(Step::order).thenComparingInt(step -> step.state().isAir() ? 0 : 1).thenComparingInt(step -> step.pos().getY()));
         // Ladders go up last, once every block they hang on stands: set earlier, a later neighbour update would knock them off
@@ -164,14 +181,15 @@ public final class WallBlocks
     /**
      * Every cell the wall stands on: columns, towers and gatehouses.
      */
-    private static java.util.Set<Long> footprint(final WallLayout layout)
+    private static java.util.Set<Long> footprint(final List<WallLayout.Column> columns, final List<WallLayout.Tower> towers,
+      final List<WallLayout.Gate> gates)
     {
         final java.util.Set<Long> cells = new java.util.HashSet<>();
-        for (final WallLayout.Column column : layout.columns())
+        for (final WallLayout.Column column : columns)
         {
             cells.add(WallRegistry.cell(column.x(), column.z()));
         }
-        for (final WallLayout.Tower tower : layout.towers())
+        for (final WallLayout.Tower tower : towers)
         {
             for (int dx = 0; dx < tower.size(); dx++)
             {
@@ -184,7 +202,7 @@ public final class WallBlocks
                 }
             }
         }
-        for (final WallLayout.Gate gate : layout.gates())
+        for (final WallLayout.Gate gate : gates)
         {
             for (int along = -WallLayout.GATE_HALF; along <= WallLayout.GATE_HALF; along++)
             {

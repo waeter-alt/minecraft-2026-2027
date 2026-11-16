@@ -11,6 +11,8 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.neoforge.common.Tags;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -91,6 +93,14 @@ public final class Terrain
      */
     public static boolean clearable(final LevelReader level, final BlockPos pos, final BlockState state)
     {
+        return clearable(state, () -> treeLog(level, pos));
+    }
+
+    /**
+     * Same, the caller saying how to tell whether a log belongs to a natural tree (only asked for a log).
+     */
+    public static boolean clearable(final BlockState state, final BooleanSupplier naturalLog)
+    {
         if (state.isAir())
         {
             return true;
@@ -105,7 +115,7 @@ public final class Terrain
         }
         if (state.is(BlockTags.LOGS))
         {
-            return treeLog(level, pos);
+            return naturalLog.getAsBoolean();
         }
         return state.canBeReplaced() || state.is(BlockTags.FLOWERS) || state.is(BlockTags.SAPLINGS)
                  || state.is(Blocks.BAMBOO) || state.is(Blocks.SUGAR_CANE) || state.is(Blocks.CACTUS) || state.is(Blocks.SWEET_BERRY_BUSH)
@@ -116,20 +126,34 @@ public final class Terrain
     /**
      * A log belongs to a natural tree when natural (non persistent) leaves grow around the top of its trunk.
      */
-    private static boolean treeLog(final LevelReader level, final BlockPos pos)
+    public static boolean treeLog(final LevelReader level, final BlockPos pos)
+    {
+        return treeLog(level::getBlockState, pos);
+    }
+
+    /**
+     * Same, reading blocks through the given function; a block it cannot tell (null) counts as natural leaves, so
+     * a tree at the edge of what is known is still a tree.
+     */
+    public static boolean treeLog(final Function<BlockPos, BlockState> blocks, final BlockPos pos)
     {
         final BlockPos.MutableBlockPos cursor = pos.mutable();
         int climbed = 0;
-        while (climbed < TREE_HEIGHT && level.getBlockState(cursor.above()).is(BlockTags.LOGS))
+        while (climbed < TREE_HEIGHT)
         {
+            final BlockState above = blocks.apply(cursor.above());
+            if (above == null || !above.is(BlockTags.LOGS))
+            {
+                break;
+            }
             cursor.move(0, 1, 0);
             climbed++;
         }
         final BlockPos top = cursor.immutable();
         for (final BlockPos near : BlockPos.betweenClosed(top.offset(-2, -1, -2), top.offset(2, 2, 2)))
         {
-            final BlockState state = level.getBlockState(near);
-            if (state.getBlock() instanceof LeavesBlock && !state.getValue(LeavesBlock.PERSISTENT))
+            final BlockState state = blocks.apply(near);
+            if (state == null || (state.getBlock() instanceof LeavesBlock && !state.getValue(LeavesBlock.PERSISTENT)))
             {
                 return true;
             }

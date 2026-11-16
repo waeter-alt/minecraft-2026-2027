@@ -1,7 +1,6 @@
 package fr.kodistan.interregne.colony;
 
 import com.minecolonies.api.colony.buildings.IBuilding;
-import com.mojang.math.Transformation;
 import fr.kodistan.interregne.InterregneMod;
 import fr.kodistan.interregne.walls.WallBlocks;
 import net.minecraft.core.BlockPos;
@@ -15,8 +14,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.BossEvent;
-import net.minecraft.world.entity.Display;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FallingBlock;
@@ -26,8 +23,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,10 +38,6 @@ public final class WallSite implements Site
     private static final int MAX_FLYING = 40;
     private static final int MAX_PER_TICK = 4096;
 
-    private record Flight(BlockPos pos, BlockState state, Display.BlockDisplay display, int launchedAt)
-    {
-    }
-
     private final ServerLevel level;
     private final List<WallBlocks.Step> steps;
     private final int durationTicks;
@@ -61,7 +52,7 @@ public final class WallSite implements Site
     @Nullable
     private final ItemStack banner;
     private final RandomSource random;
-    private final List<Flight> flights = new ArrayList<>();
+    private final List<FlyingBlocks.Flight> flights = new ArrayList<>();
 
     private int next;
     private int age;
@@ -162,7 +153,7 @@ public final class WallSite implements Site
         {
             updateBossBar(age % 20 == 0);
         }
-        tickFlights(false);
+        FlyingBlocks.tickFlights(level, flights, age, false, FLIGHT_TICKS);
         if (next >= steps.size() && flights.isEmpty())
         {
             finish();
@@ -178,7 +169,7 @@ public final class WallSite implements Site
         {
             place(steps.get(next++), false);
         }
-        tickFlights(true);
+        FlyingBlocks.tickFlights(level, flights, age, true, FLIGHT_TICKS);
         finish();
     }
 
@@ -237,7 +228,7 @@ public final class WallSite implements Site
         }
         if (solid % FLY_EVERY == 0 && flights.size() < MAX_FLYING && state.isCollisionShapeFullBlock(level, pos) && !(state.getBlock() instanceof FallingBlock))
         {
-            launch(pos, state);
+            flights.add(FlyingBlocks.launch(level, pos, state, age, 6, random));
         }
     }
 
@@ -308,54 +299,6 @@ public final class WallSite implements Site
         {
             level.sendParticles(ParticleTypes.ENCHANT, pos.getX() + 0.5, pos.getY() + 1.5, pos.getZ() + 0.5, 12, 0.6, 0.6, 0.6, 0.4);
         }
-    }
-
-    private void launch(final BlockPos pos, final BlockState state)
-    {
-        level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
-        final Display.BlockDisplay display = new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, level);
-        display.setBlockState(state);
-        display.moveTo(pos.getX(), pos.getY(), pos.getZ());
-        final float scale = 0.35F;
-        final float offset = (1 - scale) / 2;
-        display.setTransformation(new Transformation(
-          new Vector3f(offset + (random.nextFloat() - 0.5F) * 3, 6 + random.nextFloat() * 2, offset + (random.nextFloat() - 0.5F) * 3),
-          new Quaternionf().rotationXYZ(random.nextFloat() * 3.14F, random.nextFloat() * 3.14F, 0),
-          new Vector3f(scale, scale, scale),
-          new Quaternionf()));
-        display.addTag(ConstructionSite.FLYING_TAG);
-        level.addFreshEntity(display);
-        flights.add(new Flight(pos, state, display, age));
-    }
-
-    private void tickFlights(final boolean landAll)
-    {
-        flights.removeIf(flight -> {
-            final int flown = age - flight.launchedAt();
-            if (!landAll && flown == 1)
-            {
-                flight.display().setTransformationInterpolationDelay(0);
-                flight.display().setTransformationInterpolationDuration(FLIGHT_TICKS);
-                flight.display().setTransformation(Transformation.identity());
-            }
-            if (landAll || flown > FLIGHT_TICKS + 1)
-            {
-                final BlockPos pos = flight.pos();
-                final BlockState current = level.getBlockState(pos);
-                if (current.isAir() || !current.getFluidState().isEmpty())
-                {
-                    final BlockState landed = Block.updateFromNeighbourShapes(flight.state(), level, pos);
-                    level.setBlock(pos, landed.isAir() ? flight.state() : landed, Block.UPDATE_ALL);
-                    if (!landAll)
-                    {
-                        level.sendParticles(ParticleTypes.ENCHANTED_HIT, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 6, 0.4, 0.4, 0.4, 0.1);
-                    }
-                }
-                flight.display().discard();
-                return true;
-            }
-            return false;
-        });
     }
 
     private void updateBossBar(final boolean refreshViewers)

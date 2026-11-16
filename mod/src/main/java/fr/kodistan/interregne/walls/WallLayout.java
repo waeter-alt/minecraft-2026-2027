@@ -3,6 +3,8 @@ package fr.kodistan.interregne.walls;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,9 +32,10 @@ public final class WallLayout
     }
 
     /**
-     * One column of wall, from bottom to top inclusive.
+     * One column of wall, from bottom to top inclusive. riseDx/riseDz point towards the neighbouring index when
+     * the crest climbs exactly one block that way (a stair goes here instead of a flat floor); (0, 0) on the flat.
      */
-    public record Column(int x, int z, int bottom, int top, Status status, int index)
+    public record Column(int x, int z, int bottom, int top, Status status, int index, int riseDx, int riseDz)
     {
     }
 
@@ -90,12 +93,18 @@ public final class WallLayout
         boolean contains(int x, int z);
     }
 
-    private static final int SMOOTH = 2;
     /**
      * A gatehouse is 7 blocks along the wall: a 3-wide passage between two 2-wide turrets.
      */
     public static final int GATE_HALF = 3;
     public static final int PASSAGE_HALF = 1;
+
+    /**
+     * How much taller than the wall's nominal height the crest may climb above its own local ground to bridge a
+     * ravine with a ramp. Beyond that it is not worth it: the cells there are shown blocked ("trop profond")
+     * instead of building a very tall pier.
+     */
+    private static final int PLAFOND = 12;
 
     private final List<Column> columns;
     private final List<Tower> towers;
@@ -219,6 +228,72 @@ public final class WallLayout
         return null;
     }
 
+    /**
+     * The gates a trace gets on its own where it crosses a road (Manor Lords style): one in the middle of each run of
+     * trace cells a road's centre line passes through or beside, unless the player already set a gate near there.
+     * Where the crossing falls on a corner or a tower, the gate shows red like any misplaced one.
+     */
+    public static List<WallTrace.Point> crossings(final List<WallTrace.Point> points, final boolean closed, final List<WallTrace.Point> userGates,
+                                                  final java.util.function.LongPredicate onRoad)
+    {
+        final List<WallTrace.Point> out = new ArrayList<>();
+        if (points.size() < 2)
+        {
+            return out;
+        }
+        final List<WallTrace.Point> center = centerline(points, closed);
+        final int n = center.size();
+        final boolean[] hit = new boolean[n];
+        boolean all = true;
+        for (int i = 0; i < n; i++)
+        {
+            final WallTrace.Point c = center.get(i);
+            for (int dz = -1; dz <= 1 && !hit[i]; dz++)
+            {
+                for (int dx = -1; dx <= 1 && !hit[i]; dx++)
+                {
+                    hit[i] = onRoad.test(WallRegistry.cell(c.x() + dx, c.z() + dz));
+                }
+            }
+            all &= hit[i];
+        }
+        if (all)
+        {
+            return out;
+        }
+        // On a ring, start the walk on a cell off any road so no run is cut in two at index 0
+        int start = 0;
+        if (closed)
+        {
+            while (hit[start])
+            {
+                start++;
+            }
+        }
+        int k = 0;
+        while (k < n)
+        {
+            final int i = (start + k) % n;
+            if (!hit[i])
+            {
+                k++;
+                continue;
+            }
+            int length = 0;
+            while (k + length < n && hit[(start + k + length) % n])
+            {
+                length++;
+            }
+            final WallTrace.Point middle = center.get((start + k + length / 2) % n);
+            if (clearOf(middle, userGates) && clearOf(middle, out))
+            {
+                out.add(middle);
+            }
+            k += length;
+        }
+        return out;
+    }
+
     private static boolean clearOf(final WallTrace.Point cell, final List<WallTrace.Point> others)
     {
         for (final WallTrace.Point other : others)
@@ -285,62 +360,81 @@ public final class WallLayout
               status, Math.max(0, center.indexOf(point))));
         }
 
-        // The crest follows the ground along the centerline, averaged over a few blocks.
-        // A roof is not ground: blocked cells take the height of the nearest free ground before them (after them at the start)
-        final int[] groundY = new int[center.size()];
-        final boolean[] free = new boolean[center.size()];
+        // Geometric assignment: every candidate cell within the wall's width of a centerline index's own segment,
+        // excluding tower footprints, attributed to the first index that claims it. Proven to fully cover corners
+        // (90° and 45°, see WallLayoutTest#outerCornerStaysCovered) since each segment's own distance test already
+        // clamps to its shared endpoint.
+        final int[] segmentOf = segments(points, closed, center.size());
+        final double halfWidth = level.thickness() / 2.0;
+        final int reach = (int) Math.ceil(halfWidth) + 1;
+        final Map<Long, Integer> assignedIndex = new LinkedHashMap<>();
+        final Map<Long, Terrain.Probe> assignedProbe = new HashMap<>();
         for (int i = 0; i < center.size(); i++)
         {
-            final Terrain.Probe probe = ground.at(center.get(i).x(), center.get(i).z());
-            groundY[i] = probe.ground();
-            free[i] = probe.loaded() && !probe.blocked();
-        }
-        int last = -1;
-        for (int i = 0; i < center.size(); i++)
-        {
-            if (free[i])
+            final WallTrace.Point cell = center.get(i);
+            final WallTrace.Point a = points.get(segmentOf[i]);
+            final WallTrace.Point b = points.get((segmentOf[i] + 1) % points.size());
+            for (int dx = -reach; dx <= reach; dx++)
             {
-                last = groundY[i];
-            }
-            else if (last != -1)
-            {
-                groundY[i] = last;
-            }
-        }
-        int firstFree = 0;
-        while (firstFree < center.size() && !free[firstFree])
-        {
-            firstFree++;
-        }
-        for (int i = 0; i < firstFree && firstFree < center.size(); i++)
-        {
-            groundY[i] = groundY[firstFree];
-        }
-        final int[] crest = new int[center.size()];
-        for (int i = 0; i < center.size(); i++)
-        {
-            int sum = 0;
-            int count = 0;
-            for (int j = i - SMOOTH; j <= i + SMOOTH; j++)
-            {
-                final int k = closed ? Math.floorMod(j, center.size()) : j;
-                if (k >= 0 && k < center.size())
+                for (int dz = -reach; dz <= reach; dz++)
                 {
-                    sum += groundY[k];
-                    count++;
+                    final int x = cell.x() + dx;
+                    final int z = cell.z() + dz;
+                    final long cellKey = key(x, z);
+                    if (towerCells.contains(cellKey) || assignedIndex.containsKey(cellKey)
+                          || distance(x + 0.5, z + 0.5, a.x() + 1.0, a.z() + 1.0, b.x() + 1.0, b.z() + 1.0) > halfWidth)
+                    {
+                        continue;
+                    }
+                    assignedIndex.put(cellKey, i);
+                    assignedProbe.put(cellKey, ground.at(x, z));
                 }
             }
-            crest[i] = Math.round(sum / (float) count) + level.height();
         }
 
-        // Each tower's floor sits at the walkway's height where it stands, its roof well above the wall
-        // A single point has no centerline yet: its tower keeps its own heights
+        // The local high ground of each index's whole tranche (not just its centre cell), so every cell across the
+        // wall's width shares one crest instead of each reclamping to its own local ground (the main cause of the
+        // "holes" on an uneven cross-section, see WallLayoutTest#lateralSlopeMakesOneTrancheUneven).
+        final int[] g = new int[center.size()];
+        final boolean[] hasG = new boolean[center.size()];
+        Arrays.fill(g, Integer.MIN_VALUE);
+        for (final Map.Entry<Long, Integer> entry : assignedIndex.entrySet())
+        {
+            final Terrain.Probe probe = assignedProbe.get(entry.getKey());
+            if (probe.loaded() && !probe.blocked())
+            {
+                final int i = entry.getValue();
+                g[i] = Math.max(g[i], probe.ground());
+                hasG[i] = true;
+            }
+        }
+        // An index with no ground of its own (every assigned cell blocked or unloaded, or none assigned at all)
+        // borrows its nearest neighbour's, wrapping a closed loop instead of only scanning forward (the old fix
+        // for the leading unloaded cells ignored the wrap-around neighbour entirely, see
+        // WallLayoutTest#closedLoopSeamIsNotFilledCircularly).
+        fillMissingGround(g, hasG, closed);
+        // A single-cell relief blip (one isolated block of noise, surrounded by otherwise consistent ground)
+        // should not read as a step in the crest: the walkway passes over it smoothly instead of bumping up/down.
+        despikeGround(g, closed);
+
+        // The crest: this index's own ground plus the level's nominal height (same resting height as on flat
+        // ground before), raised only where a neighbour's cliff forces it, so it climbs or descends at most one
+        // block per cell — a ramp, never a cliff — wrapping a closed loop.
+        final int[] w = new int[center.size()];
+        for (int i = 0; i < center.size(); i++)
+        {
+            w[i] = g[i] + level.height();
+        }
+        lipschitzRelax(w, closed);
+
+        // Each tower's walkway reads straight off the crest, so it always agrees with the wall beside it.
+        // A single point has no centerline yet: its tower keeps its own heights.
         towers.replaceAll(tower -> {
-            if (crest.length == 0)
+            if (w.length == 0)
             {
                 return tower;
             }
-            final int walk = crest[Math.min(tower.index(), crest.length - 1)];
+            final int walk = w[Math.min(tower.index(), w.length - 1)];
             return new Tower(tower.x(), tower.z(), tower.size(), tower.bottom(), Math.max(tower.top(), walk + level.towerExtra()), walk, tower.status(), tower.index());
         });
 
@@ -381,16 +475,21 @@ public final class WallLayout
             }
             if (floor == Integer.MAX_VALUE)
             {
-                floor = groundY[index];
+                floor = g[index];
             }
-            gates.add(new Gate(point.x(), point.z(), u[0], u[1], depth, floor, Math.max(floor + level.height(), crest[index]), status, index));
+            // Past the most a wall may have (automatic gates where the trace crosses roads), a gate shows red
+            if (gates.size() >= WallLevels.MAX_GATES)
+            {
+                status = Status.BLOCKED;
+            }
+            gates.add(new Gate(point.x(), point.z(), u[0], u[1], depth, floor, Math.max(floor + level.height(), w[index]), status, index));
         }
 
+        // Columns: one uniform top per index (the crest), built from the cells assigned earlier, minus whatever a
+        // gate has since claimed. A cell too deep below the crest (a ravine the ramp would have to bridge for too
+        // long, see PLAFOND) is shown blocked instead of built impossibly tall.
         final Map<Long, Column> columns = new LinkedHashMap<>();
         int length = 0;
-        final int[] segmentOf = segments(points, closed, center.size());
-        final double halfWidth = level.thickness() / 2.0;
-        final int reach = (int) Math.ceil(halfWidth) + 1;
         for (int i = 0; i < center.size(); i++)
         {
             final WallTrace.Point cell = center.get(i);
@@ -398,35 +497,182 @@ public final class WallLayout
             {
                 length++;
             }
-            final WallTrace.Point a = points.get(segmentOf[i]);
-            final WallTrace.Point b = points.get((segmentOf[i] + 1) % points.size());
-            for (int dx = -reach; dx <= reach; dx++)
+        }
+        for (final Map.Entry<Long, Integer> entry : assignedIndex.entrySet())
+        {
+            final long cellKey = entry.getKey();
+            if (gateCells.contains(cellKey))
             {
-                for (int dz = -reach; dz <= reach; dz++)
+                continue;
+            }
+            final int i = entry.getValue();
+            final int x = (int) (cellKey >> 32);
+            final int z = (int) cellKey;
+            final Terrain.Probe probe = assignedProbe.get(cellKey);
+            final Status status = statusOf(probe, ground, claim, x, z);
+            if (status != Status.OK)
+            {
+                // Where it cannot stand, show the slice of wall that would cut through, at the crest
+                columns.put(cellKey, new Column(x, z, w[i] - level.height() + 1, w[i], status, i, 0, 0));
+                continue;
+            }
+            if (w[i] - g[i] > level.height() + PLAFOND)
+            {
+                columns.put(cellKey, new Column(x, z, probe.ground() + 1, w[i], Status.BLOCKED, i, 0, 0));
+                continue;
+            }
+            columns.put(cellKey, new Column(x, z, probe.ground() + 1, w[i], status, i, 0, 0));
+        }
+        return new WallLayout(markRises(new ArrayList<>(columns.values()), w, center, closed), towers, gates, length, center, closed, towerCells);
+    }
+
+    /**
+     * Fills the indices with no ground of their own from the nearest index that has one (forward or backward,
+     * whichever is closer), wrapping around a closed loop.
+     */
+    static void fillMissingGround(final int[] g, final boolean[] hasG, final boolean closed)
+    {
+        final int n = g.length;
+        boolean anyKnown = false;
+        for (final boolean known : hasG)
+        {
+            anyKnown |= known;
+        }
+        if (!anyKnown)
+        {
+            return;
+        }
+        final int[] filled = g.clone();
+        for (int i = 0; i < n; i++)
+        {
+            if (hasG[i])
+            {
+                continue;
+            }
+            for (int d = 1; d < n; d++)
+            {
+                final int forward = closed ? Math.floorMod(i + d, n) : i + d;
+                if (forward >= 0 && forward < n && hasG[forward])
                 {
-                    final int x = cell.x() + dx;
-                    final int z = cell.z() + dz;
-                    final long key = key(x, z);
-                    if (towerCells.contains(key) || gateCells.contains(key) || columns.containsKey(key)
-                          || distance(x + 0.5, z + 0.5, a.x() + 1.0, a.z() + 1.0, b.x() + 1.0, b.z() + 1.0) > halfWidth)
-                    {
-                        continue;
-                    }
-                    final Terrain.Probe probe = ground.at(x, z);
-                    final Status status = statusOf(probe, ground, claim, x, z);
-                    if (status != Status.OK)
-                    {
-                        // Where it cannot stand, show the slice of wall that would cut through, at the crest
-                        columns.put(key, new Column(x, z, crest[i] - level.height() + 1, crest[i], status, i));
-                        continue;
-                    }
-                    // Same height everywhere, give or take the smoothing
-                    final int top = Math.max(probe.ground() + level.height() - 1, Math.min(probe.ground() + level.height() + 1, crest[i]));
-                    columns.put(key, new Column(x, z, probe.ground() + 1, top, status, i));
+                    filled[i] = g[forward];
+                    break;
+                }
+                final int backward = closed ? Math.floorMod(i - d, n) : i - d;
+                if (backward >= 0 && backward < n && hasG[backward])
+                {
+                    filled[i] = g[backward];
+                    break;
                 }
             }
         }
-        return new WallLayout(new ArrayList<>(columns.values()), towers, gates, length, center, closed, towerCells);
+        System.arraycopy(filled, 0, g, 0, n);
+    }
+
+    /**
+     * Smooths away an isolated single-cell relief blip: an index whose ground differs from BOTH its neighbours by
+     * exactly one block, while those neighbours themselves roughly agree with each other, is noise (a lone rock, a
+     * single raised dirt block) rather than a real feature — it is flattened to its neighbours' level instead of
+     * poking a one-block bump or dip into the crest. A genuine slope (neighbours disagreeing by more than one) is
+     * left untouched.
+     */
+    static void despikeGround(final int[] g, final boolean closed)
+    {
+        final int n = g.length;
+        if (n < 3)
+        {
+            return;
+        }
+        final int[] smoothed = g.clone();
+        for (int i = 0; i < n; i++)
+        {
+            final int prev = closed ? Math.floorMod(i - 1, n) : Math.max(0, i - 1);
+            final int next = closed ? Math.floorMod(i + 1, n) : Math.min(n - 1, i + 1);
+            if (prev == i || next == i || prev == next)
+            {
+                continue;
+            }
+            if (Math.abs(g[prev] - g[next]) <= 1 && Math.abs(g[i] - g[prev]) == 1 && Math.abs(g[i] - g[next]) == 1)
+            {
+                smoothed[i] = Math.round((g[prev] + g[next]) / 2.0f);
+            }
+        }
+        System.arraycopy(smoothed, 0, g, 0, n);
+    }
+
+    /**
+     * Relaxes the crest so it never differs by more than one block between neighbours, by raising (never
+     * lowering) whichever side is low until it is consistent — a ramp instead of a cliff, wrapping a closed loop.
+     * Converges because every step only raises a value, bounded by the array's own maximum.
+     */
+    static void lipschitzRelax(final int[] w, final boolean closed)
+    {
+        final int n = w.length;
+        if (n < 2)
+        {
+            return;
+        }
+        boolean changed = true;
+        while (changed)
+        {
+            changed = false;
+            for (int i = 0; i < n; i++)
+            {
+                final int prev = closed ? Math.floorMod(i - 1, n) : Math.max(0, i - 1);
+                final int next = closed ? Math.floorMod(i + 1, n) : Math.min(n - 1, i + 1);
+                final int raised = Math.max(w[i], Math.max(w[prev] - 1, w[next] - 1));
+                if (raised != w[i])
+                {
+                    w[i] = raised;
+                    changed = true;
+                }
+            }
+        }
+    }
+
+    /**
+     * Marks, for every column, the direction (if any) in which its index's crest climbs exactly one block FROM a
+     * neighbour: a stair goes on the HIGHER of the two indices (replacing what would otherwise be a one-block-tall
+     * wall blocking the step up from the lower one), facing the direction of ascent. A local one-cell dip between
+     * two higher neighbours is a known rare edge case where only one of its two directions is kept.
+     */
+    private static List<Column> markRises(final List<Column> columns, final int[] w, final List<WallTrace.Point> center, final boolean closed)
+    {
+        final int n = w.length;
+        if (n < 2)
+        {
+            return columns;
+        }
+        final int[] riseDx = new int[n];
+        final int[] riseDz = new int[n];
+        for (int i = 0; i < n; i++)
+        {
+            final int next = closed ? Math.floorMod(i + 1, n) : i + 1;
+            if (!closed && next >= n)
+            {
+                continue;
+            }
+            final WallTrace.Point here = center.get(i);
+            final WallTrace.Point there = center.get(next);
+            if (w[next] == w[i] + 1)
+            {
+                // "there" (next) is higher: it gets the stair, facing the way you climb up to reach it.
+                riseDx[next] = Integer.signum(there.x() - here.x());
+                riseDz[next] = Integer.signum(there.z() - here.z());
+            }
+            else if (w[next] == w[i] - 1)
+            {
+                // "here" (i) is higher: it gets the stair, facing the way you climb up to reach it.
+                riseDx[i] = Integer.signum(here.x() - there.x());
+                riseDz[i] = Integer.signum(here.z() - there.z());
+            }
+        }
+        final List<Column> marked = new ArrayList<>(columns.size());
+        for (final Column column : columns)
+        {
+            marked.add(new Column(column.x(), column.z(), column.bottom(), column.top(), column.status(), column.index(),
+              riseDx[column.index()], riseDz[column.index()]));
+        }
+        return marked;
     }
 
     /**
