@@ -326,6 +326,48 @@ public final class RouteRegistry extends SavedData
     }
 
     /**
+     * The road joining two colonies as cells from {@code from} to {@code to}, tunnels bridged by straight lines; null
+     * when none is built or it is vanishing.
+     */
+    @Nullable
+    public BlockPos[] pathBetween(final int from, final int to)
+    {
+        for (final Road road : roads)
+        {
+            if (road.decay() != null || road.x().length == 0)
+            {
+                continue;
+            }
+            final boolean forward = road.pairA() == from && road.pairB() == to;
+            if (!forward && !(road.pairA() == to && road.pairB() == from))
+            {
+                continue;
+            }
+            final List<BlockPos> cells = new ArrayList<>();
+            final int n = road.x().length;
+            for (int k = 0; k < n; k++)
+            {
+                final int i = forward ? k : n - 1 - k;
+                final BlockPos cell = new BlockPos(road.x()[i], road.y()[i], road.z()[i]);
+                if (!cells.isEmpty())
+                {
+                    final BlockPos last = cells.getLast();
+                    final int gap = Math.max(Math.abs(cell.getX() - last.getX()), Math.abs(cell.getZ() - last.getZ()));
+                    for (int g = 1; g < gap; g++)
+                    {
+                        final double t = g / (double) gap;
+                        cells.add(new BlockPos((int) Math.round(last.getX() + (cell.getX() - last.getX()) * t),
+                          (int) Math.round(last.getY() + (cell.getY() - last.getY()) * t), (int) Math.round(last.getZ() + (cell.getZ() - last.getZ()) * t)));
+                    }
+                }
+                cells.add(cell);
+            }
+            return cells.toArray(new BlockPos[0]);
+        }
+        return null;
+    }
+
+    /**
      * The centre-line cells of a road, as {x, z} pairs.
      */
     public int[][] cells(final int road)

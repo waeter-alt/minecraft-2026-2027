@@ -1,0 +1,9 @@
+{
+  "icon": "icon.png",
+  "name": "Couronne Vacante",
+  "authors": ["Kodistan"],
+  "desc": "Bâtiments propres à la Couronne Vacante, communs à tous les styles.",
+  "mods": ["structurize", "minecolonies", "interregne"],
+  "version": "1",
+  "pack-format": "1"
+}

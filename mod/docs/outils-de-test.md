@@ -138,6 +138,27 @@ Pour tout ce qui a besoin d'une vraie colonie. Le jeu tourne aussi vite que la m
 
 ---
 
+## 4 bis. Commerce : commandes d'admin sur un vrai monde
+
+Pour tester contrats et caravanes sans client, sur un serveur de test (`./gradlew runServer` avec un monde à deux colonies reliées par une route, par exemple `ColoniesV2` copié dans `run/server/world`), via rcon ou la console. Les colonies sont données par numéro (`/mc colony list`).
+
+```
+/diplomatie allier 1 2          # alliance, requise pour commercer
+/commerce relais 1 2            # pose un Relais niveau 2 dans la colonie 1 (idem colonie 2)
+/commerce caisses 1 bois 40     # range 40 caisses de bois à l'entrepôt de la colonie 1
+/commerce tresor 2 1000         # 1000 Couronnes au trésor régional de la colonie 2
+/commerce offre 1 2 bois 10 5   # la colonie 1 propose 10 caisses de bois à 5 pièce à la colonie 2
+/commerce accepter 2 1          # la colonie 2 accepte le contrat n° 1 : la caravane part
+/commerce etat                  # stocks, trésors et contrats (progression sur la route)
+/commerce chantier 1            # pose un Relais non construit et demande son chantier (blueprint commun)
+```
+
+Une caravane parcourt la route à `caravanBlocksPerSecond` (3 par défaut). Sans joueur à moins de `caravanShowDistance` blocs, elle n'avance que sur le papier ; l'animal n'apparaît que près d'un joueur (couvert par `CommerceTests`, lancés avec `runGameTestServer`). `/diplomatie rompre 1 2` pendant le trajet rend les caisses au vendeur et le prix à l'acheteur.
+
+Le Relais commercial se construit depuis un pack de blueprints à nous, `Couronne Vacante`, ajouté à tous les styles du catalogue. Ses blueprints sont générés par `python -I -X utf8 mod/tools/gen_relais_blueprints.py` (`pip install nbtlib`) ; `RelaisBlueprintTest` (JUnit) vérifie qu'ils se chargent et contiennent la hutte. Écran : `screen=block:relais` dans UiShot.
+
+---
+
 ## 5. Outils de routes (à venir)
 
 RouteBench (tracé de route testé hors du jeu en ~2 s), TerrainDump (copie d'un vrai terrain) et RouteShot (captures des routes en jeu) sont sur la branche `feature/route-commerciale-test`, pas encore sur `main`. Leur mode d'emploi sera ajouté ici avec la PR des routes.

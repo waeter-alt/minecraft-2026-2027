@@ -53,7 +53,7 @@ public final class StyleScreen extends ParchmentScreen
     {
         super(Component.literal("Choisissez le style de votre cité"), catalogue);
         this.catalogue = catalogue;
-        this.packs = StructurePacks.getPackMetas().stream().filter(p -> !p.isDisabled())
+        this.packs = StructurePacks.getPackMetas().stream().filter(CatalogueIndex::isStyle)
           .sorted(Comparator.comparing(StyleNames::name)).toList();
         this.selected = StructurePacks.getSelectedPack();
     }

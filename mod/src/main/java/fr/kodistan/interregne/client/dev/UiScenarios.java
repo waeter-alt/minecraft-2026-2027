@@ -24,6 +24,9 @@ import fr.kodistan.interregne.client.hut.PermissionsScreen;
 import fr.kodistan.interregne.client.hut.StatsScreen;
 import fr.kodistan.interregne.network.IntendanceQuotePayload;
 import fr.kodistan.interregne.network.OpenBankPayload;
+import fr.kodistan.interregne.commerce.Contract;
+import fr.kodistan.interregne.commerce.RelaisStatePayload;
+import fr.kodistan.interregne.client.commerce.RelaisScreen;
 import fr.kodistan.interregne.network.OpenComptoirPayload;
 import fr.kodistan.interregne.network.OpenMarketPayload;
 import fr.kodistan.interregne.network.OpenRegionalBankPayload;
@@ -328,6 +331,14 @@ public final class UiScenarios
           series(crates, 6, 2), series(crates, 4, -1), 12_500)));
         blocks.put("throne-member", () -> ThroneScreen.open(new OpenThronePayload(NOWHERE, false, 1, true, 754, true, "Val-de-Loire",
           series(crates, 6, 2), new int[crates], 12_500)));
+        final var partners = List.of(new RelaisStatePayload.Partner(2, "Ville Neuve", true), new RelaisStatePayload.Partner(3, "Marches de l'Ouest", true),
+          new RelaisStatePayload.Partner(4, "Val-de-Loire", false));
+        blocks.put("relais", () -> RelaisScreen.preview(new RelaisStatePayload(1, "Vielle Ville", 2, 4, 5_000, "", partners, List.of(
+          new RelaisStatePayload.Row(1, 1, "Vielle Ville", 2, "Ville Neuve", 0, 40, 5, Contract.TRANSIT, 62),
+          new RelaisStatePayload.Row(2, 3, "Marches de l'Ouest", 1, "Vielle Ville", 2, 25, 12, Contract.OFFER, 0),
+          new RelaisStatePayload.Row(3, 1, "Vielle Ville", 3, "Marches de l'Ouest", 4, 8, 30, Contract.OFFER, 0)))));
+        blocks.put("relais-refus", () -> RelaisScreen.preview(new RelaisStatePayload(1, "Vielle Ville", 1, 2, 20, "L'entrepôt n'a pas assez de caisses de bois.", List.of(), List.of())));
+        blocks.put("relais-chantier", () -> RelaisScreen.preview(new RelaisStatePayload(1, "Vielle Ville", 0, 0, 0, "", List.of(), List.of())));
         // The field variant: the farm one would cancel a construction when closed
         blocks.put("crops", () -> CropChoiceScreen.openForField(() -> { }, stack -> { }));
         for (final Map.Entry<String, Runnable> block : blocks.entrySet())

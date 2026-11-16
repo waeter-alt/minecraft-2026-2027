@@ -256,6 +256,14 @@ public final class Config
       .comment("Influence the player who declares war on another colony pays (refused if they cannot)")
       .defineInRange("warDeclarationCost", 20L, 0L, Long.MAX_VALUE);
 
+    public static final ModConfigSpec.IntValue CARAVAN_BLOCKS_PER_SECOND = BUILDER
+      .comment("How fast a trade caravan walks its road, in blocks per second")
+      .defineInRange("caravanBlocksPerSecond", 3, 1, 40);
+
+    public static final ModConfigSpec.IntValue CARAVAN_SHOW_DISTANCE = BUILDER
+      .comment("A caravan shows up as real animals when a player is this close (blocks); otherwise it only advances on paper")
+      .defineInRange("caravanShowDistance", 96, 16, 256);
+
     public static final ModConfigSpec.IntValue WAR_NOTICE_SECONDS = BUILDER
       .comment("Seconds between a declaration of war and the war being open (assaults allowed)")
       .defineInRange("warNoticeSeconds", 180, 0, 86400);

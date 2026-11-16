@@ -57,7 +57,17 @@ public abstract class BOWindowMixin
         else if ((type == WindowHutWorkerModulePlaceholder.class || type == WindowHutMinPlaceholder.class || type == WindowHutLiving.class) && HutScreen.enabled())
         {
             ci.cancel();
-            HutScreen.open(((AbstractWindowModuleBuildingAccessor) this).interregne$building());
+            final var building = ((AbstractWindowModuleBuildingAccessor) this).interregne$building();
+            if (building instanceof fr.kodistan.interregne.commerce.BuildingRelaisCommercial.View)
+            {
+                // The Relais commercial has its own window: the server answers with the state it shows
+                net.neoforged.neoforge.network.PacketDistributor.sendToServer(new fr.kodistan.interregne.commerce.RelaisActionPayload(
+                  fr.kodistan.interregne.commerce.RelaisActionPayload.OPEN, building.getColony().getID(), 0, 0, 0, 0, 0));
+            }
+            else
+            {
+                HutScreen.open(building);
+            }
         }
         else if (type == WindowMainPage.class && HutScreen.enabled() && !ColonyHubScreen.consumeOpenOriginal())
         {
