@@ -46,12 +46,14 @@ public final class BuildNow
         final Boolean buildNow = PENDING.remove(player.getUUID());
         if (buildNow == null || !buildNow || !(player instanceof ServerPlayer serverPlayer))
         {
+            InterregneMod.LOGGER.info("BuildNow: pas de construction immédiate (mode reçu : {})", buildNow);
             return;
         }
         // Only a hut that was just created: a pasted, already built hut or a refused placement leaves nothing to start
         final IBuilding building = IColonyManager.getInstance().getBuilding(world, pos);
         if (building == null || building.getBuildingLevel() > 0)
         {
+            InterregneMod.LOGGER.info("BuildNow: rien à lancer en {} (bâtiment {})", pos, building == null ? "absent" : "niveau " + building.getBuildingLevel());
             return;
         }
         BuildContext.begin(serverPlayer);

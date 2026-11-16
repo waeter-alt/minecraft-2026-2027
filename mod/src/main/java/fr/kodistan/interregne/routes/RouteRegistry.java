@@ -43,6 +43,11 @@ public final class RouteRegistry extends SavedData
             final long y = b.asLong();
             return x < y ? new Pair(x, y) : new Pair(y, x);
         }
+
+        public static Pair ofColonies(final int a, final int b)
+        {
+            return new Pair(Math.min(a, b), Math.max(a, b));
+        }
     }
 
     /**
@@ -55,6 +60,8 @@ public final class RouteRegistry extends SavedData
 
     private final Set<Long> posts = new HashSet<>();
     private final Set<Pair> links = new HashSet<>();
+    /** Colonies a road already joins, by colony id: a post looks for the nearest colony not in this set. */
+    private final Set<Pair> colonyLinks = new HashSet<>();
     private final List<Road> roads = new ArrayList<>();
     /** The cells of every road's centre line, rebuilt when a road is added or changed. */
     private Set<Long> centres;
@@ -93,6 +100,35 @@ public final class RouteRegistry extends SavedData
         {
             setDirty();
         }
+    }
+
+    public void linkColonies(final int a, final int b)
+    {
+        if (colonyLinks.add(Pair.ofColonies(a, b)))
+        {
+            setDirty();
+        }
+    }
+
+    /**
+     * A post with no other colony to reach: its road goes to the colony nearest it, remembered per post.
+     */
+    public void linkPost(final int colony, final BlockPos post)
+    {
+        if (colonyLinks.add(new Pair(-1L - colony, post.asLong())))
+        {
+            setDirty();
+        }
+    }
+
+    public boolean isPostLinked(final int colony, final BlockPos post)
+    {
+        return colonyLinks.contains(new Pair(-1L - colony, post.asLong()));
+    }
+
+    public boolean areLinked(final int a, final int b)
+    {
+        return colonyLinks.contains(Pair.ofColonies(a, b));
     }
 
     public void link(final BlockPos a, final BlockPos b)
@@ -302,6 +338,12 @@ public final class RouteRegistry extends SavedData
         {
             registry.links.add(new Pair(low[i], high[i]));
         }
+        final long[] colLow = tag.getLongArray("colLinksLow");
+        final long[] colHigh = tag.getLongArray("colLinksHigh");
+        for (int i = 0; i < Math.min(colLow.length, colHigh.length); i++)
+        {
+            registry.colonyLinks.add(new Pair(colLow[i], colHigh[i]));
+        }
         return registry;
     }
 
@@ -311,6 +353,8 @@ public final class RouteRegistry extends SavedData
         tag.putLongArray("posts", posts.stream().mapToLong(Long::longValue).toArray());
         tag.putLongArray("linksLow", links.stream().mapToLong(Pair::low).toArray());
         tag.putLongArray("linksHigh", links.stream().mapToLong(Pair::high).toArray());
+        tag.putLongArray("colLinksLow", colonyLinks.stream().mapToLong(Pair::low).toArray());
+        tag.putLongArray("colLinksHigh", colonyLinks.stream().mapToLong(Pair::high).toArray());
         final ListTag list = new ListTag();
         for (final Road road : roads)
         {

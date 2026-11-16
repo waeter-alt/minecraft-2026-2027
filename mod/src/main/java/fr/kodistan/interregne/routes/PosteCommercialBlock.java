@@ -70,51 +70,59 @@ public final class PosteCommercialBlock extends Block
     private static void use(final ServerLevel level, final ServerPlayer player, final BlockPos pos, final boolean build)
     {
         final RouteRegistry registry = RouteRegistry.get(level.getServer());
-        final BlockPos other = registry.nearestUnlinked(pos);
-        if (other == null)
+        // A post placed by a command, a paste or before the registry existed is only known once it is used
+        registry.add(pos);
+        // The post stands for the colony nearest it; the road goes to the nearest colony no road joins to it yet
+        final IColony colonyA = RouteEnds.nearest(level, pos);
+        if (colonyA == null)
         {
-            say(player, registry.hasOther(pos) ? "Ce poste est déjà relié à tous les autres." : "Aucun autre Poste commercial détecté.", ChatFormatting.GRAY);
+            say(player, "Aucune colonie détectée : fonde-en une d'abord.", ChatFormatting.GRAY);
             return;
         }
-        final RouteRegistry.Pair pair = RouteRegistry.Pair.of(pos, other);
+        final IColony colonyB = RouteEnds.nearestUnlinked(level, colonyA, registry);
+        // No other colony to reach: the post itself is the far end of the road, which runs to this colony
+        final boolean toPost = colonyB == null;
+        if (toPost)
+        {
+            if (registry.isPostLinked(colonyA.getID(), pos))
+            {
+                say(player, "Ce poste est déjà relié à " + colonyA.getName() + ".", ChatFormatting.GRAY);
+                return;
+            }
+            if (colonyA.isCoordInColony(level, pos))
+            {
+                say(player, "Ce poste est dans " + colonyA.getName() + " : pose-le dehors, à l'endroit d'où la route doit partir.", ChatFormatting.RED);
+                return;
+            }
+        }
+        final RouteRegistry.Pair pair = toPost ? new RouteRegistry.Pair(-1L - colonyA.getID(), pos.asLong())
+                                               : RouteRegistry.Pair.ofColonies(colonyA.getID(), colonyB.getID());
         if (BUSY.contains(pair))
         {
             say(player, "Cette route est déjà à l'étude ou en chantier.", ChatFormatting.RED);
             return;
         }
+        final String target = toPost ? "poste → " + colonyA.getName() : colonyA.getName() + " → " + colonyB.getName();
         final Studied studied = PLANS.get(pair);
         if (studied != null && level.getGameTime() - studied.at() <= PLAN_TICKS)
         {
             if (build)
             {
-                build(level, player, pos, other, studied);
+                build(level, player, pos, pair, colonyA, colonyB, studied);
             }
             else
             {
-                describe(player, pos, other, studied.plan());
+                describe(player, target, studied.plan());
             }
             return;
         }
-        final double flight = Math.sqrt(pos.distSqr(other));
+        final double flight = Math.sqrt(colonyA.getCenter().distSqr(toPost ? pos : colonyB.getCenter()));
         final UUID who = player.getUUID();
-        // Each post stands for the colony nearest it: the end snaps to that colony's gate facing the other one (or
-        // its town hall's door, or the edge of its land). When both posts are nearest the same colony, only the
-        // closer one takes it and the other end stays at its post.
-        IColony colonyA = RouteEnds.nearest(level, pos);
-        IColony colonyB = RouteEnds.nearest(level, other);
-        if (colonyA != null && colonyB != null && colonyA.getID() == colonyB.getID())
-        {
-            if (colonyA.getCenter().distSqr(pos) <= colonyA.getCenter().distSqr(other))
-            {
-                colonyB = null;
-            }
-            else
-            {
-                colonyA = null;
-            }
-        }
-        final RouteEnds.End endA = RouteEnds.of(level, colonyA, pos, other);
-        final RouteEnds.End endB = RouteEnds.of(level, colonyB, other, pos);
+        // Each end snaps to its colony's gate facing the other one (or its town hall's door, or the edge of its land);
+        // a post set by a gate picks that gate.
+        final RouteEnds.End endA = toPost ? RouteEnds.of(level, null, pos, colonyA.getCenter()) : RouteEnds.of(level, colonyA, pos, colonyB.getCenter());
+        final RouteEnds.End endB = toPost ? RouteEnds.of(level, colonyA, colonyA.getCenter(), pos)
+                                          : RouteEnds.of(level, colonyB, colonyB.getCenter(), colonyA.getCenter());
         BUSY.add(pair);
         final boolean started = RoutePlanning.study(level, endA, endB, player, plan -> {
             BUSY.remove(pair);
@@ -123,7 +131,7 @@ public final class PosteCommercialBlock extends Block
             {
                 if (asker != null)
                 {
-                    say(asker, String.format("Poste détecté à %.0f blocs, mais aucun tracé possible entre les deux.", flight), ChatFormatting.RED);
+                    say(asker, String.format("%s à %.0f blocs, mais aucun tracé possible entre les deux.", target, flight), ChatFormatting.RED);
                 }
                 return;
             }
@@ -131,26 +139,25 @@ public final class PosteCommercialBlock extends Block
             PLANS.put(pair, done);
             if (build)
             {
-                build(level, asker, pos, other, done);
+                build(level, asker, pos, pair, colonyA, colonyB, done);
             }
             else if (asker != null)
             {
-                describe(asker, pos, other, plan);
+                describe(asker, target, plan);
             }
         });
         if (!started)
         {
             BUSY.remove(pair);
-            say(player, String.format("Poste détecté à %.0f blocs : trop loin (%d blocs au plus).", flight, RoutePlanning.MAX_DISTANCE), ChatFormatting.RED);
+            say(player, String.format("%s à %.0f blocs : trop loin (%d blocs au plus).", target, flight, RoutePlanning.MAX_DISTANCE), ChatFormatting.RED);
             return;
         }
-        say(player, String.format("Poste détecté à %.0f blocs (vol d'oiseau). Étude du tracé…", flight), ChatFormatting.GRAY);
+        say(player, String.format("Route à relier : %s, à %.0f blocs (vol d'oiseau). Étude du tracé…", target, flight), ChatFormatting.GRAY);
     }
 
-    private static void describe(final ServerPlayer player, final BlockPos pos, final BlockPos other, final RoutePlan plan)
+    private static void describe(final ServerPlayer player, final String target, final RoutePlan plan)
     {
-        say(player, String.format("Route proposée vers le poste à %.0f blocs : %d blocs de long, %s. Sneak + clic droit pour construire.",
-          Math.sqrt(pos.distSqr(other)), plan.length(), works(plan)), ChatFormatting.GOLD);
+        say(player, String.format("Route proposée %s : %d blocs de long, %s. Sneak + clic droit pour construire.", target, plan.length(), works(plan)), ChatFormatting.GOLD);
     }
 
     /**
@@ -194,10 +201,10 @@ public final class PosteCommercialBlock extends Block
         return text.toString();
     }
 
-    private static void build(final ServerLevel level, final ServerPlayer player, final BlockPos pos, final BlockPos other, final Studied studied)
+    private static void build(final ServerLevel level, final ServerPlayer player, final BlockPos pos, final RouteRegistry.Pair pair, final IColony colonyA,
+                              final IColony colonyB, final Studied studied)
     {
         final RoutePlan plan = studied.plan();
-        final RouteRegistry.Pair pair = RouteRegistry.Pair.of(pos, other);
         BUSY.add(pair);
         PLANS.remove(pair);
         // Test tool: construction is for show, not a timed cost — kept short so iterating in game stays fast
@@ -205,7 +212,14 @@ public final class PosteCommercialBlock extends Block
         RouteSite.launch(level, new RouteBuilder(level, plan), seconds, Component.literal("⚒ Route commerciale"), () -> {
             BUSY.remove(pair);
             final RouteRegistry registry = RouteRegistry.get(level.getServer());
-            registry.link(pos, other);
+            if (colonyB == null)
+            {
+                registry.linkPost(colonyA.getID(), pos);
+            }
+            else
+            {
+                registry.linkColonies(colonyA.getID(), colonyB.getID());
+            }
             registry.record(plan, studied.endA(), studied.endB());
             registry.broadcast();
             if (studied.endA().border())
@@ -265,6 +279,15 @@ public final class PosteCommercialBlock extends Block
     {
         BUSY.clear();
         PLANS.clear();
+    }
+
+    @Override
+    protected void onPlace(final BlockState state, final Level level, final BlockPos pos, final BlockState oldState, final boolean movedByPiston)
+    {
+        if (level instanceof ServerLevel serverLevel && !state.is(oldState.getBlock()))
+        {
+            RouteRegistry.get(serverLevel.getServer()).add(pos.immutable());
+        }
     }
 
     @Override
