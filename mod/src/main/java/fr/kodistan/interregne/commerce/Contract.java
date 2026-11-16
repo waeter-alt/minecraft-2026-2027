@@ -32,8 +32,24 @@ public final class Contract
     public double progress;
     /** Crates not yet stored at the buyer's, once the caravan has arrived. */
     public int left;
+    /** The mule. */
     @Nullable
     public UUID puppet;
+    /** The man walking beside it. */
+    @Nullable
+    public UUID driver;
+    /** The escort tier bought for this contract, 0 for none. */
+    public int escort;
+    /** What the seller paid for the escort, kept to refund an offer withdrawn before departure. */
+    public long escortFromTreasury;
+    public long escortFromPurse;
+    /** Soldiers still alive: killed ones never come back, even when the caravan is hidden and shown again. */
+    public int swordsmenLeft;
+    public int archersLeft;
+    /** The soldiers on the road now (not saved: they only exist while a player is near). */
+    public final java.util.List<UUID> escorts = new java.util.ArrayList<>();
+    /** A soldier is fighting: the caravan waits. Recomputed every tick. */
+    public boolean engaged;
 
     public Contract(final long id, final int seller, final int buyer, final String crate, final int quantity, final long unitPrice)
     {
@@ -43,6 +59,11 @@ public final class Contract
         this.crate = crate;
         this.quantity = quantity;
         this.unitPrice = unitPrice;
+    }
+
+    public long escortPaid()
+    {
+        return escortFromTreasury + escortFromPurse;
     }
 
     public long total()
@@ -69,6 +90,11 @@ public final class Contract
         tag.putLongArray("path", path);
         tag.putDouble("progress", progress);
         tag.putInt("left", left);
+        tag.putInt("escort", escort);
+        tag.putLong("escortTreasury", escortFromTreasury);
+        tag.putLong("escortPurse", escortFromPurse);
+        tag.putInt("swordsmen", swordsmenLeft);
+        tag.putInt("archers", archersLeft);
         return tag;
     }
 
@@ -80,6 +106,12 @@ public final class Contract
         contract.path = tag.getLongArray("path");
         contract.progress = tag.getDouble("progress");
         contract.left = tag.getInt("left");
+        // Saves from before the escort have none of these: tier 0
+        contract.escort = tag.getInt("escort");
+        contract.escortFromTreasury = tag.getLong("escortTreasury");
+        contract.escortFromPurse = tag.getLong("escortPurse");
+        contract.swordsmenLeft = tag.getInt("swordsmen");
+        contract.archersLeft = tag.getInt("archers");
         return contract;
     }
 }

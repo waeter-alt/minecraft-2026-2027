@@ -40,7 +40,7 @@ public final class RelaisDesk
             {
                 final IColony buyer = IColonyManager.getInstance().getColonyByWorld(payload.other(), player.server.overworld());
                 final Crate crate = payload.crate() >= 0 && payload.crate() < Crate.values().length ? Crate.values()[payload.crate()] : null;
-                notice = buyer == null || crate == null ? "Offre invalide." : contracts.offer(player, player.server, colony, buyer, crate, payload.quantity(), payload.price());
+                notice = buyer == null || crate == null ? "Offre invalide." : contracts.offer(player, player.server, colony, buyer, crate, payload.quantity(), payload.price(), payload.escort());
             }
             case RelaisActionPayload.ACCEPT -> notice = contracts.accept(player, player.server, colony, payload.contract());
             case RelaisActionPayload.CANCEL -> notice = contracts.cancel(player, colony, payload.contract());
@@ -70,9 +70,15 @@ public final class RelaisDesk
             final Crate crate = Crate.byId(contract.crate);
             final int percent = contract.state == Contract.OFFER || contract.path.length < 2 ? 0 : (int) Math.round(100.0 * contract.progress / (contract.path.length - 1));
             rows.add(new RelaisStatePayload.Row(contract.id, contract.seller, seller == null ? "?" : seller.getName(), contract.buyer, buyer == null ? "?" : buyer.getName(),
-              crate == null ? 0 : crate.ordinal(), contract.quantity, contract.unitPrice, contract.state, percent));
+              crate == null ? 0 : crate.ordinal(), contract.quantity, contract.unitPrice, contract.state, percent, contract.escort,
+              contract.state == Contract.OFFER ? Escort.headcount(contract.escort) : contract.swordsmenLeft + contract.archersLeft));
+        }
+        final List<RelaisStatePayload.Tier> tiers = new ArrayList<>();
+        for (int tier = 1; tier <= Escort.MAX_TIER; tier++)
+        {
+            tiers.add(new RelaisStatePayload.Tier(Escort.cost(tier), Escort.swordsmen(tier), Escort.archers(tier)));
         }
         PacketDistributor.sendToPlayer(player, new RelaisStatePayload(colony.getID(), colony.getName(), Contracts.relaisLevel(colony), Contracts.capacity(colony),
-          TreasuryPayment.available(player, colony), notice == null ? "" : notice, partners, rows));
+          TreasuryPayment.available(player, colony), notice == null ? "" : notice, partners, rows, tiers));
     }
 }

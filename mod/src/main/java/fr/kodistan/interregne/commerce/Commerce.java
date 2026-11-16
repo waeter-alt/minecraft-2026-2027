@@ -56,6 +56,7 @@ public final class Commerce
         ITEMS.register(modBus);
         BUILDINGS.register(modBus);
         TABS.register(modBus);
+        CaravanEntities.register(modBus);
         modBus.addListener(Commerce::addHutToBuildingEntity);
     }
 

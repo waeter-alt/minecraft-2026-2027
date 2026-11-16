@@ -26,7 +26,9 @@ import fr.kodistan.interregne.network.IntendanceQuotePayload;
 import fr.kodistan.interregne.network.OpenBankPayload;
 import fr.kodistan.interregne.commerce.Contract;
 import fr.kodistan.interregne.commerce.RelaisStatePayload;
+import fr.kodistan.interregne.client.commerce.KingdomMapScreen;
 import fr.kodistan.interregne.client.commerce.RelaisScreen;
+import fr.kodistan.interregne.commerce.MapStatePayload;
 import fr.kodistan.interregne.network.OpenComptoirPayload;
 import fr.kodistan.interregne.network.OpenMarketPayload;
 import fr.kodistan.interregne.network.OpenRegionalBankPayload;
@@ -333,12 +335,19 @@ public final class UiScenarios
           series(crates, 6, 2), new int[crates], 12_500)));
         final var partners = List.of(new RelaisStatePayload.Partner(2, "Ville Neuve", true), new RelaisStatePayload.Partner(3, "Marches de l'Ouest", true),
           new RelaisStatePayload.Partner(4, "Val-de-Loire", false));
-        blocks.put("relais", () -> RelaisScreen.preview(new RelaisStatePayload(1, "Vielle Ville", 2, 4, 5_000, "", partners, List.of(
-          new RelaisStatePayload.Row(1, 1, "Vielle Ville", 2, "Ville Neuve", 0, 40, 5, Contract.TRANSIT, 62),
-          new RelaisStatePayload.Row(2, 3, "Marches de l'Ouest", 1, "Vielle Ville", 2, 25, 12, Contract.OFFER, 0),
-          new RelaisStatePayload.Row(3, 1, "Vielle Ville", 3, "Marches de l'Ouest", 4, 8, 30, Contract.OFFER, 0)))));
-        blocks.put("relais-refus", () -> RelaisScreen.preview(new RelaisStatePayload(1, "Vielle Ville", 1, 2, 20, "L'entrepôt n'a pas assez de caisses de bois.", List.of(), List.of())));
-        blocks.put("relais-chantier", () -> RelaisScreen.preview(new RelaisStatePayload(1, "Vielle Ville", 0, 0, 0, "", List.of(), List.of())));
+        final var tiers = List.of(new RelaisStatePayload.Tier(150, 2, 1), new RelaisStatePayload.Tier(400, 3, 1), new RelaisStatePayload.Tier(900, 4, 2),
+          new RelaisStatePayload.Tier(2_000, 5, 3), new RelaisStatePayload.Tier(4_500, 6, 4));
+        final var relaisRows = List.of(
+          new RelaisStatePayload.Row(1, 1, "Vielle Ville", 2, "Ville Neuve", 0, 40, 5, Contract.TRANSIT, 62, 2, 4),
+          new RelaisStatePayload.Row(2, 3, "Marches de l'Ouest", 1, "Vielle Ville", 2, 25, 12, Contract.OFFER, 0, 0, 0),
+          new RelaisStatePayload.Row(3, 1, "Vielle Ville", 3, "Marches de l'Ouest", 4, 8, 30, Contract.OFFER, 0, 3, 6));
+        blocks.put("relais", () -> RelaisScreen.preview(new RelaisStatePayload(1, "Vielle Ville", 2, 4, 5_000, "", partners, relaisRows, tiers), 0));
+        blocks.put("relais-escorte", () -> RelaisScreen.preview(new RelaisStatePayload(1, "Vielle Ville", 3, 6, 5_000, "", partners, relaisRows, tiers), 2));
+        blocks.put("relais-escorte-chere", () -> RelaisScreen.preview(new RelaisStatePayload(1, "Vielle Ville", 5, 10, 300, "", partners, relaisRows, tiers), 5));
+        blocks.put("relais-refus", () -> RelaisScreen.preview(new RelaisStatePayload(1, "Vielle Ville", 1, 2, 20, "L'entrepôt n'a pas assez de caisses de bois.", List.of(), List.of(), tiers), 0));
+        blocks.put("relais-chantier", () -> RelaisScreen.preview(new RelaisStatePayload(1, "Vielle Ville", 0, 0, 0, "", List.of(), List.of(), tiers), 0));
+        blocks.put("carte", () -> Minecraft.getInstance().setScreen(KingdomMapScreen.preview(fakeMap(), fakeRoads())));
+        blocks.put("carte-vide", () -> Minecraft.getInstance().setScreen(KingdomMapScreen.preview(new MapStatePayload(List.of(), List.of()), List.of())));
         // The field variant: the farm one would cancel a construction when closed
         blocks.put("crops", () -> CropChoiceScreen.openForField(() -> { }, stack -> { }));
         for (final Map.Entry<String, Runnable> block : blocks.entrySet())
@@ -348,6 +357,32 @@ public final class UiScenarios
                 targets.add(new Target("block-" + block.getKey(), block.getValue()));
             }
         }
+    }
+
+    private static MapStatePayload fakeMap()
+    {
+        return new MapStatePayload(List.of(
+          new MapStatePayload.Colony(1, "Vielle Ville", 0, 0), new MapStatePayload.Colony(2, "Ville Neuve", 600, 120),
+          new MapStatePayload.Colony(3, "Marches de l'Ouest", -420, 380), new MapStatePayload.Colony(4, "Val-de-Loire", 180, -520)),
+          List.of(new MapStatePayload.Caravan(1, 1, 2, "Vielle Ville → Ville Neuve : 40 × caisse de bois", 270, 55, -75, 45, 2, false),
+            new MapStatePayload.Caravan(2, 3, 1, "Marches de l'Ouest → Vielle Ville : 25 × caisse de pierre", -250, 230, 140, 40, 0, false),
+            new MapStatePayload.Caravan(3, 4, 1, "Val-de-Loire → Vielle Ville : 8 × caisse de minerai", 90, -260, 10, 50, 3, true)));
+    }
+
+    /** Straight roads from the first colony to each of the others, a cell per block. */
+    private static List<int[]> fakeRoads()
+    {
+        final List<int[]> cells = new ArrayList<>();
+        final int[][] ends = {{600, 120, 2}, {-420, 380, 3}, {180, -520, 4}};
+        for (final int[] end : ends)
+        {
+            final int length = (int) Math.round(Math.hypot(end[0], end[1]));
+            for (int i = 0; i <= length; i++)
+            {
+                cells.add(new int[] {Math.round((float) end[0] * i / length), Math.round((float) end[1] * i / length), 1, end[2]});
+            }
+        }
+        return cells;
     }
 
     private static int[] series(final int length, final int start, final int step)
@@ -362,6 +397,6 @@ public final class UiScenarios
 
     static String describe()
     {
-        return Arrays.toString(new String[] {"hub:<page|all>", "hubtool:<tool|all>", "building:<type|all>", "citizen:<n>", "hud", "block:<name|all>", "catalogue"});
+        return Arrays.toString(new String[] {"hub:<page|all>", "hubtool:<tool|all>", "building:<type|all>", "citizen:<n>", "hud", "block:<name|all> (dont relais, relais-escorte, carte)", "catalogue"});
     }
 }

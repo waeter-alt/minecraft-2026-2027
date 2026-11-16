@@ -33,6 +33,7 @@ public final class RelaisScreen extends CounterScreen
     private int crate;
     private int quantity = 10;
     private long price = 10;
+    private int escort;
 
     private RelaisScreen(final RelaisStatePayload state)
     {
@@ -56,10 +57,11 @@ public final class RelaisScreen extends CounterScreen
     /**
      * Shows fake data that is never refreshed (UiShot).
      */
-    public static void preview(final RelaisStatePayload state)
+    public static void preview(final RelaisStatePayload state, final int escort)
     {
         final RelaisScreen screen = new RelaisScreen(state);
         screen.live = false;
+        screen.escort = escort;
         Minecraft.getInstance().setScreen(screen);
     }
 
@@ -75,13 +77,13 @@ public final class RelaisScreen extends CounterScreen
         // The caravans move: ask again twice a second
         if (live && ++ticks % 10 == 0)
         {
-            send(RelaisActionPayload.OPEN, 0, 0, 0, 0, 0);
+            send(RelaisActionPayload.OPEN, 0, 0, 0, 0, 0, 0);
         }
     }
 
-    private void send(final int action, final int other, final long contract, final int crate, final int quantity, final long price)
+    private void send(final int action, final int other, final long contract, final int crate, final int quantity, final long price, final int escort)
     {
-        PacketDistributor.sendToServer(new RelaisActionPayload(action, state.colony(), other, contract, crate, quantity, price));
+        PacketDistributor.sendToServer(new RelaisActionPayload(action, state.colony(), other, contract, crate, quantity, price, escort));
     }
 
     private List<RelaisStatePayload.Partner> ready()
@@ -127,6 +129,8 @@ public final class RelaisScreen extends CounterScreen
         }
         y = renderForm(graphics, mouseX, mouseY, x, y, width);
         Ui.label(graphics, font, "CONTRATS", x, y);
+        button(graphics, mouseX, mouseY, x + width - buttonWidth("Carte du royaume"), y - 3, "Carte du royaume", Ui.ButtonStyle.SECONDARY, true, "Voir les routes et les caravanes en route (touche M)",
+          () -> minecraft.setScreen(new KingdomMapScreen(this)));
         y += 12;
         if (state.contracts().isEmpty())
         {
@@ -197,11 +201,29 @@ public final class RelaisScreen extends CounterScreen
         graphics.drawString(font, total, x + width - 4 - font.width(total), y + 3, Palette.MUTED, false);
         y += 20;
 
-        final boolean ok = stock >= quantity && state.contracts().size() < state.capacity();
-        final String why = stock < quantity ? "Pas assez de caisses à l'entrepôt." : state.contracts().size() >= state.capacity() ? "Trop de contrats : améliorez le Relais." : null;
+        final int maxEscort = Math.min(state.level(), state.tiers().size());
+        escort = Math.clamp(escort, 0, maxEscort);
+        graphics.drawString(font, "Escorte", x + 2, y + 3, Palette.INK, false);
+        int ex = x + 70;
+        ex += button(graphics, mouseX, mouseY, ex, y, "<", Ui.ButtonStyle.SECONDARY, escort > 0, null, () -> escort--) + 4;
+        final String tierLabel = escort == 0 ? "Aucune" : "Palier " + escort;
+        graphics.drawString(font, tierLabel, ex, y + 3, Palette.INK, false);
+        ex += Math.max(font.width("Palier 5"), font.width("Aucune")) + 6;
+        button(graphics, mouseX, mouseY, ex, y, ">", Ui.ButtonStyle.SECONDARY, escort < maxEscort, escort < maxEscort ? null : "Chaque niveau du Relais ouvre un palier d'escorte de plus.",
+          () -> escort++);
+        y += 14;
+        final long escortCost = escort == 0 ? 0 : state.tiers().get(escort - 1).cost();
+        final String escortLine = escort == 0 ? "Sans escorte, la caravane ne se défend pas seule."
+          : state.tiers().get(escort - 1).swordsmen() + " épéistes et " + state.tiers().get(escort - 1).archers() + " archers · " + escortCost + " à chaque contrat";
+        graphics.drawString(font, Ui.fit(font, escortLine, width - 6), x + 2, y + 2, escort > 0 && state.available() < escortCost ? Palette.RED : Palette.MUTED, false);
+        y += 16;
+
+        final boolean ok = stock >= quantity && state.contracts().size() < state.capacity() && state.available() >= escortCost;
+        final String why = stock < quantity ? "Pas assez de caisses à l'entrepôt." : state.contracts().size() >= state.capacity() ? "Trop de contrats : améliorez le Relais."
+          : state.available() < escortCost ? "Il vous faut " + escortCost + " pour l'escorte (trésor régional et couronnes sur vous)." : null;
         final RelaisStatePayload.Partner target = partners.get(partner);
         y = bigButton(graphics, mouseX, mouseY, x, y, width, "Proposer à " + target.name(), ok, why,
-          () -> send(RelaisActionPayload.OFFER, target.id(), 0, crate, quantity, price));
+          () -> send(RelaisActionPayload.OFFER, target.id(), 0, crate, quantity, price, escort));
         return y + 4;
     }
 
@@ -215,13 +237,15 @@ public final class RelaisScreen extends CounterScreen
         final Runnable action;
         if (row.state() == Contract.OFFER)
         {
-            status = row.unitPrice() + " pièce, " + row.unitPrice() * row.quantity() + " au total · " + (selling ? "en attente de réponse" : "vous devez répondre");
+            status = row.unitPrice() + " pièce, " + row.unitPrice() * row.quantity() + " au total · " + (selling ? "en attente de réponse" : "vous devez répondre")
+                     + (row.escort() > 0 ? " · escorte palier " + row.escort() + " (" + row.soldiers() + " soldats)" : "");
             label = selling ? "Retirer" : "Accepter";
-            action = selling ? () -> send(RelaisActionPayload.CANCEL, 0, row.id(), 0, 0, 0) : () -> send(RelaisActionPayload.ACCEPT, 0, row.id(), 0, 0, 0);
+            action = selling ? () -> send(RelaisActionPayload.CANCEL, 0, row.id(), 0, 0, 0, 0) : () -> send(RelaisActionPayload.ACCEPT, 0, row.id(), 0, 0, 0, 0);
         }
         else
         {
-            status = row.state() == Contract.WAITING ? "arrivée : en attente de place à l'entrepôt" : "caravane en route : " + row.percent() + " %";
+            status = row.state() == Contract.WAITING ? "arrivée : en attente de place à l'entrepôt" : "caravane en route : " + row.percent() + " %"
+                                                                                          + (row.escort() > 0 ? " · escorte " + row.soldiers() + " soldat" + (row.soldiers() > 1 ? "s" : "") : "");
             label = null;
             action = null;
         }

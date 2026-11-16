@@ -13,7 +13,8 @@ import java.util.List;
  * Server to client: what a colony's Relais commercial shows. {@code notice} is the server's answer to the last action
  * (a refusal, or empty).
  */
-public record RelaisStatePayload(int colony, String colonyName, int level, int capacity, long available, String notice, List<Partner> partners, List<Row> contracts)
+public record RelaisStatePayload(int colony, String colonyName, int level, int capacity, long available, String notice, List<Partner> partners, List<Row> contracts,
+  List<Tier> tiers)
   implements CustomPacketPayload
 {
     /**
@@ -29,8 +30,18 @@ public record RelaisStatePayload(int colony, String colonyName, int level, int c
      * One contract, seen from this colony.
      *
      * @param percent how far the caravan has walked, 0 to 100
+     * @param escort  the escort tier bought for it, 0 for none
+     * @param soldiers how many of its soldiers are still alive
      */
-    public record Row(long id, int seller, String sellerName, int buyer, String buyerName, int crate, int quantity, long unitPrice, int state, int percent)
+    public record Row(long id, int seller, String sellerName, int buyer, String buyerName, int crate, int quantity, long unitPrice, int state, int percent, int escort,
+      int soldiers)
+    {
+    }
+
+    /**
+     * One escort tier (index 0 is tier 1): what it costs per contract and who it hires.
+     */
+    public record Tier(long cost, int swordsmen, int archers)
     {
     }
 
@@ -66,6 +77,15 @@ public record RelaisStatePayload(int colony, String colonyName, int level, int c
             buf.writeVarLong(row.unitPrice);
             buf.writeVarInt(row.state);
             buf.writeVarInt(row.percent);
+            buf.writeVarInt(row.escort);
+            buf.writeVarInt(row.soldiers);
+        }
+        buf.writeVarInt(p.tiers.size());
+        for (final Tier tier : p.tiers)
+        {
+            buf.writeVarLong(tier.cost);
+            buf.writeVarInt(tier.swordsmen);
+            buf.writeVarInt(tier.archers);
         }
     }
 
@@ -86,9 +106,14 @@ public record RelaisStatePayload(int colony, String colonyName, int level, int c
         for (int i = buf.readVarInt(); i > 0; i--)
         {
             rows.add(new Row(buf.readVarLong(), buf.readVarInt(), buf.readUtf(), buf.readVarInt(), buf.readUtf(), buf.readVarInt(), buf.readVarInt(),
-              buf.readVarLong(), buf.readVarInt(), buf.readVarInt()));
+              buf.readVarLong(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt()));
         }
-        return new RelaisStatePayload(colony, name, level, capacity, available, notice, partners, rows);
+        final List<Tier> tiers = new ArrayList<>();
+        for (int i = buf.readVarInt(); i > 0; i--)
+        {
+            tiers.add(new Tier(buf.readVarLong(), buf.readVarInt(), buf.readVarInt()));
+        }
+        return new RelaisStatePayload(colony, name, level, capacity, available, notice, partners, rows, tiers);
     }
 
     @Override
