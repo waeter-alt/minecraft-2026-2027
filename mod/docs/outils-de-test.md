@@ -148,14 +148,18 @@ Pour tester contrats et caravanes sans client, sur un serveur de test (`./gradle
 /commerce caisses 1 bois 40     # range 40 caisses de bois à l'entrepôt de la colonie 1
 /commerce tresor 2 1000         # 1000 Couronnes au trésor régional de la colonie 2
 /commerce offre 1 2 bois 10 5   # la colonie 1 propose 10 caisses de bois à 5 pièce à la colonie 2
+/commerce offre 1 2 bois 10 5 3 # idem avec une escorte de palier 3 (0 à 5), payée au trésor régional du vendeur
 /commerce accepter 2 1          # la colonie 2 accepte le contrat n° 1 : la caravane part
+/commerce retirer 1 2           # la colonie 1 retire son offre n° 2 (l'escorte payée est rendue)
 /commerce etat                  # stocks, trésors et contrats (progression sur la route)
 /commerce chantier 1            # pose un Relais non construit et demande son chantier (blueprint commun)
 ```
 
 Une caravane parcourt la route à `caravanBlocksPerSecond` (3 par défaut). Sans joueur à moins de `caravanShowDistance` blocs, elle n'avance que sur le papier ; l'animal n'apparaît que près d'un joueur (couvert par `CommerceTests`, lancés avec `runGameTestServer`). `/diplomatie rompre 1 2` pendant le trajet rend les caisses au vendeur et le prix à l'acheteur.
 
-Le Relais commercial se construit depuis un pack de blueprints à nous, `Couronne Vacante`, ajouté à tous les styles du catalogue. Ses blueprints sont générés par `python -I -X utf8 mod/tools/gen_relais_blueprints.py` (`pip install nbtlib`) ; `RelaisBlueprintTest` (JUnit) vérifie qu'ils se chargent et contiennent la hutte. Écran : `screen=block:relais` dans UiShot.
+Le Relais commercial se construit depuis un pack de blueprints à nous, `Couronne Vacante`, ajouté à tous les styles du catalogue. Ses blueprints sont générés par `python -I -X utf8 mod/tools/gen_relais_blueprints.py` (`pip install nbtlib`) ; `RelaisBlueprintTest` (JUnit) vérifie qu'ils se chargent et contiennent la hutte. Écrans : `screen=block:relais` (toutes les variantes) et `screen=block:carte` (carte du royaume, données factices) dans UiShot.
+
+Caravane : une mule avec coffre et son conducteur (citoyen MineColonies générique) à un bloc d'elle, plus les soldats de l'escorte quand le contrat en a. `GameTests` : mule + conducteur, mort du conducteur, soldats qui suivent et ne reviennent pas une fois morts, entités orphelines retirées, et un duel palier 1 contre un joueur en fer (le palier 1 doit le laisser à moins de 8 PV ou le tuer). `EscortTest` (JUnit) couvre les paliers et la sauvegarde. Touche `M` en jeu : carte du royaume.
 
 ---
 

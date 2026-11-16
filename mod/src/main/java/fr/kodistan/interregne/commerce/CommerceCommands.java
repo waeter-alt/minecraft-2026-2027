@@ -54,6 +54,8 @@ public final class CommerceCommands
               .then(argument("escorte", IntegerArgumentType.integer(0, Escort.MAX_TIER)).executes(CommerceCommands::offer))))))));
         root.then(literal("accepter").then(argument("acheteur", IntegerArgumentType.integer(1)).then(argument("contrat", LongArgumentType.longArg(1))
           .executes(CommerceCommands::accept))));
+        root.then(literal("retirer").then(argument("colonie", IntegerArgumentType.integer(1)).then(argument("contrat", LongArgumentType.longArg(1))
+          .executes(CommerceCommands::withdraw))));
         root.then(literal("etat").executes(CommerceCommands::state));
         event.getDispatcher().register(root);
     }
@@ -196,6 +198,17 @@ public final class CommerceCommands
         {
             return 0;
         }
+    }
+
+    private static int withdraw(final CommandContext<CommandSourceStack> ctx)
+    {
+        final IColony colony = colony(ctx, "colonie");
+        if (colony == null)
+        {
+            return fail(ctx, "Colonie inconnue.");
+        }
+        final String refusal = Contracts.get(ctx.getSource().getServer()).cancel(null, colony, LongArgumentType.getLong(ctx, "contrat"));
+        return refusal == null ? say(ctx, "Offre retirée (l'escorte payée est rendue au trésor du vendeur).") : fail(ctx, refusal);
     }
 
     private static int accept(final CommandContext<CommandSourceStack> ctx)

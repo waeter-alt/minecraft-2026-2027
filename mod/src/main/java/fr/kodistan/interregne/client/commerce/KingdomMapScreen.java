@@ -410,7 +410,9 @@ public final class KingdomMapScreen extends ParchmentScreen
             final int py = sy(caravan.z());
             if (px >= mapX && px <= mapX + mapW && py >= mapY && py <= mapY + mapH)
             {
-                label(graphics, Ui.fit(font, caravan.label(), 190), px, py + 8, Palette.GREEN);
+                // On the map only what it carries; the full contract is in the tooltip
+                final int colon = caravan.label().lastIndexOf(" : ");
+                label(graphics, colon < 0 ? caravan.label() : caravan.label().substring(colon + 3), px, py + 8, Palette.GREEN);
             }
         }
         return hot;
