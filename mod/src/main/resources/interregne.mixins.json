@@ -17,6 +17,8 @@
     "CitizenAIMixin",
     "CitizenManagerMixin",
     "QuestJsonListenerMixin",
+    "CreateColonyMessageMixin",
+    "GetColonyInfoMessageMixin",
     "DecorationBuildRequestMessageMixin",
     "DeliverymenRequestResolverMixin",
     "EnchanterStationsModuleMixin",

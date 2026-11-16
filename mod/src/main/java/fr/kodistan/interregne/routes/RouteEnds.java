@@ -121,6 +121,31 @@ public final class RouteEnds
         return best;
     }
 
+    /**
+     * @return the colony of this dimension nearest the given one that is not the colony itself and that no road joins
+     * to it yet, null when there is none
+     */
+    @Nullable
+    public static IColony nearestUnlinked(final ServerLevel level, final IColony from, final RouteRegistry registry)
+    {
+        IColony best = null;
+        double bestD = Double.MAX_VALUE;
+        for (final IColony colony : IColonyManager.getInstance().getColonies(level))
+        {
+            if (colony.getID() == from.getID() || registry.areLinked(from.getID(), colony.getID()))
+            {
+                continue;
+            }
+            final double d = colony.getCenter().distSqr(from.getCenter());
+            if (d < bestD)
+            {
+                bestD = d;
+                best = colony;
+            }
+        }
+        return best;
+    }
+
     private static WallLayout layout(final ServerLevel level, final IColony colony, final WallRegistry.Wall wall)
     {
         final Set<Long> own = WallLayout.ownCells(wall.points(), wall.closed());
