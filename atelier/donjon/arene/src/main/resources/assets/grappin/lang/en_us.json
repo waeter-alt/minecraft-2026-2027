@@ -1,8 +1,8 @@
 {
   "item.grappin.grappin": "Grappling Hook",
-  "item.grappin.grappin.aide1": "Right click: fire the hook (30 blocks); it only holds on an anchor point",
-  "item.grappin.grappin.aide2": "Hooked: hold right click to be pulled in; release it to stay hooked and swing; scroll wheel = rope length",
-  "item.grappin.grappin.aide3": "Jump or sneak: let go of the hook with a jump",
+  "item.grappin.grappin.aide1": "Right click: throws the hook (30 blocks); it only holds on an anchor point",
+  "item.grappin.grappin.aide2": "Once hooked, you are pulled straight to the aimed point, then the hook lets go; a click releases and throws again",
+  "item.grappin.grappin.aide3": "Space or sneak: let go on the way (Space keeps your momentum and jumps)",
   "itemGroup.grappin.donjon": "Dungeons",
   "item.grappin.voile": "Veil of the Deep",
   "item.grappin.voile.aide1": "Helmet: lets you breathe underwater",

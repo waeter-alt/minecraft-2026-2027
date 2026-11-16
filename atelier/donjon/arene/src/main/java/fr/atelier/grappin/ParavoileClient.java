@@ -70,7 +70,7 @@ public final class ParavoileClient {
 
         private static boolean empeche(LocalPlayer j) {
             return j.isInWater() || j.isInLava() || j.isFallFlying() || j.isPassenger() || j.getAbilities().flying || j.onClimbable() || j.isSpectator()
-                    || GrappinClient.Balancier.crochetAccroche(j) != null;
+                    || GrappinClient.Traction.crochetAccroche(j) != null;
         }
 
         @SubscribeEvent

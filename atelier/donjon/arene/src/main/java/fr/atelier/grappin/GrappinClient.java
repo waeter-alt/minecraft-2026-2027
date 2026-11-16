@@ -1,5 +1,5 @@
-// [claude-build] Cote client : le balancier (physique du pendule chaque tick), la traction (clic droit maintenu), ESPACE pour lacher,
-// la molette pour la corde, le dessin du crochet et de la corde.
+// [claude-build] Cote client : la traction (grappin 3 : on est tire en ligne droite vers le point d'ancrage vise, sans balancier), ESPACE pour lacher
+// en route, le dessin du crochet et de la corde.
 package fr.atelier.grappin;
 
 import java.util.List;
@@ -20,7 +20,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class GrappinClient {
@@ -48,17 +47,23 @@ public final class GrappinClient {
         }
     }
 
-    /** Le balancier, calcule chez le joueur a chaque tick (bus du jeu). */
+    /** La traction, calculee chez le joueur a chaque tick (bus du jeu) : accroche, on est tire en ligne droite vers le point d'ancrage vise, sans balancier ; on s'arrete a ARRIVEE blocs de lui. */
     @EventBusSubscriber(modid = Grappin.MODID, value = Dist.CLIENT)
-    public static final class Balancier {
-        private static int crochetId = -1;              // crochet auquel on est pendu
-        private static double corde = 0;                // longueur de corde fixee a l'accroche
-        private static boolean espaceAvant = false;     // etat d'ESPACE au tick precedent : on ne lache qu'a l'appui, pas en le maintenant
+    public static final class Traction {
+        private static int crochetId = -1;              // crochet qui nous tire
+        private static double vitesse = 0;              // vitesse de traction du tick precedent (montee progressive au depart)
+        private static double plusProche = 1.0E9;       // plus petite distance au crochet depuis l'accroche
+        private static int sansProgres = 0;             // ticks de suite sans se rapprocher : un bloc nous bloque, on lache
+        private static boolean elan = false;            // on lache avec ESPACE : on garde sa vitesse et on saute
 
         static Crochet crochetAccroche(LocalPlayer joueur) {
             List<Crochet> l = joueur.level().getEntitiesOfClass(Crochet.class, joueur.getBoundingBox().inflate(Reglages.PORTEE.get() + 10),
                     c -> c.estAccroche() && c.getOwner() == joueur);
             return l.isEmpty() ? null : l.get(0);
+        }
+
+        private static void lacher() {
+            PacketDistributor.sendToServer(new LacherPayload());     // le serveur supprime le crochet
         }
 
         @SubscribeEvent
@@ -68,67 +73,55 @@ public final class GrappinClient {
                 return;
             }
             Crochet c = crochetAccroche(joueur);
-            boolean espace = joueur.input.jumping;
-            boolean appuiEspace = espace && !espaceAvant;
-            espaceAvant = espace;
+            boolean appuiEspace = joueur.input.jumping && !espaceAvant;
+            espaceAvant = joueur.input.jumping;
             if (c == null) {
-                if (crochetId != -1) {                  // on vient de lacher : on garde sa vitesse (reglable) et on saute
-                    Vec3 v = joueur.getDeltaMovement().scale(Reglages.CONSERVATION.get());
-                    joueur.setDeltaMovement(v.x, v.y + Reglages.SAUT.get(), v.z);
+                if (crochetId != -1) {                      // le crochet vient de se detacher
+                    if (elan) {                             // lache avec ESPACE : on garde sa vitesse (reglable) et on saute
+                        Vec3 v = joueur.getDeltaMovement().scale(Reglages.CONSERVATION.get());
+                        joueur.setDeltaMovement(v.x, v.y + Reglages.SAUT.get(), v.z);
+                    }
                     crochetId = -1;
+                    vitesse = 0;
+                    elan = false;
                 }
                 return;
             }
-            Vec3 ancre = c.position();
-            Vec3 centre = joueur.getBoundingBox().getCenter();
-            Vec3 r = centre.subtract(ancre);
-            double d = r.length();
-            if (c.getId() != crochetId) {               // nouvelle accroche : la corde prend la distance du moment
+            Vec3 vers = c.position().subtract(joueur.getBoundingBox().getCenter());
+            double d = vers.length();
+            if (c.getId() != crochetId) {                   // nouvelle accroche
                 crochetId = c.getId();
-                corde = Math.min(Math.max(d, Reglages.CORDE_MIN.get()), Reglages.PORTEE.get());
+                vitesse = 0;
+                plusProche = d;
+                sansProgres = 0;
+                elan = false;
             }
-            if (appuiEspace) {                          // ESPACE : lacher (le serveur supprime le crochet, le saut se fait au tick suivant)
-                PacketDistributor.sendToServer(new LacherPayload());
+            if (appuiEspace) {                              // ESPACE : lacher en route, avec son elan
+                elan = true;
+                lacher();
                 return;
             }
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.options.keyUse.isDown() && mc.screen == null && joueur.isHolding(Grappin.GRAPPIN.get())) {   // traction : clic droit maintenu rembobine la corde
-                corde = Math.max(Reglages.CORDE_MIN.get(), Math.min(corde, d) - Reglages.TREUIL.get());
-            }
-            if (d < 1.0E-3) {
+            double arrivee = Reglages.ARRIVEE.get();
+            if (d <= arrivee + 0.05) {                      // arrive : on s'arrete a cote de l'ancrage, le crochet se detache, la gravite reprend
+                joueur.setDeltaMovement(Vec3.ZERO);
+                joueur.fallDistance = 0;
+                lacher();
                 return;
             }
-            Vec3 u = r.scale(1.0 / d);                  // de l'ancre vers le joueur
-            Vec3 v = joueur.getDeltaMovement();
-            v = v.add(0, -0.08 * (Reglages.GRAVITE.get() - 1.0), 0);       // gravite propre au balancier (en plus de celle du jeu)
-            float avant = joueur.input.forwardImpulse, cote = joueur.input.leftImpulse;
-            if (avant != 0 || cote != 0) {              // les touches poussent un peu le long de l'arc, jamais le long de la corde
-                double lacet = Math.toRadians(joueur.getYRot());
-                Vec3 f = new Vec3(-Math.sin(lacet), 0, Math.cos(lacet));
-                Vec3 g = new Vec3(Math.cos(lacet), 0, Math.sin(lacet));
-                Vec3 a = f.scale(avant).add(g.scale(cote)).normalize().scale(Reglages.INFLUENCE.get());
-                a = a.subtract(u.scale(a.dot(u)));
-                v = v.add(a);
+            if (d < plusProche - 0.02) {
+                plusProche = d;
+                sansProgres = 0;
+            } else if (++sansProgres > 10) {                // un bloc nous retient : on lache plutot que de rester colle
+                lacher();
+                return;
             }
-            if (d >= corde) {                           // corde tendue : plus de vitesse vers l'exterieur, rappel doux si on depasse
-                double sortie = v.dot(u);
-                if (sortie > 0) {
-                    v = v.subtract(u.scale(sortie));
-                }
-                v = v.subtract(u.scale((d - corde) * Reglages.RAIDEUR.get()));
-            }
-            joueur.setDeltaMovement(v);
+            vitesse = Math.min(Reglages.VITESSE_TRACTION.get(), vitesse + Reglages.ACCELERATION.get());
+            double v = Math.min(vitesse, Math.max(0.12, (d - arrivee) * 0.4));      // on ralentit en arrivant
+            joueur.setDeltaMovement(vers.scale(v / d));
+            joueur.fallDistance = 0;
         }
 
-        @SubscribeEvent
-        static void molette(InputEvent.MouseScrollingEvent event) {
-            LocalPlayer joueur = Minecraft.getInstance().player;
-            if (joueur == null || crochetId == -1 || !joueur.isHolding(Grappin.GRAPPIN.get())) {
-                return;
-            }
-            corde = Math.min(Math.max(corde - event.getScrollDeltaY() * Reglages.PAS_MOLETTE.get(), Reglages.CORDE_MIN.get()), Reglages.PORTEE.get());
-            event.setCanceled(true);                    // la molette regle la corde au lieu de changer d'objet
-        }
+        private static boolean espaceAvant = false;         // etat d'ESPACE au tick precedent : on ne lache qu'a l'appui, pas en le maintenant
     }
 
     static class RenduCrochet extends ThrownItemRenderer<Crochet> {

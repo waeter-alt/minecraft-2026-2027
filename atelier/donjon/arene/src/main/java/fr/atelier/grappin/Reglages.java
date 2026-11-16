@@ -8,16 +8,13 @@ public final class Reglages {
 
     public static final ModConfigSpec.DoubleValue PORTEE = B.comment("Portee maximale du tir, en blocs.").defineInRange("portee", 30.0, 4.0, 64.0);
     public static final ModConfigSpec.DoubleValue VITESSE_CROCHET = B.comment("Vitesse du crochet en vol, en blocs par tick.").defineInRange("vitesseCrochet", 2.5, 0.5, 6.0);
-    public static final ModConfigSpec.DoubleValue AIMANT = B.comment("Le crochet s'accroche a un point d'ancrage qu'il frole a moins de cette distance, en blocs (0 = il faut le toucher).").defineInRange("aimantAncrage", 1.5, 0.0, 4.0);
+    public static final ModConfigSpec.DoubleValue AIMANT = B.comment("Le crochet s'accroche a un point d'ancrage qu'il frole a moins de cette distance, en blocs (0 = il faut le toucher). Le grappin 3 vise un point : 1 bloc suffit.").defineInRange("aimant", 1.0, 0.0, 4.0);
     public static final ModConfigSpec.IntValue RECHARGE = B.comment("Temps de recharge apres un tir, en ticks (20 = 1 s).").defineInRange("recharge", 6, 0, 200);
-    public static final ModConfigSpec.DoubleValue GRAVITE = B.comment("Gravite pendant le balancier, en multiple de la gravite normale (1 = normale).").defineInRange("graviteBalancier", 1.25, 0.2, 4.0);
-    public static final ModConfigSpec.DoubleValue INFLUENCE = B.comment("Poussee des touches de deplacement pendant le balancier, en blocs par tick (par tick).").defineInRange("influenceTouches", 0.025, 0.0, 0.2);
-    public static final ModConfigSpec.DoubleValue CONSERVATION = B.comment("Part de la vitesse gardee au lacher (1 = toute).").defineInRange("vitesseAuLacher", 1.0, 0.0, 2.0);
-    public static final ModConfigSpec.DoubleValue SAUT = B.comment("Saut au lacher : vitesse vers le haut ajoutee quand on lache la corde, en blocs par tick (0,42 = un saut normal, 0 = pas de saut).").defineInRange("sautAuLacher", 0.42, 0.0, 1.5);
-    public static final ModConfigSpec.DoubleValue RAIDEUR = B.comment("Force de rappel quand la corde est trop tendue (0 a 1).").defineInRange("raideurCorde", 0.5, 0.05, 1.0);
-    public static final ModConfigSpec.DoubleValue CORDE_MIN = B.comment("Longueur minimale de corde, en blocs.").defineInRange("cordeMin", 2.0, 1.0, 10.0);
-    public static final ModConfigSpec.DoubleValue TREUIL = B.comment("Vitesse du treuil : corde rembobinee par tick quand on maintient la touche de saut, en blocs (0,3 = 6 blocs/s).").defineInRange("vitesseTreuil", 0.3, 0.0, 2.0);
-    public static final ModConfigSpec.DoubleValue PAS_MOLETTE = B.comment("Blocs de corde gagnes ou perdus par cran de molette.").defineInRange("pasMolette", 1.0, 0.25, 4.0);
+    public static final ModConfigSpec.DoubleValue VITESSE_TRACTION = B.comment("Grappin 3 : vitesse a laquelle le crochet vous tire vers le point vise, en blocs par tick (0,75 = 15 blocs/s).").defineInRange("vitesseTraction", 0.75, 0.2, 3.0);
+    public static final ModConfigSpec.DoubleValue ACCELERATION = B.comment("Grappin 3 : gain de vitesse par tick au depart de la traction, en blocs par tick.").defineInRange("accelerationTraction", 0.15, 0.02, 2.0);
+    public static final ModConfigSpec.DoubleValue ARRIVEE = B.comment("Grappin 3 : distance au point d'ancrage (du centre du joueur a l'ancrage) a laquelle la traction s'arrete et le crochet se detache, en blocs.").defineInRange("distanceArrivee", 1.2, 0.6, 4.0);
+    public static final ModConfigSpec.DoubleValue CONSERVATION = B.comment("Si on lache en cours de route avec ESPACE : part de la vitesse gardee (1 = toute).").defineInRange("vitesseAuLacher", 1.0, 0.0, 2.0);
+    public static final ModConfigSpec.DoubleValue SAUT = B.comment("Si on lache en cours de route avec ESPACE : saut ajoute, en blocs par tick (0,42 = un saut normal, 0 = pas de saut).").defineInRange("sautAuLacher", 0.42, 0.0, 1.5);
 
     public static final ModConfigSpec.IntValue VOILE_RESERVE = B.comment("Voile des Profondeurs : duree de respiration sous l'eau, en secondes.").defineInRange("voileReserveSecondes", 40, 5, 600);
     public static final ModConfigSpec.IntValue VOILE_RECHARGE = B.comment("Voile des Profondeurs : temps pour le recharger entierement a la surface, en secondes.").defineInRange("voileRechargeSecondes", 12, 1, 600);

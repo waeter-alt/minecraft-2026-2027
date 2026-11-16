@@ -1,8 +1,8 @@
 {
   "item.grappin.grappin": "Grappin",
   "item.grappin.grappin.aide1": "Clic droit : lance le crochet (30 blocs) ; il ne tient que sur un point d'ancrage",
-  "item.grappin.grappin.aide2": "Accroché : clic droit maintenu = traction ; relâché, on reste accroché et on se balance ; molette = longueur de la corde",
-  "item.grappin.grappin.aide3": "Espace ou s'accroupir : lâcher le crochet avec un saut",
+  "item.grappin.grappin.aide2": "Accroché, on est tiré en ligne droite vers le point visé, puis le crochet se détache ; un clic lâche et relance",
+  "item.grappin.grappin.aide3": "Espace ou s'accroupir : lâcher en route (Espace garde l'élan et saute)",
   "itemGroup.grappin.donjon": "Donjons",
   "item.grappin.voile": "Voile des Profondeurs",
   "item.grappin.voile.aide1": "Casque : permet de respirer sous l'eau",

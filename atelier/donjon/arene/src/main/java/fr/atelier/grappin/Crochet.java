@@ -1,4 +1,4 @@
-// [claude-build] Le crochet (grappin 2.0) : vole tout droit (sans gravite) jusqu'a la portee, et ne s'accroche qu'a un point d'ancrage
+// [claude-build] Le crochet (grappin 2 puis 3) : vole tout droit (sans gravite) jusqu'a la portee, et ne s'accroche qu'a un point d'ancrage
 // (tag grappin:ancrages) ; sur tout autre bloc il rebondit et disparait. Accroche, il ne tire plus le joueur : le balancier est
 // calcule chez le joueur (GrappinClient), comme tout mouvement de joueur dans Minecraft. Ici, cote serveur : decrocher quand le
 // joueur s'accroupit ou s'eloigne, et pas de degats de chute tant qu'il est tenu par la corde (ils reviennent apres le lacher).
@@ -95,6 +95,10 @@ public class Crochet extends ThrowableItemProjectile {
         }
         tempsAccroche++;
         if (tempsAccroche > 4 && joueur.isShiftKeyDown()) {     // s'accroupir : lacher (la vitesse est gardee chez le joueur)
+            rappeler();
+            return;
+        }
+        if (tempsAccroche > 400) {                              // securite : une traction ne dure jamais 20 s
             rappeler();
             return;
         }
