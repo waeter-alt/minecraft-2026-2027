@@ -6,20 +6,29 @@ import java.util.List;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.ThrownItemRenderer;
+import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class GrappinClient {
@@ -29,6 +38,13 @@ public final class GrappinClient {
     /** Enregistrement du dessin du crochet (bus du mod). */
     @EventBusSubscriber(modid = Grappin.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static final class Rendus {
+        static final ModelResourceLocation MODELE_CROCHET = ModelResourceLocation.standalone(ResourceLocation.fromNamespaceAndPath(Grappin.MODID, "item/crochet"));
+
+        @SubscribeEvent
+        static void modeles(ModelEvent.RegisterAdditional event) {
+            event.register(MODELE_CROCHET);       // le crochet en vol n'est pas un objet : son modele doit etre charge a part
+        }
+
         @SubscribeEvent
         static void couches(EntityRenderersEvent.RegisterLayerDefinitions event) {
             event.registerLayerDefinition(SeraphinModele.COUCHE, SeraphinModele::creerCouche);
@@ -124,13 +140,29 @@ public final class GrappinClient {
         private static boolean espaceAvant = false;         // etat d'ESPACE au tick precedent : on ne lache qu'a l'appui, pas en le maintenant
     }
 
-    static class RenduCrochet extends ThrownItemRenderer<Crochet> {
+    /** Le crochet en vol : le modele 3D grappin:item/crochet (griffes vers +X), tourne comme une fleche dans le sens du vol. */
+    static class RenduCrochet extends EntityRenderer<Crochet> {
+        private static final float ECHELLE_CROCHET = 0.75F;
+
         RenduCrochet(EntityRendererProvider.Context contexte) {
-            super(contexte, 1.0F, false);
+            super(contexte);
+        }
+
+        @Override
+        public ResourceLocation getTextureLocation(Crochet crochet) {
+            return TextureAtlas.LOCATION_BLOCKS;
         }
 
         @Override
         public void render(Crochet crochet, float lacet, float partiel, PoseStack pose, MultiBufferSource tampons, int lumiere) {
+            pose.pushPose();
+            pose.mulPose(Axis.YP.rotationDegrees(Mth.lerp(partiel, crochet.yRotO, crochet.getYRot()) - 90.0F));
+            pose.mulPose(Axis.ZP.rotationDegrees(Mth.lerp(partiel, crochet.xRotO, crochet.getXRot())));
+            pose.scale(ECHELLE_CROCHET, ECHELLE_CROCHET, ECHELLE_CROCHET);
+            BakedModel modele = Minecraft.getInstance().getModelManager().getModel(Rendus.MODELE_CROCHET);
+            Minecraft.getInstance().getItemRenderer().render(crochet.getItem(), ItemDisplayContext.NONE, false, pose, tampons, lumiere,
+                    OverlayTexture.NO_OVERLAY, modele);
+            pose.popPose();
             super.render(crochet, lacet, partiel, pose, tampons, lumiere);
             Entity lanceur = crochet.getOwner();
             if (lanceur == null) {
