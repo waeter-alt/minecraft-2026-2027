@@ -91,6 +91,14 @@ SPECIAL = {
     'campfire': ('campfire_log', 'campfire_log', 'campfire_log'),
     'lantern': ('lantern', 'lantern', 'lantern'),
     'chain': ('chain', 'chain', 'chain'),
+    'bookshelf': ('oak_planks', 'bookshelf', 'oak_planks'),
+    'red_carpet': ('red_wool',) * 3, 'white_carpet': ('white_wool',) * 3, 'blue_carpet': ('blue_wool',) * 3,
+    'red_bed': ('red_wool', 'red_wool', 'oak_planks'), 'blue_bed': ('blue_wool', 'blue_wool', 'oak_planks'),
+    'cartography_table': ('cartography_table_top', 'cartography_table_side1', 'dark_oak_planks'),
+    'lectern': ('lectern_top', 'lectern_sides', 'lectern_base'), 'loom': ('loom_top', 'loom_side', 'loom_bottom'),
+    'smoker': ('smoker_top', 'smoker_side', 'smoker_bottom'), 'furnace': ('furnace_top', 'furnace_side', 'furnace_top'),
+    'grindstone': ('grindstone_round', 'grindstone_side', 'grindstone_round'), 'bell': ('gold_block',) * 3,
+    'flower_pot': ('flower_pot',) * 3, 'polished_andesite': ('polished_andesite',) * 3,
 }
 
 
@@ -176,6 +184,16 @@ def boxes(name, props):
         return [{'north': (0, 0, 14, 16, 16, 16), 'south': (0, 0, 0, 16, 16, 2), 'east': (0, 0, 0, 2, 16, 16), 'west': (14, 0, 0, 16, 16, 16)}[f]]
     if n.endswith('_wall_banner'):
         return [{'north': (-2, -24, 14, 18, 16, 15), 'south': (-2, -24, 1, 18, 16, 2), 'east': (1, -24, -2, 2, 16, 18), 'west': (14, -24, -2, 15, 16, 18)}[f]]
+    if n.endswith('_carpet'):
+        return [(0, 0, 0, 16, 1, 16)]
+    if n.endswith('_bed'):
+        return [(0, 3, 0, 16, 9, 16)]
+    if n == 'lectern':
+        return [(0, 0, 0, 16, 12, 16)]
+    if n == 'bell':
+        return [(4, 3, 4, 12, 13, 12)]
+    if n == 'flower_pot':
+        return [(5, 0, 5, 11, 6, 11)]
     if n == 'water':
         return [(0, 0, 0, 16, 14, 16)]
     if n == 'campfire':
@@ -294,7 +312,7 @@ def load(level):
     return blocks, (sx, sy, sz), (int(off['x']), int(off['y']), int(off['z']))
 
 
-FULL_OPAQUE_SKIP = ('_stairs', '_slab', '_trapdoor', '_fence', '_wall', 'glass_pane', 'lantern', 'chain', 'banner', 'water', 'campfire', 'cauldron')
+FULL_OPAQUE_SKIP = ('_carpet', '_bed', 'lectern', 'bell', 'flower_pot', 'ladder', '_stairs', '_slab', '_trapdoor', '_fence', '_wall', 'glass_pane', 'lantern', 'chain', 'banner', 'water', 'campfire', 'cauldron')
 
 
 def is_opaque_cube(entry):
@@ -306,7 +324,8 @@ def is_opaque_cube(entry):
 
 def render_level(level, margin=3):
     blocks, (sx, sy, sz), anchor = load(level)
-    scene = dict(blocks)
+    cut = int(os.environ.get('CUT', '999'))  # CUT=n: leave out everything from height n up, to look inside
+    scene = {p: e for p, e in blocks.items() if p[1] < cut}
     # a flat grass lawn under and around the building (not part of the blueprint)
     for x in range(-margin, sx + margin):
         for z in range(-margin, sz + margin):
@@ -433,7 +452,7 @@ def main():
         canvas, _ = render_level(lvl)
         img = finish(canvas)
         images[lvl] = img
-        label(img.copy(), TITLES[lvl]).save(os.path.join(OUT, 'relais_niveau%d.png' % lvl))
+        label(img.copy(), TITLES[lvl]).save(os.path.join(OUT, 'relais_niveau%d%s.png' % (lvl, '_coupe' if os.environ.get('CUT') else '')))
         print('level', lvl, img.size)
     if len(levels) == 5:
         height = max(i.height for i in images.values())
