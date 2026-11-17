@@ -1,15 +1,7 @@
 // [claude-build] Mod Grappin 2.0 : grappin a balancier qui ne s'accroche qu'aux points d'ancrage (bloc grappin:ancrage, tag grappin:ancrages).
 package fr.atelier.grappin;
 
-import java.util.EnumMap;
-import java.util.List;
-
-import net.minecraft.Util;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.ArmorMaterial;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
@@ -41,7 +33,6 @@ public class Grappin {
     public static final DeferredRegister.Blocks BLOCS = DeferredRegister.createBlocks(MODID);
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
     public static final DeferredRegister<EntityType<?>> ENTITES = DeferredRegister.create(Registries.ENTITY_TYPE, MODID);
-    public static final DeferredRegister<ArmorMaterial> MATERIAUX = DeferredRegister.create(Registries.ARMOR_MATERIAL, MODID);
     public static final DeferredRegister<CreativeModeTab> ONGLETS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
     /** Les blocs ou le crochet tient : le point d'ancrage, et tout ce qu'on ajoute au tag grappin:ancrages. */
@@ -55,17 +46,8 @@ public class Grappin {
     /** Le grappin : pas d'usure, une seule par case. Il s'obtient par /give ou dans l'inventaire creatif. */
     public static final DeferredItem<GrappinItem> GRAPPIN = ITEMS.register("grappin", () -> new GrappinItem(new Item.Properties().stacksTo(1)));
 
-    /** Materiau du voile : aucune protection ; il ne sert qu'a l'habillage (texture portee). */
-    public static final DeferredHolder<ArmorMaterial, ArmorMaterial> MATERIAU_VOILE = MATERIAUX.register("voile", () -> new ArmorMaterial(
-            Util.make(new EnumMap<>(ArmorItem.Type.class), m -> {
-                for (ArmorItem.Type t : ArmorItem.Type.values()) {
-                    m.put(t, 0);
-                }
-            }), 0, SoundEvents.ARMOR_EQUIP_TURTLE, () -> Ingredient.EMPTY,
-            List.of(new ArmorMaterial.Layer(ResourceLocation.fromNamespaceAndPath(MODID, "voile"))), 0.0F, 0.0F));
-
-    /** Le Voile des Profondeurs : un casque qui fait respirer sous l'eau, a reserve limitee qui se recharge en surface. */
-    public static final DeferredItem<VoileItem> VOILE = ITEMS.register("voile", () -> new VoileItem(MATERIAU_VOILE, new Item.Properties()));
+    /** La Cape lestee : se porte dans l'emplacement cape d'Accessories ; respiration, nage rapide, mode leste et attaque tourbillon sous l'eau. */
+    public static final DeferredItem<CapeLesteeItem> CAPE_LESTEE = ITEMS.register("cape_lestee", () -> new CapeLesteeItem(new Item.Properties().stacksTo(1)));
 
     /** La Paravoile : voile de planeur (comme dans Breath of the Wild). Tenue en main, ESPACE en l'air la deploie ; la jauge d'endurance se vide en vol. */
     public static final DeferredItem<ParavoileItem> PARAVOILE = ITEMS.register("paravoile", () -> new ParavoileItem(new Item.Properties()));
@@ -133,14 +115,14 @@ public class Grappin {
     public static final DeferredItem<DeferredSpawnEggItem> SERAPHIN_OEUF = ITEMS.register("seraphin_spawn_egg",
             () -> new DeferredSpawnEggItem(SERAPHIN, 0xE8E8E8, 0x202020, new Item.Properties()));
 
-    /** Onglet creatif dedie aux objets de donjon (le grappin et son point d'ancrage ; la place des futurs objets : voile, amulette...). */
+    /** Onglet creatif dedie aux objets de donjon . */
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> ONGLET = ONGLETS.register("donjon", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.grappin.donjon"))
             .icon(() -> GRAPPIN.get().getDefaultInstance())
             .displayItems((parametres, sortie) -> {
                 sortie.accept(GRAPPIN.get());
                 sortie.accept(ANCRAGE_ITEM.get());
-                sortie.accept(VOILE.get());
+                sortie.accept(CAPE_LESTEE.get());
                 sortie.accept(PARAVOILE.get());
                 sortie.accept(SERAPHIN_OEUF.get());
                 sortie.accept(GOLEM_OEUF.get());
@@ -153,7 +135,6 @@ public class Grappin {
         BLOCS.register(modBus);
         ITEMS.register(modBus);
         ENTITES.register(modBus);
-        MATERIAUX.register(modBus);
         ONGLETS.register(modBus);
         container.registerConfig(ModConfig.Type.COMMON, Reglages.SPEC);
         modBus.addListener(this::reseau);
@@ -171,5 +152,7 @@ public class Grappin {
         var registrar = event.registrar("1");
         registrar.playToServer(LacherPayload.TYPE, LacherPayload.CODEC, LacherPayload::traiter);
         registrar.playBidirectional(PlaneurPayload.TYPE, PlaneurPayload.CODEC, PlaneurPayload::traiter);
+        registrar.playBidirectional(LestePayload.TYPE, LestePayload.CODEC, LestePayload::traiter);
+        registrar.playBidirectional(TourbillonPayload.TYPE, TourbillonPayload.CODEC, TourbillonPayload::traiter);
     }
 }

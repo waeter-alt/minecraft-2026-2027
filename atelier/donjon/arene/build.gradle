@@ -29,6 +29,13 @@ sourceSets.main.resources {
 repositories {
     // Add here additional repositories if required by some of the dependencies below.
     mavenCentral()      // JUnit (tests de la logique pure du Seraphin)
+    // Accessories (emplacement « cape » de la Cape lestée).
+    maven { url = "https://maven.wispforest.io/releases" }
+    // owo-lib exactement dans la version du modpack (absente du maven wispforest).
+    exclusiveContent {
+        forRepository { maven { url = "https://api.modrinth.com/maven" } }
+        filter { includeGroup "maven.modrinth" }
+    }
 }
 
 base {
@@ -117,6 +124,12 @@ configurations {
 }
 
 dependencies {
+    // Versions alignées sur le modpack Kodistan. transitive = false : owo embarque déjà
+    // (jar-in-jar) endec et fabric-api-base que le POM d'Accessories redemande.
+    compileOnly("io.wispforest:accessories-neoforge:${accessories_version}") { transitive = false }
+    localRuntime("io.wispforest:accessories-neoforge:${accessories_version}") { transitive = false }
+    localRuntime("maven.modrinth:owo-lib:${owo_version}") { transitive = false }
+
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
     testImplementation 'com.google.code.gson:gson:2.11.0'      // ModelesGrappinTest lit les modeles JSON (test seulement, absent du jar)
