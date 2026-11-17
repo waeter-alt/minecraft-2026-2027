@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "interregne:block/depot_regional_side",
+    "down": "interregne:block/depot_regional_bottom",
+    "up": "interregne:block/depot_regional_top",
+    "north": "interregne:block/depot_regional_side",
+    "south": "interregne:block/depot_regional_side",
+    "east": "interregne:block/depot_regional_front",
+    "west": "interregne:block/depot_regional_side"
+  }
+}

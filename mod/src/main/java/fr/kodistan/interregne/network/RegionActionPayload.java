@@ -9,18 +9,18 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Client to server: an operation at a Comptoir régional or a Marché impérial.
+ * Client to server: an operation at a Dépôt Régional or a Marché impérial.
  * The crate (ordinal) and amount only matter at the market.
  */
 public record RegionActionPayload(BlockPos block, int action, int crate, int amount) implements CustomPacketPayload
 {
     /**
-     * Pay for the Comptoir's next level.
+     * Open the Dépôt's window (sent when its hut is used).
      */
-    public static final int COMPTOIR_UPGRADE = 0;
+    public static final int COMPTOIR_OPEN = 0;
 
     /**
-     * Take the crates kept inside the Comptoir.
+     * Take the crates kept inside the Dépôt.
      */
     public static final int COMPTOIR_TAKE = 1;
 
