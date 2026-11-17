@@ -18,7 +18,10 @@
   "block.interregne.caisse_pierre": "Caisse de pierre",
   "block.interregne.caisse_minerai": "Caisse de minerai",
   "block.interregne.poste_commercial": "Poste commercial (test des routes)",
-  "block.interregne.comptoir_regional": "Comptoir régional",
+  "block.interregne.depot_regional": "Dépôt Régional",
+  "item.interregne.depot_regional": "Dépôt Régional",
+  "com.interregne.building.depot_regional": "Dépôt Régional",
+  "com.interregne.building.depot_regional.desc": "Fabrique les caisses de la région de la colonie, de plus en plus vite à chaque niveau.",
   "block.interregne.relais_commercial": "Relais commercial",
   "item.interregne.relais_commercial": "Relais commercial",
   "com.interregne.building.relais_commercial": "Relais commercial",
@@ -200,5 +203,9 @@
   "block.interregne.banner.tour.green": "Tour verte",
   "block.interregne.banner.tour.red": "Tour rouge",
   "block.interregne.banner.tour.black": "Tour noire",
-  "block.interregne.trone_imperial": "Trône impérial"
+  "block.interregne.trone_imperial": "Trône impérial",
+  "key.categories.interregne": "Interrègne",
+  "key.interregne.carte": "Carte du royaume",
+  "entity.interregne.conducteur": "Conducteur de caravane",
+  "entity.interregne.escorte": "Soldat d'escorte"
 }

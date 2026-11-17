@@ -58,7 +58,13 @@ public abstract class BOWindowMixin
         {
             ci.cancel();
             final var building = ((AbstractWindowModuleBuildingAccessor) this).interregne$building();
-            if (building instanceof fr.kodistan.interregne.economy.BuildingBanqueRegionale.View)
+            if (building instanceof fr.kodistan.interregne.region.BuildingDepotRegional.View)
+            {
+                // The Dépôt Régional has its own window: the server answers with the state it shows
+                net.neoforged.neoforge.network.PacketDistributor.sendToServer(new fr.kodistan.interregne.network.RegionActionPayload(
+                  building.getPosition(), fr.kodistan.interregne.network.RegionActionPayload.COMPTOIR_OPEN, 0, 0));
+            }
+            else if (building instanceof fr.kodistan.interregne.economy.BuildingBanqueRegionale.View)
             {
                 // The bank has its own window: the server answers with the state it shows
                 net.neoforged.neoforge.network.PacketDistributor.sendToServer(new fr.kodistan.interregne.network.RegionalBankActionPayload(
@@ -68,7 +74,7 @@ public abstract class BOWindowMixin
             {
                 // The Relais commercial has its own window: the server answers with the state it shows
                 net.neoforged.neoforge.network.PacketDistributor.sendToServer(new fr.kodistan.interregne.commerce.RelaisActionPayload(
-                  fr.kodistan.interregne.commerce.RelaisActionPayload.OPEN, building.getColony().getID(), 0, 0, 0, 0, 0));
+                  fr.kodistan.interregne.commerce.RelaisActionPayload.OPEN, building.getColony().getID(), 0, 0, 0, 0, 0, 0));
             }
             else
             {

@@ -294,6 +294,32 @@ public final class WallLayout
         return out;
     }
 
+    /**
+     * A road's paving (cobblestone, bricks, planks...) is not natural ground, so the probe reads it as a building in
+     * the way; where a road's centre line passes within its paving's reach the cell is let through, which is where
+     * {@link #crossings} puts the gate.
+     */
+    public static Terrain.Probe overRoad(final Terrain.Probe probe, final int x, final int z, final java.util.function.LongPredicate onRoad)
+    {
+        if (!probe.loaded() || !probe.blocked())
+        {
+            return probe;
+        }
+        for (int dz = -ROAD_REACH; dz <= ROAD_REACH; dz++)
+        {
+            for (int dx = -ROAD_REACH; dx <= ROAD_REACH; dx++)
+            {
+                if (onRoad.test(WallRegistry.cell(x + dx, z + dz)))
+                {
+                    return new Terrain.Probe(probe.ground(), false, probe.water(), true);
+                }
+            }
+        }
+        return probe;
+    }
+
+    private static final int ROAD_REACH = 3;
+
     private static boolean clearOf(final WallTrace.Point cell, final List<WallTrace.Point> others)
     {
         for (final WallTrace.Point other : others)

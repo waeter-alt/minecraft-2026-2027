@@ -30,6 +30,7 @@
     "FarmFieldUpdateSeedMessageMixin",
     "GetColonyInfoMessageMixin",
     "HarvestTransferMixin",
+    "InventoryCitizenMixin",
     "ItemStackHandlerMixin",
     "ItemStackMixin",
     "MobAiRegistryMixin",

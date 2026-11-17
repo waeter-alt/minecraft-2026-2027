@@ -37,6 +37,8 @@ public final class ClientRoads
         }
         cells = next;
         version++;
+        // Terrain read before the roads arrived still counts their paving as a building
+        WallPlanner.forgetTerrain();
     }
 
     /**
@@ -45,6 +47,20 @@ public final class ClientRoads
     public static int[] at(final int x, final int z)
     {
         return cells.get(WallRegistry.cell(x, z));
+    }
+
+    /**
+     * Every road cell as {x, z, colonyA, colonyB}, for the kingdom map.
+     */
+    public static List<int[]> cellList()
+    {
+        final List<int[]> list = new java.util.ArrayList<>(cells.size());
+        for (final Map.Entry<Long, int[]> entry : cells.entrySet())
+        {
+            final long key = entry.getKey();
+            list.add(new int[] {(int) (key >> 32), (int) key, entry.getValue()[0], entry.getValue()[1]});
+        }
+        return list;
     }
 
     /**

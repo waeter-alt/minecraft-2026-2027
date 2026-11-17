@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=east":  { "model": "interregne:block/depot_regional", "y": 0 },
+    "facing=south": { "model": "interregne:block/depot_regional", "y": 90 },
+    "facing=west":  { "model": "interregne:block/depot_regional", "y": 180 },
+    "facing=north": { "model": "interregne:block/depot_regional", "y": 270 }
+  }
+}

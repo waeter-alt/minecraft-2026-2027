@@ -71,6 +71,14 @@ public final class Config
       .comment("Workers receive the best tool their building allows when they need one, upgraded with the building")
       .define("autoTools", true);
 
+    public static final ModConfigSpec.BooleanValue CITIZEN_ITEM_ALLOWLIST = BUILDER
+      .comment("Citizens refuse any item whose mod is not in citizenItemNamespaces (a modded class-mod armor given to a citizen froze the 2025 server for hours)")
+      .define("citizenItemAllowlist", true);
+
+    public static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> CITIZEN_ITEM_NAMESPACES = BUILDER
+      .comment("Mods whose items citizens may carry and wear")
+      .defineListAllowEmpty("citizenItemNamespaces", java.util.List.of("minecraft", "minecolonies", "structurize", "domum_ornamentum", "interregne"), () -> "minecraft", o -> o instanceof String);
+
     public static final ModConfigSpec.DoubleValue HUNGRY_SLOWDOWN = BUILDER
       .comment("Hungry citizens (saturation under 6, the limit the Intendance feeds at) work and produce this many times slower")
       .defineInRange("hungrySlowdown", 2.0, 1.0, 10.0);
@@ -263,6 +271,31 @@ public final class Config
     public static final ModConfigSpec.IntValue CARAVAN_SHOW_DISTANCE = BUILDER
       .comment("A caravan shows up as real animals when a player is this close (blocks); otherwise it only advances on paper")
       .defineInRange("caravanShowDistance", 96, 16, 256);
+
+    /**
+     * Price of the caravan escort by tier (index 0 is tier 1), paid by the seller at EACH contract.
+     * Tier 1 is meant to hold its own against one player in basic iron gear; the top tiers against a small group.
+     */
+    public static final List<ModConfigSpec.LongValue> ESCORT_COST = List.of(
+      BUILDER.comment("Price in Couronnes of a tier 1 escort (2 swordsmen, 1 archer), paid at every contract, refunded if the offer is withdrawn before departure").defineInRange("escortCostTier1", 150L, 0L, Long.MAX_VALUE),
+      BUILDER.comment("Price of a tier 2 escort (3 swordsmen, 1 archer)").defineInRange("escortCostTier2", 400L, 0L, Long.MAX_VALUE),
+      BUILDER.comment("Price of a tier 3 escort (4 swordsmen, 2 archers, diamond gear)").defineInRange("escortCostTier3", 900L, 0L, Long.MAX_VALUE),
+      BUILDER.comment("Price of a tier 4 escort (5 swordsmen, 3 archers)").defineInRange("escortCostTier4", 2_000L, 0L, Long.MAX_VALUE),
+      BUILDER.comment("Price of a tier 5 escort (6 swordsmen, 4 archers, netherite gear)").defineInRange("escortCostTier5", 4_500L, 0L, Long.MAX_VALUE));
+
+    public static final List<ModConfigSpec.IntValue> ESCORT_SWORDSMEN = List.of(
+      BUILDER.comment("Swordsmen in a tier 1 escort").defineInRange("escortSwordsmenTier1", 2, 0, 32),
+      BUILDER.comment("Swordsmen in a tier 2 escort").defineInRange("escortSwordsmenTier2", 3, 0, 32),
+      BUILDER.comment("Swordsmen in a tier 3 escort").defineInRange("escortSwordsmenTier3", 4, 0, 32),
+      BUILDER.comment("Swordsmen in a tier 4 escort").defineInRange("escortSwordsmenTier4", 5, 0, 32),
+      BUILDER.comment("Swordsmen in a tier 5 escort").defineInRange("escortSwordsmenTier5", 6, 0, 32));
+
+    public static final List<ModConfigSpec.IntValue> ESCORT_ARCHERS = List.of(
+      BUILDER.comment("Archers in a tier 1 escort").defineInRange("escortArchersTier1", 1, 0, 32),
+      BUILDER.comment("Archers in a tier 2 escort").defineInRange("escortArchersTier2", 1, 0, 32),
+      BUILDER.comment("Archers in a tier 3 escort").defineInRange("escortArchersTier3", 2, 0, 32),
+      BUILDER.comment("Archers in a tier 4 escort").defineInRange("escortArchersTier4", 3, 0, 32),
+      BUILDER.comment("Archers in a tier 5 escort").defineInRange("escortArchersTier5", 4, 0, 32));
 
     public static final ModConfigSpec.IntValue WAR_NOTICE_SECONDS = BUILDER
       .comment("Seconds between a declaration of war and the war being open (assaults allowed)")
@@ -477,6 +510,45 @@ public final class Config
     public static final ModConfigSpec.IntValue DECORATION_BLOCKS_PER_CRATE = BUILDER
       .comment("A decoration needs one regional crate (wood and stone in turn) per this many blocks; 0 disables")
       .defineInRange("decorationBlocksPerCrate", 1000, 0, 100_000);
+
+    static
+    {
+        BUILDER.pop();
+        BUILDER.push("roads");
+    }
+
+    public static final ModConfigSpec.ConfigValue<String> ROAD_UPGRADE_COSTS = BUILDER
+      .comment("Couronnes to raise a trade road from level 1 to 2, 2 to 3, 3 to 4 and 4 to 5 (level 5 is the Roman road),",
+               "paid at the Poste commercial from the colony treasury; each step should cost more than the one before")
+      .define("roadUpgradeCosts", "500,1500,4000,10000");
+
+    public static final ModConfigSpec.IntValue ROAD_UPGRADE_SECONDS = BUILDER
+      .comment("How long the works raising a road one level last, whatever its length")
+      .defineInRange("roadUpgradeSeconds", 120, 10, 3600);
+
+    public static final ModConfigSpec.BooleanValue ROAD_EFFECTS = BUILDER
+      .comment("Whether walking on a trade road gives the bonuses below, growing with the road level")
+      .define("roadEffects", true);
+
+    public static final ModConfigSpec.ConfigValue<String> ROAD_SPEED = BUILDER
+      .comment("Extra walking speed on a road of level 1 to 5, as a fraction (0.10 = +10%)")
+      .define("roadSpeed", "0.10,0.20,0.30,0.40,0.50");
+
+    public static final ModConfigSpec.ConfigValue<String> ROAD_JUMP = BUILDER
+      .comment("Extra jump strength on a road of level 1 to 5, as a fraction")
+      .define("roadJump", "0,0,0.05,0.10,0.15");
+
+    public static final ModConfigSpec.ConfigValue<String> ROAD_STEP = BUILDER
+      .comment("Extra step height in blocks on a road of level 1 to 5 (0.5 lets a player walk up slabs and steps without jumping)")
+      .define("roadStep", "0,0.1,0.2,0.4,0.5");
+
+    public static final ModConfigSpec.ConfigValue<String> ROAD_SAFE_FALL = BUILDER
+      .comment("Extra blocks a player can fall without damage on a road of level 1 to 5")
+      .define("roadSafeFall", "0,0,1,2,3");
+
+    public static final ModConfigSpec.BooleanValue ROAD_POTIONS = BUILDER
+      .comment("Whether high roads also give light potions: regeneration on level 4, regeneration and resistance on level 5")
+      .define("roadPotions", true);
 
     static
     {

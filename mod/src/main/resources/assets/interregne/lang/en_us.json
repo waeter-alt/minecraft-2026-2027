@@ -18,7 +18,10 @@
   "block.interregne.caisse_pierre": "Stone Crate",
   "block.interregne.caisse_minerai": "Ore Crate",
   "block.interregne.poste_commercial": "Trading Post (route test)",
-  "block.interregne.comptoir_regional": "Regional Trading Post",
+  "block.interregne.depot_regional": "Regional Depot",
+  "item.interregne.depot_regional": "Regional Depot",
+  "com.interregne.building.depot_regional": "Regional Depot",
+  "com.interregne.building.depot_regional.desc": "Makes the colony region's crates, faster at every level.",
   "block.interregne.marche_imperial": "Imperial Market",
   "block.interregne.banner.couronne.white": "White Imperial Crown",
   "block.interregne.banner.couronne.orange": "Orange Imperial Crown",
@@ -196,5 +199,9 @@
   "block.interregne.banner.tour.green": "Green Castle Tower",
   "block.interregne.banner.tour.red": "Red Castle Tower",
   "block.interregne.banner.tour.black": "Black Castle Tower",
-  "block.interregne.trone_imperial": "Imperial Throne"
+  "block.interregne.trone_imperial": "Imperial Throne",
+  "key.categories.interregne": "Interregne",
+  "key.interregne.carte": "Kingdom map",
+  "entity.interregne.conducteur": "Caravan driver",
+  "entity.interregne.escorte": "Escort soldier"
 }
