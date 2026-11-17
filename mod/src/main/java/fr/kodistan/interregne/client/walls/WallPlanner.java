@@ -169,7 +169,8 @@ public final class WallPlanner
         Terrain.Probe probe = PROBES.get(key);
         if (probe == null)
         {
-            probe = Terrain.probe(minecraft.level, x, z, OWN.contains(key) ? fr.kodistan.interregne.walls.WallBlocks::isWallBlock : null);
+            probe = fr.kodistan.interregne.walls.WallLayout.overRoad(Terrain.probe(minecraft.level, x, z, OWN.contains(key) ? fr.kodistan.interregne.walls.WallBlocks::isWallBlock : null),
+              x, z, cell -> ClientRoads.at((int) (cell >> 32), (int) cell) != null);
             if (probe.loaded())
             {
                 PROBES.put(key, probe);

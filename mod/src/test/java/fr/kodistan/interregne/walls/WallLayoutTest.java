@@ -296,4 +296,36 @@ class WallLayoutTest
         final double ez = pz - (az + t * dz);
         return Math.sqrt(ex * ex + ez * ez);
     }
+
+    /**
+     * A paved road is not natural ground, so its blocks read as "a building in the way": the gate the trace gets where
+     * it crosses the road must still be accepted, not shown red (playtest report: ghost shows the gate, trace refused).
+     */
+    @Test
+    void gateOnPavedRoadIsNotAnObstacle()
+    {
+        final List<WallTrace.Point> points = List.of(new WallTrace.Point(-30, 0), new WallTrace.Point(30, 0));
+        // A road running north-south through x = 0, paved 7 cells wide
+        final Set<Long> centre = new HashSet<>();
+        final Set<Long> paving = new HashSet<>();
+        for (int z = -40; z <= 40; z++)
+        {
+            centre.add(key(0, z));
+            for (int x = -3; x <= 3; x++)
+            {
+                paving.add(key(x, z));
+            }
+        }
+        final WallLayout.Ground raw = ground((x, z) -> 70, Set.of(), paving);
+        final List<WallTrace.Point> gates = WallLayout.crossings(points, false, List.of(), centre::contains);
+        assertEquals(1, gates.size());
+
+        final WallLayout withoutFix = WallLayout.of(points, false, gates, LEVEL, raw, ALWAYS);
+        assertEquals(WallLayout.Status.BLOCKED, withoutFix.gates().get(0).status());
+
+        final WallLayout.Ground aware = (x, z) -> WallLayout.overRoad(raw.at(x, z), x, z, centre::contains);
+        final WallLayout layout = WallLayout.of(points, false, gates, LEVEL, aware, ALWAYS);
+        assertEquals(WallLayout.Status.OK, layout.gates().get(0).status());
+        assertEquals(0, layout.blocked());
+    }
 }
