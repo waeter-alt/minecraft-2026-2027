@@ -29,8 +29,8 @@ public class Golem extends Monster {
     public static final String[] NOMS_PIECES = {"masque", "plastron", "poing", "dos_g", "dos_d"};
     public static final double[] AZIMUTS = {0, 0, -50, 150, -150};
     /** Le corps est dessine 25 % plus mince (il debordait sur les anneaux de plateformes) : le rendu et les points faibles gardent les memes proportions horizontales. */
-    public static final float FACTEUR_LARGEUR = 0.5F;
-    public static final double[] RAYONS = {6.5 * FACTEUR_LARGEUR, 7.5 * FACTEUR_LARGEUR, 12 * FACTEUR_LARGEUR, 7.2 * FACTEUR_LARGEUR, 7.2 * FACTEUR_LARGEUR};
+    public static final float FACTEUR_LARGEUR = 0.75F;
+    public static final double[] RAYONS = {12, 12, 12, 12, 12};      // points faibles ecartes du corps : les anneaux de plateformes sont loin de lui, hors de ses bras
     public static final double[] HAUTEURS = {34, 26, 40, 30, 22};
     /** Cote de la boite de collision de chaque piece : assez grande pour qu'une fleche vise sans effort, et qui depasse du corps. */
     public static final float[] TAILLES = {5, 6, 7, 5, 5};
