@@ -71,6 +71,14 @@ public final class Config
       .comment("Workers receive the best tool their building allows when they need one, upgraded with the building")
       .define("autoTools", true);
 
+    public static final ModConfigSpec.BooleanValue CITIZEN_ITEM_ALLOWLIST = BUILDER
+      .comment("Citizens refuse any item whose mod is not in citizenItemNamespaces (a modded class-mod armor given to a citizen froze the 2025 server for hours)")
+      .define("citizenItemAllowlist", true);
+
+    public static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> CITIZEN_ITEM_NAMESPACES = BUILDER
+      .comment("Mods whose items citizens may carry and wear")
+      .defineListAllowEmpty("citizenItemNamespaces", java.util.List.of("minecraft", "minecolonies", "structurize", "domum_ornamentum", "interregne"), () -> "minecraft", o -> o instanceof String);
+
     public static final ModConfigSpec.DoubleValue HUNGRY_SLOWDOWN = BUILDER
       .comment("Hungry citizens (saturation under 6, the limit the Intendance feeds at) work and produce this many times slower")
       .defineInRange("hungrySlowdown", 2.0, 1.0, 10.0);
