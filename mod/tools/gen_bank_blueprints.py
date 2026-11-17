@@ -44,7 +44,11 @@ FLOOR = M + 'smooth_stone'
 VAULT_FLOOR = M + 'polished_blackstone_bricks'
 GLASS = M + 'glass'
 VAULT_DOOR = M + 'waxed_copper_door'
-R.SOLID.update({STONE, POLISHED, POLISHED_B, QUARTZ, PILLAR, GOLD, DARK, VAULT_FLOOR, GLASS})
+SAND = M + 'cut_sandstone'
+CHISEL = M + 'chiseled_sandstone'
+POST = R.POST
+R.ROOF, R.ROOF_FULL, R.WALL = 'brick', M + 'bricks', SAND  # red tiles over warm sandstone, gable ends included
+R.SOLID.update({SAND, CHISEL}); R.SOLID.update({STONE, POLISHED, POLISHED_B, QUARTZ, PILLAR, GOLD, DARK, VAULT_FLOOR, GLASS})
 
 
 class BankGrid(R.Grid):
@@ -106,22 +110,25 @@ def bank(g, p):
     x0, x1 = -p['hw'], p['hw']
     z0, zd, z1 = -p['hd'], p['div'], p['div'] + p['vd'] + 1  # north wall, divider, south wall
     top = p['top']
+    # ground: a checkered banking hall, a dark vault floor, a polished forecourt
     g.fill(x0 - 1, x1 + 1, 0, 0, z0 - 1, z1 + 1, FLOOR)
+    for x in range(x0 + 1, x1):
+        for z in range(z0 + 1, zd):
+            g.put(x, 0, z, FLOOR if (x + z) % 2 else POLISHED)
     g.fill(x0, x1, 0, 0, zd, z1, VAULT_FLOOR)
-    # walls: stone, polished pillars, a quartz band under the roof
-    g.ring(x0, x1, z0, z1, 1, top, STONE)
+    # walls: warm cut sandstone, quartz pillars every third block, a dark plinth, a chiseled band under the roof
+    g.ring(x0, x1, z0, z1, 1, top, SAND)
     for x in range(x0, x1 + 1, 3):
         for z in (z0, z1):
-            g.fill(x, x, 1, top, z, z, POLISHED, )
+            g.fill(x, x, 1, top, z, z, PILLAR, axis='y')
     for z in range(z0, z1 + 1, 3):
         for x in (x0, x1):
-            g.fill(x, x, 1, top, z, z, POLISHED)
+            g.fill(x, x, 1, top, z, z, PILLAR, axis='y')
     for x, z in ((x0, z0), (x1, z0), (x0, z1), (x1, z1)):
-        g.fill(x, x, 1, top, z, z, POLISHED)
-    g.ring(x0, x1, z0, z1, top, top, QUARTZ)
+        g.fill(x, x, 1, top, z, z, PILLAR, axis='y')
+    g.ring(x0, x1, z0, z1, top, top, CHISEL)
     g.ring(x0, x1, z0, z1, 1, 1, POLISHED_B)
-    # the vault: a solid stone room. The street side (east) is an arcade of full glass blocks between the wall pillars, so the
-    # hoard shows from outside without any thin bars; the front wall has two glass teller windows and a copper door
+    # the vault: solid stone room, glass arcade on the street side (east) so the hoard shows from outside
     for z in range(zd + 1, z1):
         if z not in range(z0, z1 + 1, 3):
             for y in range(2, max(3, top - 1)):
@@ -137,29 +144,63 @@ def bank(g, p):
         g.fill(x, x, 1, top - 1, zd, zd, PILLAR, axis='y')
     g.carve(0, 0, 1, 3, zd, zd)
     g.vault_door(0, zd, 'north')
+    g.fill(-1, 1, 3, 3, zd, zd, GOLD)
     g.put(0, 3, zd, GOLD)
-    # windows of the hall
+    # tall windows of the hall, shuttered outside
     for z in range(z0 + 2, zd - 1, 3):
-        for x in (x0, x1):
-            g.carve(x, x, 2, 3, z, z)
-            g.pane(x, 2, z)
-            g.pane(x, 3, z)
-    # entrance, a gold plaque over it and two lamps
+        for x, out, face in ((x0, x0 - 1, 'west'), (x1, x1 + 1, 'east')):
+            g.carve(x, x, 2, top - 2, z, z)
+            for y in range(2, top - 1):
+                g.pane(x, y, z)
+            for dz in (-1, 1):
+                for y in (2, top - 2):
+                    g.trapdoor(out, y, z + dz, face, mat='dark_oak')
+    for x in range(x0 + 2, x1 - 1, 3):
+        if abs(x) > 1:
+            g.carve(x, x, 2, 3, z1, z1)
+    # entrance: a portico on quartz pillars, a gold plaque, banners and lamps
     g.carve(-1, 1, 1, 3, z0, z0)
-    if top >= 5:
-        g.fill(-1, 1, 4, 4, z0, z0, GOLD)
+    for x in (-3, 3):
+        g.fill(x, x, 1, top - 1, z0 - 2, z0 - 2, PILLAR, axis='y')
+    for x in range(-3, 4):
+        g.put(x, top, z0 - 2, CHISEL)
+        g.put(x, top, z0 - 1, CHISEL)
+        g.slab(x, top + 1, z0 - 2, 'sandstone')
+        g.slab(x, top + 1, z0 - 1, 'sandstone')
+    g.fill(-1, 1, top, top, z0 - 2, z0 - 2, GOLD)
     for x in (-2, 2):
-        g.lantern(x, 3, z0 - 1, hanging=False)
-        g.put(x, 2, z0 - 1, M + 'dark_oak_fence', north='false', south='false', east='false', west='false', waterlogged='false')
-    # the counter, with a glass teller screen and a gold edge
+        g.lantern(x, top - 1, z0 - 2, hanging=True)
+        g.banner(x, top - 2, z0 - 1, 'north', 'red')
+        g.banner(x, top - 3, z0 - 1, 'north', 'red')
+    for x in (-5, 5):
+        if x0 < x < x1 or p['hw'] >= 5:
+            g.lamp_post(x, z0 - 2, 2)
+    # the hall: red runner to the vault, teller counter with a glass screen, chandeliers on tie beams, benches
+    for z in range(z0 + 1, zd):
+        if (0, z) != (0, 0):
+            g.put(0, 1, z, M + 'red_carpet')
+    for x in (-1, 1):
+        for z in range(z0 + 1, z0 + 3):
+            g.put(x, 1, z, M + 'red_carpet')
     for x in range(x0 + 2, x1 - 1):
         if abs(x) > 1:
-            g.put(x, 1, zd - 2, M + 'dark_oak_planks')
+            g.put(x, 1, zd - 2, DARK)
             g.pane(x, 2, zd - 2)
     g.put(x1 - 1, 1, zd - 2, GOLD)
     g.put(x0 + 1, 1, zd - 2, GOLD)
+    for x in (-2, 2):
+        g.put(x, 2, zd - 2, M + 'lectern', facing='north')
     g.put(0, 1, 0, 'interregne:banque_regionale', facing='north')
+    for z in range(z0 + 2, zd - 2, 3):
+        g.fill(x0 + 1, x1 - 1, top - 1, top - 1, z, z, POST, axis='x')
+        for x in (-3, 3):
+            g.chain(x, top - 2, z)
+            g.lantern(x, top - 3, z, hanging=True)
+    for x in (x0 + 2, x1 - 2):
+        for z in range(z0 + 2, zd - 3, 2):
+            g.stair(x, 1, z, 'dark_oak', 'east' if x < 0 else 'west')
     g.gable('x', x0, x1, z0, z1, top + 1)
+    g.put(0, top + 1, z0, GOLD)  # the pediment's emblem
     if p.get('pillars'):
         for z in range(z0 + 2, zd - 1, 3):
             for x in (x0 + 2, x1 - 2):
@@ -167,37 +208,56 @@ def bank(g, p):
     if p.get('towers'):
         for x in (x0 - 1, x1 + 1):
             for z in (z0 - 1, z1 + 1):
-                g.fill(x - 1, x + 1, 1, top + 3, z - 1, z + 1, STONE)
+                g.fill(x - 1, x + 1, 1, top + 3, z - 1, z + 1, SAND)
+                g.fill(x - 1, x + 1, 1, 1, z - 1, z + 1, POLISHED_B)
+                g.fill(x - 1, x + 1, top + 3, top + 3, z - 1, z + 1, CHISEL)
                 for dx in (-1, 0, 1):
                     for dz in (-1, 0, 1):
-                        if (dx + dz) % 2 == 0:
+                        if (dx + dz) % 2 == 0 and (dx or dz):
                             g.put(x + dx, top + 4, z + dz, M + 'stone_brick_wall', north='none', south='none', east='none', west='none', up='true', waterlogged='false')
-                g.put(x, top + 4, z, M + 'lantern', hanging='false', waterlogged='false')
+                g.put(x, top + 4, z, GOLD)
+                g.lantern(x, top + 5, z)
     if p.get('wings'):
+        # two side offices, each opening into the hall through the side wall
         for sx in (-1, 1):
-            xa = sx * (p['hw'] + 1)
-            g.fill(min(xa, xa + sx * 3), max(xa, xa + sx * 3), 1, top - 1, z0 + 1, z0 + 5, STONE)
-            g.carve(min(xa, xa + sx * 3) + (1 if sx > 0 else 0), max(xa, xa + sx * 3) - (1 if sx < 0 else 0), 1, top - 2, z0 + 2, z0 + 4)
-    if p.get('upper'):
-        g.fill(x0 + 1, x1 - 1, top - 3, top - 3, z0 + 1, zd - 1, M + 'spruce_planks')
-        g.carve(-1, 1, top - 3, top - 3, z0 + 1, z0 + 3)
-        for z in range(z0 + 2, zd - 1, 3):
-            for x in (x0, x1):
-                g.carve(x, x, top - 2, top - 1, z, z)
-                g.pane(x, top - 2, z)
-                g.pane(x, top - 1, z)
-    g.lantern(0, top - 1, zd - 3, hanging=True)
+            a, b = sorted((sx * (p['hw'] + 1), sx * (p['hw'] + 5)))
+            g.ring(a, b, z0 + 1, z0 + 6, 1, top - 2, SAND)
+            g.fill(a, b, 0, 0, z0 + 1, z0 + 6, FLOOR)
+            g.fill(a, b, top - 1, top - 1, z0 + 1, z0 + 6, M + 'dark_oak_slab')
+            g.ring(a, b, z0 + 1, z0 + 6, 1, 1, POLISHED_B)
+            g.carve(sx * p['hw'], sx * p['hw'], 1, 2, z0 + 3, z0 + 4)
+            far = b if sx > 0 else a
+            g.put(far - sx, 1, z0 + 3, M + 'bookshelf')
+            g.put(far - sx, 2, z0 + 3, M + 'bookshelf')
+            g.put(far - sx, 1, z0 + 4, M + 'bookshelf')
+            g.put(far - sx, 2, z0 + 4, M + 'bookshelf')
+            g.put(far - 3 * sx, 1, z0 + 3, DARK)
+            g.put(far - 3 * sx, 2, z0 + 3, M + 'lectern', facing='west' if sx > 0 else 'east')
+            g.lantern(far - 3 * sx, 2, z0 + 4)
+    g.lantern(0, top - 3, zd - 3, hanging=True)
+    if p.get('fountain'):
+        for x in (-1, 0, 1):
+            for z in (z0 - 6, z0 - 5, z0 - 4):
+                g.put(x, 1, z, STONE)
+        g.water(0, 1, z0 - 5)
+        g.put(0, 2, z0 - 5, GOLD)
+        for x in (-3, 3):
+            g.lamp_post(x, z0 - 5, 2)
     vault_slots(g, x0 + 1, x1 - 1, zd + 1, z1 - 1, p['seed'], p.get('density', 1.0), p.get('pedestals', True))
-    R.apron(g, x0 - 3, x1 + 3, z0 - 4, z1 + 3)
+    R.apron(g, x0 - 3, x1 + 3, z0 - 7 if p.get('fountain') else z0 - 4, z1 + 3)
 
 
 PARAMS = {
     1: dict(hw=4, hd=4, div=3, vd=4, top=4, seed=11, density=0.55, pedestals=False),
     2: dict(hw=5, hd=5, div=4, vd=5, top=5, seed=22, density=0.6, pillars=True),
-    3: dict(hw=6, hd=6, div=5, vd=6, top=7, seed=33, density=0.6, pillars=True, upper=True),
-    4: dict(hw=7, hd=7, div=6, vd=7, top=7, seed=44, density=0.62, pillars=True, upper=True, wings=True),
-    5: dict(hw=8, hd=8, div=7, vd=8, top=8, seed=55, density=0.65, pillars=True, upper=True, towers=True),
+    3: dict(hw=6, hd=6, div=5, vd=6, top=7, seed=33, density=0.6, pillars=True, fountain=True),
+    4: dict(hw=7, hd=7, div=6, vd=7, top=7, seed=44, density=0.62, pillars=True, wings=True, fountain=True),
+    5: dict(hw=8, hd=8, div=7, vd=8, top=8, seed=55, density=0.65, pillars=True, towers=True, fountain=True),
 }
+
+
+def g_vault_z(n):
+    return PARAMS[n]['div'] + 1
 
 
 def level(n):
@@ -213,6 +273,7 @@ def build(level_n):
     g = BankGrid()
     LEVELS[level_n](g)
     R.connect(g)
+    R.assert_access(g, 'banque%d' % level_n, [(0, 1, g_vault_z(level_n))])
     xs, ys, zs = [k[0] for k in g.d], [k[1] for k in g.d], [k[2] for k in g.d]
     x0, x1, y0, y1, z0, z1 = min(xs), max(xs), min(ys), max(ys), min(zs), max(zs)
     sx, sy, sz = x1 - x0 + 1, y1 - y0 + 1, z1 - z0 + 1
