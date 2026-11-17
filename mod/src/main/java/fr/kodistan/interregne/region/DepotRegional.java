@@ -82,7 +82,12 @@ public final class DepotRegional
         final IColony colony = ownerOf(level, pos);
         if (colony == null)
         {
-            player.sendSystemMessage(Component.literal("Ce dépôt n'est pas encore construit : il produira dès que le bâtisseur aura fini.")
+            // A colony has one depot, the highest: another one standing here is a duplicate, not an unbuilt depot
+            final IColony here = com.minecolonies.api.colony.IColonyManager.getInstance().getIColony(level, pos);
+            final BuildingDepotRegional active = here == null ? null : of(here);
+            player.sendSystemMessage(Component.literal(active == null
+              ? "Ce dépôt n'est pas encore construit : il produira dès que le bâtisseur aura fini."
+              : "Une colonie n'a qu'un dépôt : celui de " + here.getName() + " est en " + active.getPosition().toShortString() + ". Celui-ci est en trop, tu peux le démolir.")
                                        .withStyle(ChatFormatting.GRAY));
         }
         else if (!colony.getPermissions().hasPermission(player, Action.ACCESS_HUTS))

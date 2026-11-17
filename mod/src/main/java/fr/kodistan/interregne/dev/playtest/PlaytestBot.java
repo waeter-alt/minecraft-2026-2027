@@ -71,6 +71,7 @@ public final class PlaytestBot
         root.then(literal("hutte").then(argument("colonie", IntegerArgumentType.integer(1)).then(argument("type", com.mojang.brigadier.arguments.StringArgumentType.word())
           .then(argument("niveau", IntegerArgumentType.integer(1, 5)).executes(ctx -> hut(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "colonie"),
             com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "type"), IntegerArgumentType.getInteger(ctx, "niveau")))))));
+        root.then(literal("inspecter").then(argument("colonie", IntegerArgumentType.integer(1)).executes(ctx -> inspect(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "colonie")))));
         root.then(literal("etat").executes(ctx ->
         {
             ctx.getSource().sendSuccess(() -> Component.literal(report(ctx.getSource().getServer())), false);
@@ -117,6 +118,30 @@ public final class PlaytestBot
         }
         building.setBuildingLevel(level);
         source.sendSuccess(() -> Component.literal(type + " posé en " + pos.toShortString() + ", niveau " + level), false);
+        return 1;
+    }
+
+    /**
+     * Lists the buildings of a colony with their class, level and position, and what the bank and depot lookups find.
+     */
+    private static int inspect(final net.minecraft.commands.CommandSourceStack source, final int colonyId)
+    {
+        final IColony colony = IColonyManager.getInstance().getColonyByWorld(colonyId, source.getServer().overworld());
+        if (colony == null)
+        {
+            source.sendFailure(Component.literal("Colonie inconnue."));
+            return 0;
+        }
+        for (final var building : colony.getBuildingManager().getBuildings().values())
+        {
+            final String line = building.getBuildingType().getRegistryName().getPath() + " " + building.getClass().getSimpleName() + " niv " + building.getBuildingLevel()
+                                  + " en " + building.getPosition().toShortString();
+            source.sendSuccess(() -> Component.literal(line), false);
+        }
+        final var bank = fr.kodistan.interregne.economy.RegionalBank.of(colony);
+        final var depot = fr.kodistan.interregne.region.DepotRegional.of(colony);
+        source.sendSuccess(() -> Component.literal("RegionalBank.of -> " + (bank == null ? "null" : bank.getPosition().toShortString()) + " ; DepotRegional.of -> "
+                                                     + (depot == null ? "null" : depot.getPosition().toShortString())), false);
         return 1;
     }
 
