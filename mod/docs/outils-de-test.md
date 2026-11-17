@@ -170,3 +170,12 @@ RouteBench (tracé de route testé hors du jeu en ~2 s), TerrainDump (copie d'un
 ## 6. Contenu de test : des mondes prêts, pas des scripts
 
 Si ta PR apporte un monde ou une structure (donjon, arène…), livre un **dossier de sauvegarde prêt à copier** dans `mod/run/client/saves/`. Personne ne doit avoir à créer un monde ou taper une commande pour tester, même « juste une minute ».
+
+## Bot de playtest (`/playtest`)
+
+Pour jouer ta colonie face à une colonie pilotée par le serveur, sans second client. Le bot n'est pas un joueur : il passe par les mêmes chemins admin que `/commerce` et `/diplomatie`, donc il **ne teste pas** les règles que ces chemins sautent (coût en Influence, rang requis) : ça reste un test à la main.
+
+- `/playtest start <humain> <bot>` (op) : pose l'alliance, un Relais niveau 1 et 5000 au trésor aux deux colonies, puis le bot joue la colonie `<bot>`. Il faut un monde qui a déjà une route entre les deux (ex. `ColoniesV2`).
+- Toutes les 5 s le bot accepte les offres qui lui sont faites et garde **une** offre ouverte vers toi (bois, blé, pierre en rotation, 5 caisses à 10).
+- `/playtest etat` : contrats du bot et derniers événements ; les événements s'affichent aussi dans le chat des ops. `/playtest stop` l'arrête.
+- Pilotable par Claude avec le MCP `playtest` (`mod/tools/playtest_mcp`).
