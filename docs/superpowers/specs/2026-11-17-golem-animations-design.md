@@ -75,3 +75,29 @@ Sept animations, toutes jouées côté client :
 ## Laissé à celui qui construit
 
 Le découpage exact en os, les pivots, les angles et le rythme des animations, tant que les objectifs et les « à éviter » sont respectés et que Luca valide les aperçus.
+
+---
+
+## Révision 2 (2026-11-17, après le premier essai de Luca)
+
+Essai en jeu de Luca (capture entourée) : « ce que j'ai entouré ne bouge pas ». Les parties immobiles étaient la taille (mousse, hanches, ceinture de racines) et surtout les **couvercles des 5 points faibles** (jusqu'à 8 × 6 blocs), qui couvrent tête, torse, poing et dos. Luca : « les faire suivre le corps, modifie leur design parce que je ne trouve pas ça très joli d'avoir deux gros blocs carrés ».
+
+**Ce qui change par rapport à la version 1 (le choix A est abandonné, à faire valider par Duncan) :**
+
+- **Les points faibles suivent le corps.** Chacun est rattaché à la partie qui le porte : `masque` à la tête, `plastron` et les deux `dos` au torse, `poing` (au-dessus de l'épaule droite) au bras droit. **Leurs boîtes de collision suivent** : le serveur calcule, à chaque tick, la même pose que l'écran (solution 1 retenue par Luca), à partir d'un « squelette » de calcul généré depuis le `.bbmodel` (os, pivots, images clés, même interpolation que Minecraft) et des animations en cours (le serveur les connaît, c'est lui qui les déclenche), regard compris. Ce qu'on voit reste ce qu'on frappe.
+- **Au repos, chaque point faible est exactement là où il est aujourd'hui** (`Golem.AZIMUTS`, `RAYONS`, `HAUTEURS`), avec la même taille de boîte (`TAILLES`) : la rampe de l'arène les atteint toujours à l'épée. Ils ne bougent que pendant les animations (quelques blocs au plus, mouvements lents).
+- **Nouveau dessin :**
+  - `masque` : un **masque de bois sculpté** sur le visage (plaque, arcade, yeux creux, nez, bouche) ; à l'ouverture, il se soulève et bascule vers l'avant, le visage rouge lumineux apparaît dessous et bat.
+  - `plastron`, `poing`, `dos_g`, `dos_d` : des **excroissances de bois noueux**, arrondies (cubes en escalier), avec racines et mousse, reliées au corps ; à l'ouverture, l'écorce s'écarte **en pétales** (4 pétales qui pivotent vers l'extérieur) et le cœur rouge lumineux apparaît et bat.
+  - Le mouvement d'ouverture et de fermeture (masque qui se lève, pétales qui s'ouvrent) est calculé dans le code à partir de l'état du point faible, en douceur (environ 0,5 s), pas une animation de Blockbench.
+- **La taille, les hanches et la ceinture de racines bougent avec le corps** ; seules les racines plongées dans la lave restent fixes.
+- **« Ding » à l'arc** : quand une flèche (arc ou arbalète) d'un joueur touche un point faible **ouvert** et que les dégâts comptent, ce joueur entend le « ding » du PvP à l'arc (le même paquet que Minecraft envoie quand une flèche touche un joueur : `ClientboundGameEventPacket.ARROW_HIT_PLAYER`). Rien sur un point fermé (la flèche ne fait rien), rien pour les autres joueurs.
+
+**À éviter (en plus de la version 1) :**
+- Une boîte de collision qui ne coïncide plus avec le point faible dessiné, à n'importe quel instant d'une animation (testé automatiquement).
+- Un point faible qui sort de la portée de la rampe **au repos** (testé : position de repos inchangée).
+- Un masque ou des pétales qui ressemblent encore à des blocs carrés.
+
+**Mes choix (à corriger si besoin) :** le « ding » seulement si la flèche fait des dégâts (point ouvert) ; les pétales et le masque gardent l'écorce et le bois clair de la texture actuelle (aucun nouveau dessin de texture) ; le corps du Gardien pivote toujours comme avant (lacet du corps), les boîtes en tiennent compte comme aujourd'hui.
+
+**Validation ajoutée :** test du squelette de calcul (au repos, les 5 points faibles sont aux positions d'aujourd'hui ; pendant chaque animation, la position calculée est celle du dessin) ; planche d'aperçu des nouveaux points faibles fermés et ouverts, envoyée à Luca avant le branchement ; essai en jeu : toucher chaque point faible pendant les animations (épée et arc, « ding »).
