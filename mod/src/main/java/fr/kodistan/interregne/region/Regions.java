@@ -195,8 +195,13 @@ public final class Regions
         for (final IColony colony : IColonyManager.getInstance().getAllColonies())
         {
             final BuildingDepotRegional depot = DepotRegional.of(colony);
+            if (depot == null || !(colony.getWorld() instanceof ServerLevel level) || !level.isLoaded(depot.getPosition()))
+            {
+                continue;
+            }
+            DepotDecor.refresh(level, depot);
             final Crate crate = data.regionOf(colony);
-            if (depot == null || crate == null || !(colony.getWorld() instanceof ServerLevel level) || !level.isLoaded(depot.getPosition()))
+            if (crate == null)
             {
                 continue;
             }
