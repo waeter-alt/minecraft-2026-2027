@@ -208,28 +208,33 @@ public class GolemModele extends EntityModel<Golem> {
 
         // ---------------------------------------------------------------- points faibles : cube rouge (lumineux) + plaque d'ecorce qui s'efface quand la piece est ouverte
         PartDefinition lum = r.addOrReplaceChild("lueurs", CubeListBuilder.create(), PartPose.ZERO);
-        rouge(lum, 0, MASQUE, 0, 35.2, 7.9, 8, 7, 1);                               // 0 : masque (visible quand la plaque du visage s'efface)
-        rouge(lum, 1, ROUGE, 0, 25, 6.2, 8, 6, 2);                                  // 1 : plastron
-        rouge(lum, 2, ROUGE, 9.2, 40, 7.7, 7, 7, 7);                                // 2 : poing
-        rouge(lum, 3, ROUGE, -3.6, 30, -6.4, 4.4, 4.4, 3);                          // 3 : noeud du dos, a gauche (gros, il doit se voir de loin)
-        rouge(lum, 4, ROUGE, 3.6, 22, -6.4, 4.4, 4.4, 3);                           // 4 : noeud du dos, a droite
+        rouge_points_faibles(lum, r);
         cube(lum, "oeilg", AMBRE, -2.5, 36.0, 9.8, 2.8, 1.0, 0.4, 20);               // yeux ambre inclines (regard mauvais), toujours lumineux
         cube(lum, "oeild", AMBRE, 2.5, 36.0, 9.8, 2.8, 1.0, 0.4, -20);
-        double[][] couv = {{0, 35.2, 8.4, 10, 8.5, 2}, {0, 25, 6.9, 9, 7, 2}, {9.2, 40, 7.7, 7.8, 7.8, 7.8}, {-3.6, 30, -7.5, 5.6, 5.6, 3}, {3.6, 22, -7.5, 5.6, 5.6, 3}};
-        for (int i = 0; i < couv.length; i++) {
-            int[] zone = i == 0 ? VISAGE : SOMBRE;
-            CubeListBuilder cb = CubeListBuilder.create().texOffs(zone[0], zone[1]).addBox((float) (-couv[i][3] * U / 2), (float) (-couv[i][4] * U / 2), (float) (-couv[i][5] * U / 2),
-                    (float) (couv[i][3] * U), (float) (couv[i][4] * U), (float) (couv[i][5] * U));
-            if (i == 0) {
-                cb.texOffs(CLAIR[0], CLAIR[1]).addBox(-4, -6, -10, 8, 14, 6);          // nez : une arete saillante au milieu du visage
-                cb.texOffs(CLAIR[0], CLAIR[1]).addBox(-17, -9, -7, 10, 3, 3);          // arcade gauche
-                cb.texOffs(CLAIR[0], CLAIR[1]).addBox(7, -9, -7, 10, 3, 3);            // arcade droite
-                cb.texOffs(CLAIR[0], CLAIR[1]).addBox(-18, 3, -6, 5, 9, 2);            // pommette gauche
-                cb.texOffs(CLAIR[0], CLAIR[1]).addBox(13, 3, -6, 5, 9, 2);             // pommette droite
-            }
-            r.addOrReplaceChild("couv" + i, cb, PartPose.offset((float) (couv[i][0] * U), (float) (24 - couv[i][1] * U), (float) (-couv[i][2] * U)));
-        }
         return LayerDefinition.create(maillage, 512, 512);
+    }
+
+    /**
+     * Les points faibles sont des bourgeons au bout d'une branche qui sort du corps : leur boite de collision (Golem.TAILLES) est dessinee a l'identique, a leur azimut, leur rayon et leur hauteur
+     * (Golem.AZIMUTS, RAYONS, HAUTEURS). Ainsi ce qu'on voit est ce qu'on frappe, et la rampe de l'arene passe a portee d'epee. Le cube rouge est dedans, une plaque d'ecorce le recouvre (elle s'efface a l'ouverture).
+     */
+    private static void rouge_points_faibles(PartDefinition lum, PartDefinition r) {
+        for (int i = 0; i < Golem.NOMS_PIECES.length; i++) {
+            double rm = Golem.RAYONS[i] / Golem.FACTEUR_LARGEUR;                    // le rayon dans le repere du modele (avant l'echelle en largeur)
+            double az = Math.toRadians(Golem.AZIMUTS[i]);
+            double cx = -rm * Math.sin(az);
+            double cz = rm * Math.cos(az);
+            double t = Golem.TAILLES[i];
+            double w = t / Golem.FACTEUR_LARGEUR;
+            double cy = Golem.HAUTEURS[i];
+            for (int k = 1; k <= 4; k++) {                                          // la branche : des noeuds de bois du corps jusqu'au bourgeon
+                double f = 0.18 + 0.17 * k;
+                corps(r, cx * f, cy, cz * f, 2.4, 2.4, 2.4);
+            }
+            rouge(lum, i, ROUGE, cx, cy, cz, w * 0.72, t * 0.72, w * 0.72);
+            CubeListBuilder cb = CubeListBuilder.create().texOffs(SOMBRE[0], SOMBRE[1]).addBox((float) (-w * U / 2), (float) (-t * U / 2), (float) (-w * U / 2), (float) (w * U), (float) (t * U), (float) (w * U));
+            r.addOrReplaceChild("couv" + i, cb, PartPose.offset((float) (cx * U), (float) (24 - cy * U), (float) (-cz * U)));
+        }
     }
 
     @Override

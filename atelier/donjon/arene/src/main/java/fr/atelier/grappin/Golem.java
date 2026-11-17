@@ -28,12 +28,12 @@ public class Golem extends Monster {
     /** Points faibles : nom, direction par rapport a l'avant du golem (degres), distance a son axe, hauteur au-dessus de la surface de la lave (blocs). */
     public static final String[] NOMS_PIECES = {"masque", "plastron", "poing", "dos_g", "dos_d"};
     public static final double[] AZIMUTS = {0, 0, -50, 150, -150};
-    /** Le corps est dessine 25 % plus mince (il debordait sur les anneaux de plateformes) : le rendu et les points faibles gardent les memes proportions horizontales. */
+    /** Le corps est dessine deux fois plus mince (il debordait sur les anneaux de plateformes) : le rendu et les points faibles gardent les memes proportions horizontales. */
     public static final float FACTEUR_LARGEUR = 0.75F;
-    public static final double[] RAYONS = {12, 12, 12, 12, 12};      // points faibles ecartes du corps : les anneaux de plateformes sont loin de lui, hors de ses bras
+    public static final double[] RAYONS = {8, 8, 7.5, 8, 8};      // les points faibles sont des bourgeons au bout de branches (voir GolemModele) : a portee d'epee de la rampe de l'arene, qui est en dehors des bras
     public static final double[] HAUTEURS = {34, 26, 40, 30, 22};
     /** Cote de la boite de collision de chaque piece : assez grande pour qu'une fleche vise sans effort, et qui depasse du corps. */
-    public static final float[] TAILLES = {5, 6, 7, 5, 5};
+    public static final float[] TAILLES = {6, 6, 7, 6, 6};
 
     private static final int DUREE_EMERGENCE = 100;
     private static final double PROFONDEUR_EMERGENCE = 40;
