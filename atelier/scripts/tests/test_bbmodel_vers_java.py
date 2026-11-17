@@ -54,6 +54,12 @@ class TestBbmodelVersJava(unittest.TestCase):
             self.assertEqual(4, len(ch["PETALES"][i]))
         self.assertIn("String[][] PETALES", bj.java_geometrie(modele, "fr.test", "Geo"))
 
+    def test_entete_source(self):
+        geo = bj.java_geometrie(MINI, "fr.test", "Geo", source="atelier/modeles/rodeur/rodeur.bbmodel")
+        self.assertIn("depuis atelier/modeles/rodeur/rodeur.bbmodel", geo.splitlines()[0])
+        anim = bj.java_animations(MINI, "fr.test", "Anims", source="atelier/modeles/rodeur/rodeur.bbmodel")
+        self.assertIn("depuis atelier/modeles/rodeur/rodeur.bbmodel", anim.splitlines()[0])
+
     def test_boucle(self):
         boucle = json.loads(json.dumps(MINI))
         boucle["animations"][0]["loop"] = "loop"

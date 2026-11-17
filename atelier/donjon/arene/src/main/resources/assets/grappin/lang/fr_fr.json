@@ -45,5 +45,7 @@
   "item.grappin.golem_spawn_egg": "Œuf d'apparition de Gardien des Racines",
   "entity.grappin.seraphin.phase2": "Le Séraphin se déchaîne !",
   "entity.grappin.plume": "Plume du Séraphin",
-  "item.grappin.seraphin_spawn_egg": "Œuf d'apparition de Séraphin"
+  "item.grappin.seraphin_spawn_egg": "Œuf d'apparition de Séraphin",
+  "entity.grappin.rodeur": "Rôdeur des Racines",
+  "item.grappin.rodeur_spawn_egg": "Œuf d'apparition de Rôdeur des Racines"
 }

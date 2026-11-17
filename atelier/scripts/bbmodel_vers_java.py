@@ -13,7 +13,11 @@ import re
 import sys
 from pathlib import Path
 
-ENTETE = "// Genere par atelier/scripts/bbmodel_vers_java.py depuis atelier/modeles/golem/golem.bbmodel : ne pas modifier a la main.\n"
+SOURCE_GOLEM = "atelier/modeles/golem/golem.bbmodel"
+
+
+def entete(source):
+    return f"// Genere par atelier/scripts/bbmodel_vers_java.py depuis {source} : ne pas modifier a la main.\n"
 INTERPOLATIONS = {"linear": "LINEAR", "catmullrom": "CATMULLROM", "smooth": "CATMULLROM", "step": "LINEAR", "bezier": "CATMULLROM"}
 
 
@@ -98,7 +102,7 @@ def pose(point, ref, rot, racine=False):
     return f"PartPose.offsetAndRotation({f(ox)}, {f(oy)}, {f(oz)}, {f(rx)}, {f(ry)}, {f(rz)})"
 
 
-def java_geometrie(modele, paquet, classe):
+def java_geometrie(modele, paquet, classe, source=SOURCE_GOLEM):
     lignes = []
     variables = {}
     n = 0
@@ -122,7 +126,7 @@ def java_geometrie(modele, paquet, classe):
     def tableau(nom):
         return f"    public static final String[] {nom} = {{\n" + "".join(f'        "{c}",\n' for c in ch[nom]) + "    };\n"
     largeur, hauteur = modele["resolution"]["width"], modele["resolution"]["height"]
-    return (ENTETE + f"package {paquet};\n\n"
+    return (entete(source) + f"package {paquet};\n\n"
             "import net.minecraft.client.model.geom.PartPose;\n"
             "import net.minecraft.client.model.geom.builders.CubeListBuilder;\n"
             "import net.minecraft.client.model.geom.builders.LayerDefinition;\n"
@@ -154,7 +158,7 @@ def canal(keyframes, nom, cible, conv):
     return f"new AnimationChannel(AnimationChannel.Targets.{cible},\n                        " + ",\n                        ".join(images) + ")"
 
 
-def java_animations(modele, paquet, classe):
+def java_animations(modele, paquet, classe, source=SOURCE_GOLEM):
     champs = []
     for a in modele.get("animations", []):
         lignes = [f"    public static final AnimationDefinition {a['name'].upper()} = AnimationDefinition.Builder.withLength({f(a['length'])})"]
@@ -170,7 +174,7 @@ def java_animations(modele, paquet, classe):
                     lignes.append(f'            .addAnimation("{anim["name"]}", {c})')
         lignes[-1] += "\n            .build();"
         champs.append("\n".join(lignes))
-    return (ENTETE + f"package {paquet};\n\n"
+    return (entete(source) + f"package {paquet};\n\n"
             "import net.minecraft.client.animation.AnimationChannel;\n"
             "import net.minecraft.client.animation.AnimationDefinition;\n"
             "import net.minecraft.client.animation.Keyframe;\n"
@@ -180,7 +184,7 @@ def java_animations(modele, paquet, classe):
             + "".join("\n" + c + "\n" for c in champs) + "}\n")
 
 
-def java_squelette(modele, paquet, classe):
+def java_squelette(modele, paquet, classe, source=SOURCE_GOLEM):
     """Le meme modele pour le serveur (classe Squelette, sans Minecraft) : os, pivots et canaux, valeurs dans le repere de Minecraft."""
     os_lignes = []
     for chemin, g, parent, _ in parcourir(modele):
@@ -209,7 +213,7 @@ def java_squelette(modele, paquet, classe):
                               f'new float[][] {{{valeurs}}}, new boolean[] {{{catmull}}})')
         anims.append(f'            Map.entry("{a["name"]}", new Squelette.Anim({f(a["length"])}, {str(a.get("loop") == "loop").lower()}, List.of(\n'
                      + ",\n".join(canaux) + ")))")
-    return (ENTETE + f"package {paquet};\n\n"
+    return (entete(source) + f"package {paquet};\n\n"
             "import java.util.List;\n"
             "import java.util.Map;\n\n"
             f"public final class {classe} {{\n"
@@ -225,10 +229,13 @@ def main():
     paquet = args[args.index("--paquet") + 1] if "--paquet" in args else "fr.atelier.grappin"
     nom = args[args.index("--nom") + 1] if "--nom" in args else "Golem"
     modele = json.loads(Path(args[0]).read_text(encoding="utf-8"))
+    source = Path(args[0]).as_posix()
+    if "atelier/" in source:
+        source = source[source.index("atelier/"):]
     dossier = Path(args[1])
-    (dossier / f"{nom}Geometrie.java").write_text(java_geometrie(modele, paquet, nom + "Geometrie"), encoding="utf-8")
-    (dossier / f"{nom}Animations.java").write_text(java_animations(modele, paquet, nom + "Animations"), encoding="utf-8")
-    (dossier / f"{nom}Squelette.java").write_text(java_squelette(modele, paquet, nom + "Squelette"), encoding="utf-8")
+    (dossier / f"{nom}Geometrie.java").write_text(java_geometrie(modele, paquet, nom + "Geometrie", source), encoding="utf-8")
+    (dossier / f"{nom}Animations.java").write_text(java_animations(modele, paquet, nom + "Animations", source), encoding="utf-8")
+    (dossier / f"{nom}Squelette.java").write_text(java_squelette(modele, paquet, nom + "Squelette", source), encoding="utf-8")
     print(f"{nom}Geometrie, {nom}Animations et {nom}Squelette ecrits dans {dossier}")
 
 

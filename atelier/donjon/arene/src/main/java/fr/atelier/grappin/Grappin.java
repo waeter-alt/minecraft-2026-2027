@@ -92,6 +92,12 @@ public class Grappin {
                     .fireImmune()
                     .clientTrackingRange(16)
                     .build("golem"));
+    /** Le Rodeur des Racines, mini-boss du sous-sol 1 du Donjon Suspendu (bete a quatre pattes de 4 blocs de long), et son oeuf d'apparition. */
+    public static final DeferredHolder<EntityType<?>, EntityType<Rodeur>> RODEUR = ENTITES.register("rodeur",
+            () -> EntityType.Builder.<Rodeur>of(Rodeur::new, MobCategory.MONSTER)
+                    .sized(1.6F, 2.4F)
+                    .clientTrackingRange(10)
+                    .build("rodeur"));
     /** Le Leviathan, serpent de mer du Donjon 2 (boite de la tete de 5 x 5 blocs), et son oeuf d'apparition. */
     public static final DeferredHolder<EntityType<?>, EntityType<Leviathan>> LEVIATHAN = ENTITES.register("leviathan",
             () -> EntityType.Builder.<Leviathan>of(Leviathan::new, MobCategory.MONSTER)
@@ -111,6 +117,8 @@ public class Grappin {
                     .updateInterval(1)
                     .noSave()
                     .build("graine"));
+    public static final DeferredItem<DeferredSpawnEggItem> RODEUR_OEUF = ITEMS.register("rodeur_spawn_egg",
+            () -> new DeferredSpawnEggItem(RODEUR, 0x5A3A1E, 0x7A9A3A, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> GOLEM_OEUF = ITEMS.register("golem_spawn_egg",
             () -> new DeferredSpawnEggItem(GOLEM, 0x6B4423, 0x9C1B1B, new Item.Properties()));
 
@@ -136,6 +144,7 @@ public class Grappin {
                 sortie.accept(PARAVOILE.get());
                 sortie.accept(SERAPHIN_OEUF.get());
                 sortie.accept(GOLEM_OEUF.get());
+                sortie.accept(RODEUR_OEUF.get());
                 sortie.accept(LEVIATHAN_OEUF.get());
             })
             .build());
@@ -154,6 +163,7 @@ public class Grappin {
     private void attributs(EntityAttributeCreationEvent event) {
         event.put(SERAPHIN.get(), Seraphin.attributs().build());
         event.put(GOLEM.get(), Golem.attributs().build());
+        event.put(RODEUR.get(), Rodeur.attributs().build());
         event.put(LEVIATHAN.get(), Leviathan.attributs().build());
     }
 
