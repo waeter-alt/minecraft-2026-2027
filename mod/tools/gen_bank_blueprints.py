@@ -7,7 +7,7 @@ Needs `pip install nbtlib`. The output is committed, so this is only needed to c
 The building is a bank with a vault room behind its counter hall, vanilla blocks only (the pack is shared by every style):
   1  counter house: a grille, a small vault of seven by four
   2  stone bank: pillared hall, a vault with pedestals for jewels
-  3  two storeys, gold sign, a vault wall of bars that shows its hoard from the street
+  3  two storeys, gold sign, a glass-arcade vault wall that shows its hoard from the street
   4  town-house bank: wings, balcony, a big two-row vault
   5  treasury fortress: towers, a gatehouse, a vault the size of a ballroom
 The vault room is left empty in the blueprint. Its slots (floor piles, gold bars, open chests, gem clusters, jewel
@@ -42,9 +42,9 @@ GOLD = M + 'gold_block'
 DARK = M + 'dark_oak_planks'
 FLOOR = M + 'smooth_stone'
 VAULT_FLOOR = M + 'polished_blackstone_bricks'
-BARS = M + 'iron_bars'
-R.CONNECT[BARS] = 'pane'
-R.SOLID.update({STONE, POLISHED, POLISHED_B, QUARTZ, PILLAR, GOLD, DARK, VAULT_FLOOR})
+GLASS = M + 'glass'
+VAULT_DOOR = M + 'waxed_copper_door'
+R.SOLID.update({STONE, POLISHED, POLISHED_B, QUARTZ, PILLAR, GOLD, DARK, VAULT_FLOOR, GLASS})
 
 
 class BankGrid(R.Grid):
@@ -52,12 +52,10 @@ class BankGrid(R.Grid):
         super().__init__()
         self.slots = []
 
-    def bars(self, x, y, z):
-        self.put(x, y, z, BARS, north='false', south='false', east='false', west='false', waterlogged='false')
-
-    def iron_door(self, x, z, facing):
-        self.put(x, 1, z, M + 'iron_door', facing=facing, half='lower', hinge='left', open='false', powered='false')
-        self.put(x, 2, z, M + 'iron_door', facing=facing, half='upper', hinge='left', open='false', powered='false')
+    def vault_door(self, x, z, facing):
+        # copper, not iron: an iron door cannot be opened by hand, and its thin leaf looks stuck on in a wall of bars
+        self.put(x, 1, z, VAULT_DOOR, facing=facing, half='lower', hinge='left', open='false', powered='false')
+        self.put(x, 2, z, VAULT_DOOR, facing=facing, half='upper', hinge='left', open='false', powered='false')
 
     def slot(self, x, y, z, kind, facing='north'):
         self.slots.append({'x': x, 'y': y, 'z': z, 'kind': kind, 'facing': facing})
@@ -122,19 +120,24 @@ def bank(g, p):
         g.fill(x, x, 1, top, z, z, POLISHED)
     g.ring(x0, x1, z0, z1, top, top, QUARTZ)
     g.ring(x0, x1, z0, z1, 1, 1, POLISHED_B)
-    # the vault: bars on the east side (seen from the street) and on the divider, solid elsewhere
+    # the vault: a solid stone room. The street side (east) is an arcade of full glass blocks between the wall pillars, so the
+    # hoard shows from outside without any thin bars; the front wall has two glass teller windows and a copper door
     for z in range(zd + 1, z1):
-        for y in range(1, top):
-            g.bars(x1, y, z)
+        if z not in range(z0, z1 + 1, 3):
+            for y in range(2, max(3, top - 1)):
+                g.put(x1, y, z, GLASS)
     for x in range(x0 + 1, x1):
-        for y in range(2, top):
-            if x != 0:
-                g.bars(x, y, zd)
-            else:
-                g.carve(x, x, 2, top - 1, zd, zd)
+        for y in range(1, top):
+            g.put(x, y, zd, STONE if y > 1 else POLISHED_B)
+    for x in (-3, -2, 2, 3):
+        if x0 + 1 < x < x1 - 1:
+            for y in (2, 3):
+                g.put(x, y, zd, GLASS)
+    for x in (-1, 1):
+        g.fill(x, x, 1, top - 1, zd, zd, PILLAR, axis='y')
     g.carve(0, 0, 1, 3, zd, zd)
-    g.iron_door(0, zd, 'north')
-    g.put(0, 3, zd, M + 'iron_bars', north='false', south='false', east='false', west='false', waterlogged='false')
+    g.vault_door(0, zd, 'north')
+    g.put(0, 3, zd, GOLD)
     # windows of the hall
     for z in range(z0 + 2, zd - 1, 3):
         for x in (x0, x1):
@@ -148,11 +151,11 @@ def bank(g, p):
     for x in (-2, 2):
         g.lantern(x, 3, z0 - 1, hanging=False)
         g.put(x, 2, z0 - 1, M + 'dark_oak_fence', north='false', south='false', east='false', west='false', waterlogged='false')
-    # the counter, with a grille and a gold edge
+    # the counter, with a glass teller screen and a gold edge
     for x in range(x0 + 2, x1 - 1):
         if abs(x) > 1:
             g.put(x, 1, zd - 2, M + 'dark_oak_planks')
-            g.put(x, 2, zd - 2, BARS, north='false', south='false', east='false', west='false', waterlogged='false')
+            g.pane(x, 2, zd - 2)
     g.put(x1 - 1, 1, zd - 2, GOLD)
     g.put(x0 + 1, 1, zd - 2, GOLD)
     g.put(0, 1, 0, 'interregne:banque_regionale', facing='north')
