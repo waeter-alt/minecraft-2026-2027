@@ -65,6 +65,7 @@
     "client.WindowClipBoardAccessor",
     "client.WindowExtendedBuildToolAccessor",
     "client.WindowExtendedBuildToolMixin",
+    "client.WindowExtendedBuildToolPackMixin",
     "client.WindowFieldMixin",
     "client.WindowHireWorkerAccessor",
     "client.WindowInteractionAccessor",
