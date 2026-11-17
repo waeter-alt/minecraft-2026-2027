@@ -12,6 +12,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.AnimationState;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -46,6 +47,19 @@ public class Golem extends Monster {
     private double surfaceY = Double.NaN;       // hauteur de la surface de la lave, fixee a la premiere seconde ; sauvegardee
     private int emergence = 0;                  // ticks restants avant d'etre sorti de la lave (pas sauvegarde : apres un chargement il est considere sorti)
     private boolean degatsDePiece = false;
+
+    // Animations (cote client, jouees par GolemModele) : le serveur les declenche par des evenements d'entite, sans rien changer au combat.
+    static final byte EV_LANCER = 90;
+    static final byte EV_DOULEUR = 91;
+    static final byte EV_EMERGENCE = 92;
+    static final int DUREE_MORT = 40;           // 2 s au lieu de 1 : le temps de le voir s'effondrer dans la lave
+    final AnimationState repos = new AnimationState();
+    final AnimationState animEmergence = new AnimationState();
+    final AnimationState lancer = new AnimationState();
+    final AnimationState douleur = new AnimationState();
+    final AnimationState rage = new AnimationState();
+    final AnimationState mort = new AnimationState();
+    private boolean phase2Vue = false;          // derniere valeur de DEUXIEME_PHASE vue par le client
 
     public Golem(EntityType<? extends Golem> type, Level level) {
         super(type, level);
@@ -172,7 +186,11 @@ public class Golem extends Monster {
         }
         degatsDePiece = true;
         try {
-            return this.hurt(source, montant * Reglages.GOLEM_FACTEUR_POINT.get().floatValue());
+            boolean touche = this.hurt(source, montant * Reglages.GOLEM_FACTEUR_POINT.get().floatValue());
+            if (touche) {
+                this.level().broadcastEntityEvent(this, EV_DOULEUR);
+            }
+            return touche;
         } finally {
             degatsDePiece = false;
         }
@@ -251,6 +269,7 @@ public class Golem extends Monster {
             if (Double.isNaN(surfaceY)) {                       // premiere seconde : il part sous la lave et en emerge
                 surfaceY = this.getY();
                 emergence = DUREE_EMERGENCE;
+                this.level().broadcastEntityEvent(this, EV_EMERGENCE);
             }
             if (emergence > 0) {
                 emergence--;
@@ -298,6 +317,53 @@ public class Golem extends Monster {
 
     /** Fonctions executees a la mort du boss : un monde (datapack) les declare dans le tag grappin:golem_mort, comme le temple pour ouvrir sa sortie. */
     private static final net.minecraft.resources.ResourceLocation TAG_MORT = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(Grappin.MODID, "golem_mort");
+
+    // ------------------------------------------------------------------ animations
+
+    @Override
+    public void handleEntityEvent(byte id) {
+        switch (id) {
+            case EV_LANCER -> lancer.start(this.tickCount);
+            case EV_DOULEUR -> douleur.start(this.tickCount);
+            case EV_EMERGENCE -> animEmergence.start(this.tickCount);
+            case 3 -> {                                         // mort (envoye par LivingEntity.die)
+                mort.start(this.tickCount);
+                super.handleEntityEvent(id);
+            }
+            default -> super.handleEntityEvent(id);
+        }
+    }
+
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> donnee) {
+        super.onSyncedDataUpdated(donnee);
+        if (DEUXIEME_PHASE.equals(donnee) && this.level().isClientSide) {
+            boolean phase2 = deuxiemePhase();
+            if (GolemAnimationsEtat.jouerRage(phase2Vue, phase2, this.tickCount)) {
+                rage.start(this.tickCount);
+            }
+            phase2Vue = phase2;
+        }
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (this.level().isClientSide) {
+            boolean emergeEncore = animEmergence.isStarted() && animEmergence.getAccumulatedTime() < 5000;
+            repos.animateWhen(GolemAnimationsEtat.jouerRepos(emergeEncore, this.deathTime > 0), this.tickCount);
+        }
+    }
+
+    /** Comme LivingEntity.tickDeath, mais le corps reste DUREE_MORT ticks (l'etiquette de mort part toujours dans die()). */
+    @Override
+    protected void tickDeath() {
+        ++this.deathTime;
+        if (this.deathTime >= DUREE_MORT && !this.level().isClientSide() && !this.isRemoved()) {
+            this.level().broadcastEntityEvent(this, (byte) 60);
+            this.remove(Entity.RemovalReason.KILLED);
+        }
+    }
 
     @Override
     public void die(DamageSource source) {

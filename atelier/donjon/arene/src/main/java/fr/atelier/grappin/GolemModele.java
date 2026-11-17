@@ -26,6 +26,10 @@ public class GolemModele extends HierarchicalModel<Golem> {
     private final List<ModelPart> toutes;
     private final ModelPart[] couvercles = new ModelPart[GolemGeometrie.COUVERCLES.length];
     private final ModelPart[] rouges = new ModelPart[GolemGeometrie.ROUGES.length];
+    private final ModelPart tete;
+    private final ModelPart corps;
+    private final ModelPart fixe;
+    private final float corpsY;
     private boolean deuxiemePhase;
 
     public GolemModele(ModelPart maillage) {
@@ -38,6 +42,10 @@ public class GolemModele extends HierarchicalModel<Golem> {
             rouges[i] = os(GolemGeometrie.ROUGES[i]);
         }
         this.toutes = racine.getAllParts().toList();
+        this.tete = os(GolemGeometrie.TETE);
+        this.corps = racine.getChild("corps");
+        this.fixe = racine.getChild("fixe");
+        this.corpsY = corps.y;
     }
 
     public static LayerDefinition creerCouche() {
@@ -61,6 +69,18 @@ public class GolemModele extends HierarchicalModel<Golem> {
     @Override
     public void setupAnim(Golem boss, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
         racine.getAllParts().forEach(ModelPart::resetPose);
+        this.animate(boss.repos, GolemAnimations.REPOS, ageInTicks);
+        this.animate(boss.animEmergence, GolemAnimations.EMERGENCE, ageInTicks);
+        this.animate(boss.lancer, GolemAnimations.LANCER, ageInTicks);
+        this.animate(boss.douleur, GolemAnimations.DOULEUR, ageInTicks);
+        this.animate(boss.rage, GolemAnimations.RAGE, ageInTicks);
+        this.animate(boss.mort, GolemAnimations.MORT, ageInTicks);              // la plus importante en dernier
+        if (boss.mort.isStarted()) {
+            fixe.y += corps.y - corpsY;               // le combat est fini : les points faibles sombrent avec le corps au lieu de rester en l'air
+        } else {
+            tete.yRot += GolemAnimationsEtat.lacetTete(netHeadYaw) * ((float) Math.PI / 180F);      // il suit du regard le joueur vise
+            tete.xRot += GolemAnimationsEtat.tangageTete(headPitch) * ((float) Math.PI / 180F);
+        }
         int ouverte = boss.pieceOuverte();
         for (int i = 0; i < couvercles.length; i++) {
             couvercles[i].visible = i != ouverte;

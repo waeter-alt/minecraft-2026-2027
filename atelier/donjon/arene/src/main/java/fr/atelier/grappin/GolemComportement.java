@@ -168,6 +168,7 @@ public final class GolemComportement {
             Vec3 poing = golem.piece(2).position().add(0, 1.5, 0);
             Vec3 vers = cible.getBoundingBox().getCenter().subtract(poing).normalize();
             double[] angles = golem.phase() == 2 ? new double[] {-12, 12} : new double[] {0};
+            golem.level().broadcastEntityEvent(golem, Golem.EV_LANCER);       // animation du lancer, cote client
             golem.playSound(SoundEvents.RAVAGER_ATTACK, 5.0F, 0.5F);
             for (double deg : angles) {
                 golem.level().addFreshEntity(new Graine(golem.level(), golem, poing, vers.yRot((float) Math.toRadians(deg))));
