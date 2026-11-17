@@ -26,4 +26,20 @@ public final class GolemAnimationsEtat {
     static float tangageTete(float headPitch) {
         return Math.max(-TANGAGE_MAX, Math.min(TANGAGE_MAX, headPitch));
     }
+
+    /**
+     * Point du modele (unites de 1/16, repere du modele) -> decalage en blocs depuis les pieds du Gardien, par la meme chaine que le rendu :
+     * LivingEntityRenderer (rotation 180 - lacet du corps, retournement (-1, -1, 1)), GolemRendu.scale (x4, x0,75 en largeur),
+     * puis le decalage de -1,501 bloc du modele. Sert a poser les boites des points faibles la ou ils sont dessines.
+     */
+    static double[] versMonde(double[] p, double lacetCorpsDeg) {
+        double x = p[0] / 16, y = p[1] / 16 - 1.501, z = p[2] / 16;
+        x *= 4 * Golem.FACTEUR_LARGEUR;
+        y *= 4;
+        z *= 4 * Golem.FACTEUR_LARGEUR;
+        x = -x;
+        y = -y;
+        double t = Math.toRadians(180 - lacetCorpsDeg);
+        return new double[] {x * Math.cos(t) + z * Math.sin(t), y, -x * Math.sin(t) + z * Math.cos(t)};
+    }
 }

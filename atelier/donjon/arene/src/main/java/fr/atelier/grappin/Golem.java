@@ -2,7 +2,12 @@
 // (GolemPiece), une par point faible. Une seule est ouverte a la fois ; le reste du corps ne prend presque pas de degats. Le comportement est dans GolemComportement.
 package fr.atelier.grappin;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
+import net.minecraft.util.Mth;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -21,6 +26,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.entity.PartEntity;
@@ -62,6 +68,13 @@ public class Golem extends Monster {
     private boolean phase2Vue = false;          // derniere valeur de DEUXIEME_PHASE vue par le client
     final float[] ouverture = new float[NOMS_PIECES.length];   // ouverture affichee de chaque point faible (0 ferme, 1 ouvert), cote client
     float ageOuverture = -1;
+    private final Map<String, Integer> debuts = new HashMap<>();   // tick de depart de chaque animation en cours (pour placer les boites)
+
+    /** Le corps garde le lacet que lui donne GolemComportement.Tourner : sans cela, Minecraft le ferait deriver vers la tete. */
+    @Override
+    protected float tickHeadTurn(float lacet, float pas) {
+        return pas;
+    }
 
     public Golem(EntityType<? extends Golem> type, Level level) {
         super(type, level);
@@ -168,13 +181,36 @@ public class Golem extends Monster {
         }
     }
 
+    /** Retient le tick de depart d'une animation (des deux cotes : le serveur quand il la declenche, le client quand il recoit le signal). */
+    void demarrer(String animation) {
+        debuts.put(animation, this.tickCount);
+    }
+
+    /** Temps ecoule de chaque animation en cours, en secondes, pour GolemSquelette (le repos tourne sauf pendant l'emergence et la mort). */
+    private Map<String, Float> tempsAnimations() {
+        Map<String, Float> temps = new HashMap<>();
+        debuts.forEach((nom, debut) -> temps.put(nom, (this.tickCount - debut) / 20.0F));
+        boolean emerge = temps.containsKey("emergence") && temps.get("emergence") < 5.0F;
+        if (GolemAnimationsEtat.jouerRepos(emerge, debuts.containsKey("mort"))) {
+            temps.put("repos", this.tickCount / 20.0F);
+        }
+        return temps;
+    }
+
+    /**
+     * Les boites des points faibles suivent le dessin : meme pose que le client (GolemSquelette, genere depuis golem.bbmodel), meme regard,
+     * meme passage au monde que le rendu (GolemAnimationsEtat.versMonde). Au repos, c'est exactement l'ancienne place (GolemMondeTest).
+     */
     private void placerPieces() {
-        double lacet = Math.toRadians(this.getYRot());
+        Map<String, Float> temps = tempsAnimations();
+        boolean mort = debuts.containsKey("mort");
+        float lacetTete = mort ? 0 : GolemAnimationsEtat.lacetTete(Mth.wrapDegrees(this.yHeadRot - this.yBodyRot));
+        float tangageTete = mort ? 0 : GolemAnimationsEtat.tangageTete(this.getXRot());
         for (int i = 0; i < pieces.length; i++) {
-            double a = lacet + Math.toRadians(AZIMUTS[i]);
-            double x = this.getX() - Math.sin(a) * RAYONS[i];
-            double z = this.getZ() + Math.cos(a) * RAYONS[i];
-            double y = this.getY() + HAUTEURS[i] - TAILLES[i] / 2;      // setPos pose les pieds de la boite : on retire la moitie de sa hauteur pour la centrer sur le point faible
+            double[] d = GolemAnimationsEtat.versMonde(GolemSquelette.SQUELETTE.point("pf" + i, temps, "tete", lacetTete, tangageTete), this.yBodyRot);
+            double x = this.getX() + d[0];
+            double z = this.getZ() + d[2];
+            double y = this.getY() + d[1] - TAILLES[i] / 2;              // setPos pose les pieds de la boite : on retire la moitie de sa hauteur pour la centrer sur le point faible
             pieces[i].setPos(x, y, z);
             pieces[i].xo = pieces[i].xOld = x;
             pieces[i].zo = pieces[i].zOld = z;
@@ -190,7 +226,11 @@ public class Golem extends Monster {
         try {
             boolean touche = this.hurt(source, montant * Reglages.GOLEM_FACTEUR_POINT.get().floatValue());
             if (touche) {
+                demarrer("douleur");
                 this.level().broadcastEntityEvent(this, EV_DOULEUR);
+                if (source.getDirectEntity() instanceof AbstractArrow && source.getEntity() instanceof ServerPlayer tireur) {
+                    tireur.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.ARROW_HIT_PLAYER, 0.0F));   // le « ding » du PvP a l'arc
+                }
             }
             return touche;
         } finally {
@@ -271,6 +311,7 @@ public class Golem extends Monster {
             if (Double.isNaN(surfaceY)) {                       // premiere seconde : il part sous la lave et en emerge
                 surfaceY = this.getY();
                 emergence = DUREE_EMERGENCE;
+                demarrer("emergence");
                 this.level().broadcastEntityEvent(this, EV_EMERGENCE);
             }
             if (emergence > 0) {
@@ -295,6 +336,9 @@ public class Golem extends Monster {
         }
         if (phase() == 2 && !deuxiemePhase()) {
             this.entityData.set(DEUXIEME_PHASE, true);
+            if (GolemAnimationsEtat.jouerRage(false, true, this.tickCount)) {
+                demarrer("rage");
+            }
             this.barre.setColor(BossEvent.BossBarColor.RED);
             if (this.tickCount > 20 && this.level() instanceof net.minecraft.server.level.ServerLevel niveau) {     // annonce, sauf au chargement d'un boss deja blesse
                 this.playSound(net.minecraft.sounds.SoundEvents.ENDER_DRAGON_GROWL, 6.0F, 0.6F);
@@ -325,11 +369,21 @@ public class Golem extends Monster {
     @Override
     public void handleEntityEvent(byte id) {
         switch (id) {
-            case EV_LANCER -> lancer.start(this.tickCount);
-            case EV_DOULEUR -> douleur.start(this.tickCount);
-            case EV_EMERGENCE -> animEmergence.start(this.tickCount);
+            case EV_LANCER -> {
+                lancer.start(this.tickCount);
+                demarrer("lancer");
+            }
+            case EV_DOULEUR -> {
+                douleur.start(this.tickCount);
+                demarrer("douleur");
+            }
+            case EV_EMERGENCE -> {
+                animEmergence.start(this.tickCount);
+                demarrer("emergence");
+            }
             case 3 -> {                                         // mort (envoye par LivingEntity.die)
                 mort.start(this.tickCount);
+                demarrer("mort");
                 super.handleEntityEvent(id);
             }
             default -> super.handleEntityEvent(id);
@@ -343,6 +397,7 @@ public class Golem extends Monster {
             boolean phase2 = deuxiemePhase();
             if (GolemAnimationsEtat.jouerRage(phase2Vue, phase2, this.tickCount)) {
                 rage.start(this.tickCount);
+                demarrer("rage");
             }
             phase2Vue = phase2;
         }
@@ -370,6 +425,7 @@ public class Golem extends Monster {
     @Override
     public void die(DamageSource source) {
         super.die(source);
+        demarrer("mort");
         this.barre.setProgress(0.0F);
         if (this.dead && this.level() instanceof net.minecraft.server.level.ServerLevel niveau) {      // une mort annulee par un autre mod n'ouvre pas la sortie
             var serveur = niveau.getServer();

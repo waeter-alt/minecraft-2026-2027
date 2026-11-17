@@ -51,7 +51,7 @@ public final class GolemComportement {
             float lacet = (float) GolemLogique.tournerVers(golem.getYRot(), golem.lacetVers(cible), pas);
             golem.setYRot(lacet);
             golem.yBodyRot = lacet;
-            golem.yHeadRot = lacet;
+            golem.getLookControl().setLookAt(cible, 30.0F, 30.0F);        // la tete suit la cible (animation du regard, GolemAnimationsEtat la borne)
         }
     }
 
@@ -168,6 +168,7 @@ public final class GolemComportement {
             Vec3 poing = golem.piece(2).position().add(0, 1.5, 0);
             Vec3 vers = cible.getBoundingBox().getCenter().subtract(poing).normalize();
             double[] angles = golem.phase() == 2 ? new double[] {-12, 12} : new double[] {0};
+            golem.demarrer("lancer");
             golem.level().broadcastEntityEvent(golem, Golem.EV_LANCER);       // animation du lancer, cote client
             golem.playSound(SoundEvents.RAVAGER_ATTACK, 5.0F, 0.5F);
             for (double deg : angles) {
