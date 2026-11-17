@@ -147,6 +147,44 @@ public final class CatalogueScreen extends ParchmentScreen
 
     private List<MutableComponent> requirementsOf(final CatalogueIndex.Entry entry)
     {
+        final List<MutableComponent> own = requirementsOfMineColonies(entry);
+        final String unique = uniqueRefusal(entry);
+        if (unique == null)
+        {
+            return own;
+        }
+        final List<MutableComponent> all = new ArrayList<>(own);
+        all.add(Component.literal(unique).withStyle(net.minecraft.ChatFormatting.RED));
+        return all;
+    }
+
+    /**
+     * A building a colony has only once, when this colony already has it: greyed even in creative, where MineColonies' own
+     * requirements are skipped. Not cached, a building may have been built since the window opened.
+     */
+    private String uniqueRefusal(final CatalogueIndex.Entry entry)
+    {
+        if (entry.hut() == null || minecraft.level == null || !fr.kodistan.interregne.colony.UniqueHuts.isUnique(entry.buildingId()))
+        {
+            return null;
+        }
+        final var colony = com.minecolonies.api.colony.IColonyManager.getInstance().getClosestColonyView(minecraft.level, anchor);
+        if (colony == null)
+        {
+            return null;
+        }
+        for (final var building : colony.getBuildings())
+        {
+            if (building.getBuildingType().getRegistryName().getPath().equals(entry.buildingId()))
+            {
+                return fr.kodistan.interregne.colony.UniqueHuts.message(entry.buildingId(), colony.getName(), building.getPosition());
+            }
+        }
+        return null;
+    }
+
+    private List<MutableComponent> requirementsOfMineColonies(final CatalogueIndex.Entry entry)
+    {
         if (entry.hut() == null || minecraft.player == null || minecraft.level == null)
         {
             return List.of();

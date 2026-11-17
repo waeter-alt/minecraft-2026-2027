@@ -3,14 +3,16 @@ package fr.kodistan.interregne.colony;
 import com.minecolonies.api.blocks.AbstractBlockHut;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.buildings.IBuilding;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
 /**
- * Huts a colony may have only once: the relais commercial, the bank and the depot. Placing a second one is refused when the
- * blueprint is put down ({@code SurvivalHandlerMixin}), so a duplicate never exists. A new unique hut is added to {@link #LABELS}.
+ * Huts a colony may have only once: the town hall, the warehouse, the relais commercial, the bank and the depot. Placing a second
+ * one is refused when the blueprint is put down ({@code SurvivalHandlerMixin}) and greyed in the catalogue, so a duplicate never
+ * exists. A new unique hut is added to {@link #LABELS}.
  */
 public final class UniqueHuts
 {
@@ -18,12 +20,29 @@ public final class UniqueHuts
      * Building id (the registry path) to how the message names it, with its article.
      */
     private static final Map<String, String> LABELS = Map.of(
+      "townhall", "hôtel de ville",
+      "warehouse", "entrepôt",
       "relais_commercial", "relais commercial",
       "banque_regionale", "banque régionale",
       "depot_regional", "dépôt régional");
 
     private UniqueHuts()
     {
+    }
+
+    public static boolean isUnique(final String buildingId)
+    {
+        return LABELS.containsKey(buildingId);
+    }
+
+    /**
+     * The sentence for a second one of this building, saying where the first stands.
+     */
+    public static String message(final String buildingId, final String colonyName, final BlockPos existing)
+    {
+        final String label = LABELS.get(buildingId);
+        final boolean feminine = label.startsWith("banque");
+        return "Une colonie n'a qu'" + (feminine ? "une " : "un ") + label + " : " + (feminine ? "celle" : "celui") + " de " + colonyName + " est déjà en " + existing.toShortString() + ".";
     }
 
     /**
@@ -38,8 +57,7 @@ public final class UniqueHuts
             return null;
         }
         final String id = hut.getBuildingEntry().getRegistryName().getPath();
-        final String label = LABELS.get(id);
-        if (label == null)
+        if (!isUnique(id))
         {
             return null;
         }
@@ -47,7 +65,7 @@ public final class UniqueHuts
         {
             if (existing.getBuildingType() == hut.getBuildingEntry())
             {
-                return "Une colonie n'a qu'un " + label + " : celui de " + colony.getName() + " est déjà en " + existing.getPosition().toShortString() + ".";
+                return message(id, colony.getName(), existing.getPosition());
             }
         }
         return null;
