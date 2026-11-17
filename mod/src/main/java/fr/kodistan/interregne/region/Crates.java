@@ -46,7 +46,7 @@ public final class Crates
         for (final Crate crate : Crate.values())
         {
             final DeferredBlock<Block> block = BLOCKS.register("caisse_" + crate.id(),
-              () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(1.5F, 3.0F).sound(SoundType.WOOD)));
+              () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(1.5F, 3.0F).sound(SoundType.WOOD).noOcclusion()));
             CRATE_ITEMS.put(crate, ITEMS.register("caisse_" + crate.id(), () -> new CrateItem(crate, block.get(), new Item.Properties().stacksTo(STACK_SIZE))));
         }
     }
