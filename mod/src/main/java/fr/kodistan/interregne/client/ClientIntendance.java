@@ -21,7 +21,7 @@ public final class ClientIntendance
     {
     }
 
-    static void set(final IntendanceQuotePayload payload)
+    public static void set(final IntendanceQuotePayload payload)
     {
         quote = payload;
     }

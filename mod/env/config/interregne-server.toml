@@ -1,0 +1,357 @@
+[instantBuild]
+	#Replace MineColonies builders: build and upgrade orders are paid and placed directly
+	enabled = true
+	#Cost of a building order in Couronnes, multiplied by the target level
+	# Default: 8
+	# Range: 0 ~ 4096
+	costPerLevel = 8
+	#Flat cost of a repair order
+	# Default: 4
+	# Range: 0 ~ 4096
+	repairCost = 4
+	#Flat cost of a decoration order (walls, roads, ...)
+	# Default: 4
+	# Range: 0 ~ 4096
+	decorationCost = 4
+	#One placed block out of this many flies into place (0 disables flying blocks)
+	# Default: 6
+	# Range: 0 ~ 1000
+	flyingShare = 6
+	#Maximum flying blocks in the air at once, per construction site
+	# Default: 24
+	# Range: 0 ~ 256
+	maxFlying = 24
+	#Construction time of a level 1 building, a repair or a decoration, whatever its size
+	# Default: 30
+	# Range: 1 ~ 600
+	minBuildSeconds = 30
+	#Construction time of a max level (5) upgrade; levels in between scale linearly
+	# Default: 120
+	# Range: 1 ~ 1800
+	maxBuildSeconds = 120
+	#Flat cost of demolishing a building
+	# Default: 0
+	# Range: 0 ~ 4096
+	demolitionCost = 0
+	#How long a demolition takes, whatever the building's size
+	# Default: 20
+	# Range: 1 ~ 600
+	demolitionSeconds = 20
+
+[citizens]
+	#Citizens' tools and weapons never lose durability
+	unbreakableTools = true
+	#Citizens' armor (guards) never loses durability
+	unbreakableArmor = true
+	#An adult settler moves into a colony with a free bed every this many seconds (0 disables; children are still born as usual)
+	# Default: 180
+	# Range: 0 ~ 86400
+	immigrationSeconds = 180
+	#Hungry citizens (saturation under 6, the limit the Intendance feeds at) work and produce this many times slower
+	# Default: 2.0
+	# Range: 1.0 ~ 10.0
+	hungrySlowdown = 2.0
+	#Starving citizens (saturation 0) work and produce this many times slower, instead of the hungry slowdown
+	# Default: 4.0
+	# Range: 1.0 ~ 10.0
+	starvingSlowdown = 4.0
+	#Workers receive the best tool their building allows when they need one, upgraded with the building
+	autoTools = true
+	#Sick citizens keep working, this many times slower, until the Intendance cures them; multiplies with hunger
+	# Default: 3.0
+	# Range: 1.0 ~ 10.0
+	sickSlowdown = 3.0
+	#Citizens refuse any item whose mod is not in citizenItemNamespaces (a modded class-mod armor given to a citizen froze the 2025 server for hours)
+	citizenItemAllowlist = true
+	#Mods whose items citizens may carry and wear
+	citizenItemNamespaces = ["minecraft", "minecolonies", "structurize", "domum_ornamentum", "interregne"]
+
+[production]
+	#Raw producers' output multiplier gained per building level: 0.5 gives x1.5 at level 1 up to x3.5 at level 5
+	# Default: 0.5
+	# Range: 0.0 ~ 10.0
+	outputPerLevel = 0.5
+	#Work speed multiplier at level 5 (level 1 works at normal speed); applies to every worker except guards
+	# Default: 1.5
+	# Range: 1.0 ~ 4.0
+	maxSpeed = 1.5
+	#Workers at or above this happiness (0-10) get the full output bonus; below it the bonus shrinks, down to 30%
+	# Default: 7.0
+	# Range: 0.0 ~ 10.0
+	happinessForFullBonus = 7.0
+	#Every staffed production hut (breeders, fisher, farm) yields its goods this often, whatever its animals or water
+	# Default: 30
+	# Range: 5 ~ 3600
+	productionSeconds = 30
+	#Main goods per production cycle, per building level (a level 1 chicken coop: 1 raw chicken every cycle)
+	# Default: 1
+	# Range: 0 ~ 64
+	productionPerLevel = 1
+	#Extra goods per cycle for each decorative field planted with the farm's crop
+	# Default: 1
+	# Range: 0 ~ 64
+	fieldBonus = 1
+	#Animals shown in a breeder's pen after each construction or upgrade, per building level (plus a starting pair)
+	# Default: 2
+	# Range: 0 ~ 16
+	herdPerLevel = 2
+	#Saplings a forester makes sure exist around its hut after each construction or upgrade, per building level (plus 4)
+	# Default: 2
+	# Range: 0 ~ 16
+	forestSaplingsPerLevel = 2
+	#Chance per level, every 10 seconds, that a sapling near a staffed forester grows a stage (level 5 at 0.15: 75%)
+	# Default: 0.15
+	# Range: 0.0 ~ 1.0
+	saplingGrowthPerLevel = 0.15
+	#Raw food a restaurant whose own stock is full cooks for the warehouse every production cycle, per level
+	# Default: 16
+	# Range: 0 ~ 1024
+	kitchenSurplusPerLevel = 16
+	#A decoration costs one Couronne per this many blocks (at least decorationCost)
+	# Default: 100
+	# Range: 1 ~ 100000
+	decorationBlocksPerCouronne = 100
+	#A decoration needs one regional crate (wood and stone in turn) per this many blocks; 0 disables
+	# Default: 1000
+	# Range: 0 ~ 100000
+	decorationBlocksPerCrate = 1000
+	#Items a crafter makes from the warehouse's surplus every production cycle, per level
+	# Default: 16
+	# Range: 0 ~ 1024
+	craftSurplusPerLevel = 16
+	#A crafter stops making an item once the warehouse holds this many of it
+	# Default: 64
+	# Range: 1 ~ 100000
+	craftTarget = 64
+	#Crafters never use an ingredient below this many in the warehouse, so the player always keeps some
+	# Default: 16
+	# Range: 0 ~ 100000
+	craftReserve = 16
+
+[intendance]
+	#Requests nobody in the colony can fill are bought automatically from the town hall treasury after a grace period (off: players settle them from the town hall's Intendance page)
+	enabled = false
+	#Grace period before the Intendance buys a request, leaving players time to supply it themselves
+	# Default: 300
+	# Range: 0 ~ 86400
+	graceSeconds = 300
+	#Items the Intendance buys for one Couronne; every purchase costs at least one
+	# Default: 16
+	# Range: 1 ~ 4096
+	itemsPerCrown = 16
+	#The Intendance's supplies cost this many times the automatic purchase price: building the right hut stays cheaper
+	# Default: 2.0
+	# Range: 1.0 ~ 100.0
+	markup = 2.0
+	#Couronnes the Intendance charges to cure one sick citizen
+	# Default: 20
+	# Range: 0 ~ 100000
+	cureCost = 20
+	#Couronnes the Intendance charges to feed one hungry citizen
+	# Default: 3
+	# Range: 0 ~ 100000
+	mealCost = 3
+	#Settling with the Intendance also costs the player one Influence per this many Couronnes (at least one)
+	# Default: 10
+	# Range: 1 ~ 100000
+	crownsPerInfluence = 10
+
+[warehouse]
+	#No couriers: deliveries and pickups move straight between the warehouse and the huts
+	magicNetwork = true
+	#Delay before a delivery or pickup lands, in ticks (20 = 1 second)
+	# Default: 30
+	# Range: 0 ~ 1200
+	transferTicks = 30
+	#The warehouse racks sort themselves this often (0 disables)
+	# Default: 60
+	# Range: 0 ~ 3600
+	autoSortSeconds = 60
+	#Every worker hut's surplus is sent to the warehouse this often (0 disables; MineColonies alone waits days)
+	# Default: 10
+	# Range: 0 ~ 3600
+	sweepSeconds = 10
+	#Items a hut sends to the warehouse in one trip, per building level (level 3 hut: 3 x this)
+	# Default: 16
+	# Range: 1 ~ 4096
+	sweepItemsPerLevel = 16
+	#How far away players see the warehouse comets, in blocks (vanilla particles stop at 32)
+	# Default: 384
+	# Range: 32 ~ 512
+	cometViewDistance = 384
+
+[intendanceAlerts]
+	#A request the Intendance will not buy (strategic items) is reported to the colony's players after this long
+	# Default: 120
+	# Range: 0 ~ 86400
+	alertSeconds = 120
+
+[economy]
+	#Couronnes carried from which a player is slowed down (Slowness I)
+	# Default: 10000
+	# Range: 1 ~ 9223372036854775807
+	heavyPurse = 10000
+	#Couronnes carried from which a player is slowed further (Slowness II) and glows through walls
+	# Default: 100000
+	# Range: 1 ~ 9223372036854775807
+	dragonPurse = 100000
+	#Share the Imperial Bank keeps on every withdrawal (0.02 = 2%, at least one Couronne)
+	# Default: 0.02
+	# Range: 0.0 ~ 1.0
+	withdrawalFee = 0.02
+
+[regionalBank]
+	#Treasury capacity of a level 1 regional bank; deposits beyond it are refused
+	# Default: 10000
+	# Range: 0 ~ 9223372036854775807
+	capacityLevel1 = 10000
+	#Treasury capacity at level 2
+	# Default: 25000
+	# Range: 0 ~ 9223372036854775807
+	capacityLevel2 = 25000
+	#Treasury capacity at level 3
+	# Default: 50000
+	# Range: 0 ~ 9223372036854775807
+	capacityLevel3 = 50000
+	#Treasury capacity at level 4
+	# Default: 100000
+	# Range: 0 ~ 9223372036854775807
+	capacityLevel4 = 100000
+	#Treasury capacity at level 5
+	# Default: 250000
+	# Range: 0 ~ 9223372036854775807
+	capacityLevel5 = 250000
+	#Price of upgrading a regional bank to level 2, paid from the treasury first, then from the coins carried
+	# Default: 1000
+	# Range: 0 ~ 9223372036854775807
+	upgradeCostLevel2 = 1000
+	#Price of the upgrade to level 3
+	# Default: 2500
+	# Range: 0 ~ 9223372036854775807
+	upgradeCostLevel3 = 2500
+	#Price of the upgrade to level 4
+	# Default: 5000
+	# Range: 0 ~ 9223372036854775807
+	upgradeCostLevel4 = 5000
+	#Price of the upgrade to level 5
+	# Default: 10000
+	# Range: 0 ~ 9223372036854775807
+	upgradeCostLevel5 = 10000
+	#The bank fills the 5x5 floor around itself with coin piles, ingots, chests and a hoard as the treasury grows
+	vaultDecorations = true
+
+[death]
+	#Players keep armor, hotbar and inventory on death, even with keepInventory off; items tagged interregne:drops_on_death (backpacks) always drop
+	enabled = true
+	#When killed by a player, every Couronne carried drops for the killer to loot
+	pvpDropsCoins = true
+	#Influence lost when killed by a player (never below zero)
+	# Default: 5
+	# Range: 0 ~ 9223372036854775807
+	pvpInfluenceLoss = 5
+
+[gear]
+	#Players' tools, weapons and armor never break: they stop at 1 durability and become damaged (abîmé) until repaired
+	neverBreaks = true
+	#Share of attack damage, armor and armor toughness lost by a damaged item (0.5 = -50%)
+	# Default: 0.5
+	# Range: 0.0 ~ 1.0
+	damagedStatPenalty = 0.5
+	#Share of mining speed lost with a damaged tool in the main hand (0.5 = -50%)
+	# Default: 0.5
+	# Range: 0.0 ~ 1.0
+	damagedMiningPenalty = 0.5
+
+[safeZones]
+	#Player-vs-player damage is cancelled inside safe zones (/interregne zone sure)
+	enabled = true
+	#Show an action-bar message when a player enters or leaves a safe zone
+	messages = true
+
+[regions]
+	#A player carrying more crates than this is slowed down (Slowness I)
+	# Default: 6
+	# Range: 0 ~ 10000
+	cratesSlowness1 = 6
+	#A player carrying more crates than this is slowed further (Slowness II)
+	# Default: 16
+	# Range: 0 ~ 10000
+	cratesSlowness2 = 16
+	#Seconds a Comptoir régional takes to produce one crate, for levels 1 to 5, comma-separated
+	comptoirSeconds = "300,240,180,120,60"
+	#Couronnes to upgrade a Comptoir régional to levels 2, 3, 4 and 5, comma-separated
+	comptoirUpgradeCosts = "200,400,800,1600"
+	#Crates a Comptoir régional keeps itself when the colony has no warehouse (or a full one); production stops beyond
+	# Default: 32
+	# Range: 1 ~ 10000
+	comptoirStorage = 32
+	#When a Comptoir's chunk loads again, it catches up on at most this many minutes of production (0 disables catch-up)
+	# Default: 120
+	# Range: 0 ~ 10080
+	comptoirCatchUpMinutes = 120
+	#Crates needed to build or upgrade a building to level 2 (types: bois, brique, ble, pierre, minerai; empty for none)
+	cratesLevel2 = "bois:1,pierre:1"
+	#Crates needed for level 3
+	cratesLevel3 = "bois:2,pierre:1,brique:1"
+	#Crates needed for level 4
+	cratesLevel4 = "bois:2,pierre:2,brique:2,minerai:1"
+	#Crates needed for level 5
+	cratesLevel5 = "bois:3,brique:3,ble:3,pierre:3,minerai:3"
+	#Base price, in Couronnes, at which the Marché impérial sells a crate to players
+	# Default: 60
+	# Range: 1 ~ 1000000
+	marketBuyPrice = 60
+	#Base price, in Couronnes, at which the Marché impérial buys a crate from players
+	# Default: 25
+	# Range: 1 ~ 1000000
+	marketSellPrice = 25
+	#Imperial stock of each crate type at which base prices apply; less stock raises prices, more lowers them
+	# Default: 32
+	# Range: 1 ~ 100000
+	marketBaseStock = 32
+	#How strongly the stock moves prices: 1.0 doubles them at zero stock and halves them at 1.5x the base stock
+	# Default: 1.0
+	# Range: 0.0 ~ 10.0
+	marketElasticity = 1.0
+	#Price floor, as a multiple of the base prices
+	# Default: 0.5
+	# Range: 0.01 ~ 1.0
+	marketMinFactor = 0.5
+	#Price ceiling, as a multiple of the base prices
+	# Default: 2.5
+	# Range: 1.0 ~ 100.0
+	marketMaxFactor = 2.5
+	#Every this many minutes, each imperial stock moves one crate back toward the base stock (0 disables)
+	# Default: 10
+	# Range: 0 ~ 10080
+	marketRestockMinutes = 10
+
+[politics]
+	#Online minutes for each point of presence Influence
+	# Default: 10
+	# Range: 1 ~ 1440
+	presenceMinutes = 10
+	#Most presence Influence a player can earn per real day
+	# Default: 12
+	# Range: 0 ~ 10000
+	presenceDailyCap = 12
+	#Most Influence the Intendants can grant or remove with one edict
+	# Default: 10
+	# Range: 1 ~ 10000
+	favorCap = 10
+	#Real hours between two tithes
+	# Default: 48
+	# Range: 1 ~ 720
+	titheHours = 48
+	#Crates of each type (except the colony's own) owed per tithe, before the tithe-weight edict
+	# Default: 2
+	# Range: 0 ~ 64
+	tithePerType = 2
+	#Influence earned per crate delivered to the tithe
+	# Default: 1
+	# Range: 0 ~ 100
+	titheInfluencePerCrate = 1
+	#Influence the colony owner loses when the tithe is not fully paid at the deadline
+	# Default: 10
+	# Range: 0 ~ 10000
+	tithePenalty = 10

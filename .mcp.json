@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "playtest": {
+      "command": "python",
+      "args": ["-I", "mod/tools/playtest_mcp/server.py"]
+    }
+  }
+}

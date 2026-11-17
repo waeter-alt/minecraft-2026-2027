@@ -1,0 +1,6 @@
+#Whether Fell should provide detailed config information in the logs.
+logDetails = true
+#Whether items can be enchanted with Felling.
+disableEnchantment = false
+#Whether all axes should fell trees regardless of tags or enchantments
+globalAxeFelling = true

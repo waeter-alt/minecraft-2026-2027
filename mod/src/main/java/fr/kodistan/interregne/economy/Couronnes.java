@@ -40,7 +40,7 @@ public final class Couronnes
      * A counter of the Imperial Bank, placed by the Intendants in the citadel.
      */
     public static final DeferredBlock<BankCounterBlock> GUICHET = BLOCKS.register("guichet_imperial",
-      () -> new BankCounterBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(-1.0F, 3_600_000.0F).sound(SoundType.WOOD).noLootTable()));
+      () -> new BankCounterBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(-1.0F, 3_600_000.0F).sound(SoundType.WOOD).noOcclusion().noLootTable()));
     public static final DeferredItem<BlockItem> GUICHET_ITEM = ITEMS.registerSimpleBlockItem("guichet_imperial", GUICHET);
 
     /**

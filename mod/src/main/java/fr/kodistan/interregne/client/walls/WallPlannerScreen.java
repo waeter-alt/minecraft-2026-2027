@@ -11,6 +11,7 @@ import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
 import net.neoforged.neoforge.network.PacketDistributor;
 import fr.kodistan.interregne.client.ui.Palette;
 import fr.kodistan.interregne.client.ui.Ui;
+import com.minecolonies.api.colony.IColonyManager;
 import fr.kodistan.interregne.walls.WallLayout;
 import fr.kodistan.interregne.walls.WallLevels;
 import fr.kodistan.interregne.walls.WallTrace;
@@ -91,6 +92,9 @@ public final class WallPlannerScreen extends Screen
      * The gates placed so far, by their centre cell on the trace, in the order they were placed (the first is free).
      */
     private final List<WallTrace.Point> gates = new ArrayList<>();
+    /** The gates placed plus those the trace gets on its own where it crosses a road, for the trace they were worked out on. */
+    private List<WallTrace.Point> allGates = List.of();
+    private String allGatesKey = "";
     private boolean gateMode;
     private boolean wasDone;
     @Nullable
@@ -434,7 +438,7 @@ public final class WallPlannerScreen extends Screen
         final int barBottom = renderSiteBar(graphics);
         final String hint = trace.isEmpty() ? "Cliquez au sol pour poser le premier point de la muraille"
                               : gateMode && gates.isEmpty() ? "Cliquez sur un pan droit de la muraille pour poser sa porte (offerte)"
-                                  : gateMode && gateSpot == null && gateHover != null && gates.size() < WallLevels.MAX_GATES
+                                  : gateMode && gateSpot == null && gateHover != null && gateCount() < WallLevels.MAX_GATES
                                       ? "Une porte se pose sur un pan droit, nord-sud ou est-ouest, loin des tours"
                                       : null;
         if (hint != null)
@@ -499,11 +503,11 @@ public final class WallPlannerScreen extends Screen
             closing = false;
             finishing = false;
             // Keep the figures of the wall being built in the panel
-            final String key = "site|" + trace.version() + "|" + gates;
+            final String key = "site|" + trace.version() + "|" + gates + "|" + ClientRoads.version();
             if (!key.equals(layoutKey) && !trace.isEmpty())
             {
                 layoutKey = key;
-                layout = WallLayout.of(trace.points(), trace.closed(), gates, level, WallPlanner::probe, this::inColony);
+                layout = WallLayout.of(trace.points(), trace.closed(), withCrossings(trace.points(), trace.closed()), level, WallPlanner::probe, this::inColony);
             }
             WallPlanner.show(null, null, false, null);
             return;
@@ -554,7 +558,7 @@ public final class WallPlannerScreen extends Screen
                 closing = true;
             }
         }
-        final String key = trace.version() + "|" + candidate + "|" + closing + "|" + finishing + "|" + gates + "|" + target();
+        final String key = trace.version() + "|" + candidate + "|" + closing + "|" + finishing + "|" + gates + "|" + ClientRoads.version() + "|" + target();
         if (!key.equals(layoutKey))
         {
             layoutKey = key;
@@ -568,7 +572,7 @@ public final class WallPlannerScreen extends Screen
             {
                 points.add(candidate);
             }
-            layout = points.isEmpty() ? null : WallLayout.of(points, closed, gates, level, WallPlanner::probe, this::inColony);
+            layout = points.isEmpty() ? null : WallLayout.of(points, closed, withCrossings(points, closed), level, WallPlanner::probe, this::inColony);
         }
         WallPlanner.show(Double.isNaN(closeYaw) ? layout : null, candidate != null ? candidate : grab, closing || finishing || grab != null, null);
     }
@@ -659,14 +663,15 @@ public final class WallPlannerScreen extends Screen
         closing = false;
         finishing = false;
         gateHover = hover;
-        final String committedKey = trace.version() + "|" + gates + "|" + target();
+        final List<WallTrace.Point> all = withCrossings(trace.points(), trace.closed());
+        final String committedKey = trace.version() + "|" + all + "|" + target();
         if (committed == null || !committedKey.equals(this.committedKey))
         {
             this.committedKey = committedKey;
-            committed = WallLayout.of(trace.points(), trace.closed(), gates, level, WallPlanner::probe, this::inColony);
+            committed = WallLayout.of(trace.points(), trace.closed(), all, level, WallPlanner::probe, this::inColony);
         }
-        gateSpot = hover == null || gates.size() >= WallLevels.MAX_GATES || committed.gateAt(hover) != null ? null : committed.gateSpot(hover, gates);
-        final String key = trace.version() + "|gate|" + gateSpot + "|" + gates + "|" + target();
+        gateSpot = hover == null || all.size() >= WallLevels.MAX_GATES || committed.gateAt(hover) != null ? null : committed.gateSpot(hover, all);
+        final String key = trace.version() + "|gate|" + gateSpot + "|" + all + "|" + target();
         if (!key.equals(layoutKey))
         {
             layoutKey = key;
@@ -676,12 +681,70 @@ public final class WallPlannerScreen extends Screen
             }
             else
             {
-                final List<WallTrace.Point> preview = new ArrayList<>(gates);
+                final List<WallTrace.Point> preview = new ArrayList<>(all);
                 preview.add(gateSpot);
                 layout = WallLayout.of(trace.points(), trace.closed(), preview, level, WallPlanner::probe, this::inColony);
             }
         }
         WallPlanner.show(layout, null, false, gateSpot);
+    }
+
+    /**
+     * The gates placed, then one wherever the trace crosses a trade road and none stands near (Manor Lords style).
+     * They count toward {@link WallLevels#MAX_GATES}: past it they show red.
+     */
+    private List<WallTrace.Point> withCrossings(final List<WallTrace.Point> points, final boolean closed)
+    {
+        final String key = points + "|" + closed + "|" + gates + "|" + ClientRoads.version();
+        if (!key.equals(allGatesKey))
+        {
+            allGatesKey = key;
+            final List<WallTrace.Point> all = new ArrayList<>(gates);
+            if (ClientRoads.any() && !points.isEmpty())
+            {
+                all.addAll(WallLayout.crossings(points, closed, gates, cell -> ClientRoads.at((int) (cell >> 32), (int) cell) != null));
+            }
+            allGates = all;
+        }
+        return allGates;
+    }
+
+    private int gateCount()
+    {
+        return withCrossings(trace.points(), trace.closed()).size();
+    }
+
+    /**
+     * Where each road crossed by the trace leads, one line per automatic gate.
+     */
+    private List<String> roadLines()
+    {
+        final List<String> out = new ArrayList<>();
+        if (trace.isEmpty() || !ClientRoads.any())
+        {
+            return out;
+        }
+        final net.minecraft.client.multiplayer.ClientLevel world = net.minecraft.client.Minecraft.getInstance().level;
+        final List<WallTrace.Point> all = withCrossings(trace.points(), trace.closed());
+        for (int i = gates.size(); i < all.size(); i++)
+        {
+            final WallTrace.Point gate = all.get(i);
+            int other = 0;
+            for (int dz = -2; dz <= 2 && other == 0; dz++)
+            {
+                for (int dx = -2; dx <= 2 && other == 0; dx++)
+                {
+                    final int[] ends = ClientRoads.at(gate.x() + dx, gate.z() + dz);
+                    if (ends != null)
+                    {
+                        other = ends[0] == colony.getID() ? ends[1] : ends[0];
+                    }
+                }
+            }
+            final IColonyView view = other <= 0 || world == null ? null : IColonyManager.getInstance().getColonyView(other, world.dimension());
+            out.add(view != null ? "Route vers " + view.getName() : "Route");
+        }
+        return out;
     }
 
     private boolean inColony(final int x, final int z)
@@ -829,9 +892,10 @@ public final class WallPlannerScreen extends Screen
           new String[] {"Clic droit glissé", "pivoter"},
           new String[] {"Maj", "angle libre"});
         final int blocked = layout == null ? 0 : layout.blocked();
+        final List<String> roads = roadLines();
         final boolean showHelp = helpOpen != null && helpOpen;
         final int helpLines = showHelp ? help.size() : 1;
-        final int height = pad + 10 + row + 8 + row * 3 + (blocked > 0 ? row * 2 : 0) + 5 + 1 + 7 + helpLines * row + pad - 4;
+        final int height = pad + 10 + row + 8 + row * 3 + roads.size() * row + (blocked > 0 ? row * 2 : 0) + 5 + 1 + 7 + helpLines * row + pad - 4;
         panelX1 = x + panelW;
         panelY1 = y + height;
         Ui.plate(graphics, x, y, x + panelW, y + height, translucent(Palette.PANEL), Palette.EDGE, translucent(Palette.PAPER_LIGHT));
@@ -853,9 +917,14 @@ public final class WallPlannerScreen extends Screen
         final int towers = layout == null ? 0 : layout.towers().size();
         ty = stat(graphics, x + pad, ty, inner, "Longueur", length + (length > 1 ? " blocs" : " bloc"), row);
         ty = stat(graphics, x + pad, ty, inner, "Tours", Integer.toString(towers), row);
-        final int next = gates.size();
-        ty = stat(graphics, x + pad, ty, inner, "Portes", gates.size() + " / " + WallLevels.MAX_GATES + (next >= WallLevels.MAX_GATES ? ""
+        final int next = gateCount();
+        ty = stat(graphics, x + pad, ty, inner, "Portes", next + " / " + WallLevels.MAX_GATES + (next >= WallLevels.MAX_GATES ? ""
           : " · +" + (level.gatePrice(next) == 0 ? "0" : Integer.toString(level.gatePrice(next)))), row);
+        for (final String road : roads)
+        {
+            graphics.drawString(font, Ui.fit(font, "  ⇄ " + road, inner), x + pad, ty, next > WallLevels.MAX_GATES ? Palette.RED : Palette.MUTED, false);
+            ty += row;
+        }
         if (blocked > 0)
         {
             graphics.drawString(font, Ui.fit(font, blocked + " blocs gênés", inner), x + pad, ty, Palette.RED, false);
@@ -1003,8 +1072,9 @@ public final class WallPlannerScreen extends Screen
                                  : trace.points().size() < 2 ? null
                                      : !trace.done() ? "Finir le tracé"
                                      : upgrade && townHall.getBuildingLevel() < target() ? "Hôtel de ville niv. " + target() + " requis"
+                                         : gateCount() > WallLevels.MAX_GATES ? "Trop de portes (" + WallLevels.MAX_GATES + " au plus)"
                                          : layout != null && layout.blocked() > 0 ? "Obstacles en rouge"
-                                             : gates.isEmpty() ? "Placer une porte"
+                                             : gateCount() == 0 ? "Placer une porte"
                                                  : null;
         // An unchanged trace is not useless: it is the repair of a wall whose ladders were knocked off or whose
         // blocks (the gravel of the early levels) fell away. The server rebuilds only what is missing.
@@ -1140,7 +1210,7 @@ public final class WallPlannerScreen extends Screen
      */
     private void build()
     {
-        PacketDistributor.sendToServer(new WallBuildPayload(colony.getID(), WallTrace.flat(trace.points()), WallTrace.flat(gates), trace.closed(), target()));
+        PacketDistributor.sendToServer(new WallBuildPayload(colony.getID(), WallTrace.flat(trace.points()), WallTrace.flat(withCrossings(trace.points(), trace.closed())), trace.closed(), target()));
         // The planner stays open: the player watches the site from above, and leaves when they like
         sentAt = Util.getMillis();
     }

@@ -1,0 +1,2179 @@
+{
+ "1": [
+  {
+   "pos": [
+    -2,
+    0,
+    4
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.0,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    2,
+    0,
+    4
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.068,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -1,
+    0,
+    7
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.135,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -3,
+    0,
+    4
+   ],
+   "kind": "chest",
+   "facing": "east",
+   "from": 0.203,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -1,
+    0,
+    5
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.271,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -2,
+    0,
+    6
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.338,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -3,
+    0,
+    5
+   ],
+   "kind": "pile",
+   "facing": "east",
+   "from": 0.406,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    2,
+    0,
+    6
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.474,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    3,
+    0,
+    6
+   ],
+   "kind": "chest",
+   "facing": "west",
+   "from": 0.542,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    1,
+    0,
+    7
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.609,
+   "span": 0.391
+  },
+  {
+   "pos": [
+    -2,
+    0,
+    7
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.677,
+   "span": 0.323
+  },
+  {
+   "pos": [
+    -2,
+    0,
+    5
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.745,
+   "span": 0.255
+  },
+  {
+   "pos": [
+    2,
+    0,
+    7
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.812,
+   "span": 0.188
+  }
+ ],
+ "2": [
+  {
+   "pos": [
+    1,
+    0,
+    5
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.0,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    1,
+    1,
+    8
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.037,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -1,
+    0,
+    5
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.073,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -2,
+    0,
+    5
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.11,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    1,
+    0,
+    6
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.147,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    3,
+    0,
+    5
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.183,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -1,
+    0,
+    9
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.22,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -2,
+    0,
+    6
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.257,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -1,
+    1,
+    7
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.293,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -4,
+    0,
+    5
+   ],
+   "kind": "ingots",
+   "facing": "east",
+   "from": 0.33,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    3,
+    1,
+    6
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.367,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    4,
+    0,
+    6
+   ],
+   "kind": "chest",
+   "facing": "west",
+   "from": 0.403,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -2,
+    0,
+    9
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.44,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    1,
+    0,
+    9
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.477,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -2,
+    1,
+    8
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.513,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    3,
+    0,
+    7
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.55,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    4,
+    0,
+    5
+   ],
+   "kind": "chest",
+   "facing": "west",
+   "from": 0.587,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -4,
+    0,
+    8
+   ],
+   "kind": "chest",
+   "facing": "east",
+   "from": 0.623,
+   "span": 0.377
+  },
+  {
+   "pos": [
+    -1,
+    0,
+    8
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.66,
+   "span": 0.34
+  },
+  {
+   "pos": [
+    -3,
+    0,
+    8
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.697,
+   "span": 0.303
+  },
+  {
+   "pos": [
+    3,
+    0,
+    9
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.733,
+   "span": 0.267
+  },
+  {
+   "pos": [
+    -3,
+    0,
+    9
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.77,
+   "span": 0.23
+  },
+  {
+   "pos": [
+    -4,
+    0,
+    7
+   ],
+   "kind": "pile",
+   "facing": "east",
+   "from": 0.807,
+   "span": 0.193
+  },
+  {
+   "pos": [
+    -4,
+    0,
+    9
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.843,
+   "span": 0.157
+  }
+ ],
+ "3": [
+  {
+   "pos": [
+    2,
+    0,
+    6
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.0,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    1,
+    0,
+    7
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.024,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    2,
+    1,
+    7
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.049,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    3,
+    0,
+    8
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.073,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -2,
+    0,
+    7
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.098,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    2,
+    0,
+    8
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.122,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    3,
+    0,
+    7
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.147,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -3,
+    0,
+    6
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.171,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    1,
+    0,
+    9
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.196,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    1,
+    0,
+    11
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.22,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    4,
+    1,
+    8
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.244,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -3,
+    0,
+    7
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.269,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -3,
+    0,
+    8
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.293,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -4,
+    1,
+    7
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.318,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    5,
+    0,
+    6
+   ],
+   "kind": "ingots",
+   "facing": "west",
+   "from": 0.342,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    2,
+    1,
+    10
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.367,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    2,
+    0,
+    11
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.391,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    5,
+    0,
+    7
+   ],
+   "kind": "pile",
+   "facing": "west",
+   "from": 0.416,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    1,
+    0,
+    10
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.44,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -2,
+    0,
+    9
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.464,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -1,
+    1,
+    10
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.489,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -2,
+    0,
+    11
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.513,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -5,
+    0,
+    6
+   ],
+   "kind": "ingots",
+   "facing": "east",
+   "from": 0.538,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    4,
+    0,
+    7
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.562,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    5,
+    0,
+    8
+   ],
+   "kind": "chest",
+   "facing": "west",
+   "from": 0.587,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -5,
+    0,
+    8
+   ],
+   "kind": "chest",
+   "facing": "east",
+   "from": 0.611,
+   "span": 0.389
+  },
+  {
+   "pos": [
+    -4,
+    0,
+    8
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.636,
+   "span": 0.364
+  },
+  {
+   "pos": [
+    -3,
+    1,
+    9
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.66,
+   "span": 0.34
+  },
+  {
+   "pos": [
+    3,
+    0,
+    11
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.684,
+   "span": 0.316
+  },
+  {
+   "pos": [
+    5,
+    0,
+    10
+   ],
+   "kind": "pile",
+   "facing": "west",
+   "from": 0.709,
+   "span": 0.291
+  },
+  {
+   "pos": [
+    -5,
+    0,
+    9
+   ],
+   "kind": "ingots",
+   "facing": "east",
+   "from": 0.733,
+   "span": 0.267
+  },
+  {
+   "pos": [
+    -4,
+    0,
+    9
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.758,
+   "span": 0.242
+  },
+  {
+   "pos": [
+    -5,
+    0,
+    11
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.782,
+   "span": 0.218
+  },
+  {
+   "pos": [
+    4,
+    0,
+    9
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.807,
+   "span": 0.193
+  },
+  {
+   "pos": [
+    5,
+    0,
+    11
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.831,
+   "span": 0.169
+  },
+  {
+   "pos": [
+    -5,
+    0,
+    10
+   ],
+   "kind": "pile",
+   "facing": "east",
+   "from": 0.856,
+   "span": 0.144
+  }
+ ],
+ "4": [
+  {
+   "pos": [
+    1,
+    0,
+    7
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.0,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -2,
+    0,
+    7
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.017,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    2,
+    0,
+    7
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.034,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -1,
+    0,
+    9
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.051,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -3,
+    0,
+    7
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.068,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -1,
+    0,
+    7
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.085,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    2,
+    0,
+    8
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.102,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -1,
+    1,
+    10
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.118,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    1,
+    0,
+    10
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.135,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    3,
+    0,
+    7
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.152,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -1,
+    0,
+    8
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.169,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -3,
+    0,
+    8
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.186,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -2,
+    0,
+    9
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.203,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    5,
+    0,
+    7
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.22,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -1,
+    0,
+    11
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.237,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    4,
+    0,
+    7
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.254,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -5,
+    1,
+    8
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.271,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    1,
+    0,
+    12
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.288,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    4,
+    0,
+    9
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.305,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -3,
+    0,
+    10
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.322,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -4,
+    0,
+    8
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.338,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -2,
+    0,
+    12
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.355,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -5,
+    0,
+    10
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.372,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -3,
+    1,
+    12
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.389,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -3,
+    1,
+    9
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.406,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    2,
+    0,
+    11
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.423,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    1,
+    0,
+    13
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.44,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    3,
+    0,
+    11
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.457,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    5,
+    1,
+    10
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.474,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -4,
+    0,
+    12
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.491,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -5,
+    0,
+    7
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.508,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    3,
+    1,
+    12
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.525,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -6,
+    0,
+    9
+   ],
+   "kind": "ingots",
+   "facing": "east",
+   "from": 0.542,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    2,
+    0,
+    12
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.558,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    6,
+    0,
+    7
+   ],
+   "kind": "chest",
+   "facing": "west",
+   "from": 0.575,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    3,
+    0,
+    10
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.592,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    6,
+    0,
+    9
+   ],
+   "kind": "chest",
+   "facing": "west",
+   "from": 0.609,
+   "span": 0.391
+  },
+  {
+   "pos": [
+    -6,
+    0,
+    8
+   ],
+   "kind": "chest",
+   "facing": "east",
+   "from": 0.626,
+   "span": 0.374
+  },
+  {
+   "pos": [
+    4,
+    0,
+    10
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.643,
+   "span": 0.357
+  },
+  {
+   "pos": [
+    2,
+    0,
+    13
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.66,
+   "span": 0.34
+  },
+  {
+   "pos": [
+    -3,
+    0,
+    13
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.677,
+   "span": 0.323
+  },
+  {
+   "pos": [
+    5,
+    0,
+    9
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.694,
+   "span": 0.306
+  },
+  {
+   "pos": [
+    -5,
+    0,
+    13
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.711,
+   "span": 0.289
+  },
+  {
+   "pos": [
+    -4,
+    0,
+    11
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.728,
+   "span": 0.272
+  },
+  {
+   "pos": [
+    4,
+    1,
+    11
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.745,
+   "span": 0.255
+  },
+  {
+   "pos": [
+    -5,
+    0,
+    12
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.762,
+   "span": 0.238
+  },
+  {
+   "pos": [
+    -6,
+    0,
+    10
+   ],
+   "kind": "chest",
+   "facing": "east",
+   "from": 0.778,
+   "span": 0.222
+  },
+  {
+   "pos": [
+    4,
+    0,
+    13
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.795,
+   "span": 0.205
+  },
+  {
+   "pos": [
+    -6,
+    0,
+    13
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.812,
+   "span": 0.188
+  },
+  {
+   "pos": [
+    -5,
+    1,
+    11
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.829,
+   "span": 0.171
+  },
+  {
+   "pos": [
+    -4,
+    0,
+    13
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.846,
+   "span": 0.154
+  },
+  {
+   "pos": [
+    6,
+    0,
+    13
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.863,
+   "span": 0.14
+  }
+ ],
+ "5": [
+  {
+   "pos": [
+    -2,
+    0,
+    9
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.0,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -1,
+    0,
+    9
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.012,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    1,
+    0,
+    8
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.024,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    3,
+    1,
+    9
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.037,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -1,
+    0,
+    11
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.049,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    3,
+    0,
+    8
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.061,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    1,
+    0,
+    10
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.073,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    1,
+    1,
+    11
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.086,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    4,
+    0,
+    8
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.098,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    2,
+    0,
+    9
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.11,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    3,
+    0,
+    10
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.122,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    4,
+    0,
+    10
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.134,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -2,
+    0,
+    10
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.147,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -2,
+    1,
+    11
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.159,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    2,
+    0,
+    12
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.171,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -5,
+    0,
+    8
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.183,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -3,
+    1,
+    9
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.196,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -3,
+    0,
+    11
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.208,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -7,
+    0,
+    8
+   ],
+   "kind": "chest",
+   "facing": "east",
+   "from": 0.22,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    6,
+    0,
+    8
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.232,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    3,
+    0,
+    11
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.244,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    2,
+    0,
+    11
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.257,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    6,
+    1,
+    9
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.269,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -2,
+    0,
+    13
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.281,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -2,
+    0,
+    12
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.293,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    7,
+    0,
+    8
+   ],
+   "kind": "chest",
+   "facing": "west",
+   "from": 0.306,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -3,
+    1,
+    12
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.318,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -4,
+    0,
+    8
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.33,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -4,
+    0,
+    9
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.342,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -5,
+    1,
+    11
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.354,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -1,
+    0,
+    12
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.367,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -4,
+    0,
+    11
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.379,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -2,
+    1,
+    14
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.391,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -7,
+    0,
+    9
+   ],
+   "kind": "ingots",
+   "facing": "east",
+   "from": 0.403,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -1,
+    0,
+    14
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.416,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    4,
+    0,
+    12
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.428,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    5,
+    1,
+    10
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.44,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -1,
+    1,
+    13
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.452,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    3,
+    0,
+    13
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.464,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -5,
+    0,
+    9
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.477,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    1,
+    0,
+    15
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.489,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    3,
+    0,
+    14
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.501,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -2,
+    0,
+    15
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.513,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -4,
+    1,
+    10
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.526,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -1,
+    0,
+    15
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.538,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    6,
+    0,
+    11
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.55,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -5,
+    0,
+    12
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.562,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    5,
+    1,
+    13
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.574,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    6,
+    0,
+    10
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.587,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    5,
+    0,
+    11
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.599,
+   "span": 0.4
+  },
+  {
+   "pos": [
+    -4,
+    0,
+    14
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.611,
+   "span": 0.389
+  },
+  {
+   "pos": [
+    -4,
+    0,
+    12
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.623,
+   "span": 0.377
+  },
+  {
+   "pos": [
+    5,
+    0,
+    14
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.636,
+   "span": 0.364
+  },
+  {
+   "pos": [
+    -3,
+    0,
+    13
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.648,
+   "span": 0.352
+  },
+  {
+   "pos": [
+    -6,
+    1,
+    12
+   ],
+   "kind": "jewels",
+   "facing": "north",
+   "from": 0.66,
+   "span": 0.34
+  },
+  {
+   "pos": [
+    3,
+    0,
+    15
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.672,
+   "span": 0.328
+  },
+  {
+   "pos": [
+    7,
+    0,
+    10
+   ],
+   "kind": "ingots",
+   "facing": "west",
+   "from": 0.684,
+   "span": 0.316
+  },
+  {
+   "pos": [
+    2,
+    0,
+    15
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.697,
+   "span": 0.303
+  },
+  {
+   "pos": [
+    5,
+    0,
+    12
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.709,
+   "span": 0.291
+  },
+  {
+   "pos": [
+    7,
+    0,
+    9
+   ],
+   "kind": "chest",
+   "facing": "west",
+   "from": 0.721,
+   "span": 0.279
+  },
+  {
+   "pos": [
+    4,
+    0,
+    13
+   ],
+   "kind": "gems",
+   "facing": "north",
+   "from": 0.733,
+   "span": 0.267
+  },
+  {
+   "pos": [
+    -3,
+    0,
+    15
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.746,
+   "span": 0.254
+  },
+  {
+   "pos": [
+    -7,
+    0,
+    12
+   ],
+   "kind": "chest",
+   "facing": "east",
+   "from": 0.758,
+   "span": 0.242
+  },
+  {
+   "pos": [
+    7,
+    0,
+    12
+   ],
+   "kind": "chest",
+   "facing": "west",
+   "from": 0.77,
+   "span": 0.23
+  },
+  {
+   "pos": [
+    -4,
+    0,
+    15
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.782,
+   "span": 0.218
+  },
+  {
+   "pos": [
+    6,
+    0,
+    13
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.794,
+   "span": 0.206
+  },
+  {
+   "pos": [
+    7,
+    0,
+    13
+   ],
+   "kind": "chest",
+   "facing": "west",
+   "from": 0.807,
+   "span": 0.193
+  },
+  {
+   "pos": [
+    -5,
+    0,
+    13
+   ],
+   "kind": "ingots",
+   "facing": "north",
+   "from": 0.819,
+   "span": 0.181
+  },
+  {
+   "pos": [
+    -6,
+    0,
+    14
+   ],
+   "kind": "pile",
+   "facing": "north",
+   "from": 0.831,
+   "span": 0.169
+  },
+  {
+   "pos": [
+    -5,
+    0,
+    15
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.843,
+   "span": 0.157
+  },
+  {
+   "pos": [
+    -7,
+    0,
+    15
+   ],
+   "kind": "chest",
+   "facing": "north",
+   "from": 0.856,
+   "span": 0.144
+  },
+  {
+   "pos": [
+    -7,
+    0,
+    14
+   ],
+   "kind": "pile",
+   "facing": "east",
+   "from": 0.868,
+   "span": 0.14
+  }
+ ]
+}

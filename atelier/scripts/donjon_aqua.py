@@ -1,6 +1,6 @@
 # [claude-build]
 """
-donjon_aqua.py - Donjon aquatique « Le Sanctuaire des Marees » (2026-11-10) : un monument oceanique englouti, ~31 min. Les salles sont noyees jusqu'au plafond ;
+donjon_aqua.py - Ancien donjon 2 (aquatique) « Le Sanctuaire des Marees » (2026-11-10) : un monument oceanique englouti, ~31 min. Les salles sont noyees jusqu'au plafond ;
 seuls le Debarcadere (depart), la salle du boss et les cloches d'air (points de recharge du voile) contiennent de l'air.
 Le Voile des Profondeurs (mod Grappin 2.5.0) est donne a l'entree ; les tunnels submerges ne se traversent qu'avec lui (« pression des profondeurs »).
 Pas de grappin, pas de conduit, pas de lave, ni coffre ni mob ni boss. Eau confinee (controlee). Gabarit 150 x 70 x 170, pose en (150, -61, 260).
@@ -10,6 +10,7 @@ En jeu : /reload puis /function atelier:aqua_pose ; remise a zero : /function at
 """
 import argparse
 import json
+import sys
 import math
 from collections import Counter
 from pathlib import Path
@@ -19,25 +20,16 @@ import numpy as np
 from nbtlib import Byte, Compound, Int, List, String
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--monde", default="Donjon 2", help="nom du monde tel qu'il s'affiche en jeu")
+ap.add_argument("--monde", default="Ancien donjon 2", help="nom du monde tel qu'il s'affiche en jeu")
+ap.add_argument("--zip", action="store_true", help="ecrit aussi atelier/mondes/<monde>.zip : un monde pret a copier dans saves/")
 args = ap.parse_args()
 RACINE = Path(__file__).resolve().parent.parent                      # atelier/
 SAVES = RACINE.parent / "mod/run/client/saves"
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import monde_atelier                                                  # cree le monde de test s'il n'existe pas
 
-def dossier_du_monde(nom_):
-    """Le monde est designe par son nom en jeu (LevelName de level.dat) : le dossier peut porter un autre nom (le monde « Donjon 2 » est dans « Donjon 2 (1) »,
-    et le dossier « Donjon 2 » contient le monde « Donjon 1 »). A defaut de monde de ce nom, on prend le dossier de ce nom."""
-    for d_ in (sorted(SAVES.iterdir()) if SAVES.exists() else []):
-        try:
-            if str(nbtlib.load(d_ / "level.dat")["Data"]["LevelName"]) == nom_:
-                return d_
-        except Exception:
-            continue
-    return SAVES / nom_
-
-
-SAVE = dossier_du_monde(args.monde)
+SAVE = monde_atelier.trouver_ou_creer_monde(args.monde, SAVES)
 print(f"[0] monde « {args.monde} » -> dossier {SAVE.name}", flush=True)
 NOM = "aqua"
 SX, SY, SZ = 150, 70, 170

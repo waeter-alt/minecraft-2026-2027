@@ -60,6 +60,14 @@ public final class HutNav
     }
 
     /**
+     * The key of a page of the building's own body ({@link HutBody.Tab#key}).
+     */
+    public static String tabKey(final String tab)
+    {
+        return "tab:" + tab;
+    }
+
+    /**
      * The level, one square per level in its own colour filled up to the current one, and ✎ to rename; after the title
      * the shell draws.
      */
@@ -106,9 +114,14 @@ public final class HutNav
     private static List<Tool> tools(final IBuildingView building, final HutScreen hut)
     {
         final List<Tool> tools = new ArrayList<>();
-        tools.add(new Tool("Coffre", Icon.of(Items.CHEST), () -> new OpenInventoryMessage(building).sendToServer()));
+        // The bank, the depot and the relais keep nothing in a chest and no stock of their own: no such tools
+        final boolean ownBody = HutBodies.of(building) != null;
+        if (!ownBody)
+        {
+            tools.add(new Tool("Coffre", Icon.of(Items.CHEST), () -> new OpenInventoryMessage(building).sendToServer()));
+        }
         // In a warehouse with the magic network, the register takes and stores as well as it lists
-        if (!HutScreen.isWarehouse(building))
+        if (!HutScreen.isWarehouse(building) && !ownBody)
         {
             tools.add(new Tool("Tout le stock", Icon.module("inventory"), () -> StockScreen.open(building, hut)));
         }
@@ -150,9 +163,15 @@ public final class HutNav
             Ui.label(graphics, font, "BÂTIMENT", x + 2, y0 + 25);
             y = y0 + 36;
         }
-        item(graphics, font, x, y, width, Icon.module("main"), "Vue d'ensemble", OVERVIEW.equals(current), mouseX, mouseY, hits,
-          () -> Minecraft.getInstance().setScreen(hut));
+        item(graphics, font, x, y, width, Icon.module("main"), "Vue d'ensemble", OVERVIEW.equals(current), mouseX, mouseY, hits, () -> hut.showTab(""));
         y += Ui.NAV_ROW + 1;
+        // The building's own pages (the Relais's new offer, the Depot's crates), right under the overview
+        for (final HutBody.Tab bodyTab : hut.bodyTabs())
+        {
+            item(graphics, font, x, y, width, bodyTab.icon(), Ui.rail(navW) ? bodyTab.label() : Ui.fit(font, bodyTab.label(), width - 22), tabKey(bodyTab.key()).equals(current),
+              mouseX, mouseY, hits, () -> hut.showTab(bodyTab.key()));
+            y += Ui.NAV_ROW + 1;
+        }
 
         final List<Tool> tools = tools(building, hut);
         final int toolsTop = y0 + h - 6 - tools.size() * (Ui.NAV_ROW + 1);

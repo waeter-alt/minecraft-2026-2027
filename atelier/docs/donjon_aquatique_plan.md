@@ -1,12 +1,12 @@
-<!-- [claude-build] plan du donjon aquatique « Le Sanctuaire des Marées », validé par Luca le 2026-11-10 ; la fiche de ce qui est construit est donjon_aquatique.md -->
-# Donjon aquatique — « Le Sanctuaire des Marées » (plan validé)
+<!-- [claude-build] plan de l'ancien donjon 2 (aquatique) « Le Sanctuaire des Marées », validé par Luca le 2026-11-10 ; la fiche de ce qui est construit est donjon_aquatique.md -->
+# Ancien donjon 2 (aquatique) — « Le Sanctuaire des Marées » (plan validé)
 
 Un monument océanique englouti, dans le style de ceux de Minecraft, **noyé jusqu'au plafond** (révision du 2026-11-11 : Luca trouvait trop de passages à pied et une déco qui ne ressemblait pas à un temple sous-marin). L'objet du donjon est le **Voile des Profondeurs** (mod Grappin 2.5.0), remis à l'entrée. Règle posée par Luca : aucun autre objet ni effet ne doit permettre de respirer sous l'eau.
 
 ## Cadre
 
-- Monde « Donjon 2 » (dossier `Donjon 2 (1)`), superflat, sol à Y-61, dans le client de test du dépôt. NeoForge 21.1.216.
-- Gabarit 150 × 70 × 170, posé en 150 -61 260. Le Temple des Mille Racines est dans un autre monde (« Donjon 1 »).
+- Monde « Ancien donjon 2 », superflat, sol à Y-61, dans le client de test du dépôt. NeoForge 21.1.216.
+- Gabarit 150 × 70 × 170, posé en 150 -61 260. Le Temple des Mille Racines est dans un autre monde (« Ancien donjon 1 »).
 - Palette : briques de prismarine, prismarine, prismarine sombre en bandeaux et en damier au sol, lanternes de mer encastrées, éponges mouillées dans les salles cachées, noyau d'or dans la salle du boss. Un petit herbier dans la Colonnade seulement.
 - Interdits : ancrage de grappin, conduit, lave, coffre, conteneur, générateur, monstre, boss, colonne de bulles. Toute l'eau est en sources confinées.
 - Tout est éclairé, eau comprise.

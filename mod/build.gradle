@@ -142,6 +142,10 @@ dependencies {
     // Interregne code doesn't use its API.
     localRuntime files('libs/create-1.21.1-6.0.9.jar')
 
+    // Fell, so chopping a trunk fells the whole tree: used by the trade-route terraforming (clearing the way without
+    // leaving half-floating canopies). Interregne code doesn't call its API, so runtime only.
+    localRuntime files('libs/fell-1.0.0.jar')
+
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
@@ -203,3 +207,6 @@ idea {
         downloadJavadoc = true
     }
 }
+
+// Environnement de dev partagé (mods, configs, mondes de test) : voir env.gradle et CLAUDE.md
+apply from: 'env.gradle'
