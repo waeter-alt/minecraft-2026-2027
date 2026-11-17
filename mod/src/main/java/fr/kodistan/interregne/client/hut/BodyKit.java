@@ -168,8 +168,9 @@ public final class BodyKit
         final Component big = Component.literal(Wallet.format(amount)).withStyle(ChatFormatting.BOLD);
         final String unit = amount > 1 ? "couronnes" : "couronne";
         final String cap2 = "/ " + Wallet.format(cap);
-        final int side = Math.max(font().width(unit), font().width(cap2));
-        final float scale = Math.min(2.8f, (width - 50 - side - 5) / (float) font().width(big));
+        final Component unitText = Component.literal(unit).withStyle(ChatFormatting.BOLD);
+        final int side = Math.max(font().width(unitText), font().width(cap2));
+        final float scale = Math.min(2.8f, (width - 50 - side - 6) / (float) font().width(big));
         final float ty = y + 18 + (36 - 9 * scale) / 2f;
         final var pose = graphics.pose();
         pose.pushPose();
@@ -179,7 +180,7 @@ public final class BodyKit
         pose.popPose();
         final int sx = x + 42 + (int) (font().width(big) * scale) + 5;
         final float mid = ty + 9 * scale / 2f;
-        graphics.drawString(font(), Component.literal(unit).withStyle(ChatFormatting.BOLD), sx, (int) (mid - 10), Palette.GOLD_TEXT, true);
+        graphics.drawString(font(), unitText, sx, (int) (mid - 10), Palette.GOLD_TEXT, true);
         graphics.drawString(font(), cap2, sx, (int) (mid + 1), HERO_MUTED, false);
         return y + HERO_H + heroExtra + 6;
     }
