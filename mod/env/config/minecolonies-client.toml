@@ -1,0 +1,18 @@
+#Toutes les configurations liées à la base du jeu
+[gameplay]
+	#minecolonies.config.enablecitizenvoices.comment [Default: true]
+	enablecitizenvoices = true
+	#Par défaut, en plaçant un plan près d'autres bâtiments, les bâtiments déjà placés apparaitront comme s'ils étaient niveau 5 et auront un contour bleu. Vous pouvez désactiver ceci en mettant cette valeur à faux. [Default: true]
+	neighborbuildingrendering = true
+	#À quelle distance un bâtiment doit être d’un autre pour être considéré comme un voisin, en blocs. -1 = intersection, 0 = toucher [Default: 4, min: -2, max: 16]
+	# Default: 4
+	# Range: -2 ~ 16
+	neighborbuildingrange = 4
+	#La distance (en blocs) à laquelle vous devez vous trouver pour voir les ordres de travail lorsque vous portez les lunettes de construction. [Default: 50, min: 1, max: 250]
+	# Default: 50
+	# Range: 1 ~ 250
+	buildgogglerange = 50
+	#Quand vrai, les limites de la colonie affichés en tenant l'outil de construction seront de la couleur de l'équipe de la colonie. Quand faux, la colonie dans laquelle vous êtes sera blanche et les autres rouges. [Default: true]
+	colonyteamborders = true
+	#Le contenu des vacances doit-il être affiché? [Default: true]
+	holidayfeatures = true
