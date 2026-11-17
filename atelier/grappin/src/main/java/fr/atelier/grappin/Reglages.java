@@ -27,6 +27,8 @@ public final class Reglages {
     public static final ModConfigSpec.DoubleValue TOURBILLON_PORTEE = B.comment("Cape lestee : portee de l'attaque tourbillon autour du joueur, en blocs (une epee : 3).").defineInRange("tourbillonPortee", 3.5, 1.0, 8.0);
     public static final ModConfigSpec.DoubleValue TOURBILLON_DEGATS = B.comment("Cape lestee : degats de l'attaque tourbillon (2 = un coeur).").defineInRange("tourbillonDegats", 6.0, 0.0, 40.0);
     public static final ModConfigSpec.IntValue TOURBILLON_RECHARGE = B.comment("Cape lestee : temps de recharge de l'attaque tourbillon, en ticks (20 = 1 s).").defineInRange("tourbillonRecharge", 16, 2, 200);
+    public static final ModConfigSpec.DoubleValue TOURBILLON_ROULIS = B.comment("Cape lestee, vue a la premiere personne : inclinaison de la camera pendant le tourbillon, en degres (0 = aucune, 360 = tonneau complet).").defineInRange("tourbillonRoulis", 14.0, 0.0, 360.0);
+    public static final ModConfigSpec.DoubleValue TOURBILLON_ELAN = B.comment("Cape lestee : elan vers l'avant donne par le tourbillon, en blocs par tick (0 = aucun).").defineInRange("tourbillonElan", 0.35, 0.0, 1.5);
 
     public static final ModConfigSpec.IntValue PARAVOILE_ENDURANCE = B.comment("Paravoile : duree de vol, en secondes (la jauge se vide en vol).").defineInRange("paravoileEnduranceSecondes", 10, 3, 300);
     public static final ModConfigSpec.IntValue PARAVOILE_RECHARGE = B.comment("Paravoile : temps pour recharger la jauge entierement, au sol ou dans l'eau, en secondes.").defineInRange("paravoileRechargeSecondes", 6, 1, 300);

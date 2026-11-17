@@ -169,13 +169,24 @@ public final class CapeEvenements {
             if (degats > 0 && cible.hurt(j.damageSources().playerAttack(j), degats)) {
                 Vec3 ecart = point.subtract(centre);
                 cible.knockback(0.5, -ecart.x, -ecart.z);
+                touche((ServerLevel) j.level(), cible, point);
             }
         }
 
         anneauDeBulles((ServerLevel) j.level(), centre, j.getLookAngle(), portee);
+        j.level().playSound(null, j.getX(), j.getY(), j.getZ(), SoundEvents.TRIDENT_RIPTIDE_1.value(), SoundSource.PLAYERS, 0.6F, 1.4F);
         j.level().playSound(null, j.getX(), j.getY(), j.getZ(), SoundEvents.BUBBLE_COLUMN_WHIRLPOOL_INSIDE, SoundSource.PLAYERS, 1.0F, 1.3F);
         j.level().playSound(null, j.getX(), j.getY(), j.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.8F, 0.7F);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(j, new TourbillonPayload(j.getId()));
+    }
+
+    /** Coup porte : etincelles, eclaboussures et un son propre au coup, distinct du son de l'attaque elle-meme. */
+    private static void touche(ServerLevel monde, LivingEntity cible, Vec3 point) {
+        monde.sendParticles(ParticleTypes.CRIT, point.x, point.y, point.z, 8, 0.3, 0.3, 0.3, 0.3);
+        monde.sendParticles(ParticleTypes.ENCHANTED_HIT, point.x, point.y, point.z, 6, 0.3, 0.3, 0.3, 0.2);
+        monde.sendParticles(ParticleTypes.SPLASH, point.x, point.y, point.z, 10, 0.4, 0.3, 0.4, 0.2);
+        monde.playSound(null, cible.getX(), cible.getY(), cible.getZ(), SoundEvents.TRIDENT_HIT, SoundSource.PLAYERS, 1.0F, 1.1F);
+        monde.playSound(null, cible.getX(), cible.getY(), cible.getZ(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 0.7F, 1.0F);
     }
 
     /** Anneau de bulles dans le plan perpendiculaire a l'axe de nage, projetees vers l'exterieur. */
@@ -192,6 +203,7 @@ public final class CapeEvenements {
             monde.sendParticles(ParticleTypes.BUBBLE, p.x, p.y, p.z, 0, dir.x, dir.y, dir.z, 0.6);
             if (i % 3 == 0) {
                 monde.sendParticles(ParticleTypes.BUBBLE_POP, p.x, p.y, p.z, 1, 0.1, 0.1, 0.1, 0.02);
+                monde.sendParticles(ParticleTypes.SPLASH, p.x, p.y, p.z, 2, 0.2, 0.2, 0.2, 0.1);
             }
         }
     }

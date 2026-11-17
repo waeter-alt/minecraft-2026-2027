@@ -35,4 +35,43 @@ public final class CapeCalcul {
         double p = (maintenant - debut) / duree;
         return p < 0 || p > 1 ? -1 : p;
     }
+
+    /** Tour complet adouci (en radians, 0 a 2 pi) : lent au debut et a la fin, rapide au milieu. */
+    public static double tourComplet(double p) {
+        return (p - Math.sin(p * Math.PI * 2) / (Math.PI * 2)) * Math.PI * 2;
+    }
+
+    /** Enveloppe 0..1 d'un a-coup : montee rapide (quart de sinus) puis retour amorti (1-r)^3, t en ticks. */
+    public static double aCoup(double t, double montee, double retour) {
+        if (t <= 0 || t >= montee + retour) {
+            return 0;
+        }
+        if (t < montee) {
+            return Math.sin(t / montee * Math.PI / 2);
+        }
+        double r = 1 - (t - montee) / retour;
+        return r * r * r;
+    }
+
+    /**
+     * Roulis de camera du tourbillon, en degres, pour un reglage donne : 0 = aucun, 360 = l'ancien tonneau complet,
+     * entre les deux = un a-coup qui penche jusqu'a ce pic puis revient a plat.
+     */
+    public static double roulis(double p, double t, double pic, double montee, double retour) {
+        if (pic <= 0) {
+            return 0;
+        }
+        if (pic >= 360) {
+            return Math.toDegrees(tourComplet(p));
+        }
+        return pic * aCoup(t, montee, retour);
+    }
+
+    /** Intensite 0..1 des effets de vitesse : vitesse actuelle rapportee a la vitesse de sprint. */
+    public static double intensite(double vitesse, double vitesseSprint) {
+        if (vitesseSprint <= 0) {
+            return 0;
+        }
+        return Math.max(0, Math.min(1, vitesse / vitesseSprint));
+    }
 }
