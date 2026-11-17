@@ -163,3 +163,73 @@ Chemins relatifs au worktree `D:\PROJET\wt-golem-anim` (branche `feature/golem-a
 Après l'accord de Luca sur l'essai en jeu. Dans `D:\PROJET\wt-objets\mod` : générer `GolemGeometrie` et `GolemAnimations` dans le paquet du Gardien de `mod/` (option `--paquet` à ajouter à `bbmodel_vers_java.py`), reporter les changements de `GolemModele`, `Golem`, `GolemComportement`, `GolemAnimationsEtat` et `GolemAnimationsTest` ; `./gradlew build --console=plain -q` OK ; commit `Gardien des Racines : reprend les animations (3.2.0)`.
 
 Pousser et ouvrir une PR : seulement à la demande de Luca ; le merge vers `main` est décidé par Duncan.
+
+---
+
+## Révision 2 (spec, section « Révision 2 ») — tâches 7 à 11, avant la tâche 6
+
+La tâche 6 (report dans `mod/`) passe après la tâche 11. Les tâches 1 à 5 restent faites. La contrainte « l'os `fixe` n'est jamais animé » est remplacée par : **au repos**, chaque point faible est à sa position d'aujourd'hui ; pendant les animations, sa boîte suit le dessin.
+
+### Task 7 : hanches dans le corps, nouveaux points faibles dans le `.bbmodel`
+
+**Files :** Modify `atelier/scripts/golem_vers_bbmodel.py`, `atelier/scripts/tests/test_golem_bbmodel.py`, `atelier/scripts/tests/test_bbmodel_vers_java.py` ; régénérer `golem.bbmodel`, `GolemGeometrie.java`, `GolemAnimations.java` ; aperçu (non commité) `atelier/exports/golem_points_faibles_apercu.png`.
+
+**Interfaces — Produces :**
+- `base` ne garde que les 4 racines plongées dans la lave ; mousse de taille, hanches et ceinture passent dans `corps`. L'os `fixe` disparaît.
+- Os `pf0`…`pf4` (ordre de `Golem.NOMS_PIECES`), pivot = centre de la boîte de repos (formule `AZIMUTS/RAYONS/HAUTEURS`), parents : `pf0` → `tete`, `pf1` → `corps`, `pf2` → `bras_d`, `pf3` et `pf4` → `corps`. Dans chaque `pf<i>` : le cœur `rouge<i>` (lumineux, même taille qu'aujourd'hui), les nœuds de la branche qui le relie au corps, et la coque :
+  - `pf0` : sous-os `pf0_masque` (pivot en haut du masque) avec des cubes `couv0_*` (plaque, arcade, joues, nez, bouche ; trous des yeux laissés vides) en bois clair.
+  - `pf1`…`pf4` : sous-os `pf<i>_petale0..3` (pivot à la base de chaque pétale, côté corps), chacun avec 2 ou 3 cubes `couv<i>_*` en escalier qui arrondissent la coque ; plus quelques cubes de racine et de mousse.
+- Les animations ne visent jamais un os `pf*` (ils suivent leur porteur).
+
+- [ ] **Step 1 : tests** (remplacent `test_points_faibles_dans_fixe_et_a_leur_place`, `test_fixe_jamais_anime` et `test_meme_nombre_de_cubes`) :
+  - `test_points_faibles_au_repos` : le pivot de `pf<i>`, converti en Java, vaut `(cx·4, 24 − cy·4, −cz·4)` à 1e-6 près (formule de la tâche 1 ; les os ont tous une rotation de repos nulle, donc le pivot est sa position absolue).
+  - `test_parents_des_points_faibles` : parents ci-dessus.
+  - `test_coques` : `pf0_masque` a au moins 6 cubes `couv0_*` ; chaque `pf1..4` a 4 sous-os `petale` et au moins 8 cubes `couv<i>_*` ; aucun cube `couv*` ne dépasse 60 % de la boîte (`TAILLES[i]`, et `TAILLES[i] / FACTEUR_LARGEUR` en largeur) dans ses trois dimensions à la fois (fini les gros blocs).
+  - `test_pf_jamais_animes` : aucun animateur ne vise un os dont le nom commence par `pf`, ni `racine`, ni `base`.
+  - `test_hanches_dans_le_corps` : `base` n'a que 4 cubes, tous nommés `racine`.
+  - `test_chemins_points_faibles` (convertisseur) : `ROUGES` = `corps/tete/pf0/rouge0`, `corps/pf1/rouge1`, `corps/bras_d/pf2/rouge2`, `corps/pf3/rouge3`, `corps/pf4/rouge4`.
+- [ ] **Step 2 : lancer, ils échouent** — `$PY -I -m unittest discover -s atelier/scripts/tests -v`.
+- [ ] **Step 3 : écrire** la géométrie dans `golem_vers_bbmodel.py`.
+- [ ] **Step 4 : générer, lancer, ils passent.**
+- [ ] **Step 5 : planche** : les 5 points faibles fermés et ouverts (masque levé de 50° et 2 blocs, pétales ouverts de 70°), de près, et le Gardien entier de face et de dos. **Envoyer à Luca et attendre son accord.**
+- [ ] **Step 6 : build et commit** — `Gardien des Racines : points faibles en masque de bois et en excroissances à pétales`.
+
+### Task 8 : ouverture en douceur dans `GolemModele`
+
+**Files :** Modify `JAVA/GolemModele.java`, `atelier/scripts/bbmodel_vers_java.py`, `atelier/scripts/tests/test_bbmodel_vers_java.py`.
+
+**Interfaces — Produces :** dans `GolemGeometrie` : `String[] MASQUES` (un chemin, `corps/tete/pf0/pf0_masque`, indexé comme `ROUGES` avec `""` pour les autres) et `String[][] PETALES` (`PETALES[i]` = les 4 chemins des pétales de `pf<i>`, vide pour `pf0`). `COUVERCLES` disparaît.
+
+- [ ] **Step 1** : test Python `test_chemins_coques` (`MASQUES[0]`, 4 pétales pour `pf1..4`) ; le voir échouer, l'implémenter, le voir passer.
+- [ ] **Step 2** : `GolemModele` garde par point faible une ouverture `float[] ouverture` ∈ [0, 1] qui va vers 1 (ouvert) ou 0 en 0,5 s (`Mth.approach` avec le delta d'`ageInTicks` depuis l'image précédente) ; masque : `xRot -= 50° · o`, `y -= 8 · o` ; pétale k : rotation de `70° · o` vers l'extérieur (pétales 0 et 1 sur l'axe x, ±, pétales 2 et 3 sur l'axe z, ±, selon la position du pétale autour du cœur) ; le cœur bat comme avant quand `o > 0,5`. Plus de `visible = false` sur les coques.
+- [ ] **Step 3** : build OK ; commit `Gardien des Racines : le masque se lève et les pétales s'ouvrent en douceur`.
+
+### Task 9 : le squelette de calcul (sans Minecraft)
+
+**Files :** Modify `atelier/scripts/bbmodel_vers_java.py` (écrit aussi `GolemSquelette.java`) ; Create `JAVA/Squelette.java` (moteur pur : os, pivots, canaux, interpolation) ; Test `atelier/donjon/arene/src/test/java/fr/atelier/grappin/GolemSqueletteTest.java`.
+
+**Interfaces — Produces :**
+- `GolemSquelette.SQUELETTE : Squelette` (généré : os, parents, pivots en unités Java, canaux de chaque animation, sous les noms `repos`, `emergence`, `lancer`, `douleur`, `rage`, `mort`).
+- `Squelette.point(String os, Map<String, Float> temps, String osTete, float lacetTeteDeg, float tangageTeteDeg) -> double[] {x, y, z}` : position du pivot de l'os en unités du modèle Java, avec les animations dont `temps` donne le temps écoulé en secondes (absentes = non jouées ; `repos` boucle), dans l'ordre de `GolemModele.setupAnim` (repos, émergence, lancer, douleur, rage, mort, puis regard ajouté à la tête). Rotations des os dans l'ordre de `ModelPart.translateAndRotate` (Z·Y·X).
+- Interpolation identique à Minecraft : linéaire, et Catmull-Rom avec les voisins `max(0, i−1)`, `i`, `i+1`, `min(n−1, i+2)` et la formule de `Mth.catmullrom` ; après la dernière image clé, la valeur reste celle de la dernière.
+
+- [ ] **Step 1 : tests** : `auReposLesPointsFaiblesSontALeurPlace` (5 positions = formule de repos, à 1e-4) ; `catmullromCommeMinecraft` (une valeur calculée à la main avec la formule de `Mth.catmullrom` sur 4 images clés) ; `lineaireAuMilieu` ; `lancerDeplaceLeMasque` (pendant `lancer` à 0,9 s, le masque a bougé de plus de 1 unité) ; `regardTourneLeMasque` (lacet 30° : le masque reste à la même distance du pivot de la tête et change de x).
+- [ ] **Step 2 : échec** — `./gradlew test --console=plain --tests fr.atelier.grappin.GolemSqueletteTest`.
+- [ ] **Step 3 : écrire** `Squelette` et sa génération.
+- [ ] **Step 4 : passe** ; commit `Gardien des Racines : le serveur sait où sont les points faibles pendant les animations`.
+
+### Task 10 : boîtes qui suivent + « ding »
+
+**Files :** Modify `JAVA/Golem.java`, `JAVA/GolemAnimationsEtat.java` ; Test `GolemMondeTest.java`.
+
+**Interfaces — Produces :** `GolemAnimationsEtat.versMonde(double[] pointModele, double lacetCorpsDeg) -> double[] {dx, dy, dz}` : décalage en blocs depuis les pieds du Gardien, avec la chaîne du rendu (`MobRenderer` : rotation `180 − yBodyRot` autour de y, `scale(-1, -1, 1)`, `translate(0, -1.501, 0)`, puis `GolemRendu.scale(4·0,75, 4, 4·0,75)` ; 1 unité = 1/16 de bloc).
+
+- [ ] **Step 1 : test** `reposDonneLesAnciennesPositions` : pour les 5 points, `versMonde(point de repos, lacet)` = l'ancien calcul de `placerPieces` (centre de la boîte : `−sin(a)·R`, `HAUTEURS[i]`, `cos(a)·R`, `a = lacet + AZIMUTS[i]`) pour les lacets 0, 90 et −135, à 1e-3 près.
+- [ ] **Step 2 : échec, Step 3 : écrire, Step 4 : passe.**
+- [ ] **Step 5 : brancher** : le serveur retient le tick de départ de chaque animation qu'il déclenche (`emergence`, `lancer`, `douleur`, `rage` au passage en phase 2, `mort` dans `die`) ; `placerPieces` : `versMonde(GolemSquelette.SQUELETTE.point("pf" + i, temps, "tete", lacet et tangage de la tête comme le client), yBodyRot)` ; la boîte reste centrée sur ce point, même taille.
+- [ ] **Step 6 : ding** : dans `blesserParPiece`, si les dégâts comptent, `source.getDirectEntity()` est une `AbstractArrow` et `source.getEntity()` un `ServerPlayer`, lui envoyer `new ClientboundGameEventPacket(ClientboundGameEventPacket.ARROW_HIT_PLAYER, 0.0F)`.
+- [ ] **Step 7 : build** ; commit `Gardien des Racines : les boîtes des points faibles suivent le corps ; ding à l'arc`.
+
+### Task 11 : jar 3.3.0 et essai en jeu
+
+`mod_version=3.3.0`, build, copie dans `atelier/exports`, commit. Essai par Luca : nouveaux points faibles fermés et ouverts ; frapper chacun à l'épée depuis la rampe au repos et pendant les animations ; flèche sur un point ouvert (ding) et fermé (rien) ; hanches qui bougent ; plus rien de figé. Puis revue finale des deux branches, puis tâche 6.
