@@ -98,19 +98,7 @@ public final class RegionalBankScreen extends CounterScreen
         final int next = state.level() + 1;
         Ui.plate(graphics, x, y, x + width, y + 30, Palette.levelSoft(next), Palette.levelEdge(next), Palette.levelSoft(next));
         graphics.drawString(font, Component.literal("Niveau " + next).withStyle(ChatFormatting.BOLD), x + 6, y + 5, Palette.INK, false);
-        graphics.drawString(font, fit("contient jusqu'à " + couronnes(state.nextCapacity()), width - (6)), x + 6, y + 17, Palette.MUTED, false);
-        final String label = "Améliorer · " + Wallet.format(state.upgradeCost());
-        final int bw = Ui.levelButtonWidth(font, label);
-        final boolean over = Ui.inside(mouseX, mouseY, x + width - 6 - bw, y + 8, bw, 14);
-        Ui.levelButton(graphics, font, x + width - 6 - bw, y + 8, bw, 14, label, next, state.manager(), over);
-        if (state.manager())
-        {
-            addHit(x + width - 6 - bw, y + 8, bw, 14, () -> send(RegionalBankActionPayload.UPGRADE, 0));
-        }
-        if (over)
-        {
-            hint = state.manager() ? "Payé avec le trésor, complété par les couronnes sur toi." : MANAGERS;
-        }
+        graphics.drawString(font, fit("contient jusqu'à " + couronnes(state.nextCapacity()) + " · par un bâtisseur", width - (6)), x + 6, y + 17, Palette.MUTED, false);
         return y + 34;
     }
 

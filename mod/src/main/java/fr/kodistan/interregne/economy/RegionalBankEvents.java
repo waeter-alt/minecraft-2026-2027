@@ -43,51 +43,30 @@ public final class RegionalBankEvents
     }
 
     /**
-     * Lowest priority, so the bank is recorded only if no other check refused the placement.
+     * The treasury follows the colony's built bank: its level is the building's, and its position is where the vault stands.
+     * A bank that is gone leaves no vault behind.
      */
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onPlace(final BlockEvent.EntityPlaceEvent event)
+    private static void followBuildings(final MinecraftServer server)
     {
-        if (!(event.getPlacedBlock().getBlock() instanceof RegionalBankBlock)
-              || !(event.getLevel() instanceof ServerLevel level)
-              || !(event.getEntity() instanceof ServerPlayer player))
+        final RegionalTreasury treasury = RegionalTreasury.get(server);
+        for (final IColony colony : IColonyManager.getInstance().getAllColonies())
         {
-            return;
+            final BuildingBanqueRegionale bank = RegionalBank.of(colony);
+            final BlockPos recorded = treasury.bank(colony);
+            if (bank != null)
+            {
+                treasury.setLevel(colony, bank.getBuildingLevel());
+                if (!bank.getPosition().equals(recorded))
+                {
+                    treasury.setBank(colony, bank.getPosition());
+                }
+            }
+            else if (recorded != null && colony.getWorld() instanceof ServerLevel level && level.isLoaded(recorded))
+            {
+                Vault.clear(level, recorded);
+                treasury.setBank(colony, null);
+            }
         }
-        final BlockPos pos = event.getPos();
-        final IColony colony = IColonyManager.getInstance().getIColony(level, pos);
-        final String refusal = refusal(level, pos, colony, player);
-        if (refusal != null)
-        {
-            event.setCanceled(true);
-            player.sendSystemMessage(Component.literal(refusal).withStyle(ChatFormatting.RED));
-            return;
-        }
-        RegionalTreasury.get(level.getServer()).setBank(colony, pos);
-        player.sendSystemMessage(Component.literal("Banque régionale de " + colony.getName() + " ouverte : le trésor de la colonie y est gardé.")
-                                   .withStyle(ChatFormatting.GOLD));
-    }
-
-    /**
-     * Why this bank may not stand here, or null when it may.
-     */
-    private static String refusal(final ServerLevel level, final BlockPos pos, final IColony colony, final ServerPlayer player)
-    {
-        if (colony == null)
-        {
-            return "Une Banque régionale se construit dans le territoire d'une colonie.";
-        }
-        if (!player.isCreative() && !colony.getPermissions().hasPermission(player, Action.ACCESS_HUTS))
-        {
-            return "Seuls les membres de " + colony.getName() + " peuvent y construire sa Banque régionale.";
-        }
-        final BlockPos existing = RegionalTreasury.get(level.getServer()).bank(colony);
-        if (existing != null && !existing.equals(pos)
-              && (!level.isLoaded(existing) || level.getBlockState(existing).getBlock() instanceof RegionalBankBlock))
-        {
-            return colony.getName() + " a déjà une Banque régionale (" + existing.getX() + " " + existing.getY() + " " + existing.getZ() + ").";
-        }
-        return null;
     }
 
     @SubscribeEvent
@@ -98,6 +77,7 @@ public final class RegionalBankEvents
             return;
         }
         final MinecraftServer server = event.getServer();
+        followBuildings(server);
         for (final RegionalTreasury.Vault vault : RegionalTreasury.get(server).drainChanged())
         {
             PENDING.put(vault.colonyKey(), vault);
