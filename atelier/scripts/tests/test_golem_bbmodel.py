@@ -101,6 +101,49 @@ class TestGolemBbmodel(unittest.TestCase):
         self.assertGreaterEqual(sum(n.startswith("veine_") for n in noms), 1)
         self.assertEqual(5, sum(re.fullmatch(r"rouge[0-4]", n) is not None for n in noms))
 
+    # ------------------------------------------------ animations
+    DUREES = {"repos": 4.0, "emergence": 5.0, "lancer": 1.5, "douleur": 0.75, "rage": 2.5, "mort": 2.0}
+    LIMITES = {"corps": 25, "tete": 35, "machoire": 35, "bras_g": 60, "main_g": 60, "bras_d": 60, "poing_d": 60,
+               "branches_dos": 60, "lianes": 60}
+
+    def animations(self):
+        return {a["name"]: a for a in self.modele["animations"]}
+
+    def test_six_animations(self):
+        anims = self.animations()
+        self.assertEqual(set(self.DUREES), set(anims))
+        for nom, duree in self.DUREES.items():
+            self.assertAlmostEqual(duree, anims[nom]["length"], delta=1e-6)
+            self.assertEqual("loop" if nom == "repos" else "once", anims[nom]["loop"], nom)
+
+    def test_fixe_jamais_anime(self):
+        interdits = {"fixe", "racine", "base"} | {e["name"] for e in self.os["fixe"][1]}
+        for a in self.modele["animations"]:
+            for anim in a["animators"].values():
+                self.assertNotIn(anim["name"], interdits, a["name"])
+
+    def test_angles_lents_et_lourds(self):
+        for a in self.modele["animations"]:
+            for anim in a["animators"].values():
+                for k in anim["keyframes"]:
+                    if k["channel"] == "rotation":
+                        for v in k["data_points"][0].values():
+                            self.assertLessEqual(abs(float(v)), self.LIMITES[anim["name"]], (a["name"], anim["name"]))
+
+    def test_boucle_sans_saut(self):
+        for anim in self.animations()["repos"]["animators"].values():
+            for canal in ("rotation", "position"):
+                ks = sorted((k for k in anim["keyframes"] if k["channel"] == canal), key=lambda k: k["time"])
+                if ks:
+                    self.assertAlmostEqual(0.0, ks[0]["time"])
+                    self.assertAlmostEqual(4.0, ks[-1]["time"])
+                    self.assertEqual(ks[0]["data_points"], ks[-1]["data_points"], anim["name"])
+
+    def test_mort_finit_sous_la_lave(self):
+        corps = next(v for v in self.animations()["mort"]["animators"].values() if v["name"] == "corps")
+        fin = max((k for k in corps["keyframes"] if k["channel"] == "position"), key=lambda k: k["time"])
+        self.assertLessEqual(float(fin["data_points"][0]["y"]), -40)
+
 
 if __name__ == "__main__":
     unittest.main()

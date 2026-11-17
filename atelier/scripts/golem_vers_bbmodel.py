@@ -248,9 +248,78 @@ def construire(animations=None):
     }
 
 
+# ------------------------------------------------ animations de depart (a retoucher dans Blockbench, onglet Animer)
+# Valeurs dans le repere de Blockbench (y vers le haut, l'avant du Gardien vers -z) :
+#   rotation x : negatif = se pencher en avant ; tete positive = tete en arriere ; machoire negative = bouche ouverte ;
+#   bras : x positif = vers l'avant ; z positif = bras gauche (bras_g) ecarte, z negatif = bras droit (bras_d) ecarte.
+# Lent et lourd : au plus 25 degres pour le corps, 35 pour la tete et la machoire, 60 pour un bras (teste).
+Z = (0, 0, 0)
+ANIMATIONS = {
+    "repos": (4.0, "loop", {
+        "corps": {"rotation": [(0, Z), (2, (-2, 0, 0)), (4, Z)], "position": [(0, Z), (2, (0, -0.5, 0)), (4, Z)]},
+        "tete": {"rotation": [(0, Z), (1, (0, 3, 0)), (3, (0, -3, 0)), (4, Z)]},
+        "machoire": {"rotation": [(0, Z), (2, (-2, 0, 0)), (4, Z)]},
+        "branches_dos": {"rotation": [(0, Z), (1, (0, 0, 4)), (3, (0, 0, -4)), (4, Z)]},
+        "lianes": {"rotation": [(0, Z), (2, (4, 0, 2)), (4, Z)]},
+        "bras_g": {"rotation": [(0, Z), (2, (2, 0, 1)), (4, Z)]},
+    }),
+    "emergence": (5.0, "once", {
+        "corps": {"rotation": [(0, (-20, 0, 0)), (1.5, (-14, 0, 0)), (3.0, Z), (5.0, Z)]},
+        "tete": {"rotation": [(0, (-15, 0, 0)), (3.0, Z), (3.2, (20, 0, 0)), (4.2, (20, 0, 0)), (5.0, Z)]},
+        "machoire": {"rotation": [(0, Z), (3.0, Z), (3.2, (-25, 0, 0)), (4.2, (-25, 0, 0)), (5.0, Z)]},
+        "bras_g": {"rotation": [(0, (25, 0, -10)), (3.0, Z), (3.2, (0, 0, 20)), (4.2, (0, 0, 20)), (5.0, Z)]},
+    }),
+    "lancer": (1.5, "once", {
+        "corps": {"rotation": [(0, Z), (0.6, (-8, 0, 0)), (0.9, (10, 0, 0)), (1.5, Z)]},
+        "tete": {"rotation": [(0, Z), (0.6, (-5, 0, 0)), (0.9, (15, 0, 0)), (1.5, Z)]},
+        "machoire": {"rotation": [(0, Z), (0.6, Z), (0.9, (-15, 0, 0)), (1.5, Z)]},
+        "bras_g": {"rotation": [(0, Z), (0.6, (-30, 0, 0)), (0.9, (40, 0, 0)), (1.5, Z)]},
+    }),
+    "douleur": (0.75, "once", {
+        "corps": {"rotation": [(0, Z), (0.15, (8, 0, 5)), (0.4, (6, 0, -3)), (0.75, Z)]},
+        "tete": {"rotation": [(0, Z), (0.15, (25, 0, 0)), (0.75, Z)]},
+        "machoire": {"rotation": [(0, Z), (0.15, (-20, 0, 0)), (0.75, Z)]},
+        "bras_g": {"rotation": [(0, Z), (0.15, (0, 0, 15)), (0.75, Z)]},
+        "bras_d": {"rotation": [(0, Z), (0.15, (0, 0, -15)), (0.75, Z)]},
+    }),
+    "rage": (2.5, "once", {
+        "corps": {"rotation": [(0, Z), (0.6, (15, 0, 0)), (1.8, (15, 0, 0)), (2.5, Z)]},
+        "tete": {"rotation": [(0, Z), (0.6, (30, 0, 0)), (1.8, (30, 0, 0)), (2.5, Z)]},
+        "machoire": {"rotation": [(0, Z), (0.6, (-30, 0, 0)), (1.8, (-30, 0, 0)), (2.5, Z)]},
+        "bras_g": {"rotation": [(0, Z), (0.6, (0, 0, 45)), (1.8, (0, 0, 45)), (2.5, Z)]},
+        "bras_d": {"rotation": [(0, Z), (0.6, (0, 0, -30)), (1.8, (0, 0, -30)), (2.5, Z)]},
+        "branches_dos": {"rotation": [(0, Z), (0.6, (0, 0, 8)), (1.2, (0, 0, -8)), (1.8, (0, 0, 8)), (2.5, Z)]},
+    }),
+    "mort": (2.0, "once", {
+        "corps": {"rotation": [(0, Z), (0.8, (8, 0, 0)), (2.0, (-25, 0, 0))], "position": [(0, Z), (0.8, Z), (2.0, (0, -48, 0))]},
+        "tete": {"rotation": [(0, Z), (0.8, (25, 0, 0)), (2.0, (-30, 0, 0))]},
+        "machoire": {"rotation": [(0, Z), (0.8, (-30, 0, 0)), (2.0, (-10, 0, 0))]},
+        "bras_g": {"rotation": [(0, Z), (0.8, (0, 0, 20)), (2.0, (0, 0, -20))]},
+        "bras_d": {"rotation": [(0, Z), (2.0, (0, 0, 20))]},
+    }),
+}
+
+
+def animations_bbmodel():
+    resultat = []
+    for nom, (duree, boucle, os_anims) in ANIMATIONS.items():
+        animateurs = {}
+        for os, canaux in os_anims.items():
+            keyframes = []
+            for canal, images in canaux.items():
+                for t, (x, y, z) in images:
+                    keyframes.append({"channel": canal, "data_points": [{"x": str(x), "y": str(y), "z": str(z)}],
+                                      "uuid": ident("anim", nom, os, canal, t), "time": t, "color": -1, "interpolation": "catmullrom"})
+            animateurs[ident("os", os)] = {"name": os, "type": "bone", "keyframes": keyframes}
+        resultat.append({"uuid": ident("anim", nom), "name": nom, "loop": boucle, "override": False, "length": duree,
+                         "snapping": 20, "selected": False, "anim_time_update": "", "blend_weight": "", "start_delay": "",
+                         "loop_delay": "", "animators": animateurs})
+    return resultat
+
+
 def main():
     SORTIE.parent.mkdir(parents=True, exist_ok=True)
-    modele = construire()
+    modele = construire(animations_bbmodel())
     SORTIE.write_text(json.dumps(modele, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"golem.bbmodel ecrit : {len(modele['elements'])} cubes")
 
