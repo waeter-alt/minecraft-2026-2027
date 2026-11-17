@@ -53,7 +53,7 @@ public final class RegionCommands
         {
             final Crate crate = data.regionOf(colony);
             final RegionData.Comptoir comptoir = data.existingComptoir(colony);
-            final String workshop = comptoir == null || comptoir.pos == null ? "pas de comptoir" : "comptoir niveau " + comptoir.level + ", réserve " + comptoir.stock;
+            final String workshop = comptoir == null || comptoir.pos == null ? "pas de dépôt" : "dépôt niveau " + comptoir.level + ", réserve " + comptoir.stock;
             source.sendSuccess(() -> Component.literal("#" + colony.getID() + " " + colony.getName() + " : "
                                                          + (crate == null ? "pas encore de région" : crate.regionName()) + " (" + workshop + ")"), false);
             shown++;

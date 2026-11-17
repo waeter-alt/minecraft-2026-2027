@@ -41,6 +41,7 @@
   "warehouse": {"name": "Entrepôt", "desc": "Ce que vos huttes produisent y arrive seul toutes les 10 s, puis repart où il faut. Un seul par colonie."},
   "postbox": {"name": "Boîte aux lettres", "desc": "Commandez des objets de l'entrepôt : ils arrivent dans la boîte."},
   "relais_commercial": {"name": "Relais commercial", "desc": "Concluez des contrats avec vos alliés : une caravane livre les caisses par la route, sans rien porter."},
+  "depot_regional": {"name": "Dépôt Régional", "desc": "Fabrique les caisses de la région de la colonie : plus il monte en niveau, plus elles sortent vite. Un seul par colonie."},
   "stash": {"name": "Cachette", "desc": "Déposez-y des objets : ils partent à l'entrepôt."},
   "guardtower": {"name": "Tour de garde", "desc": "Loge UN garde et agrandit le territoire. La défense la plus simple."},
   "barracks": {"name": "Caserne", "desc": "Le quartier général de la défense : les Tours de caserne se posent autour d'elle."},

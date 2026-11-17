@@ -102,24 +102,18 @@ public final class ComptoirScreen extends CounterScreen
             return y + 16;
         }
         final int next = state.level() + 1;
+        if (state.upgradeCost() == -2)
+        {
+            Ui.plate(graphics, x, y, x + width, y + 30, Palette.levelSoft(next), Palette.levelEdge(next), Palette.levelSoft(next));
+            graphics.drawString(font, Component.literal("Niveau " + next).withStyle(ChatFormatting.BOLD), x + 6, y + 5, Palette.INK, false);
+            graphics.drawString(font, "une caisse toutes les " + BuildCosts.formatSeconds(state.nextSeconds()) + " · demande l'amélioration à un bâtisseur",
+              x + 6, y + 17, Palette.MUTED, false);
+            return y + 35;
+        }
         Ui.plate(graphics, x, y, x + width, y + 30, Palette.levelSoft(next), Palette.levelEdge(next), Palette.levelSoft(next));
         graphics.drawString(font, Component.literal("Niveau " + next).withStyle(ChatFormatting.BOLD), x + 6, y + 5, Palette.INK, false);
         graphics.drawString(font, "une caisse toutes les " + BuildCosts.formatSeconds(state.nextSeconds()) + " (au lieu de " + BuildCosts.formatSeconds(state.seconds()) + ")",
           x + 6, y + 17, Palette.MUTED, false);
-        final String upgrade = "Améliorer · " + Wallet.format(state.upgradeCost());
-        final boolean can = state.purse() >= state.upgradeCost() || minecraft.player.isCreative();
-        final int bw = Ui.levelButtonWidth(font, upgrade);
-        final int bx = x + width - 6 - bw;
-        final boolean over = Ui.inside(mouseX, mouseY, bx, y + 8, bw, 14);
-        Ui.levelButton(graphics, font, bx, y + 8, bw, 14, upgrade, next, can, over);
-        if (can)
-        {
-            addHit(bx, y + 8, bw, 14, () -> send(RegionActionPayload.COMPTOIR_UPGRADE));
-        }
-        if (over)
-        {
-            hint = can ? "Payé avec les couronnes sur toi." : "Il te faut " + couronnes(state.upgradeCost()) + " sur toi.";
-        }
         return y + 35;
     }
 
