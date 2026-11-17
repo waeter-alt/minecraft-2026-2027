@@ -37,6 +37,8 @@ public final class ClientRoads
         }
         cells = next;
         version++;
+        // Terrain read before the roads arrived still counts their paving as a building
+        WallPlanner.forgetTerrain();
     }
 
     /**

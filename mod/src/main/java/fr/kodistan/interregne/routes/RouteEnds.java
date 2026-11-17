@@ -150,10 +150,11 @@ public final class RouteEnds
     private static WallLayout layout(final ServerLevel level, final IColony colony, final WallRegistry.Wall wall)
     {
         final Set<Long> own = WallLayout.ownCells(wall.points(), wall.closed());
+        final java.util.function.LongPredicate roads = RouteRegistry.get(level.getServer())::onRoad;
         final WallLayout.Ground reader = (x, z) -> {
             final long cell = WallRegistry.cell(x, z);
             final Terrain.Probe known = wall.ground().get(cell);
-            return known != null ? known : Terrain.probe(level, x, z, own.contains(cell) ? WallBlocks::isWallBlock : null);
+            return known != null ? known : WallLayout.overRoad(Terrain.probe(level, x, z, own.contains(cell) ? WallBlocks::isWallBlock : null), x, z, roads);
         };
         final WallLayout.Claim claim = (x, z) -> colony.isCoordInColony(level, new BlockPos(x, 64, z));
         return WallLayout.of(wall.points(), wall.closed(), wall.gates(), WallLevels.of(wall.level()), reader, claim);
