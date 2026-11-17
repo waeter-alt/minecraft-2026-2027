@@ -48,6 +48,7 @@ public final class PlaytestBot
     private static int human = -1;
     private static int bot = -1;
     private static int offersMade;
+    private static String lastRefusal = "";
     private static int tick;
 
     private PlaytestBot()
@@ -162,7 +163,9 @@ public final class PlaytestBot
             }
         }
         final Crate crate = CRATES[offersMade % CRATES.length];
-        if (open < MAX_OPEN_OFFERS && crate != null)
+        // the game counts every contract of a colony (offers, caravans, both directions) against its capacity: don't even try when full
+        final boolean room = contracts.of(bot).size() < Contracts.capacity(botColony) && contracts.of(human).size() < Contracts.capacity(humanColony);
+        if (open < MAX_OPEN_OFFERS && room && crate != null)
         {
             if (Contracts.stockOf(botColony, crate) < MIN_STOCK)
             {
@@ -177,7 +180,12 @@ public final class PlaytestBot
             else
             {
                 offersMade++;
-                event("Offre refusée par le jeu : " + refusal);
+                // same refusal as last time: stay quiet, otherwise the ops' chat is flooded every 5 s
+                if (!refusal.equals(lastRefusal))
+                {
+                    event("Offre refusée par le jeu : " + refusal);
+                    lastRefusal = refusal;
+                }
             }
         }
     }
