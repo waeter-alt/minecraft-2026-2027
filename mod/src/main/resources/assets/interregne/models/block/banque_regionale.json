@@ -1,8 +1,12 @@
 {
-  "parent": "minecraft:block/cube_bottom_top",
+  "parent": "minecraft:block/cube",
   "textures": {
-    "top": "interregne:block/banque_regionale_top",
-    "bottom": "minecraft:block/stone_bricks",
-    "side": "interregne:block/banque_regionale"
+    "particle": "interregne:block/banque_regionale",
+    "down": "minecraft:block/stone_bricks",
+    "up": "interregne:block/banque_regionale_top",
+    "north": "interregne:block/banque_regionale",
+    "south": "interregne:block/banque_regionale",
+    "east": "interregne:block/banque_regionale_front",
+    "west": "interregne:block/banque_regionale"
   }
 }

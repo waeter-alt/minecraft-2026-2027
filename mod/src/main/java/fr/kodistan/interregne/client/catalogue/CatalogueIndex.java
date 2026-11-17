@@ -128,7 +128,7 @@ public final class CatalogueIndex
         put(Need.PLANTATION, "plantation");
         put(Need.WOOD_STONE, "lumberjack", "miner", "simplequarry", "mediumquarry", "largequarry", "crusher", "sifter", "netherworker");
         put(Need.HOUSING, "townhall", "residence", "hospital", "tavern", "graveyard");
-        put(Need.LOGISTICS, "warehouse", "postbox", "stash", "relais_commercial");
+        put(Need.LOGISTICS, "warehouse", "postbox", "stash", "relais_commercial", "banque_regionale");
         put(Need.DEFENSE, "guardtower", "barracks", "barrackstower", "archery", "combatacademy");
         put(Need.KNOWLEDGE, "university", "library", "school", "enchanter", "mysticalsite");
         put(Need.CRAFT, "sawmill", "stonemason", "blacksmith", "smeltery", "stonesmeltery", "glassblower", "fletcher", "composter", "florist", "dyer",
