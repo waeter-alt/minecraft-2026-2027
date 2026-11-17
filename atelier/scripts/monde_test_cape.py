@@ -89,8 +89,8 @@ poser(23, SOL + 6, 18, "grappin:ancrage")
 #     tubes de verre suspendus au dessus de l'eau, ouverts par le bas, ancrage au plafond. Du plus facile au plus dur.
 #     Hauteurs choisies d'apres la portee du crochet (30 blocs mesures depuis les pieds) : estimation, pas encore verifiee en jeu.
 # Vert : bond en sprint (environ 3 blocs) ; jaune : elan du tourbillon tire de plus de 3 blocs sous la surface (environ 8) ;
-#     rouge : projection du tourbillon pres de la surface en visant a la verticale (environ 16).
-TUBES = [(16, 27, -17, "lime_stained_glass"), (27, 27, -12, "yellow_stained_glass"), (27, 11, -4, "red_stained_glass")]
+#     rouge : projection du tourbillon pres de la surface en visant a la verticale (environ 8).
+TUBES = [(16, 27, -17, "lime_stained_glass"), (27, 27, -12, "yellow_stained_glass"), (27, 11, -10, "red_stained_glass")]
 for x, z, haut, verre in TUBES:
     fill(x - 3, RIM + 2, z - 3, x + 3, haut + 1, z + 3, verre)
     fill(x - 2, RIM + 2, z - 2, x + 2, haut, z + 2, "air")
