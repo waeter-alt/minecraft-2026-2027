@@ -1,4 +1,11 @@
 {
-  "parent": "minecraft:item/handheld",
-  "textures": { "layer0": "grappin:item/grappin" }
+  "loader": "neoforge:separate_transforms",
+  "base": {
+    "parent": "grappin:item/grappin_main"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "grappin:item/grappin_icone"
+    }
+  }
 }
