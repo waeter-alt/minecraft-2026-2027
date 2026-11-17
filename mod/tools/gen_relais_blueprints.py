@@ -477,36 +477,142 @@ def level4(g):
         g.lamp_post(x, -9)
 
 
+def hearth(g, cx, z, top):
+    """A real fireplace in the back wall: brick surround, a lit campfire in the niche, the flue running up through both floors."""
+    for x in (cx - 1, cx + 1):
+        g.fill(x, x, 1, 3, z, z, M + 'bricks')
+    g.put(cx, 3, z, M + 'bricks')
+    g.put(cx, 1, z, M + 'campfire', lit='true', facing='south', signal_fire='false', waterlogged='false')
+    g.fill(cx, cx, 4, top, z, z, M + 'bricks')
+    g.stair(cx - 1, 4, z, 'brick', 'east')
+    g.stair(cx + 1, 4, z, 'brick', 'west')
+    g.stair(cx - 1, 1, z - 1, 'stone_brick', 'east')  # raised hearth stones in front
+    g.stair(cx + 1, 1, z - 1, 'stone_brick', 'west')
+
+
+def tower(g, x0, z0):
+    """A 3x3 corner tower: stone, arrow slits, a crenellated top with a lantern."""
+    g.fill(x0, x0 + 2, 1, 7, z0, z0 + 2, STONE)
+    g.fill(x0, x0 + 2, 1, 1, z0, z0 + 2, M + 'cobblestone')
+    for y in (4, 5):
+        for dx, dz in ((1, 0), (1, 2), (0, 1), (2, 1)):
+            g.pane(x0 + dx, y, z0 + dz)
+    g.fill(x0, x0 + 2, 8, 8, z0, z0 + 2, TRIM)
+    for dx in range(3):
+        for dz in range(3):
+            if (dx + dz) % 2 == 0 and not (dx == 1 and dz == 1):
+                g.wall(x0 + dx, 9, z0 + dz)
+    g.lantern(x0 + 1, 9, z0 + 1)
+
+
+def furnish_hall(g, X0, X1, HZ0, HZ1):
+    """Ground floor: reception with counter and shelves, a dining corner, the stair, the fireplace. Upper floor: dormitories,
+    a long table and a library. Nothing stands in the door lane (x -1..1) or in the way to the hut."""
+    # reception: runner from the door to the hut, counter behind it, shelves along the back wall
+    for x in (-1, 0, 1):
+        for z in (-2, -1):
+            g.put(x, 1, z, M + 'red_carpet')
+    g.put(-1, 1, 0, M + 'red_carpet')
+    g.put(1, 1, 0, M + 'red_carpet')
+    for x in (-5, -4, -3, -2, -1, 1, 2, 3, 4, 5):
+        g.put(x, 1, 2, TRIM)
+    g.put(-3, 2, 2, M + 'lectern', facing='north')
+    g.put(3, 2, 2, M + 'lectern', facing='north')
+    g.lantern(-1, 2, 2)
+    g.lantern(1, 2, 2)
+    for x in (-5, -4, -3, 3, 4, 5):
+        g.barrel(x, 1, 4)
+        g.put(x, 2, 4, M + 'bookshelf')
+        g.put(x, 3, 4, M + 'bookshelf')
+    g.put(-1, 1, 4, M + 'cartography_table')
+    g.put(1, 1, 4, M + 'loom', facing='north')
+    g.lantern(0, 4, 3, hanging=True)
+    # dining corner (west): a long table with benches
+    for z in (-1, 0, 1):
+        g.slab(-7, 1, z, 'spruce', 'top')
+        g.stair(-8, 1, z, 'spruce', 'east')
+        g.stair(-6, 1, z, 'spruce', 'west')
+    g.lantern(-7, 2, 0)
+    g.barrel(-9, 1, -2)
+    g.barrel(-9, 2, -2)
+    g.barrel(-9, 1, 2)
+    # the stair to the upper floor, rising westward along the back wall: blocks (-5,1)..(-8,4)
+    for k in range(4):
+        g.stair(-5 - k, 1 + k, 3, 'spruce', 'west')
+    g.carve(-8, -6, 5, 5, 3, 3)
+    g.fill(-9, -9, 1, 3, 3, 3, M + 'barrel', facing='up', open='false')
+    # market table and display in the middle of the east wing
+    for x in (4, 5, 6):
+        g.slab(x, 1, -1, 'dark_oak', 'top')
+    g.put(4, 2, -1, M + 'melon')
+    g.put(5, 2, -1, M + 'pumpkin')
+    g.lantern(6, 2, -1)
+    g.lantern(5, 4, 0, hanging=True)
+    g.lantern(-7, 4, 0, hanging=True)
+    g.lantern(0, 4, -2, hanging=True)
+    # fireplace corner (east) with two armchairs and a rug; stock along the east wall
+    hearth(g, 8, HZ1 - 1, 13)
+    for x in (7, 9):
+        g.stair(x, 1, 2, 'dark_oak', 'south')
+    for x in (7, 8, 9):
+        g.put(x, 1, 3, M + ('red_carpet' if x == 8 else 'blue_carpet'))
+    for z in range(-2, 3):
+        g.barrel(X1 - 1, 1, z)
+        if z % 2 == 0:
+            g.barrel(X1 - 1, 2, z)
+        else:
+            g.hay(X1 - 1, 2, z)
+    g.hay(X1 - 2, 1, -2)
+    g.barrel(X1 - 2, 1, -1)
+    # upper floor: dormitories at both ends, a long table with benches, a library on the back wall
+    for z in (-2, 0):
+        g.put(-8, 6, z, M + 'red_bed', facing='west', part='foot', occupied='false')
+        g.put(-9, 6, z, M + 'red_bed', facing='west', part='head', occupied='false')
+    g.lantern(-9, 6, -1)
+    g.barrel(-9, 6, 1)
+    for z in (-2, 0, 2):
+        g.put(X1 - 2, 6, z, M + 'red_bed', facing='east', part='foot', occupied='false')
+        g.put(X1 - 1, 6, z, M + 'red_bed', facing='east', part='head', occupied='false')
+    g.lantern(X1 - 1, 6, -1)
+    g.lantern(X1 - 1, 6, 1)
+    for x in range(-3, 4):
+        g.slab(x, 6, 1, 'dark_oak', 'bottom')
+        g.stair(x, 6, 0, 'spruce', 'south')
+        g.stair(x, 6, 2, 'spruce', 'north')
+    for x in (-2, 2):
+        g.lantern(x, 7, 1)
+    for x in (1, 2, 4, 5):
+        g.put(x, 6, 4, M + 'bookshelf')
+        g.put(x, 7, 4, M + 'bookshelf')
+    g.put(-4, 6, 4, M + 'lectern', facing='south')
+    for x in (-6, 6):
+        g.banner(x, 7, HZ0 + 1, 'south')
+
+
 def level5(g):
     X0, X1 = -10, 12
     GZ = -14                     # gate wall
     HZ0, HZ1 = -3, 5             # hall
-    # ground
+    # ground: stone and cobble, a polished avenue from the gate to the porch with a border of stone bricks
     for x in range(X0 - 1, X1 + 2):
         for z in range(GZ - 1, HZ1 + 2):
             h = hash2(x, z) % 11
             g.put(x, 0, z, STONE if h < 6 else M + 'cobblestone' if h < 9 else M + 'andesite')
     paved(g, X0 + 1, X1 - 1, GZ + 1, HZ0 - 1)
-    for x in range(-1, 2):
-        for z in range(GZ, HZ0):
-            g.put(x, 0, z, M + 'polished_andesite')
+    for x in range(-2, 3):
+        for z in range(GZ - 1, HZ0 - 3):
+            g.put(x, 0, z, M + ('polished_andesite' if abs(x) < 2 else 'stone_bricks'))
     g.fill(X0, X1, 0, 0, HZ0, HZ1, FLOOR)
     # hall: two storeys, long north facade
     mid = timber_hall(g, X0, X1, HZ0, HZ1, 7, floors=2)
     g.carve(-1, 1, 1, 3, HZ0, HZ0)
     g.beam(-1, 1, 4, HZ0, HZ0, 'x')
-    for y in range(1, mid + 1):
-        g.put(0, y, HZ1 - 1, M + 'ladder', facing='north', waterlogged='false')
     for x in (-8, -6, -4, 4, 6, 8, 10):
-        g.window(x, 2, HZ0, 2)
-        for dx in (-1, 1):
-            g.trapdoor(x + dx, 2, HZ0 - 1, 'north')
-            g.trapdoor(x + dx, 3, HZ0 - 1, 'north')
-    for x in (-8, -6, -4, 4, 6, 8, 10):
-        g.window(x, 6, HZ0, 2)
-        for dx in (-1, 1):
-            g.trapdoor(x + dx, 6, HZ0 - 1, 'north')
-            g.trapdoor(x + dx, 7, HZ0 - 1, 'north')
+        for y0 in (2, 6):
+            g.window(x, y0, HZ0, 2)
+            for dx in (-1, 1):
+                g.trapdoor(x + dx, y0, HZ0 - 1, 'north')
+                g.trapdoor(x + dx, y0 + 1, HZ0 - 1, 'north')
     for x in range(-9, 12, 3):
         g.window(x, 2, HZ1, 2)
         g.window(x, 6, HZ1, 2)
@@ -514,8 +620,6 @@ def level5(g):
         for x in (X0, X1):
             g.window(x, 2, z, 2)
             g.window(x, 6, z, 2)
-    for y in range(1, mid + 1):
-        g.put(0, y, HZ1 - 1, M + 'ladder', facing='north', waterlogged='false')
     # entrance wing: a projecting gabled porch with the way into the hall
     PZ = HZ0 - 4
     g.ring(-3, 3, PZ, HZ0, 1, 7, WALL)
@@ -529,9 +633,7 @@ def level5(g):
     g.beam(-1, 1, 4, HZ0, HZ0, 'x')
     for x in (-2, 2):
         g.window(x, 2, PZ, 2)
-    g.window(-1, 6, PZ, 2)
-    g.window(1, 6, PZ, 2)
-    g.fill(-1, 1, 5, 5, PZ, PZ, M + 'gold_block')
+    g.fill(-1, 1, 5, 5, PZ, PZ, M + 'gold_block')      # sign over the door, set into the wall
     g.carve(-1, 1, 6, 7, PZ, PZ)
     g.window(0, 6, PZ, 2)
     for x in (-1, 1):
@@ -540,23 +642,28 @@ def level5(g):
     g.gable('x', -3, 3, PZ, HZ0, 8)
     for x in (-2, 2):
         g.banner(x, 4, PZ - 1, 'north')
-    # chimneys
-    for cx in (-6, 7):
-        for y in range(9, 13):
-            g.put(cx, y, 4, M + 'bricks')
-    # banners on the hall facade
+    for x in (-2, 2):                                  # porch: a bench each side under a lantern
+        g.stair(x, 1, PZ + 2, 'spruce', 'east' if x < 0 else 'west')
+        g.lantern(x, 2, PZ + 2)
+    g.barrel(-2, 1, HZ0 - 1)
+    g.barrel(2, 1, HZ0 - 1)
+    furnish_hall(g, X0, X1, HZ0, HZ1)
     for x in (-6, 6):
         g.banner(x, 5, HZ0 - 1, 'north')
-    # perimeter: a low stone wall, so the court stays visible from the road
+    # curtain wall: two blocks of stone and a parapet, closed except at the gate
     for x in range(X0, X1 + 1):
-        g.wall(x, 1, GZ)
+        if not -3 <= x <= 3:
+            g.fill(x, x, 1, 2, GZ, GZ, STONE)
+            g.wall(x, 3, GZ)
     for z in range(GZ, HZ0):
-        g.wall(X0, 1, z)
-        g.wall(X1, 1, z)
-    for x, z in ((X0, GZ), (X1, GZ), (X0, HZ0 - 1), (X1, HZ0 - 1)):
-        g.posts(x, z, 1, 3)
-        g.lantern(x, 4, z)
-    # gatehouse: lower than the hall, so the court stays visible from the road
+        for x in (X0, X1):
+            g.fill(x, x, 1, 2, z, z, STONE)
+            g.wall(x, 3, z)
+    for x in (X0, X1):
+        tower(g, x - (0 if x == X0 else 2), GZ)
+        g.posts(x, HZ0 - 1, 1, 3)
+        g.lantern(x, 4, HZ0 - 1)
+    # gatehouse: lower than the hall, so the court stays visible from the road; a raised portcullis under the lintel
     g.ring(-3, 3, GZ, GZ + 2, 1, 5, WALL)
     g.ring(-3, 3, GZ, GZ + 2, 1, 3, STONE)
     for x, z in ((-3, GZ), (3, GZ), (-3, GZ + 2), (3, GZ + 2)):
@@ -565,15 +672,13 @@ def level5(g):
     g.fill(-1, 1, 4, 4, GZ, GZ + 2, TRIM)
     g.fill(-1, 1, 5, 5, GZ, GZ, M + 'gold_block')
     g.gable('x', -3, 3, GZ, GZ + 2, 6)
+    for x in (-1, 0, 1):
+        g.fence(x, 3, GZ)
+    g.lantern(0, 3, GZ + 1, hanging=True)
+    g.lantern(0, 3, GZ + 2, hanging=True)
     for x in (-2, 2):
         g.banner(x, 4, GZ - 1, 'north')
         g.lamp_post(x * 2, GZ - 2, 2)
-    # golden plaque hanging under the lintel, on chains from a bracket
-    for x in (-1, 0, 1):
-        g.fence(x, 4, GZ - 1)
-    g.chain(-1, 3, GZ - 1)
-    g.chain(1, 3, GZ - 1)
-    g.fill(-1, 1, 2, 2, GZ - 1, GZ - 1, M + 'gold_block')
     # warehouse (west, back half of the court): stone walls, a wide door on the court side, barrels
     WX0, WX1, WZ0, WZ1 = -9, -4, -10, -5
     g.fill(WX0, WX1, 0, 0, WZ0, WZ1, FLOOR)
@@ -587,12 +692,15 @@ def level5(g):
     g.window(WX0, 2, WZ0 + 2)
     g.gable('x', WX0, WX1, WZ0, WZ1, 5)
     for x in range(WX0 + 1, WX1):
-        for z in (WZ1 - 1, WZ1 - 2, WZ1 - 3):
+        for z in (WZ1 - 1, WZ1 - 2):
             g.barrel(x, 1, z)
             if (x + z) % 2:
                 g.barrel(x, 2, z)
-    g.lantern(WX0 + 1, 2, WZ0 + 1)
-    # crates and a handcart outside the door
+    for x in range(WX0 + 1, WX0 + 3):
+        g.hay(x, 1, WZ0 + 1)
+        g.hay(x, 2, WZ0 + 1)
+    g.lantern(WX0 + 2, 3, WZ0 + 3, hanging=True)
+    g.lantern(WX0 + 1, 3, WZ0 + 1)
     g.barrel(WX1 + 1, 1, WZ0 + 1)
     g.barrel(WX1 + 1, 2, WZ0 + 1)
     g.barrel(WX1 + 1, 1, WZ0 + 4)
@@ -620,22 +728,38 @@ def level5(g):
     g.hay(SX1 - 1, 1, SZ1 - 2)
     g.barrel(SX1 - 1, 1, SZ0 + 1)
     g.lantern(SX0 + 2, 3, SZ1 - 1, True)
-    # court: covered well on the avenue, a wagon, a trough in front of the stable, lamp posts
+    # court: a covered well in the middle of the avenue (a lane each side and a free row before and after it), a market
+    # stall under a striped awning, a trough, lamp posts
     for x in range(-1, 2):
-        for z in range(-11, -8):
+        for z in (-10, -9):
             g.put(x, 1, z, STONE)
+            g.slab(x, 4, z, 'dark_oak')
     g.water(0, 1, -10)
-    for x, z in ((-1, -11), (1, -11), (-1, -9), (1, -9)):
+    g.water(0, 1, -9)
+    for x, z in ((-1, -10), (1, -10), (-1, -9), (1, -9)):
         g.fence(x, 2, z)
         g.fence(x, 3, z)
-    for x in range(-1, 2):
-        for z in range(-11, -8):
-            g.slab(x, 4, z, 'dark_oak')
-    wagon(g, -8, -13)
-    trough(g, 7, 9, -12)
-    for x, z in ((-4, -5), (4, -5), (4, -12), (-3, -12)):
+    for x in (4, 6):
+        g.posts(x, -11, 1, 3)
+    for x in (4, 5, 6):
+        g.slab(x, 1, -10, 'dark_oak', 'top')
+    awning(g, 4, 6, -9, 4, 3)
+    g.put(4, 2, -10, M + 'melon')
+    g.put(5, 2, -10, M + 'pumpkin')
+    g.barrel(6, 2, -10)
+    g.lantern(5, 3, -11, hanging=True)
+    trough(g, 8, 9, -12)
+    for x, z in ((-4, -12), (-4, -5), (4, -5), (4, -12)):
         g.lamp_post(x, z)
+    g.hay(-6, 1, -12)
+    g.hay(-6, 2, -12)
+    g.hay(-7, 1, -12)
+    g.barrel(-8, 1, -12)
+    g.barrel(-8, 1, -11)
+    g.barrel(-8, 2, -12)
 
+# cells a visitor must be able to reach on top of the hut: the upper floor, the dining corner, the hearth, the warehouse, the stable
+MUST = {5: [(-8, 5, 3), (-4, 6, 1), (-7, 1, -2), (8, 1, 3), (-6, 1, -8), (9, 1, -8), (-9, 6, 3), (9, 6, 3)]}
 
 LEVELS = {1: level1, 2: level2, 3: level3, 4: level4, 5: level5}
 
@@ -686,11 +810,86 @@ def connect(g):
     g.d.update(updates)
 
 
+FREE_WORDS = ('_door', 'fence_gate', 'ladder', 'banner', 'carpet', 'button', 'pressure_plate', '_sign', 'torch')
+
+
+def is_free(entry):
+    """True when a body can stand inside this block (open trapdoors and every door or gate count as free)."""
+    if entry is None:
+        return True
+    name, props = entry
+    if name.endswith('_trapdoor'):
+        return dict(props).get('open') == 'true'
+    return any(w in name for w in FREE_WORDS)
+
+
+def reachable(g, hut=(0, 1, 0), margin=4):
+    """Walk from outside the building to the hut: stands on solid blocks, steps up one block, drops up to three, climbs
+    ladders, goes through doors and gates, is stopped by everything else. Returns (set of standing cells, True when a cell
+    next to the hut at its height can be reached). The ground outside the grid is solid."""
+    xs, ys, zs = [k[0] for k in g.d], [k[1] for k in g.d], [k[2] for k in g.d]
+    bx0, bx1, bz0, bz1, top = min(xs) - margin, max(xs) + margin, min(zs) - margin, max(zs) + margin, max(ys) + 2
+
+    def free(x, y, z):
+        return y > 0 and is_free(g.get(x, y, z))
+
+    def ladder(x, y, z):
+        e = g.get(x, y, z)
+        return bool(e) and e[0].endswith('ladder')
+
+    def stands(x, y, z):
+        if not (bx0 <= x <= bx1 and bz0 <= z <= bz1 and 1 <= y <= top):
+            return False
+        return free(x, y, z) and free(x, y + 1, z) and (not free(x, y - 1, z) or ladder(x, y, z) or y == 1 and g.get(x, 0, z) is None)
+
+    seen, stack = set(), []
+    for x in range(bx0, bx1 + 1):
+        for z in (bz0, bz1):
+            stack.append((x, 1, z))
+    for z in range(bz0, bz1 + 1):
+        for x in (bx0, bx1):
+            stack.append((x, 1, z))
+    stack = [c for c in stack if stands(*c)]
+    seen.update(stack)
+    while stack:
+        x, y, z = stack.pop()
+        nxt = []
+        if ladder(x, y, z) or ladder(x, y + 1, z):
+            nxt.append((x, y + 1, z))
+        if ladder(x, y - 1, z) or ladder(x, y, z):
+            nxt.append((x, y - 1, z))
+        for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, nz = x + dx, z + dz
+            nxt.append((nx, y, nz))
+            tall = g.get(nx, y, nz)  # fences and walls reach 1.5 blocks: no jumping onto them
+            if free(x, y + 2, z) and not (tall and any(k in tall[0] for k in ('_fence', '_wall'))):
+                nxt.append((nx, y + 1, nz))
+            for drop in (1, 2, 3):
+                if all(free(nx, y - k, nz) for k in range(0, drop)):
+                    nxt.append((nx, y - drop, nz))
+        for c in nxt:
+            if c not in seen and stands(*c):
+                seen.add(c)
+                stack.append(c)
+    hx, hy, hz = hut
+    ok = any((hx + dx, hy, hz + dz) in seen for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)))
+    return seen, ok
+
+
+def assert_access(g, label, must=()):
+    """Fails the generation when the hut cannot be walked to from outside, or when one of `must` (extra cells) cannot."""
+    seen, ok = reachable(g)
+    missing = [c for c in must if c not in seen]
+    if not ok or missing:
+        raise SystemExit('%s: the hut %s, unreachable cells: %s' % (label, 'is reachable' if ok else 'CANNOT be reached from outside', missing))
+
+
 def build(level):
     g = Grid()
     LEVELS[level](g)
     g.put(0, 1, 0, 'interregne:relais_commercial', facing='north')
     connect(g)
+    assert_access(g, 'relais%d' % level, MUST.get(level, ()))
     xs, ys, zs = [k[0] for k in g.d], [k[1] for k in g.d], [k[2] for k in g.d]
     x0, x1, y0, y1, z0, z1 = min(xs), max(xs), min(ys), max(ys), min(zs), max(zs)
     sx, sy, sz = x1 - x0 + 1, y1 - y0 + 1, z1 - z0 + 1
