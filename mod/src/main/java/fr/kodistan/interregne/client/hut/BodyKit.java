@@ -154,6 +154,37 @@ public final class BodyKit
     }
 
     /**
+     * A hero card for a capped figure: the amount in big bold gold with the cap small beside it ("9 800 couronnes / 10 000").
+     * Taller than a plain hero so the label, the figure and the gauge have air; the figure shrinks rather than overflow.
+     * Returns the y below it.
+     */
+    public int heroCapped(final GuiGraphics graphics, final int x, final int y, final int width, final String label, final long amount, final long cap)
+    {
+        heroExtra = 12;
+        Ui.plate(graphics, x, y, x + width, y + HERO_H + heroExtra, Palette.LEATHER, Palette.EDGE, Palette.LEATHER_LIGHT);
+        Ui.coin(graphics, x + 9, y + 15, 24);
+        graphics.drawString(font(), fit(label, width - 50), x + 42, y + 8, HERO_MUTED, false);
+        // The number fills the card; "couronnes" and the cap stack small to its right
+        final Component big = Component.literal(Wallet.format(amount)).withStyle(ChatFormatting.BOLD);
+        final String unit = amount > 1 ? "couronnes" : "couronne";
+        final String cap2 = "/ " + Wallet.format(cap);
+        final int side = Math.max(font().width(unit), font().width(cap2));
+        final float scale = Math.min(2.8f, (width - 50 - side - 5) / (float) font().width(big));
+        final float ty = y + 18 + (36 - 9 * scale) / 2f;
+        final var pose = graphics.pose();
+        pose.pushPose();
+        pose.translate(x + 42, ty, 0);
+        pose.scale(scale, scale, 1f);
+        graphics.drawString(font(), big, 0, 0, Palette.GOLD_TEXT, true);
+        pose.popPose();
+        final int sx = x + 42 + (int) (font().width(big) * scale) + 5;
+        final float mid = ty + 9 * scale / 2f;
+        graphics.drawString(font(), Component.literal(unit).withStyle(ChatFormatting.BOLD), sx, (int) (mid - 10), Palette.GOLD_TEXT, true);
+        graphics.drawString(font(), cap2, sx, (int) (mid + 1), HERO_MUTED, false);
+        return y + HERO_H + heroExtra + 6;
+    }
+
+    /**
      * A thin gauge along the bottom of the hero card drawn last.
      */
     public void heroGauge(final GuiGraphics graphics, final int x, final int y, final int width, final long value, final long max)

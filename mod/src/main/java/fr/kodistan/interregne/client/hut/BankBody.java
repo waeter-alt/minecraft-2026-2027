@@ -50,8 +50,7 @@ final class BankBody implements HutBody
         final boolean full = bank.balance() >= bank.capacity();
         final long room = Math.max(0, bank.capacity() - bank.balance());
         final int top = y;
-        y = kit.hero(graphics, x, y, width, null, "TRÉSOR DE LA COLONIE", BodyKit.couronnes(bank.balance()),
-          full ? "Plein : améliore la banque pour y mettre plus." : "Place pour " + BodyKit.couronnes(room) + " de plus, sur " + Wallet.format(bank.capacity()));
+        y = kit.heroCapped(graphics, x, y, width, "TRÉSOR DE LA COLONIE", bank.balance(), bank.capacity());
         kit.heroGauge(graphics, x, top, width, bank.balance(), bank.capacity());
 
         final long purse = kit.purse();

@@ -75,9 +75,18 @@ public abstract class BOWindowMixin
             else if (building instanceof fr.kodistan.interregne.commerce.BuildingRelaisCommercial.View)
             {
                 // The Relais commercial is a hut window with its own body: open it now, the server answers with the state it shows
-                HutScreen.open(building);
-                net.neoforged.neoforge.network.PacketDistributor.sendToServer(new fr.kodistan.interregne.commerce.RelaisActionPayload(
-                  fr.kodistan.interregne.commerce.RelaisActionPayload.OPEN, building.getColony().getID(), 0, 0, 0, 0, 0, 0));
+                // A colony has one relais, the highest: the others only say so
+                final var active = fr.kodistan.interregne.client.hut.HutBodies.activeOf(building);
+                if (active != building)
+                {
+                    fr.kodistan.interregne.client.hut.HutBodies.tellDuplicate(building, active, "relais commercial");
+                }
+                else
+                {
+                    HutScreen.open(building);
+                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(new fr.kodistan.interregne.commerce.RelaisActionPayload(
+                      fr.kodistan.interregne.commerce.RelaisActionPayload.OPEN, building.getColony().getID(), 0, 0, 0, 0, 0, 0));
+                }
             }
             else
             {

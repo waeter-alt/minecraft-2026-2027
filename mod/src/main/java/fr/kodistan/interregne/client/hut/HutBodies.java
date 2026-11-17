@@ -58,6 +58,42 @@ public final class HutBodies
     }
 
     /**
+     * The building of this type that counts in its colony: the highest level, the first one built when several are as high. A
+     * colony has one relais, one bank, one depot; the others are duplicates.
+     */
+    public static IBuildingView activeOf(final IBuildingView building)
+    {
+        IBuildingView best = building;
+        for (final IBuildingView other : building.getColony().getBuildings())
+        {
+            if (other.getBuildingType() != building.getBuildingType())
+            {
+                continue;
+            }
+            if (other.getBuildingLevel() > best.getBuildingLevel()
+                  || (other.getBuildingLevel() == best.getBuildingLevel() && other.getID().compareTo(best.getID()) < 0))
+            {
+                best = other;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Says in the chat that this building is one too many and where the one that counts stands.
+     */
+    public static void tellDuplicate(final IBuildingView building, final IBuildingView active, final String what)
+    {
+        final var player = net.minecraft.client.Minecraft.getInstance().player;
+        if (player != null)
+        {
+            player.displayClientMessage(net.minecraft.network.chat.Component.literal("Une colonie n'a qu'un " + what + " : celui de " + building.getColony().getName() + " est en "
+                                                                                       + active.getPosition().toShortString() + ". Celui-ci est en trop, tu peux le démolir.")
+                                          .withStyle(net.minecraft.ChatFormatting.GRAY), false);
+        }
+    }
+
+    /**
      * What a page shows until the server's answer is here (or when the building is not built, so there is none).
      */
     static int loading(final BodyKit kit, final GuiGraphics graphics, final int x, final int y, final int width, final IBuildingView building)
