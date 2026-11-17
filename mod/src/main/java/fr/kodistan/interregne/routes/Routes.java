@@ -26,7 +26,7 @@ public final class Routes
     public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, InterregneMod.MODID);
 
     public static final DeferredBlock<PosteCommercialBlock> POSTE_COMMERCIAL = BLOCKS.register("poste_commercial",
-      () -> new PosteCommercialBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_ORANGE).strength(2.0F, 4.0F).sound(SoundType.WOOD)));
+      () -> new PosteCommercialBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_ORANGE).strength(2.0F, 4.0F).sound(SoundType.WOOD).noOcclusion()));
     public static final DeferredItem<BlockItem> POSTE_COMMERCIAL_ITEM = ITEMS.registerSimpleBlockItem("poste_commercial", POSTE_COMMERCIAL);
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register("routes", () -> CreativeModeTab.builder()

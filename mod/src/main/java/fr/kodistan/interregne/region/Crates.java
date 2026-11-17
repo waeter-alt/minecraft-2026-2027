@@ -40,7 +40,7 @@ public final class Crates
         for (final Crate crate : Crate.values())
         {
             final DeferredBlock<Block> block = BLOCKS.register("caisse_" + crate.id(),
-              () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(1.5F, 3.0F).sound(SoundType.WOOD)));
+              () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(1.5F, 3.0F).sound(SoundType.WOOD).noOcclusion()));
             CRATE_ITEMS.put(crate, ITEMS.register("caisse_" + crate.id(), () -> new CrateItem(crate, block.get(), new Item.Properties().stacksTo(STACK_SIZE))));
         }
     }
@@ -49,7 +49,7 @@ public final class Crates
      * One per colony, placed by its members; produces the colony's crate.
      */
     public static final DeferredBlock<ComptoirBlock> COMPTOIR = BLOCKS.register("comptoir_regional",
-      () -> new ComptoirBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BROWN).strength(2.5F, 6.0F).sound(SoundType.WOOD)));
+      () -> new ComptoirBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BROWN).strength(2.5F, 6.0F).sound(SoundType.WOOD).noOcclusion()));
     public static final DeferredItem<BlockItem> COMPTOIR_ITEM = ITEMS.registerSimpleBlockItem("comptoir_regional", COMPTOIR);
 
     /**

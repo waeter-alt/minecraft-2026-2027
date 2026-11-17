@@ -20,7 +20,7 @@ public final class RegionalBanks
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(InterregneMod.MODID);
 
     public static final DeferredBlock<RegionalBankBlock> BANK = BLOCKS.register("banque_regionale",
-      () -> new RegionalBankBlock(BlockBehaviour.Properties.of().mapColor(MapColor.GOLD).strength(5.0F, 1200.0F).sound(SoundType.METAL)
+      () -> new RegionalBankBlock(BlockBehaviour.Properties.of().mapColor(MapColor.GOLD).strength(5.0F, 1200.0F).sound(SoundType.METAL).noOcclusion()
                                     .pushReaction(PushReaction.BLOCK)));
     public static final DeferredItem<BlockItem> BANK_ITEM = ITEMS.registerSimpleBlockItem("banque_regionale", BANK);
 
