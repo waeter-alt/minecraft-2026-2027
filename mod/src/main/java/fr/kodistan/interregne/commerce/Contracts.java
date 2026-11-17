@@ -520,6 +520,8 @@ public final class Contracts extends SavedData
             fresh.setCustomName(net.minecraft.network.chat.Component.literal(name));
             fresh.setCustomNameVisible(true);
             contract.puppet = fresh.getUUID();
+            // positioned before joining the world: at (0,0,0) it lands in a chunk that is usually unloaded and the caravan never shows
+            place(fresh, spotAt(contract, contract.progress));
             level.addFreshEntity(fresh);
             added = true;
         }
@@ -534,6 +536,7 @@ public final class Contracts extends SavedData
                 fresh.setSilent(true);
                 fresh.addTag(PUPPET_TAG);
                 contract.driver = fresh.getUUID();
+                place(fresh, spotAt(contract, contract.progress));
                 level.addFreshEntity(fresh);
                 added = true;
             }
@@ -584,6 +587,7 @@ public final class Contracts extends SavedData
         soldier.equip(contract.escort, archer, contract.seller, contract.buyer);
         soldier.addTag(ESCORT_TAG);
         contract.escorts.add(soldier.getUUID());
+        place(soldier, spotAt(contract, contract.progress));
         level.addFreshEntity(soldier);
         return true;
     }
@@ -670,6 +674,11 @@ public final class Contracts extends SavedData
     {
         final Spot spot = spotAt(contract, contract.progress);
         return new double[] {spot.x, spot.z, spot.yaw};
+    }
+
+    private static void place(final Entity entity, final Spot spot)
+    {
+        place(entity, spot.x(), spot.y(), spot.z(), spot.yaw());
     }
 
     /**
