@@ -446,6 +446,7 @@ public final class Contracts extends SavedData
                 if (contract.progress >= contract.path.length - 1)
                 {
                     contract.state = Contract.WAITING;
+                    contracts.arrive(level, contract);
                     changed = true;
                 }
                 else if (check)
@@ -699,6 +700,108 @@ public final class Contracts extends SavedData
     }
 
     /**
+     * The standing height at a column, searched near the road's own height: the formation sits beside the road, where the
+     * ground is not at the road's height (slopes, steps, verge), so a fixed height floats or buries the walkers.
+     */
+    private static double groundAt(final ServerLevel level, final double x, final double z, final double near)
+    {
+        final int bx = net.minecraft.util.Mth.floor(x);
+        final int bz = net.minecraft.util.Mth.floor(z);
+        final int top = net.minecraft.util.Mth.floor(near) + 2;
+        if (!level.isLoaded(new BlockPos(bx, top, bz)))
+        {
+            return near;
+        }
+        for (int y = top; y >= top - 6; y--)
+        {
+            final BlockPos below = new BlockPos(bx, y - 1, bz);
+            final net.minecraft.world.phys.shapes.VoxelShape shape = level.getBlockState(below).getCollisionShape(level, below);
+            if (!shape.isEmpty())
+            {
+                return below.getY() + shape.max(net.minecraft.core.Direction.Axis.Y);
+            }
+        }
+        return near;
+    }
+
+    private static void placeOnGround(final ServerLevel level, final Entity entity, final double x, final double y, final double z, final float yaw)
+    {
+        place(entity, x, groundAt(level, x, z, y), z, yaw);
+    }
+
+    /**
+     * The caravan has reached the gate: it stops a little before it and spreads out instead of piling on the last cell
+     * (mule across the road, driver by it, the escort fanned out behind facing the road), then announces itself.
+     */
+    private void arrive(final ServerLevel level, final Contract contract)
+    {
+        effects(level, contract, false);
+        final Spot spot = spotAt(contract, Math.max(0, contract.path.length - 1 - 1.5));
+        final Entity mule = contract.puppet == null ? null : level.getEntity(contract.puppet);
+        if (mule != null)
+        {
+            placeOnGround(level, mule, spot.x, spot.y, spot.z, spot.yaw + 90.0F);
+        }
+        final Entity driver = contract.driver == null ? null : level.getEntity(contract.driver);
+        if (driver != null)
+        {
+            final double[] xz = spot.offset(0, 1.5);
+            placeOnGround(level, driver, xz[0], spot.y, xz[1], spot.yaw + 180.0F);
+        }
+        int slot = 0;
+        for (final EntEscorte soldier : soldiers(level, contract))
+        {
+            final double side = slot % 2 == 0 ? -1.8 : 1.8;
+            final double[] xz = spot.offset(-1.5 - 1.6 * (slot / 2), side);
+            placeOnGround(level, soldier, xz[0], spot.y, xz[1], spot.yaw + 180.0F);
+            slot++;
+        }
+    }
+
+    /**
+     * Sound and light at the gate, heard and seen from the destination colony: a bell when the caravan arrives, a flourish
+     * and a column of sparks when the crates are delivered. Particles are sent to every player within 128 blocks.
+     */
+    private static void effects(final ServerLevel level, final Contract contract, final boolean delivered)
+    {
+        final BlockPos gate = contract.cell(contract.path.length - 1);
+        final double x = gate.getX() + 0.5;
+        final double y = gate.getY() + 1.0;
+        final double z = gate.getZ() + 0.5;
+        final var source = net.minecraft.sounds.SoundSource.NEUTRAL;
+        // volume 4 carries about 64 blocks
+        if (delivered)
+        {
+            level.playSound(null, x, y, z, net.minecraft.sounds.SoundEvents.VILLAGER_TRADE, source, 4.0F, 1.0F);
+            level.playSound(null, x, y, z, net.minecraft.sounds.SoundEvents.CHEST_CLOSE, source, 3.0F, 0.9F);
+            level.playSound(null, x, y, z, net.minecraft.sounds.SoundEvents.EXPERIENCE_ORB_PICKUP, source, 3.0F, 1.2F);
+        }
+        else
+        {
+            level.playSound(null, x, y, z, net.minecraft.sounds.SoundEvents.BELL_BLOCK, source, 4.0F, 0.9F);
+            level.playSound(null, x, y, z, net.minecraft.sounds.SoundEvents.MULE_AMBIENT, source, 2.0F, 1.0F);
+        }
+        for (final ServerPlayer player : level.players())
+        {
+            if (player.distanceToSqr(x, y, z) > 128.0 * 128.0)
+            {
+                continue;
+            }
+            if (delivered)
+            {
+                level.sendParticles(player, net.minecraft.core.particles.ParticleTypes.HAPPY_VILLAGER, true, x, y + 1.0, z, 30, 1.5, 1.0, 1.5, 0.0);
+                level.sendParticles(player, net.minecraft.core.particles.ParticleTypes.FIREWORK, true, x, y + 1.0, z, 60, 0.3, 6.0, 0.3, 0.02);
+                level.sendParticles(player, net.minecraft.core.particles.ParticleTypes.END_ROD, true, x, y + 1.0, z, 40, 0.2, 8.0, 0.2, 0.0);
+            }
+            else
+            {
+                level.sendParticles(player, net.minecraft.core.particles.ParticleTypes.CLOUD, true, x, y + 0.2, z, 25, 1.5, 0.2, 1.5, 0.03);
+                level.sendParticles(player, net.minecraft.core.particles.ParticleTypes.NOTE, true, x, y + 2.0, z, 6, 1.0, 0.5, 1.0, 1.0);
+            }
+        }
+    }
+
+    /**
      * Puts the mule, its driver (one block beside it) and the soldiers (in rows ahead of and behind them, alternating
      * sides) where the road says the caravan is.
      */
@@ -708,13 +811,13 @@ public final class Contracts extends SavedData
         final Entity mule = contract.puppet == null ? null : level.getEntity(contract.puppet);
         if (mule != null)
         {
-            place(mule, spot.x, spot.y, spot.z, spot.yaw);
+            placeOnGround(level, mule, spot.x, spot.y, spot.z, spot.yaw);
         }
         final Entity driver = contract.driver == null ? null : level.getEntity(contract.driver);
         if (driver != null)
         {
             final double[] xz = spot.offset(0, 1.3);
-            place(driver, xz[0], spot.y, xz[1], spot.yaw);
+            placeOnGround(level, driver, xz[0], spot.y, xz[1], spot.yaw);
         }
         if (contract.engaged)
         {
@@ -727,7 +830,7 @@ public final class Contracts extends SavedData
             final double side = slot % 2 == 0 ? -1.6 : 1.6;
             final Spot there = spotAt(contract, contract.progress + 3.0 - 2.5 * row);
             final double[] xz = there.offset(0, side);
-            place(soldier, xz[0], there.y, xz[1], there.yaw);
+            placeOnGround(level, soldier, xz[0], there.y, xz[1], there.yaw);
             slot++;
         }
     }
@@ -783,6 +886,7 @@ public final class Contracts extends SavedData
             return false;
         }
         removePuppet(level, contract);
+        effects(level, contract, true);
         if (seller != null)
         {
             RegionalTreasury.get(server).credit(seller, contract.escrow);
