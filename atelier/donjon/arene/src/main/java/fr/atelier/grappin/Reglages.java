@@ -43,6 +43,15 @@ public final class Reglages {
     public static final ModConfigSpec.DoubleValue GOLEM_FACTEUR_CORPS = B.comment("Gardien : part des degats recus sur le reste du corps (0,15 = 15 %).").defineInRange("golemFacteurCorps", 0.15, 0.0, 1.0);
     public static final ModConfigSpec.IntValue GOLEM_OUVERTURE = B.comment("Gardien : duree d'ouverture d'un point faible, en ticks (20 = 1 s).").defineInRange("golemOuverture", 400, 20, 1200);
     public static final ModConfigSpec.IntValue GOLEM_DEMI_TOUR = B.comment("Gardien : temps qu'il met a faire un demi-tour vers le joueur, en ticks.").defineInRange("golemDemiTour", 300, 10, 1200);
+    public static final ModConfigSpec.DoubleValue RODEUR_VIE = B.comment("Rodeur des Racines (mini-boss du sous-sol 1) : points de vie.").defineInRange("rodeurVie", 150.0, 10.0, 1024.0);
+    public static final ModConfigSpec.DoubleValue RODEUR_MORSURE = B.comment("Rodeur : degats d une morsure ou d une charge qui touche.").defineInRange("rodeurMorsure", 8.0, 0.0, 100.0);
+    public static final ModConfigSpec.DoubleValue RODEUR_VITESSE = B.comment("Rodeur : vitesse de marche.").defineInRange("rodeurVitesse", 0.3, 0.05, 1.0);
+    public static final ModConfigSpec.DoubleValue RODEUR_VITESSE_CHARGE = B.comment("Rodeur : vitesse de la charge, en blocs par tick.").defineInRange("rodeurVitesseCharge", 0.9, 0.1, 3.0);
+    public static final ModConfigSpec.DoubleValue RODEUR_PORTEE_CHARGE = B.comment("Rodeur : longueur maximale d une charge, en blocs.").defineInRange("rodeurPorteeCharge", 24.0, 4.0, 64.0);
+    public static final ModConfigSpec.IntValue RODEUR_GRATTAGE = B.comment("Rodeur : duree du grattage avant la charge, en ticks (le temps de la voir venir).").defineInRange("rodeurGrattage", 20, 5, 100);
+    public static final ModConfigSpec.IntValue RODEUR_SONNE = B.comment("Rodeur : duree pendant laquelle il reste sonne apres avoir percute un mur, en ticks.").defineInRange("rodeurSonne", 60, 10, 400);
+    public static final ModConfigSpec.IntValue RODEUR_DELAI_CHARGE = B.comment("Rodeur : temps minimal entre deux charges, en ticks.").defineInRange("rodeurDelaiCharge", 120, 20, 1200);
+    public static final ModConfigSpec.DoubleValue RODEUR_FACTEUR_SONNE = B.comment("Rodeur : multiplicateur des degats recus quand il est sonne.").defineInRange("rodeurFacteurSonne", 2.0, 1.0, 10.0);
     public static final ModConfigSpec.DoubleValue GRAINE_DEGATS = B.comment("Gardien : degats de l'explosion d'une graine.").defineInRange("graineDegats", 10.0, 0.0, 100.0);
     public static final ModConfigSpec.DoubleValue GRAINE_ZONE = B.comment("Gardien : rayon de l'explosion d'une graine, en blocs.").defineInRange("graineZone", 3.0, 0.5, 16.0);
     public static final ModConfigSpec.IntValue GRAINE_CADENCE = B.comment("Gardien : delai entre deux graines, en ticks.").defineInRange("graineCadence", 70, 10, 600);
