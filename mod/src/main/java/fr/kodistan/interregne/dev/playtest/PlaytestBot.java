@@ -48,6 +48,7 @@ public final class PlaytestBot
     private static int human = -1;
     private static int bot = -1;
     private static int offersMade;
+    private static String lastRefusal = "";
     private static int tick;
 
     private PlaytestBot()
@@ -67,12 +68,81 @@ public final class PlaytestBot
             ctx.getSource().sendSuccess(() -> Component.literal("Bot arrêté."), false);
             return 1;
         }));
+        root.then(literal("hutte").then(argument("colonie", IntegerArgumentType.integer(1)).then(argument("type", com.mojang.brigadier.arguments.StringArgumentType.word())
+          .then(argument("niveau", IntegerArgumentType.integer(1, 5)).executes(ctx -> hut(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "colonie"),
+            com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "type"), IntegerArgumentType.getInteger(ctx, "niveau")))))));
+        root.then(literal("inspecter").then(argument("colonie", IntegerArgumentType.integer(1)).executes(ctx -> inspect(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "colonie")))));
         root.then(literal("etat").executes(ctx ->
         {
             ctx.getSource().sendSuccess(() -> Component.literal(report(ctx.getSource().getServer())), false);
             return 1;
         }));
         event.getDispatcher().register(root);
+    }
+
+    /**
+     * Sets a bank, a depot or a relais of this level near the colony's centre, registered as a building (to see their hut windows).
+     */
+    private static int hut(final net.minecraft.commands.CommandSourceStack source, final int colonyId, final String type, final int level)
+    {
+        final var server = source.getServer();
+        final var world = server.overworld();
+        final IColony colony = IColonyManager.getInstance().getColonyByWorld(colonyId, world);
+        final net.minecraft.world.level.block.Block block = switch (type)
+        {
+            case "banque" -> fr.kodistan.interregne.economy.RegionalBanks.BANK.get();
+            case "depot" -> fr.kodistan.interregne.region.Crates.DEPOT.get();
+            case "relais" -> fr.kodistan.interregne.commerce.Commerce.RELAIS_BLOCK.get();
+            default -> null;
+        };
+        if (colony == null || block == null)
+        {
+            source.sendFailure(Component.literal("Colonie inconnue ou type inconnu (banque, depot, relais)."));
+            return 0;
+        }
+        final int dx = switch (type) { case "banque" -> 8; case "depot" -> -8; default -> 8; };
+        final int dz = switch (type) { case "banque" -> -8; case "depot" -> 8; default -> 8; };
+        final var centre = colony.getCenter();
+        final int x = centre.getX() + dx;
+        final int z = centre.getZ() + dz;
+        world.getChunk(x >> 4, z >> 4);
+        final net.minecraft.core.BlockPos pos = new net.minecraft.core.BlockPos(x, world.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z);
+        final var state = block.defaultBlockState();
+        world.setBlock(pos, state, 3);
+        block.setPlacedBy(world, pos, state, null, net.minecraft.world.item.ItemStack.EMPTY);
+        final var building = colony.getBuildingManager().getBuilding(pos);
+        if (building == null)
+        {
+            source.sendFailure(Component.literal("Pas reconnu par la colonie en " + pos.toShortString()));
+            return 0;
+        }
+        building.setBuildingLevel(level);
+        source.sendSuccess(() -> Component.literal(type + " posé en " + pos.toShortString() + ", niveau " + level), false);
+        return 1;
+    }
+
+    /**
+     * Lists the buildings of a colony with their class, level and position, and what the bank and depot lookups find.
+     */
+    private static int inspect(final net.minecraft.commands.CommandSourceStack source, final int colonyId)
+    {
+        final IColony colony = IColonyManager.getInstance().getColonyByWorld(colonyId, source.getServer().overworld());
+        if (colony == null)
+        {
+            source.sendFailure(Component.literal("Colonie inconnue."));
+            return 0;
+        }
+        for (final var building : colony.getBuildingManager().getBuildings().values())
+        {
+            final String line = building.getBuildingType().getRegistryName().getPath() + " " + building.getClass().getSimpleName() + " niv " + building.getBuildingLevel()
+                                  + " en " + building.getPosition().toShortString();
+            source.sendSuccess(() -> Component.literal(line), false);
+        }
+        final var bank = fr.kodistan.interregne.economy.RegionalBank.of(colony);
+        final var depot = fr.kodistan.interregne.region.DepotRegional.of(colony);
+        source.sendSuccess(() -> Component.literal("RegionalBank.of -> " + (bank == null ? "null" : bank.getPosition().toShortString()) + " ; DepotRegional.of -> "
+                                                     + (depot == null ? "null" : depot.getPosition().toShortString())), false);
+        return 1;
     }
 
     @SubscribeEvent
@@ -162,7 +232,9 @@ public final class PlaytestBot
             }
         }
         final Crate crate = CRATES[offersMade % CRATES.length];
-        if (open < MAX_OPEN_OFFERS && crate != null)
+        // the game counts every contract of a colony (offers, caravans, both directions) against its capacity: don't even try when full
+        final boolean room = contracts.of(bot).size() < Contracts.capacity(botColony) && contracts.of(human).size() < Contracts.capacity(humanColony);
+        if (open < MAX_OPEN_OFFERS && room && crate != null)
         {
             if (Contracts.stockOf(botColony, crate) < MIN_STOCK)
             {
@@ -177,7 +249,12 @@ public final class PlaytestBot
             else
             {
                 offersMade++;
-                event("Offre refusée par le jeu : " + refusal);
+                // same refusal as last time: stay quiet, otherwise the ops' chat is flooded every 5 s
+                if (!refusal.equals(lastRefusal))
+                {
+                    event("Offre refusée par le jeu : " + refusal);
+                    lastRefusal = refusal;
+                }
             }
         }
     }

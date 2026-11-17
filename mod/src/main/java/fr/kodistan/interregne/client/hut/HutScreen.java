@@ -30,6 +30,7 @@ import fr.kodistan.interregne.colony.BuildCosts;
 import fr.kodistan.interregne.colony.Yields;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
@@ -59,7 +60,7 @@ import java.util.Map;
  * The hut window: how the building is doing in one line, its workers, what it makes, what it waits for, and on the
  * right what the next level costs and brings. Its modules (recipes, settings…) are the left navigation.
  */
-public final class HutScreen extends ParchmentScreen
+public final class HutScreen extends ParchmentScreen implements BodyKit.Host
 {
     private int navW()
     {
@@ -112,10 +113,83 @@ public final class HutScreen extends ParchmentScreen
     private EditBox stockSearch;
     private int stockRefresh;
 
+    /**
+     * The building's own middle column (bank, depot, relais…), null for a standard hut; the page of it shown ({@code ""} is
+     * the overview), its amount field and whether a page drew the field this frame.
+     */
+    @Nullable
+    private final HutBody body;
+    private String tab = "";
+    @Nullable
+    private EditBox bodyField;
+    private boolean fieldDrawn;
+    private final BodyKit kit = new BodyKit(this);
+
     private HutScreen(final IBuildingView building, @Nullable final Screen parent)
     {
         super(Component.literal(nameOf(building)), parent);
         this.building = building;
+        this.body = HutBodies.of(building);
+    }
+
+    // --- What the building's own body may use (see BodyKit.Host) ---
+
+    @Override
+    public Font font()
+    {
+        return font;
+    }
+
+    @Override
+    public void hit(final int x, final int y, final int width, final int height, final Runnable action)
+    {
+        addHit(x, y, width, height, action);
+    }
+
+    @Override
+    public void hint(final String text)
+    {
+        hint = text;
+    }
+
+    @Override
+    @Nullable
+    public EditBox field()
+    {
+        return bodyField;
+    }
+
+    @Override
+    public void fieldShown()
+    {
+        fieldDrawn = true;
+    }
+
+    @Override
+    public void slot(final int x, final int y, final int size, final ItemStack stack)
+    {
+        if (y >= mainTop() && y + size <= mainBottom())
+        {
+            slots.add(new Ui.Slot(x, y, size, stack));
+        }
+    }
+
+    /**
+     * The pages of this building's body, after the overview in the left navigation.
+     */
+    List<HutBody.Tab> bodyTabs()
+    {
+        return body == null ? List.of() : body.tabs(building);
+    }
+
+    /**
+     * Shows a page of the body ({@code ""} for the overview), from this window or from a page of the building opened on top of it.
+     */
+    void showTab(final String key)
+    {
+        tab = key;
+        scroll = 0;
+        Minecraft.getInstance().setScreen(this);
     }
 
     public static boolean enabled()
@@ -126,6 +200,16 @@ public final class HutScreen extends ParchmentScreen
     public static void open(final IBuildingView building)
     {
         Minecraft.getInstance().setScreen(new HutScreen(building, null));
+    }
+
+    /**
+     * The hut window of a building with its own body, on one of the body's pages (UiShot).
+     */
+    public static void openTab(final IBuildingView building, final String tab)
+    {
+        final HutScreen screen = new HutScreen(building, null);
+        screen.tab = tab;
+        Minecraft.getInstance().setScreen(screen);
     }
 
     /**
@@ -185,6 +269,14 @@ public final class HutScreen extends ParchmentScreen
             stockSearch.setResponder(text -> scroll = 0);
             addWidget(stockSearch);
         }
+        if (body != null && body.wantsField())
+        {
+            final String typed = bodyField == null ? "" : bodyField.getValue();
+            bodyField = new fr.kodistan.interregne.client.ui.ParchmentField(font, 0, 0, 76, 12, Component.literal("Montant"));
+            bodyField.setFilter(text -> text.matches("[0-9 ]*"));
+            bodyField.setValue(typed);
+            addWidget(bodyField);
+        }
     }
 
     @Override
@@ -195,6 +287,10 @@ public final class HutScreen extends ParchmentScreen
         if (fresh != null)
         {
             building = fresh;
+        }
+        if (body != null)
+        {
+            body.tick(building);
         }
         if (isWarehouse(building) && stockRefresh-- <= 0)
         {
@@ -210,10 +306,15 @@ public final class HutScreen extends ParchmentScreen
         hits.clear();
         slots.clear();
         hint = null;
+        fieldDrawn = false;
         renderHeader(graphics, mouseX, mouseY);
         renderNav(graphics, mouseX, mouseY);
         renderMain(graphics, mouseX, mouseY);
         renderSide(graphics, mouseX, mouseY);
+        if (bodyField != null && fieldDrawn)
+        {
+            bodyField.render(graphics, mouseX, mouseY, 0);
+        }
         for (final Ui.Slot slot : slots)
         {
             if (Ui.inside(mouseX, mouseY, slot.x(), slot.y(), slot.size(), slot.size()))
@@ -267,7 +368,7 @@ public final class HutScreen extends ParchmentScreen
 
     private void renderNav(final GuiGraphics graphics, final int mouseX, final int mouseY)
     {
-        HutNav.nav(graphics, font, x0, y0, w, h, building, this, HutNav.OVERVIEW, mouseX, mouseY, (x, y, w, h, a) -> hits.add(new Hit(x, y, w, h, a)));
+        HutNav.nav(graphics, font, x0, y0, w, h, building, this, tab.isEmpty() ? HutNav.OVERVIEW : HutNav.tabKey(tab), mouseX, mouseY, (x, y, w, h, a) -> hits.add(new Hit(x, y, w, h, a)));
     }
 
     boolean fromHub()
@@ -318,6 +419,15 @@ public final class HutScreen extends ParchmentScreen
             renderStock(graphics, mouseX, mouseY, x, top, width, bottom);
             return;
         }
+        if (body != null)
+        {
+            graphics.enableScissor(x, top, x + width, bottom);
+            final int end = body.render(kit, graphics, mouseX, my, tab, building, x, top - scroll, width);
+            graphics.disableScissor();
+            contentHeight = end + scroll - top;
+            scrollbar(graphics, x, width, top, bottom);
+            return;
+        }
         graphics.enableScissor(x, top, x + width, bottom);
         int y = top - scroll;
         final List<Worker> workers = workers();
@@ -352,6 +462,11 @@ public final class HutScreen extends ParchmentScreen
         graphics.disableScissor();
 
         contentHeight = y + scroll - top;
+        scrollbar(graphics, x, width, top, bottom);
+    }
+
+    private void scrollbar(final GuiGraphics graphics, final int x, final int width, final int top, final int bottom)
+    {
         if (contentHeight > bottom - top)
         {
             final int track = bottom - top;
@@ -1041,6 +1156,16 @@ public final class HutScreen extends ParchmentScreen
     @Override
     protected boolean clicked(final double mouseX, final double mouseY)
     {
+        if (bodyField != null && fieldDrawn && bodyField.isMouseOver(mouseX, mouseY))
+        {
+            setFocused(bodyField);
+            bodyField.setFocused(true);
+            return bodyField.mouseClicked(mouseX, mouseY, 0);
+        }
+        if (bodyField != null)
+        {
+            bodyField.setFocused(false);
+        }
         for (final Hit hit : List.copyOf(hits))
         {
             if (Ui.inside(mouseX, mouseY, hit.x(), hit.y(), hit.width(), hit.height()))
