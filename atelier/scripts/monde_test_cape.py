@@ -10,8 +10,8 @@ Le bassin (coordonnees du monde ; sol de la plaine a y -61, premier bloc d'air a
   - zone de minage au fond (pierre, deepslate, fer) pour comparer la vitesse de minage ; trois noyes immobiles a 3, 4 et 6 blocs d'un repere en or (portee du tourbillon) ;
   - trois points d'ancrage du grappin : sur le rebord, au sommet d'un pilier (sous l'eau), au dessus du tunnel (sous l'eau) ;
   - trois tubes de verre suspendus au dessus de l'eau (vert, jaune, rouge), ancrage au plafond, hors de portee depuis la surface :
-    il faut jaillir de l'eau (nage rapide vers le haut) et tirer en plein bond. Vert : un bond ; jaune : bond en sprint ;
-    rouge : bond en sprint + elan du tourbillon. Hauteurs estimees d'apres la portee du crochet, pas encore verifiees en jeu.
+    il faut jaillir de l'eau (nage rapide vers le haut) et tirer en plein bond. Vert : bond en sprint ; jaune : tourbillon
+    tire en profondeur (plus de 3 blocs sous la surface) en remontant ; rouge : tourbillon pres de la surface en visant a la verticale (projection). Hauteurs estimees d'apres la portee du crochet, pas encore verifiees en jeu.
 """
 import sys
 import tempfile
@@ -51,6 +51,7 @@ fill(X0 - 2, SOL + 13, Z0 - 2, X1 + 16, SOL + 25, Z1 + 2, "air")
 # (decoupe en tranches : une commande fill est limitee a 32768 blocs)
 fill(X0 - 2, SOL + 26, Z0 - 2, X1 + 16, SOL + 40, Z1 + 2, "air")
 fill(X0 - 2, SOL + 41, Z0 - 2, X1 + 16, SOL + 52, Z1 + 2, "air")
+fill(X0 - 2, SOL + 53, Z0 - 2, X1 + 16, SOL + 60, Z1 + 2, "air")
 fill(X0, SOL, Z0, X1, RIM, Z1, "stone_bricks")
 fill(IX0, SOL + 1, IZ0, IX1, EAU_HAUT, IZ1, "water")
 fill(IX0, EAU_HAUT + 1, IZ0, IX1, RIM, IZ1, "air")
@@ -87,7 +88,9 @@ poser(23, SOL + 6, 18, "grappin:ancrage")
 # 7b. Ancrages hors de portee depuis la surface, a attraper en plein bond (sortie de l'eau vers le haut) :
 #     tubes de verre suspendus au dessus de l'eau, ouverts par le bas, ancrage au plafond. Du plus facile au plus dur.
 #     Hauteurs choisies d'apres la portee du crochet (30 blocs mesures depuis les pieds) : estimation, pas encore verifiee en jeu.
-TUBES = [(16, 27, -15, "lime_stained_glass"), (27, 27, -13, "yellow_stained_glass"), (27, 11, -11, "red_stained_glass")]
+# Vert : bond en sprint (environ 3 blocs) ; jaune : elan du tourbillon tire de plus de 3 blocs sous la surface (environ 8) ;
+#     rouge : projection du tourbillon pres de la surface en visant a la verticale (environ 16).
+TUBES = [(16, 27, -17, "lime_stained_glass"), (27, 27, -12, "yellow_stained_glass"), (27, 11, -4, "red_stained_glass")]
 for x, z, haut, verre in TUBES:
     fill(x - 3, RIM + 2, z - 3, x + 3, haut + 1, z + 3, verre)
     fill(x - 2, RIM + 2, z - 2, x + 2, haut, z + 2, "air")
@@ -114,7 +117,7 @@ c("function atelier:cape_kit")
 c(monde_atelier.message_entree("Le bassin de test de la cape est pret.", "2 -60 18"))
 c('tellraw @a [{"text":"Equipe la cape dans l\'emplacement cape d\'Accessories. Nage rapide : dans l\'eau, avance dans la direction du regard (sprint = elan). Leste : touche V. Tourbillon : clic gauche en nage rapide.","color":"yellow"}]')
 c('tellraw @a [{"text":"A essayer : ","color":"gray"},{"text":"plage (marcher leste), slalom, tunnel, minage au fond (nord-ouest), cibles autour de l\'or, grappin sous l\'eau.","color":"white"}]')
-c('tellraw @a [{"text":"Bond : ","color":"gray"},{"text":"les tubes de verre au dessus de l\'eau cachent un ancrage hors de portee depuis la surface. Jaillis de l\'eau en nage rapide et tire au grappin en l\'air. Vert : un bond ; jaune : en sprint ; rouge : sprint + tourbillon juste avant de sortir (hauteurs estimees).","color":"white"}]')
+c('tellraw @a [{"text":"Bond : ","color":"gray"},{"text":"les tubes de verre au dessus de l\'eau cachent un ancrage hors de portee depuis la surface. Jaillis de l\'eau en nage rapide et tire au grappin en l\'air. Vert : bond en sprint ; jaune : tourbillon en profondeur en remontant ; rouge : tourbillon pres de la surface en visant a la verticale (hauteurs estimees).","color":"white"}]')
 
 KIT = [
     "gamemode survival @s",
