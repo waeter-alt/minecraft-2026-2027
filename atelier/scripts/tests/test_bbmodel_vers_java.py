@@ -44,6 +44,16 @@ class TestBbmodelVersJava(unittest.TestCase):
         self.assertIn("corps/tete/pf0/rouge0", chemins["LUEURS"])
         self.assertTrue(any(c.startswith("corps/tete/lueur_") for c in chemins["LUEURS"]))
 
+    def test_chemins_coques(self):
+        modele = json.loads((RACINE / "atelier/modeles/golem/golem.bbmodel").read_text(encoding="utf-8"))
+        ch = bj.chemins(modele)
+        self.assertEqual(["corps/tete/pf0/pf0_masque", "", "", "", ""], ch["MASQUES"])
+        self.assertEqual([], ch["PETALES"][0])
+        self.assertEqual([f"corps/pf1/pf1_petale{k}" for k in range(4)], ch["PETALES"][1])
+        for i in range(1, 5):
+            self.assertEqual(4, len(ch["PETALES"][i]))
+        self.assertIn("String[][] PETALES", bj.java_geometrie(modele, "fr.test", "Geo"))
+
     def test_boucle(self):
         boucle = json.loads(json.dumps(MINI))
         boucle["animations"][0]["loop"] = "loop"

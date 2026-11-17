@@ -60,6 +60,8 @@ public class Golem extends Monster {
     final AnimationState rage = new AnimationState();
     final AnimationState mort = new AnimationState();
     private boolean phase2Vue = false;          // derniere valeur de DEUXIEME_PHASE vue par le client
+    final float[] ouverture = new float[NOMS_PIECES.length];   // ouverture affichee de chaque point faible (0 ferme, 1 ouvert), cote client
+    float ageOuverture = -1;
 
     public Golem(EntityType<? extends Golem> type, Level level) {
         super(type, level);

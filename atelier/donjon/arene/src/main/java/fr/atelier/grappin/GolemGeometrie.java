@@ -33,7 +33,19 @@ public final class GolemGeometrie {
         "corps/pf3/rouge3",
         "corps/pf4/rouge4",
     };
-    public static final String[] COUVERCLES = {
+    public static final String[] MASQUES = {
+        "corps/tete/pf0/pf0_masque",
+        "",
+        "",
+        "",
+        "",
+    };
+    public static final String[][] PETALES = {
+        {},
+        {"corps/pf1/pf1_petale0", "corps/pf1/pf1_petale1", "corps/pf1/pf1_petale2", "corps/pf1/pf1_petale3"},
+        {"corps/bras_d/pf2/pf2_petale0", "corps/bras_d/pf2/pf2_petale1", "corps/bras_d/pf2/pf2_petale2", "corps/bras_d/pf2/pf2_petale3"},
+        {"corps/pf3/pf3_petale0", "corps/pf3/pf3_petale1", "corps/pf3/pf3_petale2", "corps/pf3/pf3_petale3"},
+        {"corps/pf4/pf4_petale0", "corps/pf4/pf4_petale1", "corps/pf4/pf4_petale2", "corps/pf4/pf4_petale3"},
     };
     public static final String TETE = "corps/tete";
 

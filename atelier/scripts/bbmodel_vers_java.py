@@ -1,11 +1,11 @@
 # [claude-build] Traduit un modele Blockbench d'entite (.bbmodel : os, box UV, animations) en deux classes Java pour Minecraft 1.21.1 :
-#   <Nom>Geometrie : creerCouche() et les chemins des parties dont le rendu a besoin (lueurs, bourgeons, couvercles, tete) ;
+#   <Nom>Geometrie : creerCouche() et les chemins des parties dont le rendu a besoin (lueurs, bourgeons, masque et petales des points faibles, tete) ;
 #   <Nom>Animations : une AnimationDefinition par animation (systeme d'animation integre a Minecraft, comme le Warden).
 # On n'utilise pas l'export Java de Blockbench : il ne garde pas les parties lumineuses ni les points faibles a part.
 #   python bbmodel_vers_java.py <modele.bbmodel> <dossier java> [--paquet fr.atelier.grappin] [--nom Golem]
 # Reperes : Blockbench a y vers le haut et les pieds en 0 ; Minecraft a y vers le bas et les pieds en 24, x inverse :
 #   x_java = -x_bb, y_java = -y_bb (+24 a la racine), z_java = z_bb ; rotations (-rx, -ry, rz) ; posVec(-px, py, pz) (posVec inverse deja y).
-# Chaque cube tourne, lumineux, bourgeon (rouge<i>) ou couvercle (couv<i>) devient sa propre partie, pour pouvoir le cacher ou l'agrandir.
+# Chaque cube tourne, lumineux ou bourgeon (rouge<i>) devient sa propre partie, pour pouvoir le rendre lumineux ou l'agrandir.
 import json
 import math
 import re
@@ -25,11 +25,11 @@ def lumineux(nom):
 
 
 def a_part(e):
-    return lumineux(e["name"]) or re.fullmatch(r"couv\d+", e["name"]) is not None or any(abs(r) > 1e-9 for r in e.get("rotation", [0, 0, 0]))
+    return lumineux(e["name"]) or any(abs(r) > 1e-9 for r in e.get("rotation", [0, 0, 0]))
 
 
 def nom_part(e, n):
-    if re.fullmatch(r"(rouge|couv)\d+", e["name"]):
+    if re.fullmatch(r"rouge\d+", e["name"]):
         return e["name"]
     return f"{e['name'].rstrip('_')}_{n}"
 
@@ -50,11 +50,18 @@ def parcourir(modele):
 
 
 def chemins(modele):
-    lueurs, rouges, couvercles, tete = [], {}, {}, None
+    lueurs, rouges, tete = [], {}, None
+    masques, petales = {}, {}
     n = 0
     for chemin, g, _, els in parcourir(modele):
         if g["name"] == "tete":
             tete = chemin
+        m = re.fullmatch(r"pf(\d+)_masque", g["name"])
+        if m:
+            masques[int(m.group(1))] = chemin
+        m = re.fullmatch(r"pf(\d+)_petale(\d+)", g["name"])
+        if m:
+            petales.setdefault(int(m.group(1)), {})[int(m.group(2))] = chemin
         for e in els:
             if a_part(e):
                 nom = nom_part(e, n)
@@ -62,11 +69,13 @@ def chemins(modele):
                 complet = (chemin + "/" if chemin else "") + nom
                 if lumineux(e["name"]):
                     lueurs.append(complet)
-                m = re.fullmatch(r"(rouge|couv)(\d+)", e["name"])
+                m = re.fullmatch(r"rouge(\d+)", e["name"])
                 if m:
-                    (rouges if m.group(1) == "rouge" else couvercles)[int(m.group(2))] = complet
-    return {"LUEURS": lueurs, "ROUGES": [rouges[i] for i in sorted(rouges)],
-            "COUVERCLES": [couvercles[i] for i in sorted(couvercles)], "TETE": tete}
+                    rouges[int(m.group(1))] = complet
+    indices = sorted(rouges)
+    return {"LUEURS": lueurs, "ROUGES": [rouges[i] for i in indices], "TETE": tete,
+            "MASQUES": [masques.get(i, "") for i in indices],
+            "PETALES": [[petales.get(i, {})[k] for k in sorted(petales.get(i, {}))] for i in indices]}
 
 
 def boite(e, ref):
@@ -120,7 +129,9 @@ def java_geometrie(modele, paquet, classe):
             "import net.minecraft.client.model.geom.builders.PartDefinition;\n\n"
             f"public final class {classe} {{\n"
             f"    private {classe}() {{\n    }}\n\n"
-            + tableau("LUEURS") + tableau("ROUGES") + tableau("COUVERCLES")
+            + tableau("LUEURS") + tableau("ROUGES") + tableau("MASQUES")
+            + "    public static final String[][] PETALES = {\n"
+            + "".join("        {" + ", ".join(f'"{c}"' for c in p) + "},\n" for p in ch["PETALES"]) + "    };\n"
             + f'    public static final String TETE = "{ch["TETE"] or ""}";\n\n'
             "    public static LayerDefinition creerCouche() {\n"
             "        MeshDefinition maillage = new MeshDefinition();\n"
