@@ -24,9 +24,9 @@ public record RegionalBankActionPayload(BlockPos bank, int action, long amount) 
     public static final int WITHDRAW = 1;
 
     /**
-     * Raise the bank one level, which raises the treasury's capacity.
+     * Open the bank's window (sent when its hut is used).
      */
-    public static final int UPGRADE = 2;
+    public static final int OPEN = 2;
 
     public static final Type<RegionalBankActionPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "regional_bank_action"));
 

@@ -153,6 +153,20 @@ public final class RegionalTreasury extends SavedData
     }
 
     /**
+     * The bank's level is its building's: a builder raises it.
+     */
+    public void setLevel(final IColony colony, final int level)
+    {
+        final Entry entry = entry(colony);
+        final int wanted = Math.clamp(level, 1, MAX_LEVEL);
+        if (entry.level != wanted)
+        {
+            entry.level = wanted;
+            changed(colony);
+        }
+    }
+
+    /**
      * Raise the bank one level; the caller has checked and paid the price.
      */
     public void upgrade(final IColony colony)

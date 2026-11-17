@@ -1,0 +1,85 @@
+{
+ "textures": {
+  "emerald": "interregne:block/vault_emerald",
+  "particle": "interregne:block/vault_emerald"
+ },
+ "elements": [
+  {
+   "from": [
+    5.0,
+    0,
+    5.0
+   ],
+   "to": [
+    11.0,
+    6,
+    11.0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#emerald"
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#emerald"
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#emerald"
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#emerald"
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#emerald"
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#emerald"
+    }
+   },
+   "rotation": {
+    "origin": [
+     8.0,
+     3.0,
+     8.0
+    ],
+    "axis": "y",
+    "angle": 45
+   }
+  }
+ ]
+}
