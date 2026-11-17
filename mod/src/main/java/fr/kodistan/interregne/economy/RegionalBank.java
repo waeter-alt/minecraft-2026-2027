@@ -77,7 +77,12 @@ public final class RegionalBank
         final IColony colony = colonyOf(player.level(), pos);
         if (colony == null)
         {
-            player.sendSystemMessage(Component.literal("Cette banque n'est pas encore construite : le trésor y sera gardé dès que le bâtisseur aura fini.")
+            // A colony has one bank, the highest: another one standing here is a duplicate, not an unbuilt bank
+            final IColony here = IColonyManager.getInstance().getIColony(player.level(), pos);
+            final BuildingBanqueRegionale active = here == null ? null : of(here);
+            player.sendSystemMessage(Component.literal(active == null
+              ? "Cette banque n'est pas encore construite : le trésor y sera gardé dès que le bâtisseur aura fini."
+              : "Une colonie n'a qu'une banque : celle de " + here.getName() + " est en " + active.getPosition().toShortString() + ". Celle-ci est en trop, tu peux la démolir.")
                                        .withStyle(ChatFormatting.GRAY));
             return;
         }

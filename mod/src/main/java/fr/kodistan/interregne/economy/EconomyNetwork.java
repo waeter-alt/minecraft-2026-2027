@@ -13,7 +13,7 @@ public final class EconomyNetwork
         Net.toClient(r, OpenBankPayload.TYPE, OpenBankPayload.STREAM_CODEC, p -> fr.kodistan.interregne.client.blocks.BankScreen.open(p));
         r.playToServer(RegionalBankActionPayload.TYPE, RegionalBankActionPayload.STREAM_CODEC, RegionalBank::onAction);
         Net.toClient(r, OpenRegionalBankPayload.TYPE, OpenRegionalBankPayload.STREAM_CODEC,
-          p -> fr.kodistan.interregne.client.blocks.RegionalBankScreen.open(p));
+          p -> fr.kodistan.interregne.client.hut.HutBodies.receive(p));
         Net.toClient(r, TreasurySyncPayload.TYPE, TreasurySyncPayload.STREAM_CODEC,
           p -> fr.kodistan.interregne.client.ClientTreasury.set(p.colonyKey(), p.balance()));
     }

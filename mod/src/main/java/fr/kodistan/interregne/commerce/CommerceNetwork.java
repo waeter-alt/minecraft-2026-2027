@@ -14,6 +14,6 @@ public final class CommerceNetwork
         r.playToServer(RelaisActionPayload.TYPE, RelaisActionPayload.STREAM_CODEC, RelaisDesk::onAction);
         r.playToServer(MapRequestPayload.TYPE, MapRequestPayload.STREAM_CODEC, KingdomMap::onRequest);
         Net.toClient(r, MapStatePayload.TYPE, MapStatePayload.STREAM_CODEC, p -> fr.kodistan.interregne.client.commerce.KingdomMapScreen.receive(p));
-        Net.toClient(r, RelaisStatePayload.TYPE, RelaisStatePayload.STREAM_CODEC, p -> fr.kodistan.interregne.client.commerce.RelaisScreen.open(p));
+        Net.toClient(r, RelaisStatePayload.TYPE, RelaisStatePayload.STREAM_CODEC, p -> fr.kodistan.interregne.client.hut.HutBodies.receive(p));
     }
 }

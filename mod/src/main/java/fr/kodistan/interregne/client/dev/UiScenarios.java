@@ -7,10 +7,8 @@ import com.minecolonies.api.colony.buildings.modules.IBuildingModuleView;
 import com.minecolonies.api.colony.buildings.views.IBuildingView;
 import com.minecolonies.core.colony.buildings.workerbuildings.BuildingTownHall;
 import fr.kodistan.interregne.client.blocks.BankScreen;
-import fr.kodistan.interregne.client.blocks.ComptoirScreen;
 import fr.kodistan.interregne.client.blocks.CropChoiceScreen;
 import fr.kodistan.interregne.client.blocks.MarketScreen;
-import fr.kodistan.interregne.client.blocks.RegionalBankScreen;
 import fr.kodistan.interregne.client.blocks.ThroneScreen;
 import fr.kodistan.interregne.client.catalogue.CatalogueScreen;
 import fr.kodistan.interregne.client.hut.AppearanceScreen;
@@ -18,6 +16,7 @@ import fr.kodistan.interregne.client.hut.CitizenScreen;
 import fr.kodistan.interregne.client.hut.ClipboardScreen;
 import fr.kodistan.interregne.client.hut.ColonyHubScreen;
 import fr.kodistan.interregne.client.hut.HutNav;
+import fr.kodistan.interregne.client.hut.HutBodies;
 import fr.kodistan.interregne.client.hut.HutScreen;
 import fr.kodistan.interregne.client.hut.MercenaryScreen;
 import fr.kodistan.interregne.client.hut.PermissionsScreen;
@@ -29,7 +28,6 @@ import fr.kodistan.interregne.client.routes.RoadScreen;
 import fr.kodistan.interregne.routes.RoadStatePayload;
 import fr.kodistan.interregne.commerce.RelaisStatePayload;
 import fr.kodistan.interregne.client.commerce.KingdomMapScreen;
-import fr.kodistan.interregne.client.commerce.RelaisScreen;
 import fr.kodistan.interregne.commerce.MapStatePayload;
 import fr.kodistan.interregne.network.OpenComptoirPayload;
 import fr.kodistan.interregne.network.OpenMarketPayload;
@@ -105,7 +103,7 @@ public final class UiScenarios
                 case "building" -> buildings(targets, arg, colony);
                 case "citizen" -> citizen(targets, arg, colony);
                 case "hud" -> targets.add(new Target("hud", () -> Minecraft.getInstance().setScreen(null)));
-                case "block" -> blocks(targets, arg);
+                case "block" -> blocks(targets, arg, colony);
                 case "catalogue" -> targets.add(new Target("catalogue", 60, () -> {
                     final BlockPos pos = Minecraft.getInstance().player.blockPosition();
                     CatalogueScreen.open(new WindowExtendedBuildTool(pos, 0, Minecraft.getInstance().level.registryAccess()), pos);
@@ -313,19 +311,50 @@ public final class UiScenarios
 
     // --- Our blocks, with fake data ---
 
-    private static void blocks(final List<Target> targets, final String arg)
+    /**
+     * Feeds the building's own body with fake data at the real building's position, then opens its hut window (on a page when given).
+     */
+    private static void ownBody(final IColonyView colony, final String type, final String tab, final java.util.function.Consumer<IBuildingView> feed)
+    {
+        final IBuildingView building = firstOfEachType(colony).get(type);
+        if (building == null)
+        {
+            throw new IllegalArgumentException("No " + type + " in the colony: build one first");
+        }
+        feed.accept(building);
+        if (tab == null)
+        {
+            HutScreen.open(building);
+        }
+        else
+        {
+            HutScreen.openTab(building, tab);
+        }
+    }
+
+    private static void relais(final IColonyView colony, final String tab, final int level, final int capacity, final long available, final String notice,
+      final List<RelaisStatePayload.Partner> partners, final java.util.function.IntFunction<List<RelaisStatePayload.Row>> rows, final List<RelaisStatePayload.Tier> tiers,
+      final int escort)
+    {
+        ownBody(colony, "relais_commercial", tab, b -> HutBodies.preview(
+          new RelaisStatePayload(b.getColony().getID(), "Vielle Ville", level, capacity, available, notice, partners, rows.apply(b.getColony().getID()), tiers), escort));
+    }
+
+    private static void blocks(final List<Target> targets, final String arg, final IColonyView colony)
     {
         final Map<String, Runnable> blocks = new LinkedHashMap<>();
         blocks.put("bank", () -> BankScreen.open(new OpenBankPayload(NOWHERE, 48_250, 0.02)));
         blocks.put("bank-empty", () -> BankScreen.open(new OpenBankPayload(NOWHERE, 0, 0.02)));
-        blocks.put("regionalbank", () -> RegionalBankScreen.open(
-          new OpenRegionalBankPayload(NOWHERE, "dev", "Val-de-Loire", 8_400, 10_000, 2, 2_500, 25_000, true, true)));
-        blocks.put("regionalbank-visitor", () -> RegionalBankScreen.open(
-          new OpenRegionalBankPayload(NOWHERE, "dev", "Val-de-Loire", 8_400, 10_000, 2, 2_500, 25_000, false, false)));
-        blocks.put("comptoir", () -> ComptoirScreen.open(
-          new OpenComptoirPayload(NOWHERE, "Val-de-Loire", "Marches de l'Ouest", 2, 90, 60, 1_500, 14, 32, true, 37, 2_340)));
-        blocks.put("comptoir-nowarehouse", () -> ComptoirScreen.open(
-          new OpenComptoirPayload(NOWHERE, "Val-de-Loire", "Marches de l'Ouest", 1, 120, 90, 800, 0, 16, false, 0, 40)));
+        blocks.put("regionalbank", () -> ownBody(colony, "banque_regionale", null, b -> HutBodies.receive(
+          new OpenRegionalBankPayload(b.getPosition(), "dev", "Val-de-Loire", 8_400, 10_000, 2, 2_500, 25_000, true, true))));
+        blocks.put("regionalbank-visitor", () -> ownBody(colony, "banque_regionale", null, b -> HutBodies.receive(
+          new OpenRegionalBankPayload(b.getPosition(), "dev", "Val-de-Loire", 8_400, 10_000, 2, 2_500, 25_000, false, false))));
+        blocks.put("comptoir", () -> ownBody(colony, "depot_regional", null, b -> HutBodies.receive(
+          new OpenComptoirPayload(b.getPosition(), "Val-de-Loire", "bois", 2, 90, 60, 1_500, 14, 32, true, 37, 2_340))));
+        blocks.put("comptoir-caisses", () -> ownBody(colony, "depot_regional", "caisses", b -> HutBodies.receive(
+          new OpenComptoirPayload(b.getPosition(), "Val-de-Loire", "bois", 2, 90, 60, 1_500, 14, 32, true, 37, 2_340))));
+        blocks.put("comptoir-nowarehouse", () -> ownBody(colony, "depot_regional", null, b -> HutBodies.receive(
+          new OpenComptoirPayload(b.getPosition(), "Val-de-Loire", "bois", 1, 120, 90, 800, 0, 16, false, 0, 40))));
         final int crates = Crate.values().length;
         blocks.put("market", () -> MarketScreen.open(new OpenMarketPayload(NOWHERE, series(crates, 120, 35), series(crates, 80, 25),
           series(crates, 64, -9), series(crates, 3, -1), 5_600)));
@@ -339,15 +368,16 @@ public final class UiScenarios
           new RelaisStatePayload.Partner(4, "Val-de-Loire", false));
         final var tiers = List.of(new RelaisStatePayload.Tier(150, 2, 1), new RelaisStatePayload.Tier(400, 3, 1), new RelaisStatePayload.Tier(900, 4, 2),
           new RelaisStatePayload.Tier(2_000, 5, 3), new RelaisStatePayload.Tier(4_500, 6, 4));
-        final var relaisRows = List.of(
-          new RelaisStatePayload.Row(1, 1, "Vielle Ville", 2, "Ville Neuve", 0, 40, 5, Contract.TRANSIT, 62, 2, 4),
-          new RelaisStatePayload.Row(2, 3, "Marches de l'Ouest", 1, "Vielle Ville", 2, 25, 12, Contract.OFFER, 0, 0, 0),
-          new RelaisStatePayload.Row(3, 1, "Vielle Ville", 3, "Marches de l'Ouest", 4, 8, 30, Contract.OFFER, 0, 3, 6));
-        blocks.put("relais", () -> RelaisScreen.preview(new RelaisStatePayload(1, "Vielle Ville", 2, 4, 5_000, "", partners, relaisRows, tiers), 0));
-        blocks.put("relais-escorte", () -> RelaisScreen.preview(new RelaisStatePayload(1, "Vielle Ville", 3, 6, 5_000, "", partners, relaisRows, tiers), 2));
-        blocks.put("relais-escorte-chere", () -> RelaisScreen.preview(new RelaisStatePayload(1, "Vielle Ville", 5, 10, 300, "", partners, relaisRows, tiers), 5));
-        blocks.put("relais-refus", () -> RelaisScreen.preview(new RelaisStatePayload(1, "Vielle Ville", 1, 2, 20, "L'entrepôt n'a pas assez de caisses de bois.", List.of(), List.of(), tiers), 0));
-        blocks.put("relais-chantier", () -> RelaisScreen.preview(new RelaisStatePayload(1, "Vielle Ville", 0, 0, 0, "", List.of(), List.of(), tiers), 0));
+        final java.util.function.IntFunction<List<RelaisStatePayload.Row>> relaisRows = cid -> List.of(
+          new RelaisStatePayload.Row(1, cid, "Vielle Ville", 2, "Ville Neuve", 0, 40, 5, Contract.TRANSIT, 62, 2, 4),
+          new RelaisStatePayload.Row(2, 3, "Marches de l'Ouest", cid, "Vielle Ville", 2, 25, 12, Contract.OFFER, 0, 0, 0),
+          new RelaisStatePayload.Row(3, cid, "Vielle Ville", 3, "Marches de l'Ouest", 4, 8, 30, Contract.OFFER, 0, 3, 6));
+        blocks.put("relais", () -> relais(colony, null, 2, 4, 5_000, "", partners, relaisRows, tiers, 0));
+        blocks.put("relais-offre", () -> relais(colony, "offre", 2, 4, 5_000, "", partners, relaisRows, tiers, 0));
+        blocks.put("relais-escorte", () -> relais(colony, "offre", 3, 6, 5_000, "", partners, relaisRows, tiers, 2));
+        blocks.put("relais-escorte-chere", () -> relais(colony, "offre", 5, 10, 300, "", partners, relaisRows, tiers, 5));
+        blocks.put("relais-refus", () -> relais(colony, null, 1, 2, 20, "L'entrepôt n'a pas assez de caisses de bois.", List.of(), cid -> List.of(), tiers, 0));
+        blocks.put("relais-chantier", () -> relais(colony, null, 0, 0, 0, "", List.of(), cid -> List.of(), tiers, 0));
         blocks.put("carte", () -> Minecraft.getInstance().setScreen(KingdomMapScreen.preview(fakeMap(), fakeRoads())));
         blocks.put("carte-vide", () -> Minecraft.getInstance().setScreen(KingdomMapScreen.preview(new MapStatePayload(List.of(), List.of()), List.of())));
         final var perks = List.of("+10 % de vitesse", "+20 % de vitesse · chute de +0 bloc sans dégât", "+30 % de vitesse · +5 % de saut · chute de +1 bloc sans dégât",
