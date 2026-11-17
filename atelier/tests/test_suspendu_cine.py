@@ -258,5 +258,27 @@ class TestFonctions(unittest.TestCase):
         self.assertIn("tripwire_hook", coffre[i])                                                                   # avec la cle dedans
 
 
+# les particules de Minecraft 1.21.1 (fichiers assets/minecraft/particles/*.json du jeu, NeoForge 21.1.216) : un nom faux fait rejeter TOUTE la fonction au chargement
+PARTICULES_1_21_1 = {"ambient_entity_effect", "angry_villager", "ash", "bubble", "bubble_column_up", "bubble_pop", "campfire_cosy_smoke", "campfire_signal_smoke", "cherry_leaves", "cloud", "composter", "crimson_spore", "crit", "current_down", "damage_indicator", "dolphin", "dragon_breath", "dripping_dripstone_lava", "dripping_dripstone_water", "dripping_honey", "dripping_lava", "dripping_obsidian_tear", "dripping_water", "dust", "dust_color_transition", "dust_plume", "effect", "egg_crack", "electric_spark", "enchant", "enchanted_hit", "end_rod", "entity_effect", "explosion", "falling_dripstone_lava", "falling_dripstone_water", "falling_dust", "falling_honey", "falling_lava", "falling_nectar", "falling_obsidian_tear", "falling_spore_blossom", "falling_water", "firework", "fishing", "flame", "flash", "glow", "glow_squid_ink", "gust", "happy_villager", "heart", "infested", "instant_effect", "landing_honey", "landing_lava", "landing_obsidian_tear", "large_smoke", "lava", "mycelium", "nautilus", "note", "ominous_spawning", "poof", "portal", "raid_omen", "rain", "reverse_portal", "scrape", "sculk_charge", "sculk_charge_pop", "sculk_soul", "shriek", "small_flame", "small_gust", "smoke", "sneeze", "snowflake", "sonic_boom", "soul", "soul_fire_flame", "spit", "splash", "spore_blossom_air", "squid_ink", "sweep_attack", "totem_of_undying", "trial_omen", "trial_spawner_detection", "trial_spawner_detection_ominous", "underwater", "vault_connection", "vibration", "warped_spore", "wax_off", "wax_on", "white_ash", "white_smoke", "witch"}
+
+
+class TestParticulesValides(unittest.TestCase):
+    def test_toutes_les_particules_des_fonctions_existent_dans_le_jeu(self):
+        import re
+        import donjon_suspendu as dj
+        import suspendu_salle1 as rdc
+        import suspendu_ss1_blocs as s1
+        import suspendu_ss2_blocs as s2
+        import suspendu_ss3_blocs as s3
+        decalages = {n: (0, 0, 0) for n in ("salle1", "ss1", "ss2", "ss3", "porte1", "porte2", "porte3", "portem1")}
+        f, _ = dj.fonctions(rdc.construire()[1], decalages, s1.construire()[1], s2.construire()[1], s3.construire()[1])
+        vus = set()
+        for nom, texte in f.items():
+            for m in re.finditer(r"particle minecraft:([a-z_]+)", texte):
+                vus.add(m.group(1))
+                self.assertIn(m.group(1), PARTICULES_1_21_1, nom)
+        self.assertIn("campfire_cosy_smoke", vus)
+
+
 if __name__ == "__main__":
     unittest.main()

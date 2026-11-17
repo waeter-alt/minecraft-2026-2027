@@ -89,7 +89,8 @@ def etapes_pilier(p, txt, yf2, y_fond, t0, duree):
         ev.setdefault(tick, []).extend(f"fill {txt((a, y, z))} {txt((b, y, z))} {bloc}" for (a, b, z) in rangees)
     for tick in range(t0, t0 + duree, 3):
         y = ys[min(len(ys) - 1, (tick - t0) * len(ys) // duree)]
-        ev.setdefault(tick, []).append(f"particle minecraft:campfire_cosmic_smoke {cine._f(cx)} {cine._f(y + 1 + oy)} {cine._f(cz)} 1.6 0.3 1.6 0.02 12 force")
+        ev.setdefault(tick, []).extend([f"particle minecraft:campfire_cosy_smoke {cine._f(cx)} {cine._f(y + 1 + oy)} {cine._f(cz)} 1.6 0.3 1.6 0.02 10 force",       # (« cosy » : un nom de particule faux fait rejeter toute la fonction par le jeu)
+                                        f"particle minecraft:dust_plume {cine._f(cx)} {cine._f(y + 1 + oy)} {cine._f(cz)} 1.8 0.2 1.8 0.05 25 force"])
     for tick in range(t0, t0 + duree, 6):
         ev.setdefault(tick, []).append("execute as @a[tag=cine] at @s run playsound minecraft:block.deepslate.place master @s ~ ~ ~ 1 0.5")
     ev.setdefault(t0, []).append("execute as @a[tag=cine] at @s run playsound minecraft:block.piston.extend master @s ~ ~ ~ 0.8 0.5")
@@ -174,7 +175,8 @@ def fonctions(infos, txt, cle_item):
             message = f"execute positioned {pos} run title @a[distance=..40] actionbar " + '{"text":"Levier ' + str(k) + ' : un point d\'ancrage est apparu","color":"aqua"}'
             f[f"suspendu_ss2_l{k}_tout"] = "\n".join([f"# [claude-build] Levier {k} : tous ses ancrages apparaissent tout de suite (sans camera).",
                                                     *[f"function atelier:suspendu_ss2_l{k}_a{i}" for i in range(1, len(ancrages) + 1)], message]) + "\n"
-            ev = {2: ['title @a[tag=cine] actionbar {"text":"…","color":"gray"}']}
+            annonce = "Un pilier sort de l'abîme…" if piliers else "Une chaîne descend de la voûte…"
+            ev = {2: ['title @a[tag=cine] actionbar {"text":"' + annonce + '","color":"gray"}']}
             for i, a in enumerate(ancrages, start=1):
                 decal = 6 * (i - 1)
                 if a in piliers:
