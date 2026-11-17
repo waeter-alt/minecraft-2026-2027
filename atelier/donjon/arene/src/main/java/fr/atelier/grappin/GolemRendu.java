@@ -22,7 +22,7 @@ public class GolemRendu extends MobRenderer<Golem, GolemModele> {
 
     @Override
     protected void scale(Golem boss, PoseStack pose, float partialTick) {
-        pose.scale(4.0F, 4.0F, 4.0F);                       // le modele est dessine a 4 unites par bloc (1 unite = 1/16 de bloc par defaut)
+        pose.scale(4.0F * Golem.FACTEUR_LARGEUR, 4.0F, 4.0F * Golem.FACTEUR_LARGEUR);                       // le modele est dessine a 4 unites par bloc (1 unite = 1/16 de bloc par defaut)
     }
 
     @Override
