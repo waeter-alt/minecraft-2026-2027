@@ -573,6 +573,7 @@ public final class CatalogueScreen extends ParchmentScreen
         {
             return;
         }
+        SharedPackOrigin.remember(blueprint, ref.pack());
         ((WindowExtendedBuildToolAccessor) (Object) buildTool).interregne$setBlueprint(blueprint);
         final BlockPos pos = RenderingCache.getOrCreateBlueprintPreviewData("blueprint").getPos();
         final int groundstyle = ((AbstractBlueprintManipulationWindowAccessor) (Object) buildTool).interregne$groundstyle();
