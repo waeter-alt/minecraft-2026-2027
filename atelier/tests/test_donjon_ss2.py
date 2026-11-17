@@ -297,8 +297,8 @@ class TestFonctionsSalleMoins2(unittest.TestCase):
         return "\n".join(lignes)
 
     def texte_levier(self, k):
-        """Tout ce que fait le levier k : pour le 5, les ancrages puis le coffre de la cle (la scene de camera en plus n'y est pas)."""
-        return self._developper("suspendu_ss2_cle_tout") if k == 5 else self.f[f"suspendu_ss2_levier{k}"]
+        """Tout ce que fait le levier k sans camera : ses ancrages (et, pour le 5, le coffre de la cle) ; la scene de camera, qui fait la meme chose en montrant les piliers monter, n'y est pas."""
+        return self._developper("suspendu_ss2_cle_tout") if k == 5 else self._developper(f"suspendu_ss2_l{k}_tout")
 
     def test_chaque_levier_fait_apparaitre_ses_ancrages(self):
         tick = self.f["suspendu_tick"]
@@ -310,7 +310,7 @@ class TestFonctionsSalleMoins2(unittest.TestCase):
             self.assertEqual(texte.count("minecraft:chain[axis=y]"), len(self.infos3["ancrages_cyan"][k]))   # l'ancrage et sa chaine, du plafond
             self.assertIn(f"scoreboard players set #l{k} suspendu 1", self.f[f"suspendu_ss2_levier{k}"])
         for nom, texte in self.f.items():
-            if not nom.startswith(("suspendu_ss2_levier", "suspendu_ss2_l5_")):
+            if not nom.startswith("suspendu_ss2_l"):
                 self.assertNotIn("grappin:ancrage", texte, nom)                                      # seuls les leviers posent les ancrages cyan
 
     @staticmethod
@@ -401,8 +401,45 @@ class TestFonctionsSalleMoins2(unittest.TestCase):
         tout = self.f["suspendu_ss2_cle_tout"].splitlines()
         n = len(self.infos3["ancrages_cyan"][5])
         self.assertEqual([l for l in tout if l.startswith("function")], [f"function atelier:suspendu_ss2_l5_a{i}" for i in range(1, n + 1)] + ["function atelier:suspendu_ss2_cle_coffre"])
+
+    def test_chaque_levier_lance_une_cinematique_ou_le_pilier_monte_de_la_fosse(self):
+        ox, oy, oz = dj.ORIGINE
+        yf2, y_fond, plafond = self.infos3["yf2"], self.infos3["y_fond"], self.infos3["plafond"]
         for k in (1, 2, 3, 4):
-            self.assertNotIn("cine", self.f[f"suspendu_ss2_levier{k}"])                              # les autres leviers n'ont pas de cinematique
+            lk = self.f[f"suspendu_ss2_levier{k}"]
+            self.assertIn(f"execute if score #libre cine matches 0 run function atelier:suspendu_cine_debut_levier{k}", lk)
+            self.assertIn(f"execute unless score #libre cine matches 0 run function atelier:suspendu_ss2_l{k}_tout", lk)        # sinon tout apparait tout de suite
+            scene = self.f[f"suspendu_cine_levier{k}"]
+            images = re.findall(r"matches (\d+) run tp @e\[type=minecraft:armor_stand,tag=cine_cam\] (\S+) (\S+) (\S+) (\S+) (\S+)", scene)
+            self.assertEqual(len(images), sj.DUREE_LEVIER)
+            pts = [(float(x) - ox, float(y) - oy, float(z) - oz, float(yaw), float(pitch)) for (_, x, y, z, yaw, pitch) in images]
+            for (x, y, z, _, _) in pts:
+                self.assertEqual(self.blocs_ss2.get((math.floor(x), math.floor(y), math.floor(z))), AIR, (k, x, y, z))       # toujours dans l'air de la salle
+            for a, b in zip(pts, pts[1:]):
+                self.assertLessEqual(math.dist(a[:3], b[:3]), 1.2)
+            self.assertLess(max(p[3] for p in pts) - min(p[3] for p in pts), 0.01)                   # elle ne tourne jamais
+            n = len(self.infos3["ancrages_cyan"][k])
+            ticks = [int(re.search(r"matches (\d+) run function atelier:suspendu_ss2_l%d_a%d$" % (k, i), scene, re.M).group(1)) for i in range(1, n + 1)]
+            self.assertLessEqual(ticks[-1] + 20, sj.DUREE_LEVIER)                                    # l'ancrage apparait, et on a le temps de le voir
+            piliers = self.infos3["piliers_cyan"].get(k, [])
+            for p in piliers:                                                                          # le pilier monte rang par rang, du fond de la fosse vers le haut, avant que l'ancrage apparaisse
+                (cx, cz) = p["cases"][0]
+                rangs = []
+                for ligne in scene.splitlines():
+                    m = re.match(r"execute if score #t cine matches (\d+) run fill (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) minecraft:(?:chiseled_)?stone_bricks$", ligne)
+                    if m and int(m.group(4)) - oz == cz and int(m.group(2)) - ox <= cx <= int(m.group(5)) - ox:
+                        rangs.append((int(m.group(1)), int(m.group(3)) - oy))
+                self.assertEqual(sorted(y for _, y in rangs), list(range(y_fond + 2, yf2)))
+                self.assertEqual(sorted(rangs), sorted(rangs, key=lambda r: (r[1], r[0])))           # les rangs du bas d'abord
+                self.assertLess(max(t for t, _ in rangs), ticks[0])
+                self.assertGreaterEqual(max(t for t, _ in rangs) - min(t for t, _ in rangs), 30)       # il monte pendant 1,5 s au moins
+            if not piliers:                                                                            # sans pilier : la chaine descend du plafond, maillon par maillon
+                (x, y, z) = self.infos3["ancrages_cyan"][k][0]
+                maillons = [(int(m.group(1)), int(m.group(2)) - oy) for m in re.finditer(r"matches (\d+) run setblock -?\d+ (-?\d+) -?\d+ minecraft:chain\[axis=y\]", scene)]
+                self.assertEqual(sorted(yy for _, yy in maillons), list(range(y + 1, plafond + 1)))
+                self.assertEqual(sorted(maillons), sorted(maillons, key=lambda r: (-r[1], r[0])))      # du haut vers le bas
+            self.assertEqual(scene.count("block.note_block.chime"), 3)
+            self.assertIn(f"suspendu_cine_debut_levier{k}", self.f)
 
     def test_la_cinematique_de_la_cle_survole_la_salle_puis_montre_le_coffre(self):
         ox, oy, oz = dj.ORIGINE
@@ -428,6 +465,7 @@ class TestFonctionsSalleMoins2(unittest.TestCase):
         for k, (xx, yy, zz) in enumerate(self.infos3["ancrages_cyan"][5], start=1):
             ligne = next(l for l in scene.splitlines() if l.endswith(f"run function atelier:suspendu_ss2_l5_a{k}"))
             self.assertIn("matches", ligne)
+        self.assertGreaterEqual(len(re.findall(r"run fill .* minecraft:stone_bricks$", scene, re.M)), 3 * 40)       # ses trois piliers montent aussi de la fosse, rang par rang
         ticks_ancrages = [int(re.search(r"matches (\d+) run function atelier:suspendu_ss2_l5_a%d$" % k, scene, re.M).group(1)) for k in range(1, len(self.infos3["ancrages_cyan"][5]) + 1)]
         self.assertEqual(ticks_ancrages, sorted(ticks_ancrages))                                      # les ancrages apparaissent un a un, du plus proche au plus loin
         self.assertGreater(len(set(ticks_ancrages)), 3)
@@ -466,6 +504,41 @@ class TestFonctionsSalleMoins2(unittest.TestCase):
         for nom, texte in self.f.items():
             for appelee in re.findall(r"function atelier:([a-z0-9_]+)", texte):
                 self.assertIn(appelee, self.f, f"{nom} appelle {appelee}")
+
+
+
+class TestCouloirOrganique(unittest.TestCase):
+    """Le couloir d'arrivee de la salle -2 est une grotte (demande de Luca) : plus de briques apres l'escalier."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.blocs, cls.infos = ss2.construire()
+
+    def test_le_couloir_est_creuse_dans_la_roche_et_decore(self):
+        couloir = set(self.infos["couloir"])
+        yf2 = ss2.YF2
+        murs = []
+        for (x, z) in couloir:
+            if x < 30 and z < ss2.Z_ARRIVEE + 4:
+                continue
+            for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                if (x + dx, z + dz) not in self.infos["cases"]:
+                    for y in range(yf2 + 1, yf2 + 4):
+                        v = self.blocs.get((x + dx, y, z + dz))
+                        if v is not None and v != AIR:
+                            murs.append(v[0])
+        self.assertGreater(len(murs), 300)
+        self.assertFalse([n for n in murs if "bricks" in n], "plus de briques dans les parois du couloir")
+        self.assertGreater(sum(1 for n in murs if n == "minecraft:shroomlight"), 15)                            # des champignons lumineux dans les parois
+        self.assertGreater(sum(1 for n in murs if n == "minecraft:moss_block"), 10)                              # de la mousse au pied
+        largeurs = {sum(1 for (x, z) in couloir if x == xx) for xx in range(30, 80)}
+        self.assertGreaterEqual(len(largeurs), 3)                                                               # la largeur ondule
+        hauteurs = {self.infos["cases"][c][1] - yf2 for c in couloir}
+        self.assertTrue({7, 8, 9} <= hauteurs, hauteurs)                                                        # le plafond aussi
+        for (x, z) in couloir:
+            self.assertNotEqual(self.blocs[(x, yf2, z)][0], "minecraft:stone_bricks")                          # le sol est de la roche (et de la mousse)
+            if x >= 24:                                                                                          # (la grande salle du sous-sol 1 commence en x 24)
+                self.assertGreaterEqual(z, 112)                                                                  # jamais contre la grande salle du sous-sol 1
 
 
 if __name__ == "__main__":

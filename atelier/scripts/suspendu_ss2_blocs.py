@@ -23,7 +23,7 @@ HAUT_ANCRAGE_PILIER = 4                  # l'ancrage d'un pilier : 4 au dessus d
 HAUT_ANCRAGE_CYAN = 3                    # l'ancrage d'un levier : 3 au dessus du sol de l'ile visee, comme ceux de la corniche et des fosses du sous-sol 1
 LUM_NIVEAU, LUM_PAS = ss1.LUM_NIVEAU, ss1.LUM_PAS
 PAS_LANTERNE = 5
-NATUREL = {"abime", "ile", "pilier", "pont", "massif", "grotte"}
+NATUREL = {"abime", "ile", "pilier", "pont", "massif", "grotte", "couloir"}          # le couloir d'arrivee est une grotte lui aussi (demande de Luca) : plus de briques apres l'escalier
 
 
 def dans_ellipse(px, py, e):
@@ -38,8 +38,6 @@ def region(px, py, ile):
 
 
 def sol_genre(genre, x, z):
-    if genre == "couloir":
-        return rdc.sol(x, z)
     if genre == "abime":
         return deco.fond_roche(x, z)
     if genre == "pilier":
@@ -49,6 +47,24 @@ def sol_genre(genre, x, z):
 
 def mur_genre(genre, x, y, z):
     return deco.roche_mur(x, y, z, YF2) if genre in NATUREL else rdc.mur(x, y, z)
+
+
+def elargir_couloir(x, z):
+    """De combien le couloir d'arrivee s'elargit en (x, z) : de 0 a 2 blocs, qui ondulent ; rien au debut (il prolonge exactement le tunnel de l'escalier) ; au nord de la branche est, jamais en deca
+    de z 112 (la grande salle du sous-sol 1 s'arrete en z 109, son mur en z 110)."""
+    if z < Z_ARRIVEE + 3 and x < 30:
+        return 0.0
+    e = 2.2 * deco.bruit(x, z, 7, 141)
+    if x >= 18 and z < 117:
+        e = min(e, 117 - 112 - LARGEUR_COULOIR / 2 + 0.4)
+    return e
+
+
+def haut_couloir(x, z):
+    """L'air au dessus du sol du couloir : de 7 a 9 blocs, qui ondule (8 au debut, comme avant)."""
+    if z < Z_ARRIVEE + 3 and x < 30:
+        return HAUT_COULOIR2
+    return HAUT_COULOIR2 - 1 + int(3 * deco.bruit(x, z, 6, 143))
 
 
 def cellule_de(sp):
@@ -116,8 +132,8 @@ def construire():
         for z in range(60, 125):
             if (x, z) in cases or (x < 30 and z < Z_ARRIVEE):
                 continue
-            if min(rdc.dist_segment(x + 0.5, z + 0.5, a, b) for a, b in zip(COULOIR, COULOIR[1:])) <= LARGEUR_COULOIR / 2:
-                cases[(x, z)] = [YF2, YF2 + HAUT_COULOIR2, "couloir"]
+            if min(rdc.dist_segment(x + 0.5, z + 0.5, a, b) for a, b in zip(COULOIR, COULOIR[1:])) <= LARGEUR_COULOIR / 2 + elargir_couloir(x, z):
+                cases[(x, z)] = [YF2, YF2 + haut_couloir(x, z), "couloir"]
                 couloir.add((x, z))
     lave_grotte = {c for m in montagnes.values() for c in m["lave"]}
     air = set()
@@ -144,6 +160,9 @@ def construire():
             colonne = cases.get((n[0], n[2]))
             if colonne and colonne[2] == "pilier" and n[1] < colonne[0]:       # le flanc d'un pilier : briques de pierre, une bande sculptee tous les 4 blocs
                 blocs[n] = S("chiseled_stone_bricks") if (colonne[0] - n[1]) % 4 == 0 else (S("cracked_stone_bricks") if h01(n[0], n[1], n[2], 7) < 0.12 else S("stone_bricks"))
+                continue
+            if genre == "couloir" and n[1] <= YF2 + 1 and deco.bruit(n[0], n[2], 7, 31) > 0.6 and h01(n[0], n[1], n[2], 33) < 0.8:
+                blocs[n] = S("moss_block")                                      # de la mousse au pied des parois du couloir
                 continue
             blocs[n] = mur_genre(genre, n[0], n[1], n[2])
     # les ancrages toujours actifs : les piliers et un point sur l'ile du levier 1, accroches au plafond par une chaine
@@ -263,7 +282,7 @@ def construire():
         lanternes.append(max(sombres, key=lambda q: (min([abs(q[0] - p[0]) + abs(q[1] - p[1]) for p in lanternes] + [99]), q)))
     for (x, z) in lanternes:
         ly = YF2 + 5
-        for y in range(ly + 1, YF2 + HAUT_COULOIR2 + 1):
+        for y in range(ly + 1, cases[(x, z)][1] + 1):
             blocs[(x, y, z)] = S("chain", axis="y", waterlogged=False)
         blocs[(x, ly, z)] = S("lantern", hanging=True, waterlogged=False)
         sources.append((x, ly, z))
@@ -347,6 +366,35 @@ def construire():
                         sources.append((x, y, z, 5))
                         cristaux += 1
                         deco_nb["cristaux"] += 1
+    # le couloir d'arrivee, une grotte : des champignons lumineux dans les parois (un pas de 6, des deux cotes), des stalactites, des racines et des lianes a baies sous la voute, des stalagmites
+    # contre les parois (jamais au milieu : on passe a 5 de front) ; rien au pied de l'escalier ni autour des lanternes
+    proteges_c = {(x + dx, z + dz) for (x, z) in lanternes for dx in (-1, 0, 1) for dz in (-1, 0, 1)}
+    proteges_c |= {(x, z) for (x, z) in couloir if x < 30 and z < Z_ARRIVEE + 4}
+    for (x, z) in sorted(couloir):
+        sol, haut, _ = cases[(x, z)]
+        for dx, dz in deco.VOISINS:
+            n = (x + dx, YF2 + 2, z + dz)
+            if (n[0], n[2]) not in cases and (n[0] * 3 + n[2] * 5) % 6 == 0 and blocs.get(n) not in (None, AIR) and not (x < 30 and z < Z_ARRIVEE + 4):
+                blocs[n] = S("shroomlight")
+                sources.append((*n, 15))
+                deco_nb["champignons"] = deco_nb.get("champignons", 0) + 1
+        if (x, z) in proteges_c:
+            continue
+        contre_mur = any((x + dx, z + dz) not in cases for dx, dz in deco.VOISINS)
+        if h01(x, 21, z, 151) < 0.05 and libre([(x, haut - i, z) for i in range(3)]):
+            deco.stalactite(blocs, x, haut, z, 1 + int(h01(x, 22, z, 152) * 2))
+            deco_nb["stalactites"] += 1
+        elif h01(x, 23, z, 153) < 0.035 and libre([(x, haut - i, z) for i in range(3)]):
+            blocs[(x, haut, z)] = S("hanging_roots", waterlogged=False)
+            if h01(x, 24, z, 154) < 0.5:
+                blocs[(x, haut - 1, z)] = S("hanging_roots", waterlogged=False)
+            deco_nb["racines"] = deco_nb.get("racines", 0) + 1
+        elif h01(x, 25, z, 155) < 0.02 and libre([(x, haut - i, z) for i in range(5)]):
+            baies += deco.liane(blocs, x, haut, z, 2 + int(h01(x, 26, z, 156) * 3), True)
+            deco_nb["lianes"] += 1
+        elif contre_mur and h01(x, 27, z, 157) < 0.12 and libre([(x, sol + 1 + i, z) for i in range(3)]):
+            deco.stalagmite(blocs, x, sol + 1, z, 1 + int(h01(x, 28, z, 158) * 2))
+            deco_nb["stalagmites"] += 1
     sources += [(x, y, z, 14) for (x, y, z) in baies]                           # les baies lumineuses eclairent
     iles = {}
     for nom, ile in ILES.items():
