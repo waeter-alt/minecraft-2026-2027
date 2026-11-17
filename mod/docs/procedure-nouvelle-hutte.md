@@ -36,7 +36,10 @@ MineColonies dessine, quand on prévisualise un blueprint à côté d'un bâtime
 
 ## 5. Un bâtiment par colonie
 
-Si la hutte est unique par colonie, le serveur ne sert que la plus haute. Un doublon doit recevoir un message qui le dit (et nomme celui qui est actif), pas « pas encore construit ».
+Si la hutte est unique par colonie (c'est le cas du Relais, de la Banque et du Dépôt) :
+
+- l'ajouter à `UniqueHuts` (`colony/`) : un **deuxième exemplaire est refusé à la pose** (`SurvivalHandlerMixin`), avec un message qui dit où est le premier. On n'empêche pas seulement l'usage, on empêche la construction ;
+- un doublon déjà là (monde ancien, commande de test) doit quand même recevoir un message qui le dit et nomme celui qui est actif, pas « pas encore construit » : le serveur ne sert que le plus haut niveau.
 
 ## 6. Tests avant de dire « c'est fait »
 
