@@ -2,7 +2,10 @@ package fr.kodistan.interregne.routes;
 
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
+import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.InterregneMod;
+import fr.kodistan.interregne.economy.TreasuryPayment;
+import fr.kodistan.interregne.economy.Wallet;
 import fr.kodistan.interregne.colony.RouteSite;
 import fr.kodistan.interregne.routes.plan.RoutePlan;
 import net.minecraft.ChatFormatting;
@@ -45,6 +48,8 @@ public final class PosteCommercialBlock extends Block
     private static final long PLAN_TICKS = 20 * 60 * 5;
     private static final int MIN_SECONDS = 3;
     private static final int MAX_SECONDS = 10;
+    /** A post this close to one of its colony's roads raises it once the colony has nothing new to join. */
+    static final int UPGRADE_REACH = 16;
 
     private record Studied(RoutePlan plan, long at, RouteEnds.End endA, RouteEnds.End endB)
     {
@@ -83,6 +88,13 @@ public final class PosteCommercialBlock extends Block
         final IColony colonyB = RouteEnds.nearestUnlinked(level, colonyA, registry);
         if (colonyB == null)
         {
+            // Nothing new to join and a road of this colony runs by the post: the post now raises that road
+            final int road = registry.nearestRoad(colonyA.getID(), pos, UPGRADE_REACH);
+            if (road >= 0)
+            {
+                upgrade(level, player, colonyA, pos, road, build);
+                return;
+            }
             // The post is the far end of a road only when there is no other colony at all, or every ally is already joined
             boolean others = false;
             boolean allies = false;
@@ -278,6 +290,24 @@ public final class PosteCommercialBlock extends Block
         final BlockPos base = new BlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z);
         level.setBlockAndUpdate(base, Blocks.OAK_FENCE.defaultBlockState());
         level.setBlockAndUpdate(base.above(), Blocks.LANTERN.defaultBlockState());
+    }
+
+    /**
+     * Click: opens the road screen (level, what each level gives, price of the next). Sneak + click: pays and starts the
+     * works at once, as the screen's button does.
+     */
+    private static void upgrade(final ServerLevel level, final ServerPlayer player, final IColony colony, final BlockPos post, final int road, final boolean build)
+    {
+        if (!build)
+        {
+            RoadDesk.send(player, colony, road, post, null);
+            return;
+        }
+        final String refusal = RoadDesk.raise(level, player, colony, road);
+        if (refusal != null)
+        {
+            say(player, refusal, ChatFormatting.RED);
+        }
     }
 
     private static void say(final ServerPlayer player, final String text, final ChatFormatting colour)

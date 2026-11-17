@@ -70,12 +70,14 @@ public class InterregneMod
         Crates.register(modEventBus);
         fr.kodistan.interregne.war.WarEntities.register(modEventBus);
         fr.kodistan.interregne.routes.Routes.register(modEventBus);
+        fr.kodistan.interregne.commerce.Commerce.register(modEventBus);
     }
 
     private void registerPayloads(final RegisterPayloadHandlersEvent event)
     {
         // One line per feature: each feature registers its own payloads, so features don't edit the same list
         final PayloadRegistrar registrar = event.registrar("1");
+        fr.kodistan.interregne.commerce.CommerceNetwork.register(registrar);
         ColonyNetwork.register(registrar);
         EconomyNetwork.register(registrar);
         PoliticsNetwork.register(registrar);

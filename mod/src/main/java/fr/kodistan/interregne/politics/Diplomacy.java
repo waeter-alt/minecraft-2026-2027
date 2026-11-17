@@ -203,7 +203,7 @@ public final class Diplomacy
         }
     }
 
-    static void notifyMembers(final MinecraftServer server, final IColony colony, final String text)
+    public static void notifyMembers(final MinecraftServer server, final IColony colony, final String text)
     {
         for (final ServerPlayer member : server.getPlayerList().getPlayers())
         {

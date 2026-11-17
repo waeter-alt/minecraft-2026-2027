@@ -552,7 +552,7 @@ public final class CatalogueScreen extends ParchmentScreen
 
     private void cyclePack(final int step)
     {
-        final List<StructurePackMeta> packs = new ArrayList<>(StructurePacks.getPackMetas().stream().filter(p -> !p.isDisabled()).toList());
+        final List<StructurePackMeta> packs = new ArrayList<>(StructurePacks.getPackMetas().stream().filter(CatalogueIndex::isStyle).toList());
         if (packs.isEmpty())
         {
             return;
