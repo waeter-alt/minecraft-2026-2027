@@ -1,6 +1,7 @@
 // [claude-build] La Cape lestee cote client : nage rapide (calculee chez le joueur, comme la paravoile), touche de lest, saut depuis le fond,
-// flottaison neutre a l'arret, bond hors de l'eau, clic gauche transforme en attaque tourbillon pendant la nage rapide,
-// et tous les effets (a-coup de camera, lames et bulles du tourbillon, bords d'ecran et sons de vitesse).
+// flottaison neutre a l'arret, bond hors de l'eau, clic gauche transforme en attaque tourbillon pendant la nage rapide
+// (projection hors de l'eau pres de la surface), et tous les effets (champ de vision, lames et bulles du tourbillon,
+// bords d'ecran et sons de vitesse).
 // Le serveur verifie et applique tout ce qui compte (CapeEvenements).
 package fr.atelier.grappin;
 
@@ -54,9 +55,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class CapeClient {
     /** Duree de l'animation du tourbillon, en ticks. */
     static final double DUREE_TOURBILLON = 10.0;
-    /** A-coup de camera : montee puis retour, en ticks (5 ticks = 0,25 s). */
-    private static final double MONTEE = 1.2;
-    private static final double RETOUR = 5.0;
+    /** Elargissement du champ de vision au tourbillon : montee, puis retour en douceur (ticks) et pic (part du champ ajoutee). */
+    private static final double FOV_MONTEE = 2.0;
+    private static final double FOV_RETOUR_ELAN = 14.0;
+    private static final double FOV_PIC_ELAN = 0.25;
+    private static final double FOV_RETOUR_PROJECTION = 24.0;
+    private static final double FOV_PIC_PROJECTION = 0.35;
 
     // V par defaut : a verifier contre les touches de sorts des mods RPG Series du modpack (reaffectable dans Options > Commandes).
     static final KeyMapping TOUCHE_LEST = new KeyMapping("key.grappin.lest", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V, "key.categories.grappin");
@@ -64,8 +68,10 @@ public final class CapeClient {
     /** Debut (temps de jeu, en ticks) du dernier tourbillon de chaque entite, d'apres le serveur. */
     private static final Map<Integer, Long> TOURBILLONS = new HashMap<>();
 
-    /** Cote vers lequel penche la camera au prochain tourbillon (alterne, ou suit le pas de cote). */
-    private static int cote = 1;
+    /** Dernier elargissement du champ de vision chez soi : debut (temps de jeu), pic et duree du retour. */
+    private static double debutFov = -1000;
+    private static double picFov = 0;
+    private static double retourFov = FOV_RETOUR_ELAN;
 
     private CapeClient() {
     }
@@ -83,11 +89,12 @@ public final class CapeClient {
             return;
         }
         TOURBILLONS.put(message.idEntite(), mc.level.getGameTime());
-        LocalPlayer moi = mc.player;
-        if (moi != null && moi.getId() == message.idEntite()) {
-            float pas = moi.input.leftImpulse;
-            cote = pas > 0 ? -1 : pas < 0 ? 1 : -cote;
-        }
+    }
+
+    private static void elargir(Minecraft mc, double pic, double retour) {
+        debutFov = mc.level.getGameTime();
+        picFov = pic;
+        retourFov = retour;
     }
 
     /** Avancement 0..1 du tourbillon de cette entite, ou -1 s'il n'y en a pas en cours. Sert aussi au dessin de la cape (spirale). */
@@ -122,6 +129,11 @@ public final class CapeClient {
         /** Intensite lissee 0..1 des effets de vitesse (bords d'ecran, son de ruee). */
         static double intensite = 0;
         private static Ruee ruee;
+        /** Projection hors de l'eau en cours : ticks restants pour atteindre la surface, et vitesse visee. */
+        private static int projection = 0;
+        private static double px, py, pz;
+        /** Ticks restants de la trainee d'eau sous le joueur apres une projection. */
+        private static int trainee = 0;
 
         /** Conditions communes au demarrage et a la poursuite de la nage rapide. */
         private static boolean permis(LocalPlayer j) {
@@ -175,25 +187,40 @@ public final class CapeClient {
                     vz = v.z;
                     entree(mc, j);
                 }
-                nager(j, sprint);
+                if (projection > 0) {
+                    projection--;
+                    vx = CapeCalcul.approcher(vx, px, 0.6);
+                    vy = CapeCalcul.approcher(vy, py, 0.6);
+                    vz = CapeCalcul.approcher(vz, pz, 0.6);
+                    j.setDeltaMovement(vx, vy, vz);
+                } else {
+                    nager(j, sprint);
+                }
                 if (mc.screen == null) {
                     while (mc.options.keyAttack.consumeClick()) {
                         long maintenant = mc.level.getGameTime();
                         if (CapeCalcul.rechargee(maintenant, dernierClic, Reglages.TOURBILLON_RECHARGE.get())) {
                             dernierClic = maintenant;
+                            // Meme decision que le serveur (CapeEvenements.projection), qui montre la gerbe aux autres joueurs.
+                            boolean projeter = CapeEvenements.projection(j);
                             PacketDistributor.sendToServer(new TourbillonPayload(j.getId()));
-                            elan(j);
+                            if (projeter) {
+                                projeter(mc, j);
+                            } else {
+                                elan(mc, j);
+                            }
                         }
                     }
                     // Le clic garde enfonce ne doit pas non plus miner ni declencher l'attaque de Better Combat.
                     mc.options.keyAttack.setDown(false);
                 }
             } else if (avant) {
-                if (!j.isInWater() && vy > 0.1) {
-                    bond(mc, j);
+                if (!j.isInWater() && (projection > 0 || vy > 0.1)) {
+                    bond(mc, j, projection > 0);
                 } else {
                     son(mc, j, SoundEvents.BUBBLE_COLUMN_BUBBLE_POP, 0.7F, 0.8F);
                 }
+                projection = 0;
             } else {
                 flotter(mc, j);
             }
@@ -206,6 +233,14 @@ public final class CapeClient {
 
             sillage(mc);
             lamesDesTourbillons(mc);
+            if (trainee > 0) {
+                trainee--;
+                for (int k = 0; k < 3; k++) {
+                    double x = j.getX() + (j.getRandom().nextDouble() - 0.5) * 0.6;
+                    double z = j.getZ() + (j.getRandom().nextDouble() - 0.5) * 0.6;
+                    mc.level.addParticle(k == 0 ? ParticleTypes.SPLASH : ParticleTypes.FALLING_WATER, x, j.getY() - 0.2, z, 0, 0, 0);
+                }
+            }
         }
 
         /** Un pas de nage rapide : la vitesse glisse vers le regard (inertie facon elytres). */
@@ -225,7 +260,8 @@ public final class CapeClient {
         }
 
         /** Le tourbillon pousse vers l'avant ; l'inertie de la nage ramene ensuite doucement a la vitesse normale. */
-        private static void elan(LocalPlayer j) {
+        private static void elan(Minecraft mc, LocalPlayer j) {
+            elargir(mc, FOV_PIC_ELAN, FOV_RETOUR_ELAN);
             double e = Reglages.TOURBILLON_ELAN.get();
             if (e <= 0) {
                 return;
@@ -238,20 +274,56 @@ public final class CapeClient {
         }
 
         /**
-         * Sortie de l'eau vers le haut : on rend au joueur la vitesse de nage entiere (le dernier tick dans l'eau l'a freinee),
-         * puis le jeu fait le reste (gravite et air normaux, objets utilisables).
+         * Tourbillon pres de la surface en visant vers le haut : remplace l'elan (sinon un elan tire a la verticale depasserait la projection).
+         * Quelques ticks pour atteindre la surface, puis bond() rend la vitesse visee entiere : en l'air, gravite et freinage normaux du jeu.
          */
-        private static void bond(Minecraft mc, LocalPlayer j) {
+        private static void projeter(Minecraft mc, LocalPlayer j) {
+            elargir(mc, FOV_PIC_PROJECTION, FOV_RETOUR_PROJECTION);
+            Vec3 regard = j.getLookAngle();
+            double[] p = CapeCalcul.projection(regard.x, regard.y, regard.z, Reglages.TOURBILLON_PROJECTION.get(), Reglages.TOURBILLON_PROJECTION_PORTEE.get());
+            px = p[0];
+            py = p[1];
+            pz = p[2];
+            projection = 8;
+            vx = CapeCalcul.approcher(vx, px, 0.6);
+            vy = CapeCalcul.approcher(vy, py, 0.6);
+            vz = CapeCalcul.approcher(vz, pz, 0.6);
             j.setDeltaMovement(vx, vy, vz);
-            for (int i = 0; i < 24; i++) {
-                double a = i * Math.PI * 2 / 24;
-                mc.level.addParticle(ParticleTypes.SPLASH, j.getX() + Math.cos(a) * 0.6, j.getY(), j.getZ() + Math.sin(a) * 0.6, Math.cos(a) * 0.2, 0.3, Math.sin(a) * 0.2);
+        }
+
+        /**
+         * Sortie de l'eau vers le haut : on rend au joueur la vitesse entiere (le dernier tick dans l'eau l'a freinee),
+         * puis le jeu fait le reste (gravite et air normaux, objets et grappin utilisables).
+         */
+        private static void bond(Minecraft mc, LocalPlayer j, boolean projete) {
+            if (projete) {
+                j.setDeltaMovement(px, py, pz);
+            } else {
+                j.setDeltaMovement(vx, vy, vz);
             }
-            for (int i = 0; i < 8; i++) {
-                mc.level.addParticle(ParticleTypes.BUBBLE_POP, j.getX() + (j.getRandom().nextDouble() - 0.5), j.getY(), j.getZ() + (j.getRandom().nextDouble() - 0.5), 0, 0.05, 0);
+            int gerbe = projete ? 72 : 24;
+            for (int i = 0; i < gerbe; i++) {
+                double a = i * Math.PI * 2 / 24 + i / 24 * 0.13;
+                double r = projete ? 0.5 + (i / 24) * 0.4 : 0.6;
+                double haut = projete ? 0.35 + (i / 24) * 0.25 : 0.3;
+                mc.level.addParticle(ParticleTypes.SPLASH, j.getX() + Math.cos(a) * r, j.getY(), j.getZ() + Math.sin(a) * r, Math.cos(a) * 0.25, haut, Math.sin(a) * 0.25);
             }
-            son(mc, j, SoundEvents.PLAYER_SPLASH_HIGH_SPEED, 0.5F, 1.3F);
-            son(mc, j, SoundEvents.DOLPHIN_JUMP, 0.9F, 1.0F);
+            for (int i = 0; i < (projete ? 30 : 8); i++) {
+                mc.level.addParticle(ParticleTypes.BUBBLE_POP, j.getX() + (j.getRandom().nextDouble() - 0.5) * 1.5, j.getY(), j.getZ() + (j.getRandom().nextDouble() - 0.5) * 1.5, 0, 0.08, 0);
+            }
+            if (projete) {
+                for (int i = 0; i < 10; i++) {
+                    mc.level.addParticle(ParticleTypes.CLOUD, j.getX() + (j.getRandom().nextDouble() - 0.5), j.getY() + 0.2, j.getZ() + (j.getRandom().nextDouble() - 0.5), 0, 0.05, 0);
+                }
+                son(mc, j, SoundEvents.PLAYER_SPLASH_HIGH_SPEED, 1.0F, 1.0F);
+                son(mc, j, SoundEvents.DOLPHIN_JUMP, 1.0F, 0.8F);
+                son(mc, j, SoundEvents.TRIDENT_RIPTIDE_3.value(), 0.8F, 1.2F);
+                son(mc, j, SoundEvents.GENERIC_SPLASH, 0.8F, 0.7F);
+                trainee = 12;
+            } else {
+                son(mc, j, SoundEvents.PLAYER_SPLASH_HIGH_SPEED, 0.5F, 1.3F);
+                son(mc, j, SoundEvents.DOLPHIN_JUMP, 0.9F, 1.0F);
+            }
         }
 
         private static void entree(Minecraft mc, LocalPlayer j) {
@@ -349,6 +421,9 @@ public final class CapeClient {
             active = false;
             dernierClic = -1;
             intensite = 0;
+            projection = 0;
+            trainee = 0;
+            debutFov = -1000;
             TOURBILLONS.clear();
         }
     }
@@ -390,45 +465,21 @@ public final class CapeClient {
     public static final class Effets {
         private static final Set<Integer> TOURNES = new HashSet<>();
 
-        /** Enveloppe 0..1 de l'a-coup du tourbillon chez soi (camera, champ de vision, bords d'ecran). */
-        private static double aCoup(double p) {
-            return p < 0 ? 0 : CapeCalcul.aCoup(p * DUREE_TOURBILLON, MONTEE, RETOUR);
-        }
-
-        /**
-         * Vue a la premiere personne : la camera penche brievement d'un cote puis revient, avec une petite secousse.
-         * Seul le roulis change : le regard (donc la visee) ne bouge jamais.
-         */
-        @SubscribeEvent
-        static void camera(ViewportEvent.ComputeCameraAngles evenement) {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.player == null || !mc.options.getCameraType().isFirstPerson()) {
-                return;
-            }
-            double p = tourbillon(mc.player, evenement.getPartialTick());
-            if (p < 0) {
-                return;
-            }
-            double t = p * DUREE_TOURBILLON;
-            double secousse = aCoup(p) * 0.8 * Math.sin(t * 9.0) * mc.options.screenEffectScale().get();
-            double roulis = cote * CapeCalcul.roulis(p, t, Reglages.TOURBILLON_ROULIS.get(), MONTEE, RETOUR) + secousse;
-            evenement.setRoll(evenement.getRoll() + (float) roulis);
-        }
-
-        /** Le champ de vision s'elargit un instant au declenchement du tourbillon. */
+        /** Le champ de vision s'elargit nettement au tourbillon (plus encore a la projection), puis revient en douceur. */
         @SubscribeEvent
         static void champDeVision(ViewportEvent.ComputeFov evenement) {
             Minecraft mc = Minecraft.getInstance();
-            if (mc.player == null || !evenement.usedConfiguredFov()) {
+            if (mc.player == null || mc.level == null || !evenement.usedConfiguredFov()) {
                 return;
             }
-            double e = aCoup(tourbillon(mc.player, evenement.getPartialTick()));
+            double t = mc.level.getGameTime() + evenement.getPartialTick() - debutFov;
+            double e = CapeCalcul.aCoup(t, FOV_MONTEE, retourFov);
             if (e > 0) {
-                evenement.setFOV(evenement.getFOV() * (1 + 0.08 * e * mc.options.fovEffectScale().get()));
+                evenement.setFOV(evenement.getFOV() * (1 + picFov * e * mc.options.fovEffectScale().get()));
             }
         }
 
-        /** Bords d'ecran : eclair du tourbillon, et pendant la nage rapide traits de vitesse et bulles dont l'intensite suit la vitesse. */
+        /** Bords d'ecran : eclair du tourbillon, et pendant la nage rapide teinte, traits de vitesse et bulles dont l'intensite suit la vitesse. */
         static void ecran(GuiGraphics g, DeltaTracker delta) {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player == null || mc.level == null || mc.options.hideGui || !mc.options.getCameraType().isFirstPerson()) {
@@ -438,14 +489,15 @@ public final class CapeClient {
             int h = g.guiHeight();
             float partiel = delta.getGameTimeDeltaPartialTick(false);
             double force = mc.options.screenEffectScale().get();
-            double eclair = aCoup(tourbillon(mc.player, partiel));
-            if (eclair > 0) {
-                bords(g, w, h, 0xD8F6FF, eclair * 0.5 * force, Math.max(8, h / 6));
+            double p = tourbillon(mc.player, partiel);
+            if (p >= 0) {
+                double eclair = CapeCalcul.aCoup(p * DUREE_TOURBILLON, 1.2, 6.0);
+                bords(g, w, h, 0xD8F6FF, eclair * 0.65 * force, Math.max(10, h / 4));
             }
             double i = Nage.intensite * force;
             if (i > 0.01) {
                 double temps = mc.level.getGameTime() + partiel;
-                bords(g, w, h, 0x4FB8DC, i * 0.22, Math.max(8, h / 5));
+                bords(g, w, h, 0x4FB8DC, i * 0.45, (int) Math.max(10, h / 3.5));
                 traits(g, w, h, i, temps);
                 bulles(g, w, h, i, temps);
             }
@@ -469,35 +521,40 @@ public final class CapeClient {
         /** Traits de vitesse rayonnants, seulement dans la couronne exterieure de l'ecran (le centre et le viseur restent libres). */
         private static void traits(GuiGraphics g, int w, int h, double i, double temps) {
             double rayon = Math.sqrt(w * w + h * h) / 2;
-            int n = 28;
+            int n = 44;
             PoseStack pose = g.pose();
             for (int k = 0; k < n; k++) {
                 double graine = (k * 0.618034) % 1;
-                double phase = (temps * 0.05 * (0.6 + i) + graine) % 1;
+                double phase = (temps * 0.06 * (0.6 + i) + graine) % 1;
                 double angle = k * Math.PI * 2 / n + graine * 0.2;
-                int r0 = (int) (rayon * (0.66 + 0.34 * phase));
-                int longueur = (int) (rayon * 0.12 * (0.4 + i));
+                // Distance du centre au bord de l'ecran dans cette direction : sur un ecran large, un rayon fixe mordrait le centre en haut et en bas.
+                double c = Math.abs(Math.cos(angle));
+                double s = Math.abs(Math.sin(angle));
+                double bord = Math.min(c < 1e-6 ? Double.MAX_VALUE : w / 2.0 / c, s < 1e-6 ? Double.MAX_VALUE : h / 2.0 / s);
+                int r0 = (int) (bord * (0.55 + 0.45 * phase));
+                int longueur = (int) (rayon * 0.22 * (0.4 + i));
                 pose.pushPose();
                 pose.translate(w / 2.0F, h / 2.0F, 0);
                 pose.mulPose(Axis.ZP.rotation((float) angle));
-                g.fill(r0, 0, r0 + longueur, 1, couleur(i * 0.45 * (1 - phase), 0xE8FBFF));
+                g.fill(r0, 0, r0 + longueur, 2, couleur(i * 0.8 * (1 - phase), 0xE8FBFF));
                 pose.popPose();
             }
         }
 
-        /** Petites bulles qui remontent le long des bords gauche et droit. */
+        /** Bulles qui remontent le long des bords gauche et droit. */
         private static void bulles(GuiGraphics g, int w, int h, double i, double temps) {
-            int bande = Math.max(6, w / 10);
-            for (int k = 0; k < 16; k++) {
+            int bande = Math.max(8, w / 6);
+            for (int k = 0; k < 40; k++) {
                 double graine = (k * 0.381966) % 1;
-                double phase = (temps * 0.015 * (1 + graine) + graine) % 1;
+                double phase = (temps * 0.02 * (1 + graine) + graine) % 1;
                 int x = (int) (graine * bande);
+                int taille = 2 + k % 3;
                 if (k % 2 == 1) {
-                    x = w - 2 - x;
+                    x = w - taille - x;
                 }
                 int y = (int) (h * (1.05 - phase * 1.1));
-                int c = couleur(i * 0.55 * Math.sin(phase * Math.PI), 0xE0F8FF);
-                g.fill(x, y, x + 2, y + 2, c);
+                int c = couleur(i * 0.85 * Math.sin(phase * Math.PI), 0xE0F8FF);
+                g.fill(x, y, x + taille, y + taille, c);
             }
         }
 

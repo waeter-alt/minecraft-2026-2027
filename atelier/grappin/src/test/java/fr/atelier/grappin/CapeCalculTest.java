@@ -67,12 +67,20 @@ class CapeCalculTest {
     }
 
     @Test
-    void roulisSelonLeReglage() {
-        assertEquals(0, CapeCalcul.roulis(0.12, 1.2, 0, 1.2, 5), 0);
-        assertEquals(14, CapeCalcul.roulis(0.12, 1.2, 14, 1.2, 5), 1e-9);
-        assertEquals(0, CapeCalcul.roulis(0.9, 9, 14, 1.2, 5), 0);
-        assertEquals(360, CapeCalcul.roulis(1, 10, 360, 1.2, 5), 1e-9);
-        assertEquals(180, CapeCalcul.roulis(0.5, 5, 360, 1.2, 5), 1e-9);
+    void aCoupRevientEnDouceur() {
+        assertEquals(0.5, CapeCalcul.aCoup(1.2 + 2.5, 1.2, 5), 1e-9);
+        assertTrue(CapeCalcul.aCoup(6.15, 1.2, 5) < 1e-3, "la fin doit rejoindre zero sans a-coup");
+    }
+
+    @Test
+    void projectionHauteFixeEtPorteeSelonLeRegard() {
+        assertArrayEquals(new double[] {2.0, 1.8, 0}, CapeCalcul.projection(1, 0.3, 0, 1.8, 2.0), 1e-9);
+        double[] diagonale = CapeCalcul.projection(0, 0.7, 0.7, 1.8, 2.0);
+        assertEquals(2.0, diagonale[2], 1e-9);
+        assertEquals(1.8, diagonale[1], 1e-9);
+        double[] raide = CapeCalcul.projection(0.35, 0.94, 0, 1.8, 2.0);
+        assertTrue(raide[0] > 0 && raide[0] < 1.2, "viser tres haut raccourcit la portee");
+        assertArrayEquals(new double[] {0, 1.8, 0}, CapeCalcul.projection(0, 1, 0, 1.8, 2.0), 0);
     }
 
     @Test

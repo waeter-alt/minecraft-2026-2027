@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
@@ -173,11 +174,46 @@ public final class CapeEvenements {
             }
         }
 
+        if (projection(j)) {
+            // Gerbe vue par tout le monde ; le joueur lui-meme a deja la sienne, calculee chez lui (CapeClient), d'ou le son qui l'exclut.
+            BlockPos surface = surfaceProche(j);
+            ServerLevel monde = (ServerLevel) j.level();
+            double sx = j.getX(), sy = surface.getY(), sz = j.getZ();
+            monde.sendParticles(ParticleTypes.SPLASH, sx, sy, sz, 60, 0.8, 0.2, 0.8, 0.4);
+            monde.sendParticles(ParticleTypes.BUBBLE_POP, sx, sy, sz, 20, 0.6, 0.1, 0.6, 0.05);
+            monde.sendParticles(ParticleTypes.CLOUD, sx, sy + 0.3, sz, 8, 0.5, 0.1, 0.5, 0.02);
+            monde.playSound(j, sx, sy, sz, SoundEvents.PLAYER_SPLASH_HIGH_SPEED, SoundSource.PLAYERS, 1.0F, 0.9F);
+            monde.playSound(j, sx, sy, sz, SoundEvents.TRIDENT_RIPTIDE_3.value(), SoundSource.PLAYERS, 0.8F, 1.2F);
+        }
         anneauDeBulles((ServerLevel) j.level(), centre, j.getLookAngle(), portee);
         j.level().playSound(null, j.getX(), j.getY(), j.getZ(), SoundEvents.TRIDENT_RIPTIDE_1.value(), SoundSource.PLAYERS, 0.6F, 1.4F);
         j.level().playSound(null, j.getX(), j.getY(), j.getZ(), SoundEvents.BUBBLE_COLUMN_WHIRLPOOL_INSIDE, SoundSource.PLAYERS, 1.0F, 1.3F);
         j.level().playSound(null, j.getX(), j.getY(), j.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.8F, 0.7F);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(j, new TourbillonPayload(j.getId()));
+    }
+
+    /** Pente minimale du regard pour qu'un tourbillon pres de la surface devienne une projection (0,25 = environ 15 degres vers le haut). */
+    static final double PENTE_PROJECTION = 0.25;
+
+    /**
+     * Premier bloc libre (ni eau, ni obstacle) a 3 blocs ou moins au dessus des yeux, ou null : sous un plafond ou trop profond.
+     * Partage par le client (qui projette le joueur) et le serveur (qui montre la gerbe aux autres) pour qu'ils decident pareil.
+     */
+    static BlockPos surfaceProche(Player j) {
+        BlockPos yeux = BlockPos.containing(j.getEyePosition());
+        for (int k = 1; k <= 3; k++) {
+            BlockPos p = yeux.above(k);
+            if (!j.level().getFluidState(p).isEmpty()) {
+                continue;
+            }
+            return j.level().getBlockState(p).getCollisionShape(j.level(), p).isEmpty() ? p : null;
+        }
+        return null;
+    }
+
+    /** Ce tourbillon est-il une projection hors de l'eau ? */
+    static boolean projection(Player j) {
+        return Reglages.TOURBILLON_PROJECTION.get() > 0 && j.getLookAngle().y > PENTE_PROJECTION && surfaceProche(j) != null;
     }
 
     /** Coup porte : etincelles, eclaboussures et un son propre au coup, distinct du son de l'attaque elle-meme. */

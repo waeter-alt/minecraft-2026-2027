@@ -41,7 +41,10 @@ public final class CapeCalcul {
         return (p - Math.sin(p * Math.PI * 2) / (Math.PI * 2)) * Math.PI * 2;
     }
 
-    /** Enveloppe 0..1 d'un a-coup : montee rapide (quart de sinus) puis retour amorti (1-r)^3, t en ticks. */
+    /**
+     * Enveloppe 0..1 d'un a-coup, t en ticks : montee rapide (quart de sinus) puis retour en demi-cosinus.
+     * Les deux raccords ont une pente nulle (au pic et a la fin) : pas de cassure visible dans le champ de vision.
+     */
     public static double aCoup(double t, double montee, double retour) {
         if (t <= 0 || t >= montee + retour) {
             return 0;
@@ -49,22 +52,22 @@ public final class CapeCalcul {
         if (t < montee) {
             return Math.sin(t / montee * Math.PI / 2);
         }
-        double r = 1 - (t - montee) / retour;
-        return r * r * r;
+        return (1 + Math.cos((t - montee) / retour * Math.PI)) / 2;
     }
 
     /**
-     * Roulis de camera du tourbillon, en degres, pour un reglage donne : 0 = aucun, 360 = l'ancien tonneau complet,
-     * entre les deux = un a-coup qui penche jusqu'a ce pic puis revient a plat.
+     * Vitesse de projection hors de l'eau : toujours la meme vitesse verticale (hauteur), et vers l'avant du regard la vitesse horizontale
+     * (portee) entiere tant qu'on vise a moins de 45 degres environ ; au dela elle diminue, pour qu'un regard a la verticale donne un bond sur place.
      */
-    public static double roulis(double p, double t, double pic, double montee, double retour) {
-        if (pic <= 0) {
-            return 0;
+    public static double[] projection(double rx, double ry, double rz, double hauteur, double portee) {
+        double horizontal = Math.sqrt(rx * rx + rz * rz);
+        double n = Math.sqrt(horizontal * horizontal + ry * ry);
+        if (horizontal < 1.0E-9 || n < 1.0E-9) {
+            return new double[] {0, hauteur, 0};
         }
-        if (pic >= 360) {
-            return Math.toDegrees(tourComplet(p));
-        }
-        return pic * aCoup(t, montee, retour);
+        double part = Math.min(1, horizontal / n / 0.7);
+        double v = portee * part / horizontal;
+        return new double[] {rx * v, hauteur, rz * v};
     }
 
     /** Intensite 0..1 des effets de vitesse : vitesse actuelle rapportee a la vitesse de sprint. */
