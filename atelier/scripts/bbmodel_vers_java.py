@@ -1,6 +1,7 @@
 # [claude-build] Traduit un modele Blockbench d'entite (.bbmodel : os, box UV, animations) en deux classes Java pour Minecraft 1.21.1 :
 #   <Nom>Geometrie : creerCouche() et les chemins des parties dont le rendu a besoin (lueurs, bourgeons, masque et petales des points faibles, tete) ;
 #   <Nom>Animations : une AnimationDefinition par animation (systeme d'animation integre a Minecraft, comme le Warden).
+#   <Nom>Squelette : le meme modele pour le serveur (classe Squelette), qui y calcule ou sont les points faibles.
 # On n'utilise pas l'export Java de Blockbench : il ne garde pas les parties lumineuses ni les points faibles a part.
 #   python bbmodel_vers_java.py <modele.bbmodel> <dossier java> [--paquet fr.atelier.grappin] [--nom Golem]
 # Reperes : Blockbench a y vers le haut et les pieds en 0 ; Minecraft a y vers le bas et les pieds en 24, x inverse :
@@ -179,6 +180,46 @@ def java_animations(modele, paquet, classe):
             + "".join("\n" + c + "\n" for c in champs) + "}\n")
 
 
+def java_squelette(modele, paquet, classe):
+    """Le meme modele pour le serveur (classe Squelette, sans Minecraft) : os, pivots et canaux, valeurs dans le repere de Minecraft."""
+    os_lignes = []
+    for chemin, g, parent, _ in parcourir(modele):
+        assert all(abs(r) < 1e-9 for r in g.get("rotation", [0, 0, 0])), f"os {g['name']} : rotation de repos non geree par Squelette"
+        o = g["origin"]
+        ref = [0, 0, 0] if parent is None else parent["origin"]
+        y = (24 - o[1]) if parent is None else -(o[1] - ref[1])
+        nom_parent = "null" if parent is None else f'"{parent["name"]}"'
+        os_lignes.append(f'            new Squelette.Os("{g["name"]}", {nom_parent}, {f(-(o[0] - ref[0]))}, {f(y)}, {f(o[2] - ref[2])})')
+    anims = []
+    for a in modele.get("animations", []):
+        canaux = []
+        for anim in a.get("animators", {}).values():
+            for nom, rotation in (("rotation", True), ("position", False)):
+                ks = sorted((k for k in anim["keyframes"] if k["channel"] == nom), key=lambda k: k["time"])
+                if not ks:
+                    continue
+                vals = []
+                for k in ks:
+                    x, y, z = (float(k["data_points"][0][c]) for c in "xyz")
+                    vals.append((-x, -y, z))
+                temps = ", ".join(f(k["time"]) for k in ks)
+                valeurs = ", ".join("{" + ", ".join(f(v) for v in t) + "}" for t in vals)
+                catmull = ", ".join("true" if INTERPOLATIONS.get(k.get("interpolation", "linear")) == "CATMULLROM" else "false" for k in ks)
+                canaux.append(f'                    new Squelette.Canal("{anim["name"]}", {str(rotation).lower()}, new float[] {{{temps}}}, '
+                              f'new float[][] {{{valeurs}}}, new boolean[] {{{catmull}}})')
+        anims.append(f'            Map.entry("{a["name"]}", new Squelette.Anim({f(a["length"])}, {str(a.get("loop") == "loop").lower()}, List.of(\n'
+                     + ",\n".join(canaux) + ")))")
+    return (ENTETE + f"package {paquet};\n\n"
+            "import java.util.List;\n"
+            "import java.util.Map;\n\n"
+            f"public final class {classe} {{\n"
+            f"    private {classe}() {{\n    }}\n\n"
+            "    public static final Squelette SQUELETTE = new Squelette(\n"
+            "        List.of(\n" + ",\n".join(os_lignes) + "),\n"
+            "        Map.ofEntries(\n" + ",\n".join(anims) + "));\n"
+            "}\n")
+
+
 def main():
     args = sys.argv[1:]
     paquet = args[args.index("--paquet") + 1] if "--paquet" in args else "fr.atelier.grappin"
@@ -187,7 +228,8 @@ def main():
     dossier = Path(args[1])
     (dossier / f"{nom}Geometrie.java").write_text(java_geometrie(modele, paquet, nom + "Geometrie"), encoding="utf-8")
     (dossier / f"{nom}Animations.java").write_text(java_animations(modele, paquet, nom + "Animations"), encoding="utf-8")
-    print(f"{nom}Geometrie.java et {nom}Animations.java ecrits dans {dossier}")
+    (dossier / f"{nom}Squelette.java").write_text(java_squelette(modele, paquet, nom + "Squelette"), encoding="utf-8")
+    print(f"{nom}Geometrie, {nom}Animations et {nom}Squelette ecrits dans {dossier}")
 
 
 if __name__ == "__main__":
