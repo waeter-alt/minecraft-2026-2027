@@ -180,17 +180,15 @@ def fonctions(infos, decalages, infos2, infos3=None, infos4=None):
     contenu_grappin = "{Items:[{Slot:13b,id:\"grappin:grappin\",count:1}]}"
     contenu_cle = ("{Items:[{Slot:13b,id:\"minecraft:tripwire_hook\",count:1,components:{\"minecraft:custom_name\":'\"" + NOMS_CLES["2"] + "\"',"
                    "\"minecraft:lore\":['\"Ouvre la porte " + salle1.COULEURS_PORTES["2"][2] + "\"']}}]}")
-    # le mini-boss de la grande salle (PROVISOIRE : un vindicateur costaud, Luca definira le vrai) : il se reveille quand un joueur s'approche ; le coffre du grappin, sur l'estrade, n'apparait qu'une fois le mini-boss vaincu
+    # le mini-boss de la grande salle : le Rodeur des Racines (grappin:rodeur, mod grappin 3.4.0+), qui se reveille quand un joueur s'approche ; le coffre du grappin, sur l'estrade, n'apparait qu'une fois le mini-boss vaincu
     f["suspendu_ss1_boss_debut"] = "\n".join([
-        "# [claude-build] Un joueur s'approche du mini-boss de la grande salle : il apparait (une seule fois). Provisoire : un vindicateur a 60 points de vie, a remplacer par le vrai mini-boss.",
+        "# [claude-build] Un joueur s'approche du mini-boss de la grande salle : le Rodeur des Racines sort de la mousse (une seule fois). Sa vie et ses degats se reglent dans la config du mod grappin (rodeur*).",
         "scoreboard players set #s4 suspendu 1",
-        f"summon minecraft:vindicator {centre_boss} {{Tags:[\"suspendu_ss1m\"],PersistenceRequired:1b,CustomName:'{{\"text\":\"Gardien de la salle\",\"color\":\"red\"}}',CustomNameVisible:1b}}",
-        "attribute @e[type=minecraft:vindicator,tag=suspendu_ss1m,limit=1] minecraft:generic.max_health base set 60",
-        "data modify entity @e[type=minecraft:vindicator,tag=suspendu_ss1m,limit=1] Health set value 60f",
+        f"summon grappin:rodeur {centre_boss} {{Tags:[\"suspendu_ss1m\"],PersistenceRequired:1b,CustomName:'{{\"text\":\"Rôdeur des Racines\",\"color\":\"red\"}}',CustomNameVisible:1b}}",
         f"execute positioned {centre_boss} run title @a[distance=..60] times 10 50 20",
         f"execute positioned {centre_boss} run title @a[distance=..60] subtitle {{\"text\":\"Le coffre du grappin apparaîtra sur l'estrade\",\"color\":\"gray\"}}",
-        f"execute positioned {centre_boss} run title @a[distance=..60] title {{\"text\":\"Vainquez le gardien de la salle\",\"color\":\"red\"}}",
-        f"execute positioned {centre_boss} run playsound minecraft:entity.vindicator.celebrate master @a[distance=..60] ~ ~ ~ 2 0.8"]) + "\n"
+        f"execute positioned {centre_boss} run title @a[distance=..60] title {{\"text\":\"Vainquez le Rôdeur des Racines\",\"color\":\"red\"}}",
+        f"execute positioned {centre_boss} run playsound minecraft:entity.ravager.roar master @a[distance=..60] ~ ~ ~ 2 1.4"]) + "\n"
     f["suspendu_ss1_boss_fin"] = "\n".join([
         "# [claude-build] Le mini-boss est vaincu : une cinematique montre le coffre du grappin qui apparait sur l'estrade (ou le coffre apparait tout de suite si une autre cinematique est en cours).",
         "scoreboard players set #s4 suspendu 2",
