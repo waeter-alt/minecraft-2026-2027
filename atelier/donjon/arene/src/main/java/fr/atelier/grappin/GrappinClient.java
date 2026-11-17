@@ -8,8 +8,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 
+import org.joml.Matrix4f;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -19,9 +22,11 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -171,12 +176,32 @@ public final class GrappinClient {
             Vec3 main = lanceur.getRopeHoldPosition(partiel);
             Vec3 ici = crochet.getPosition(partiel);
             Vec3 d = main.subtract(ici);
-            float lx = (float) d.x, ly = (float) d.y, lz = (float) d.z;
-            float n = (float) Math.max(1.0E-4, d.length());
-            VertexConsumer corde = tampons.getBuffer(RenderType.lines());
-            PoseStack.Pose p = pose.last();
-            corde.addVertex(p, 0.0F, 0.0F, 0.0F).setColor(70, 60, 50, 255).setNormal(p, lx / n, ly / n, lz / n);
-            corde.addVertex(p, lx, ly, lz).setColor(70, 60, 50, 255).setNormal(p, lx / n, ly / n, lz / n);
+            double[][] pts = Corde.points(d.x, d.y, d.z, Corde.mou(crochet.estAccroche(), d.length()), Corde.SEGMENTS);
+            // Lumiere prise aux deux bouts et melangee le long de la corde, comme la laisse : visible dans le noir sans briller.
+            BlockPos bc = BlockPos.containing(ici), bm = BlockPos.containing(main);
+            int blocC = crochet.level().getBrightness(LightLayer.BLOCK, bc), blocM = crochet.level().getBrightness(LightLayer.BLOCK, bm);
+            int cielC = crochet.level().getBrightness(LightLayer.SKY, bc), cielM = crochet.level().getBrightness(LightLayer.SKY, bm);
+            double horiz = Math.sqrt(d.x * d.x + d.z * d.z);
+            float demi = Corde.LARGEUR / 2;
+            float ox = horiz < 1.0E-4 ? demi : (float) (-d.z / horiz) * demi;
+            float oz = horiz < 1.0E-4 ? 0 : (float) (d.x / horiz) * demi;
+            VertexConsumer corde = tampons.getBuffer(RenderType.leash());
+            Matrix4f m = pose.last().pose();
+            bande(corde, m, pts, ox, 0, oz, blocC, blocM, cielC, cielM, false);      // bande a plat, du crochet a la main
+            bande(corde, m, pts, 0, demi, 0, blocC, blocM, cielC, cielM, true);      // bande debout, de la main au crochet : le meme tampon (triangle strip) enchaine les deux bandes sans triangle parasite, comme la laisse
+        }
+
+        /** Une bande de la corde (triangle strip), deux tons de brun en alternance pour l'effet tresse. */
+        private static void bande(VertexConsumer c, Matrix4f m, double[][] pts, float ox, float oy, float oz, int blocC, int blocM, int cielC, int cielM, boolean envers) {
+            for (int k = 0; k < pts.length; k++) {
+                int i = envers ? pts.length - 1 - k : k;
+                float t = (float) i / (pts.length - 1);
+                int lum = LightTexture.pack((int) Mth.lerp(t, blocC, blocM), (int) Mth.lerp(t, cielC, cielM));
+                int r = i % 2 == 0 ? 139 : 105, g = i % 2 == 0 ? 105 : 78, b = i % 2 == 0 ? 70 : 50;
+                float x = (float) pts[i][0], y = (float) pts[i][1], z = (float) pts[i][2];
+                c.addVertex(m, x - ox, y - oy, z - oz).setColor(r, g, b, 255).setLight(lum);
+                c.addVertex(m, x + ox, y + oy, z + oz).setColor(r, g, b, 255).setLight(lum);
+            }
         }
     }
 }
