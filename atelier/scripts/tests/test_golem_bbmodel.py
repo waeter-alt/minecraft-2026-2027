@@ -12,12 +12,9 @@ BBMODEL = RACINE / "atelier/modeles/golem/golem.bbmodel"
 GOLEM_JAVA = RACINE / "atelier/donjon/arene/src/main/java/fr/atelier/grappin/Golem.java"
 TEXTURE = RACINE / "atelier/donjon/arene/src/main/resources/assets/grappin/textures/entity/golem.png"
 
-# Nombre de cubes de GolemModele.creerCouche() avant le passage en os (compte fait a la main sur le code du 2026-11-17 :
-# 138 cubes du corps et des veines, 5 x (4 noeuds + bourgeon + couvercle) = 30 pour les points faibles, 2 yeux).
-CUBES_ORIGINE = 170
-
-OS = {"racine": None, "base": "racine", "fixe": "racine", "corps": "racine", "tete": "corps", "machoire": "tete",
-      "bras_g": "corps", "main_g": "bras_g", "bras_d": "corps", "poing_d": "bras_d", "branches_dos": "corps", "lianes": "corps"}
+OS = {"racine": None, "base": "racine", "corps": "racine", "tete": "corps", "machoire": "tete",
+      "bras_g": "corps", "main_g": "bras_g", "bras_d": "corps", "poing_d": "bras_d", "branches_dos": "corps", "lianes": "corps",
+      "pf0": "tete", "pf1": "corps", "pf2": "bras_d", "pf3": "corps", "pf4": "corps", "pf0_masque": "pf0"}
 
 
 def constantes():
@@ -69,25 +66,48 @@ class TestGolemBbmodel(unittest.TestCase):
             self.assertIn(nom, self.os, nom)
             self.assertEqual(parent, self.os[nom][0], nom)
 
-    def test_points_faibles_dans_fixe_et_a_leur_place(self):
+    def groupes(self):
+        g = {}
+
+        def visiter(gr):
+            g[gr["name"]] = gr
+            for c in gr["children"]:
+                if isinstance(c, dict):
+                    visiter(c)
+        for gr in self.modele["outliner"]:
+            visiter(gr)
+        return g
+
+    def test_points_faibles_au_repos(self):
         az, rayons, hauteurs, tailles, largeur = constantes()
-        fixe = {e["name"]: e for e in self.os["fixe"][1]}
+        g = self.groupes()
         for i in range(5):
-            self.assertIn(f"rouge{i}", fixe)
-            couv = fixe[f"couv{i}"]
             rm = rayons[i] / largeur
             cx, cz = -rm * math.sin(math.radians(az[i])), rm * math.cos(math.radians(az[i]))
             attendu = (cx * 4, 24 - hauteurs[i] * 4, -cz * 4)
-            for a, b in zip(centre_java(couv), attendu):
+            o = g[f"pf{i}"]["origin"]
+            for a, b in zip((-o[0], 24 - o[1], o[2]), attendu):
                 self.assertAlmostEqual(a, b, delta=1e-6)
-            t = tailles[i]
-            w = t / largeur
-            taille = [b - a for a, b in zip(couv["from"], couv["to"])]
-            for a, b in zip(taille, (w * 4, t * 4, w * 4)):
-                self.assertAlmostEqual(a, b, delta=1e-6)
+            self.assertTrue(all(abs(r) < 1e-9 for gr in g.values() for r in gr.get("rotation", [0, 0, 0])))
+            self.assertIn(f"rouge{i}", [e["name"] for e in self.os[f"pf{i}"][1]])
 
-    def test_meme_nombre_de_cubes(self):
-        self.assertEqual(CUBES_ORIGINE, len(self.modele["elements"]))
+    def test_coques(self):
+        az, rayons, hauteurs, tailles, largeur = constantes()
+        self.assertGreaterEqual(sum(e["name"].startswith("couv0_") for e in self.os["pf0_masque"][1]), 6)
+        for i in range(1, 5):
+            petales = [n for n, (parent, _) in self.os.items() if parent == f"pf{i}" and n.startswith(f"pf{i}_petale")]
+            self.assertEqual(4, len(petales), i)
+            self.assertGreaterEqual(sum(e["name"].startswith(f"couv{i}_") for p in petales for e in self.os[p][1]), 8)
+        for i in range(5):
+            limite = (0.6 * tailles[i] / largeur * 4, 0.6 * tailles[i] * 4, 0.6 * tailles[i] / largeur * 4)
+            for e in self.modele["elements"]:
+                if e["name"].startswith(f"couv{i}_"):
+                    taille = [b - a for a, b in zip(e["from"], e["to"])]
+                    self.assertFalse(all(taille[k] > limite[k] for k in range(3)), e["name"])
+
+    def test_hanches_dans_le_corps(self):
+        noms = [e["name"] for e in self.os["base"][1]]
+        self.assertEqual(["racine"] * 4, noms)
 
     def test_texture_et_uv(self):
         self.assertEqual({"width": 512, "height": 512}, self.modele["resolution"])
@@ -116,11 +136,10 @@ class TestGolemBbmodel(unittest.TestCase):
             self.assertAlmostEqual(duree, anims[nom]["length"], delta=1e-6)
             self.assertEqual("loop" if nom == "repos" else "once", anims[nom]["loop"], nom)
 
-    def test_fixe_jamais_anime(self):
-        interdits = {"fixe", "racine", "base"} | {e["name"] for e in self.os["fixe"][1]}
+    def test_pf_jamais_animes(self):
         for a in self.modele["animations"]:
             for anim in a["animators"].values():
-                self.assertNotIn(anim["name"], interdits, a["name"])
+                self.assertFalse(anim["name"].startswith("pf") or anim["name"] in ("racine", "base"), (a["name"], anim["name"]))
 
     def test_angles_lents_et_lourds(self):
         for a in self.modele["animations"]:

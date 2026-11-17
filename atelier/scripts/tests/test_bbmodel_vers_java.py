@@ -39,9 +39,9 @@ class TestBbmodelVersJava(unittest.TestCase):
     def test_chemins_points_faibles(self):
         modele = json.loads((RACINE / "atelier/modeles/golem/golem.bbmodel").read_text(encoding="utf-8"))
         chemins = bj.chemins(modele)
-        self.assertEqual([f"fixe/rouge{i}" for i in range(5)], chemins["ROUGES"])
-        self.assertEqual([f"fixe/couv{i}" for i in range(5)], chemins["COUVERCLES"])
-        self.assertIn("fixe/rouge0", chemins["LUEURS"])
+        self.assertEqual(["corps/tete/pf0/rouge0", "corps/pf1/rouge1", "corps/bras_d/pf2/rouge2", "corps/pf3/rouge3",
+                          "corps/pf4/rouge4"], chemins["ROUGES"])
+        self.assertIn("corps/tete/pf0/rouge0", chemins["LUEURS"])
         self.assertTrue(any(c.startswith("corps/tete/lueur_") for c in chemins["LUEURS"]))
 
     def test_boucle(self):

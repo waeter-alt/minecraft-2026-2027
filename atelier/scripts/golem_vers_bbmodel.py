@@ -27,7 +27,7 @@ GRAINE = uuid.UUID("2b9f3c1e-6a41-4d7e-9c55-0d1f00000000")
 OS = {
     "racine": (None, (0, 0, 0)),
     "base": ("racine", (0, 0, 0)),
-    "fixe": ("racine", (0, 0, 0)),
+
     "corps": ("racine", (0, 6, 0)),
     "tete": ("corps", (0, 31, 2)),
     "machoire": ("tete", (0, 31, 1)),
@@ -47,7 +47,7 @@ def vers_bb(cx, cy, cz):
 
 class Modele:
     def __init__(self):
-        self.cubes = {nom: [] for nom in OS}
+        self.cubes = {nom: [] for nom in os_complets()}
 
     def cube(self, os, nom, zone, cx, cy, cz, w, h, d, rz=0):
         c = vers_bb(cx, cy, cz)
@@ -74,11 +74,85 @@ def constantes_golem():
     return tableau("AZIMUTS"), tableau("RAYONS"), tableau("HAUTEURS"), tableau("TAILLES"), largeur
 
 
+PORTEURS = ["tete", "corps", "bras_d", "corps", "corps"]       # l'os qui porte chaque point faible (ordre de Golem.NOMS_PIECES)
+
+
+def points_faibles():
+    """(cx, cy, cz, hauteur t, largeur w) de chaque point faible au repos, en blocs ; w est la largeur dans le modele (avant l'echelle 0,75)."""
+    az, rayons, hauteurs, tailles, largeur = constantes_golem()
+    res = []
+    for i in range(5):
+        rm = rayons[i] / largeur
+        a = math.radians(az[i])
+        res.append((-rm * math.sin(a), hauteurs[i], rm * math.cos(a), tailles[i], tailles[i] / largeur))
+    return res
+
+
+def os_complets():
+    """Les os du corps, plus un os par point faible (pivot au centre de sa boite) et ses sous-os (masque, petales)."""
+    tous = dict(OS)
+    for i, (cx, cy, cz, t, w) in enumerate(points_faibles()):
+        tous[f"pf{i}"] = (PORTEURS[i], (cx, cy, cz))
+        hw, ht = w / 2, t / 2
+        if i == 0:
+            tous["pf0_masque"] = ("pf0", (cx, cy + 3.0, cz + 0.4))              # charniere en haut du masque
+        else:
+            for k, (dx, dz) in enumerate(((1, 0), (-1, 0), (0, 1), (0, -1))):   # pivot au bas du petale, cote exterieur
+                tous[f"pf{i}_petale{k}"] = (f"pf{i}", (cx + dx * 0.75 * hw, cy - 0.95 * ht, cz + dz * 0.75 * hw))
+    return tous
+
+
+def masque(m, cx, cy, cz, t, w):
+    """Masque de bois sculpte pose sur le visage (os pf0_masque) ; derriere, le visage rouge lumineux qui bat quand il s'ouvre."""
+    os = "pf0_masque"
+
+    def piece(nom, x0, x1, y0, y1, z0, z1, zone=CLAIR):
+        m.cube(os, "couv0_" + nom, zone, cx + (x0 + x1) / 2, cy + (y0 + y1) / 2, cz + (z0 + z1) / 2, x1 - x0, y1 - y0, z1 - z0)
+    piece("front", -3.6, 3.6, 1.0, 3.0, 0.0, 0.8)
+    piece("arcade", -3.8, 3.8, 0.6, 1.2, 0.8, 1.4, SOMBRE)
+    piece("tempe_g", -3.6, -2.6, 0.0, 1.0, 0.0, 0.8)
+    piece("tempe_d", 2.6, 3.6, 0.0, 1.0, 0.0, 0.8)
+    piece("joue_g", -3.6, -1.4, -2.2, 0.0, 0.0, 0.8)
+    piece("joue_d", 1.4, 3.6, -2.2, 0.0, 0.0, 0.8)
+    piece("nez", -0.6, 0.6, -1.2, 1.0, 0.0, 1.6)
+    piece("menton", -3.0, 3.0, -3.0, -2.2, 0.0, 0.8)
+    piece("bord_g", -4.0, -3.6, -2.0, 2.5, -1.5, 0.8, SOMBRE)
+    piece("bord_d", 3.6, 4.0, -2.0, 2.5, -1.5, 0.8, SOMBRE)
+    piece("corne_g", -3.0, -2.2, 3.0, 4.2, 0.2, 1.0, SOMBRE)
+    piece("corne_d", 2.2, 3.0, 3.0, 4.2, 0.2, 1.0, SOMBRE)
+    m.cube("pf0", "rouge0", ROUGE, cx, cy, cz - 0.5, 0.8 * w, 0.6 * t, 1.0)             # le visage rouge, juste derriere le masque
+
+
+def excroissance(m, i, cx, cy, cz, t, w):
+    """Nœud de bois vivant : un cœur rouge dans une coque de 4 petales d'ecorce arrondis, mousse dessus, racines vers le corps."""
+    hw, ht = w / 2, t / 2
+    m.cube(f"pf{i}", f"rouge{i}", ROUGE, cx, cy, cz, 1.2 * hw, 1.2 * ht, 1.2 * hw)
+    for k, (dx, dz) in enumerate(((1, 0), (-1, 0), (0, 1), (0, -1))):
+        os = f"pf{i}_petale{k}"
+
+        def piece(nom, r0, r1, y0, y1, l0, l1):
+            """r : vers l'exterieur du petale, l : le long du petale (en fractions de la demi-largeur), y en fractions de la demi-hauteur."""
+            rc, lc = (r0 + r1) / 2 * hw, (l0 + l1) / 2 * hw
+            x, z = (cx + dx * rc + dz * lc, cz + dz * rc + dx * lc)
+            tr, tl = (r1 - r0) * hw, (l1 - l0) * hw
+            m.sombre(os, x, cy + (y0 + y1) / 2 * ht, z, tr if dx else tl, (y1 - y0) * ht, tl if dx else tr, nom=f"couv{i}_{nom}")
+        decale = 0.03 * k                                                                  # evite deux faces exactement superposees
+        piece("flanc", 0.6, 0.9, -0.7, 0.7, -0.75, 0.75)
+        piece("haut", 0.05, 0.65, 0.7 + decale, 0.93 + decale, -0.6, 0.6)
+        piece("bas", 0.05, 0.65, -0.93 - decale, -0.7 - decale, -0.6, 0.6)
+    m.cube(f"pf{i}", "mousse", MOUSSE, cx, cy + 0.97 * ht, cz, 0.6 * hw, 0.12 * ht, 0.6 * hw)
+    for k in range(1, 5):                                                                  # la branche qui le relie au corps
+        f = 0.18 + 0.17 * k
+        m.sombre(f"pf{i}", cx * f, cy, cz * f, 2.4, 2.4, 2.4, nom="noeud")
+    for s in (-1, 1):                                                                      # racines qui l'agrippent
+        m.sombre(f"pf{i}", cx * 0.86 + s * 0.6, cy - 0.8 * ht, cz * 0.86 - s * 0.6, 0.9, 0.9, 0.9, nom="racine_pf")
+
+
 def geometrie():
     m = Modele()
     # ------------------------------------------------ taille de mousse, hanches, racines (base : ne bouge pas, plonge dans la lave)
-    m.cube("base", "mousse", MOUSSE, 0, 3, 0, 13, 6, 11)
-    m.sombre("base", 0, 10.5, 0, 11.5, 9, 10)
+    m.cube("corps", "mousse", MOUSSE, 0, 3, 0, 13, 6, 11)                 # taille et hanches : elles bougent avec le corps
+    m.sombre("corps", 0, 10.5, 0, 11.5, 9, 10, nom="hanche")
     for s in (-1, 1):
         m.sombre("base", s * 7.4, 1.0, 3.5, 3.5, 2.6, 3.5, nom="racine")
         m.sombre("base", s * 7.0, 1.0, -3.5, 3.5, 2.6, 3.5, nom="racine")
@@ -147,7 +221,7 @@ def geometrie():
         m.cube("tete", "mousse", MOUSSE, -2.6 + k * 1.7, 41.8, 2.5, 1.0, 1.4, 1.0)
     for k in range(6):                                                    # ceinture de racines
         a = k * math.pi / 3
-        m.sombre("base", math.cos(a) * 5.9, 6.9, math.sin(a) * 5.2, 2.4, 1.8, 2.4, nom="ceinture")
+        m.sombre("corps", math.cos(a) * 5.9, 6.9, math.sin(a) * 5.2, 2.4, 1.8, 2.4, nom="ceinture")
     m.bois("bras_g", -12.6, 12.6, 4.9, 4.6, 6, 0.6, nom="plaque")
     m.bois("bras_g", -12.2, 21.5, 3.8, 3.6, 7, 0.6, nom="plaque")
     for k in range(4):
@@ -169,20 +243,12 @@ def geometrie():
         m.cube("corps", "veine_", AMBRE, s * 5.6, 20.0, 5.75, 0.5, 5.0, 0.3, s * 12)
         m.cube("corps", "veine_", AMBRE, s * 6.4, 16.8, 5.75, 0.4, 3.0, 0.3, -s * 18)
         m.cube("corps", "veine_", AMBRE, s * 9.0, 30.0, 4.65, 0.4, 3.0, 0.3)
-    # ------------------------------------------------ points faibles (os fixe), a l'identique de leurs boites de collision
-    az, rayons, hauteurs, tailles, largeur = constantes_golem()
-    for i in range(5):
-        rm = rayons[i] / largeur
-        a = math.radians(az[i])
-        cx, cz = -rm * math.sin(a), rm * math.cos(a)
-        t = tailles[i]
-        w = t / largeur
-        cy = hauteurs[i]
-        for k in range(1, 5):
-            f = 0.18 + 0.17 * k
-            m.sombre("fixe", cx * f, cy, cz * f, 2.4, 2.4, 2.4, nom="noeud")
-        m.cube("fixe", f"rouge{i}", ROUGE, cx, cy, cz, w * 0.72, t * 0.72, w * 0.72)
-        m.cube("fixe", f"couv{i}", SOMBRE, cx, cy, cz, w, t, w)
+    # ------------------------------------------------ points faibles : au repos, au centre de leur boite de collision ; ils suivent l'os qui les porte
+    for i, (cx, cy, cz, t, w) in enumerate(points_faibles()):
+        if i == 0:
+            masque(m, cx, cy, cz, t, w)
+        else:
+            excroissance(m, i, cx, cy, cz, t, w)
     m.cube("tete", "lueur_oeil_g", AMBRE, -2.5, 36.0, 9.8, 2.8, 1.0, 0.4, 20)
     m.cube("tete", "lueur_oeil_d", AMBRE, 2.5, 36.0, 9.8, 2.8, 1.0, 0.4, -20)
     return m
@@ -209,7 +275,8 @@ def ident(*parties):
 def construire(animations=None):
     m = geometrie()
     elements = []
-    enfants = {nom: [] for nom in OS}
+    tous = os_complets()
+    enfants = {nom: [] for nom in tous}
     for os, cubes in m.cubes.items():
         for n, c in enumerate(cubes):
             e = {
@@ -222,10 +289,10 @@ def construire(animations=None):
             enfants[os].append(e["uuid"])
 
     def groupe(nom):
-        pivot = OS[nom][1]
+        pivot = tous[nom][1]
         return {"name": nom, "origin": list(vers_bb(*pivot)), "color": 0, "uuid": ident("os", nom), "export": True,
                 "mirror_uv": False, "isOpen": True, "locked": False, "visibility": True, "autouv": 0,
-                "children": enfants[nom] + [groupe(f) for f, (p, _) in OS.items() if p == nom]}
+                "children": enfants[nom] + [groupe(f) for f, (p, _) in tous.items() if p == nom]}
 
     return {
         "meta": {"format_version": "4.10", "model_format": "modded_entity", "box_uv": True},
