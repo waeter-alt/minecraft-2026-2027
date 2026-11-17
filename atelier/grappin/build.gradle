@@ -27,7 +27,13 @@ sourceSets.main.resources {
 }
 
 repositories {
-    // Add here additional repositories if required by some of the dependencies below.
+    // Accessories (emplacement « cape » de la Cape lestée).
+    maven { url = "https://maven.wispforest.io/releases" }
+    // owo-lib exactement dans la version du modpack (absente du maven wispforest).
+    exclusiveContent {
+        forRepository { maven { url = "https://api.modrinth.com/maven" } }
+        filter { includeGroup "maven.modrinth" }
+    }
 }
 
 base {
@@ -116,6 +122,15 @@ configurations {
 }
 
 dependencies {
+    // Versions alignées sur le modpack Kodistan. transitive = false : owo embarque déjà
+    // (jar-in-jar) endec et fabric-api-base que le POM d'Accessories redemande.
+    compileOnly("io.wispforest:accessories-neoforge:${accessories_version}") { transitive = false }
+    localRuntime("io.wispforest:accessories-neoforge:${accessories_version}") { transitive = false }
+    localRuntime("maven.modrinth:owo-lib:${owo_version}") { transitive = false }
+
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
@@ -175,6 +190,10 @@ publishing {
             url "file://${project.projectDir}/repo"
         }
     }
+}
+
+tasks.named('test', Test).configure {
+    useJUnitPlatform()
 }
 
 tasks.withType(JavaCompile).configureEach {
