@@ -1,7 +1,8 @@
 {
   "variants": {
-    "": {
-      "model": "interregne:block/banque_regionale"
-    }
+    "facing=east":  { "model": "interregne:block/banque_regionale", "y": 0 },
+    "facing=south": { "model": "interregne:block/banque_regionale", "y": 90 },
+    "facing=west":  { "model": "interregne:block/banque_regionale", "y": 180 },
+    "facing=north": { "model": "interregne:block/banque_regionale", "y": 270 }
   }
 }

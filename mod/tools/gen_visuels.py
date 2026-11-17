@@ -620,6 +620,7 @@ def poste_model():
          box((10.5, 3, 10.5, 15, 9, 15), {"all": "tonneau", "up": "tonneau_top", "down": "tonneau_top"}),
          box((11.5, 3, 2, 14.5, 5.5, 5), {"all": "caisse"})]
     write_model("poste_commercial", tex, E)
+    write_model("relais_commercial", tex, E)
 
 
 def guichet_model():
@@ -666,8 +667,8 @@ def banque_model():
     write_model("banque_regionale", tex, E)
 
 
-def comptoir_model():
-    tex = {"bois": "comptoir_bois", "auvent": "comptoir_auvent", "etagere": "comptoir_etagere", "or": "comptoir_or", "caisse": "comptoir_caisse"}
+def depot_model():
+    tex = {"bois": "depot_bois", "auvent": "depot_auvent", "etagere": "depot_etagere", "or": "depot_or", "caisse": "depot_caisse"}
     E = [box((0, 0, 0, 16, 7, 16), {"all": "bois", "up": "bois"}),
          box((0, 7, 0, 16, 8.5, 16), {"all": "or", "up": "bois"}),
          box((1, 8.5, 1, 15, 9, 15), {"all": "bois"})]
@@ -681,7 +682,7 @@ def comptoir_model():
     E.append(box((2, 9, 2, 14, 12, 3), {"all": "etagere"})); E.append(box((2, 9, 13, 14, 12, 14), {"all": "etagere"}))
     E.append(box((6, 9, 6, 10, 11, 10), {"all": "caisse"})); E.append(box((10.5, 9, 10.5, 13, 10.5, 13), {"all": "or"}))
     E.append(box((3, 9, 10.5, 5.5, 10.5, 13), {"all": "caisse"}))
-    write_model("comptoir_regional", tex, E)
+    write_model("depot_regional", tex, E)
 
 
 # ---------------------------------------------------------------- skins 64x32 (mise en page armure)
@@ -933,21 +934,23 @@ def main():
     bt(stone(rgb("5a6a8a"), 72, blocks=False), "banque_toit")
     banque_model()
     # comptoir
-    bt(planks(rgb("94602c"), 3, seed=80), "comptoir_bois")
-    bt(stripes(rgb("c0342c"), rgb("f0e6cc"), 4, True), "comptoir_auvent")
-    bt(shelf(), "comptoir_etagere")
-    bt(metal_plate(GOLD["g"], 81), "comptoir_or")
-    bt(planks(rgb("b88a4c"), 2, seed=82), "comptoir_caisse")
-    comptoir_model()
+    bt(planks(rgb("94602c"), 3, seed=80), "depot_bois")
+    bt(stripes(rgb("c0342c"), rgb("f0e6cc"), 4, True), "depot_auvent")
+    bt(shelf(), "depot_etagere")
+    bt(metal_plate(GOLD["g"], 81), "depot_or")
+    bt(planks(rgb("b88a4c"), 2, seed=82), "depot_caisse")
+    depot_model()
 
     # skins des troupes
     save(skin_legionnaire(), "entity/war/legionnaire.png")
     save(skin_archer(), "entity/war/archer.png")
 
     # anciennes textures devenues inutiles
-    for old in ("block/caisse_bottom.png", "block/banque_regionale.png", "block/banque_regionale_top.png",
+    for old in ("block/caisse_bottom.png", "block/banque_regionale.png", "block/banque_regionale_top.png", "block/banque_regionale_front.png",
                 "block/guichet_imperial.png", "block/guichet_imperial_top.png", "block/comptoir_regional.png",
-                "block/comptoir_regional_top.png"):
+                "block/comptoir_regional_top.png", "block/depot_regional_side.png", "block/depot_regional_front.png",
+                "block/depot_regional_top.png", "block/depot_regional_bottom.png", "block/relais_commercial_side.png",
+                "block/relais_commercial_front.png", "block/relais_commercial_top.png", "block/relais_commercial_bottom.png"):
         p = TEX / old
         if p.exists():
             p.unlink()

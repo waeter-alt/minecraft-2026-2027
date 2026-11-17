@@ -1,157 +1,177 @@
 package fr.kodistan.interregne.economy;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.ldtteam.structurize.api.RotationMirror;
+import com.minecolonies.api.colony.IColony;
+import com.minecolonies.api.colony.IColonyManager;
 import fr.kodistan.interregne.Config;
+import fr.kodistan.interregne.InterregneMod;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.util.RandomSource;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * The vault of a regional bank: the floor around the bank (7×7) fills with wealth as the treasury does, in a messy heap.
- * Piles grow highest near the bank and thin out toward the edges, with per-bank noise so no two vaults look alike;
- * only the very heart of a full vault turns into chests. The four straight lanes to the bank always stay clear to walk.
- * Only air and the vault's own decorations are ever replaced, so player builds around the bank are safe.
+ * The vault of a regional bank: the vault room of its building fills with wealth as the treasury does.
+ * Each level's blueprint leaves the room's slots empty and lists them in {@code data/interregne/bank_vault.json}
+ * (written by tools/gen_bank_blueprints.py): floor piles, gold bars, open chests, gem clusters, jewel cushions on
+ * pedestals. A slot appears once the vault is full enough for it and then grows through six stages, so the vault
+ * swells all the way up to a overflowing hoard. Only air and the vault's own decorations are ever replaced.
  */
 public final class Vault
 {
-    private static final int RADIUS = 3;
+    private static final ResourceLocation FILE = ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "bank_vault.json");
+
+    /**
+     * One decoration slot, relative to the hut and in the blueprint's north-facing frame.
+     * It shows from fill ratio {@code from}, and reaches its last stage {@code span} of the fill later.
+     */
+    private record Slot(BlockPos offset, VaultHoardBlock.Kind kind, Direction facing, double from, double span)
+    {
+    }
+
+    private static Map<Integer, List<Slot>> layouts;
 
     private Vault()
     {
     }
 
     /**
-     * Lay out the decorations for this fill level around the bank.
+     * Lay out the decorations for this fill level in the bank's vault room.
      */
     public static void refresh(final Level level, final BlockPos bank, final long balance, final long capacity)
     {
+        final Layout layout = layout(level, bank);
+        if (layout == null)
+        {
+            return;
+        }
         if (!Config.VAULT_DECORATIONS.get())
         {
             clear(level, bank);
             return;
         }
         final double ratio = capacity <= 0 ? (balance > 0 ? 1 : 0) : Math.min(1.0, (double) balance / capacity);
-        final List<Step> plan = plan(bank);
-        final int shown = balance <= 0 ? 0 : Math.max(1, (int) Math.ceil(ratio * plan.size()));
-        final Map<BlockPos, Integer> stages = new HashMap<>();
-        for (int i = 0; i < shown; i++)
+        for (final Slot slot : layout.slots)
         {
-            stages.merge(plan.get(i).offset(), 1, Integer::sum);
-        }
-        for (final BlockPos offset : offsets())
-        {
-            place(level, bank.offset(offset), stages.getOrDefault(offset, 0));
-        }
-        clearLanes(level, bank);
-    }
-
-    /**
-     * Older vault layouts could cover the lanes: make sure the way to the bank is free.
-     */
-    private static void clearLanes(final Level level, final BlockPos bank)
-    {
-        for (int step = 1; step <= RADIUS; step++)
-        {
-            place(level, bank.offset(step, 0, 0), 0);
-            place(level, bank.offset(-step, 0, 0), 0);
-            place(level, bank.offset(0, 0, step), 0);
-            place(level, bank.offset(0, 0, -step), 0);
+            final BlockPos pos = bank.offset(layout.rm.applyToPos(slot.offset));
+            int stage = 0;
+            if (balance > 0 && ratio >= slot.from - 1e-9)
+            {
+                stage = (int) Math.clamp(Math.ceil((ratio - slot.from) / slot.span * VaultHoardBlock.MAX_STAGE), 1, VaultHoardBlock.MAX_STAGE);
+            }
+            place(level, pos, stage == 0 ? null : layout.rm.applyToBlockState(state(slot, stage)));
         }
     }
 
     /**
-     * Remove every decoration around the bank, e.g. when it is broken.
+     * Remove every decoration of this bank's vault, e.g. when it is broken or its decorations are switched off.
      */
     public static void clear(final Level level, final BlockPos bank)
     {
-        for (final BlockPos offset : offsets())
+        final Layout layout = layout(level, bank);
+        if (layout == null)
         {
-            place(level, bank.offset(offset), 0);
+            return;
         }
-        clearLanes(level, bank);
+        for (final Slot slot : layout.slots)
+        {
+            place(level, bank.offset(layout.rm.applyToPos(slot.offset)), null);
+        }
     }
 
-    /**
-     * One stage of wealth on one tile; the vault grows by applying steps in priority order.
-     */
-    private record Step(BlockPos offset, double priority)
+    private static BlockState state(final Slot slot, final int stage)
+    {
+        return RegionalBanks.HOARD.get().defaultBlockState().setValue(VaultHoardBlock.KIND, slot.kind).setValue(VaultHoardBlock.STAGE, stage)
+                 .setValue(VaultHoardBlock.FACING, slot.facing);
+    }
+
+    private record Layout(List<Slot> slots, RotationMirror rm)
     {
     }
 
-    /**
-     * Every stage of every tile, ordered by when it appears: inner tiles and low stages first, shuffled by
-     * per-bank noise so the heap grows lumpy. Outer tiles are capped low, so chests only appear near the bank.
-     */
-    private static List<Step> plan(final BlockPos bank)
+    private static Layout layout(final Level level, final BlockPos bank)
     {
-        final RandomSource random = RandomSource.create(bank.asLong() * 31L + 7L);
-        final List<Step> steps = new ArrayList<>();
-        for (final BlockPos offset : offsets())
+        if (level.getServer() == null)
         {
-            final int ring = Math.max(Math.abs(offset.getX()), Math.abs(offset.getZ()));
-            final int cap = Math.clamp(VaultHoardBlock.MAX_STAGE - (ring - 1) * 2 + random.nextInt(3) - 1, 1, VaultHoardBlock.MAX_STAGE);
-            final double weight = (RADIUS + 1 - ring) + random.nextDouble() * 1.5;
-            for (int stage = 1; stage <= cap; stage++)
-            {
-                steps.add(new Step(offset, stage / weight + random.nextDouble() * 0.6));
-            }
+            return null;
         }
-        steps.sort(Comparator.comparingDouble(Step::priority));
-        return steps;
+        final IColony colony = IColonyManager.getInstance().getIColony(level, bank);
+        final BuildingBanqueRegionale building = colony == null ? null : RegionalBank.of(colony);
+        if (building == null || !bank.equals(building.getPosition()))
+        {
+            return null;
+        }
+        final List<Slot> slots = layouts(level.getServer()).get(building.getBuildingLevel());
+        if (slots == null)
+        {
+            return null;
+        }
+        final var entity = building.getTileEntity();
+        return new Layout(slots, entity == null ? RotationMirror.NONE : entity.getRotationMirror());
     }
 
     /**
-     * The tiles around the bank, minus the four straight lanes leading to it.
+     * A slot is set (or emptied, for a null state) only where there is air or one of our own decorations.
      */
-    private static List<BlockPos> offsets()
-    {
-        final List<BlockPos> offsets = new ArrayList<>();
-        for (int dx = -RADIUS; dx <= RADIUS; dx++)
-        {
-            for (int dz = -RADIUS; dz <= RADIUS; dz++)
-            {
-                if (dx != 0 && dz != 0)
-                {
-                    offsets.add(new BlockPos(dx, 0, dz));
-                }
-            }
-        }
-        return offsets;
-    }
-
-    private static void place(final Level level, final BlockPos pos, final int stage)
+    private static void place(final Level level, final BlockPos pos, final BlockState wanted)
     {
         final BlockState current = level.getBlockState(pos);
         final boolean ours = current.is(RegionalBanks.HOARD.get());
-        if (stage == 0)
+        if (wanted == null)
         {
             if (ours)
             {
                 level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
             }
-            return;
         }
-        if (ours)
+        else if ((ours || current.isAir()) && !current.equals(wanted))
         {
-            if (current.getValue(VaultHoardBlock.STAGE) != stage)
+            level.setBlock(pos, wanted, Block.UPDATE_ALL);
+        }
+    }
+
+    private static Map<Integer, List<Slot>> layouts(final MinecraftServer server)
+    {
+        if (layouts == null)
+        {
+            final Map<Integer, List<Slot>> loaded = new HashMap<>();
+            try (Reader reader = new InputStreamReader(server.getResourceManager().getResourceOrThrow(FILE).open()))
             {
-                level.setBlock(pos, current.setValue(VaultHoardBlock.STAGE, stage), Block.UPDATE_ALL);
+                final JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+                for (final Map.Entry<String, JsonElement> level : root.entrySet())
+                {
+                    final List<Slot> slots = new ArrayList<>();
+                    for (final JsonElement element : level.getValue().getAsJsonArray())
+                    {
+                        final JsonObject o = element.getAsJsonObject();
+                        final var pos = o.getAsJsonArray("pos");
+                        slots.add(new Slot(new BlockPos(pos.get(0).getAsInt(), pos.get(1).getAsInt(), pos.get(2).getAsInt()),
+                          VaultHoardBlock.Kind.valueOf(o.get("kind").getAsString().toUpperCase()),
+                          Direction.byName(o.get("facing").getAsString()), o.get("from").getAsDouble(), o.get("span").getAsDouble()));
+                    }
+                    loaded.put(Integer.parseInt(level.getKey()), slots);
+                }
             }
-            return;
+            catch (final Exception e)
+            {
+                InterregneMod.LOGGER.warn("Banque régionale: vault layout unreadable, no hoard: {}", e.toString());
+            }
+            layouts = loaded;
         }
-        final BlockPos below = pos.below();
-        if (current.isAir() && level.getBlockState(below).isFaceSturdy(level, below, Direction.UP))
-        {
-            level.setBlock(pos, RegionalBanks.HOARD.get().defaultBlockState().setValue(VaultHoardBlock.STAGE, stage), Block.UPDATE_ALL);
-        }
+        return layouts;
     }
 }

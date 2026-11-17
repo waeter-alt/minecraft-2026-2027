@@ -159,6 +159,7 @@ public final class Walls
         final Map<Long, Terrain.Probe> remembered = old == null ? Map.of() : old.ground();
         final Map<Long, Terrain.Probe> ground = new HashMap<>(remembered);
         final java.util.Set<Long> own = old == null ? java.util.Set.of() : WallLayout.ownCells(old.points(), old.closed());
+        final java.util.function.LongPredicate roads = fr.kodistan.interregne.routes.RouteRegistry.get(level.getServer())::onRoad;
         final WallLayout.Ground reader = (x, z) -> {
             final long cell = WallRegistry.cell(x, z);
             final Terrain.Probe known = ground.get(cell);
@@ -166,7 +167,7 @@ public final class Walls
             {
                 return known;
             }
-            final Terrain.Probe probe = Terrain.probe(level, x, z, own.contains(cell) ? WallBlocks::isWallBlock : null);
+            final Terrain.Probe probe = WallLayout.overRoad(Terrain.probe(level, x, z, own.contains(cell) ? WallBlocks::isWallBlock : null), x, z, roads);
             if (probe.loaded() && !probe.blocked())
             {
                 ground.put(cell, probe);
@@ -297,6 +298,7 @@ public final class Walls
         final ServerLevel level = player.serverLevel();
         final Map<Long, Terrain.Probe> ground = new HashMap<>(wall.ground());
         final java.util.Set<Long> own = WallLayout.ownCells(wall.points(), wall.closed());
+        final java.util.function.LongPredicate roads = fr.kodistan.interregne.routes.RouteRegistry.get(level.getServer())::onRoad;
         final WallLayout.Ground reader = (x, z) -> {
             final long cell = WallRegistry.cell(x, z);
             final Terrain.Probe known = ground.get(cell);
@@ -304,7 +306,7 @@ public final class Walls
             {
                 return known;
             }
-            final Terrain.Probe probe = Terrain.probe(level, x, z, own.contains(cell) ? WallBlocks::isWallBlock : null);
+            final Terrain.Probe probe = WallLayout.overRoad(Terrain.probe(level, x, z, own.contains(cell) ? WallBlocks::isWallBlock : null), x, z, roads);
             if (probe.loaded() && !probe.blocked())
             {
                 ground.put(cell, probe);
@@ -362,7 +364,7 @@ public final class Walls
         }
         final WallLayout.Ground reader = (x, z) -> {
             final Terrain.Probe known = wall.ground().get(WallRegistry.cell(x, z));
-            return known != null ? known : Terrain.probe(level, x, z);
+            return known != null ? known : WallLayout.overRoad(Terrain.probe(level, x, z), x, z, fr.kodistan.interregne.routes.RouteRegistry.get(level.getServer())::onRoad);
         };
         return valueOf(wall, reader, (x, z) -> true);
     }

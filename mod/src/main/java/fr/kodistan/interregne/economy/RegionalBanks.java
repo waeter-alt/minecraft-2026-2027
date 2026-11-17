@@ -1,6 +1,14 @@
 package fr.kodistan.interregne.economy;
 
+import com.minecolonies.api.colony.buildings.registry.BuildingEntry;
+import com.minecolonies.api.items.ItemBlockHut;
+import com.minecolonies.api.tileentities.MinecoloniesTileEntities;
+import com.minecolonies.apiimp.CommonMinecoloniesAPIImpl;
 import fr.kodistan.interregne.InterregneMod;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.neoforged.neoforge.event.BlockEntityTypeAddBlocksEvent;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -19,10 +27,19 @@ public final class RegionalBanks
     public static final DeferredRegister.Items  ITEMS  = DeferredRegister.createItems(InterregneMod.MODID);
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(InterregneMod.MODID);
 
-    public static final DeferredBlock<RegionalBankBlock> BANK = BLOCKS.register("banque_regionale",
-      () -> new RegionalBankBlock(BlockBehaviour.Properties.of().mapColor(MapColor.GOLD).strength(5.0F, 1200.0F).sound(SoundType.METAL).noOcclusion()
-                                    .pushReaction(PushReaction.BLOCK)));
-    public static final DeferredItem<BlockItem> BANK_ITEM = ITEMS.registerSimpleBlockItem("banque_regionale", BANK);
+    public static final String BANK_ID = "banque_regionale";
+
+    public static final DeferredRegister<BuildingEntry> BUILDINGS = DeferredRegister.create(CommonMinecoloniesAPIImpl.BUILDINGS, InterregneMod.MODID);
+
+    public static final DeferredBlock<RegionalBankBlock> BANK = BLOCKS.register(BANK_ID, RegionalBankBlock::new);
+    public static final DeferredItem<Item> BANK_ITEM = ITEMS.register(BANK_ID, () -> new ItemBlockHut(BANK.get(), new Item.Properties()));
+
+    public static final DeferredHolder<BuildingEntry, BuildingEntry> BANK_ENTRY = BUILDINGS.register(BANK_ID, () -> new BuildingEntry.Builder()
+      .setBuildingBlock(BANK.get())
+      .setBuildingProducer(BuildingBanqueRegionale::new)
+      .setBuildingViewProducer(() -> BuildingBanqueRegionale.View::new)
+      .setRegistryName(ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, BANK_ID))
+      .createBuildingEntry());
 
     /**
      * Decoration only: no item, no loot table, cannot be pushed or pulled.
@@ -39,5 +56,16 @@ public final class RegionalBanks
     {
         BLOCKS.register(modBus);
         ITEMS.register(modBus);
+        BUILDINGS.register(modBus);
+        modBus.addListener(RegionalBanks::addHutToBuildingEntity);
+    }
+
+    /**
+     * MineColonies builds the hut block entity type from its own list of huts: ours must be declared valid, or its
+     * block entity is dropped on load.
+     */
+    private static void addHutToBuildingEntity(final BlockEntityTypeAddBlocksEvent event)
+    {
+        event.modify(MinecoloniesTileEntities.BUILDING.get(), BANK.get());
     }
 }

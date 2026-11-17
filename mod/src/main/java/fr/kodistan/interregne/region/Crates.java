@@ -1,6 +1,12 @@
 package fr.kodistan.interregne.region;
 
+import com.minecolonies.api.colony.buildings.registry.BuildingEntry;
+import com.minecolonies.api.items.ItemBlockHut;
+import com.minecolonies.api.tileentities.MinecoloniesTileEntities;
+import com.minecolonies.apiimp.CommonMinecoloniesAPIImpl;
 import fr.kodistan.interregne.InterregneMod;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.event.BlockEntityTypeAddBlocksEvent;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
@@ -20,7 +26,7 @@ import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * Registry of the regional crates, the Comptoir régional and the Marché impérial.
+ * Registry of the regional crates, the Dépôt Régional and the Marché impérial.
  */
 public final class Crates
 {
@@ -45,12 +51,22 @@ public final class Crates
         }
     }
 
+    public static final String DEPOT_ID = "depot_regional";
+
+    public static final DeferredRegister<BuildingEntry> BUILDINGS = DeferredRegister.create(CommonMinecoloniesAPIImpl.BUILDINGS, InterregneMod.MODID);
+
     /**
-     * One per colony, placed by its members; produces the colony's crate.
+     * The Dépôt Régional, a colony building: produces the colony's crate, faster as its level rises.
      */
-    public static final DeferredBlock<ComptoirBlock> COMPTOIR = BLOCKS.register("comptoir_regional",
-      () -> new ComptoirBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BROWN).strength(2.5F, 6.0F).sound(SoundType.WOOD).noOcclusion()));
-    public static final DeferredItem<BlockItem> COMPTOIR_ITEM = ITEMS.registerSimpleBlockItem("comptoir_regional", COMPTOIR);
+    public static final DeferredBlock<DepotRegionalBlock> DEPOT = BLOCKS.register(DEPOT_ID, DepotRegionalBlock::new);
+    public static final DeferredItem<Item> DEPOT_ITEM = ITEMS.register(DEPOT_ID, () -> new ItemBlockHut(DEPOT.get(), new Item.Properties()));
+
+    public static final DeferredHolder<BuildingEntry, BuildingEntry> DEPOT_ENTRY = BUILDINGS.register(DEPOT_ID, () -> new BuildingEntry.Builder()
+      .setBuildingBlock(DEPOT.get())
+      .setBuildingProducer(BuildingDepotRegional::new)
+      .setBuildingViewProducer(() -> BuildingDepotRegional.View::new)
+      .setRegistryName(ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, DEPOT_ID))
+      .createBuildingEntry());
 
     /**
      * Placed by the Intendants in the imperial city; unbreakable, like the bank counter.
@@ -64,7 +80,7 @@ public final class Crates
       .icon(() -> CRATE_ITEMS.get(Crate.BOIS).get().getDefaultInstance())
       .displayItems((parameters, output) -> {
           CRATE_ITEMS.values().forEach(item -> output.accept(item.get()));
-          output.accept(COMPTOIR_ITEM.get());
+          output.accept(DEPOT_ITEM.get());
           output.accept(MARCHE_ITEM.get());
       })
       .build());
@@ -78,6 +94,17 @@ public final class Crates
         BLOCKS.register(modBus);
         ITEMS.register(modBus);
         TABS.register(modBus);
+        BUILDINGS.register(modBus);
+        modBus.addListener(Crates::addHutToBuildingEntity);
+    }
+
+    /**
+     * MineColonies builds the hut block entity type from its own list of huts: ours must be declared valid, or its
+     * block entity is dropped on load.
+     */
+    private static void addHutToBuildingEntity(final BlockEntityTypeAddBlocksEvent event)
+    {
+        event.modify(MinecoloniesTileEntities.BUILDING.get(), DEPOT.get());
     }
 
     public static Item item(final Crate crate)

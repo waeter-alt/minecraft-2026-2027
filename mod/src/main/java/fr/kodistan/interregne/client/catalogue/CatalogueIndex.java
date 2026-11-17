@@ -128,7 +128,7 @@ public final class CatalogueIndex
         put(Need.PLANTATION, "plantation");
         put(Need.WOOD_STONE, "lumberjack", "miner", "simplequarry", "mediumquarry", "largequarry", "crusher", "sifter", "netherworker");
         put(Need.HOUSING, "townhall", "residence", "hospital", "tavern", "graveyard");
-        put(Need.LOGISTICS, "warehouse", "postbox", "stash");
+        put(Need.LOGISTICS, "warehouse", "postbox", "stash", "relais_commercial", "banque_regionale", "depot_regional");
         put(Need.DEFENSE, "guardtower", "barracks", "barrackstower", "archery", "combatacademy");
         put(Need.KNOWLEDGE, "university", "library", "school", "enchanter", "mysticalsite");
         put(Need.CRAFT, "sawmill", "stonemason", "blacksmith", "smeltery", "stonesmeltery", "glassblower", "fletcher", "composter", "florist", "dyer",
@@ -210,7 +210,7 @@ public final class CatalogueIndex
             packs.sort(Comparator.comparing((StructurePackMeta p) -> p != selected).thenComparing(StructurePackMeta::getName));
             for (final StructurePackMeta pack : packs)
             {
-                if (!pack.isDisabled())
+                if (isStyle(pack))
                 {
                     of(pack.getName(), provider).join();
                 }
@@ -227,11 +227,36 @@ public final class CatalogueIndex
         preloading = false;
     }
 
+    /**
+     * Our own pack: buildings that belong to no style (the Relais commercial). It is not a style the player picks; its
+     * blueprints are added to every style's catalogue and keep being built from this pack.
+     */
+    public static final String SHARED_PACK = "Couronne Vacante";
+
+    /**
+     * Whether a pack is a style the player can choose, as opposed to {@link #SHARED_PACK}.
+     */
+    public static boolean isStyle(final StructurePackMeta pack)
+    {
+        return !pack.isDisabled() && !SHARED_PACK.equals(pack.getName());
+    }
+
     private static List<Entry> build(final String pack, final HolderLookup.Provider provider)
     {
         final StructurePackMeta meta = StructurePacks.getStructurePack(pack);
         final List<Blueprint> all = new ArrayList<>();
         walk(pack, "", provider, all, 0);
+        // Which pack each blueprint comes from: the shared pack's ones are placed from it whatever the style
+        final Map<Blueprint, String> packOf = new java.util.IdentityHashMap<>();
+        all.forEach(blueprint -> packOf.put(blueprint, pack));
+        if (!SHARED_PACK.equals(pack) && StructurePacks.getStructurePack(SHARED_PACK) != null)
+        {
+            final List<Blueprint> shared = new ArrayList<>();
+            walk(SHARED_PACK, "", provider, shared, 0);
+            shared.forEach(blueprint -> packOf.put(blueprint, SHARED_PACK));
+            all.addAll(shared);
+            InterregneMod.LOGGER.info("L'Interregne: {} blueprints of {} added to the catalogue of {}", shared.size(), SHARED_PACK, pack);
+        }
 
         // Lowest level of each variant: "residence1".."residence5" and "altresidence1".. are two variants of one building
         final Map<String, Blueprint> lowest = new LinkedHashMap<>();
@@ -257,8 +282,9 @@ public final class CatalogueIndex
         String firstMissing = "";
         for (final Blueprint blueprint : lowest.values())
         {
-            final Ref ref = new Ref(pack, blueprint.getFilePath().resolve(blueprint.getFileName() + ".blueprint"));
-            final String folder = folderOf(meta, blueprint);
+            final String from = packOf.get(blueprint);
+            final Ref ref = new Ref(from, blueprint.getFilePath().resolve(blueprint.getFileName() + ".blueprint"));
+            final String folder = folderOf(from.equals(pack) ? meta : StructurePacks.getStructurePack(from), blueprint);
             final Block anchor = anchorOf(blueprint);
             if (anchor instanceof AbstractBlockHut<?> hut)
             {

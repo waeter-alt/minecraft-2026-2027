@@ -10,7 +10,7 @@ public final class RegionNetwork
         Net.toClient(r, CrateStockPayload.TYPE, CrateStockPayload.STREAM_CODEC,
           p -> fr.kodistan.interregne.client.ClientCrateStock.set(p.counts()));
         r.playToServer(RegionActionPayload.TYPE, RegionActionPayload.STREAM_CODEC, Regions::onAction);
-        Net.toClient(r, OpenComptoirPayload.TYPE, OpenComptoirPayload.STREAM_CODEC, p -> fr.kodistan.interregne.client.blocks.ComptoirScreen.open(p));
+        Net.toClient(r, OpenComptoirPayload.TYPE, OpenComptoirPayload.STREAM_CODEC, p -> fr.kodistan.interregne.client.hut.HutBodies.receive(p));
         Net.toClient(r, OpenMarketPayload.TYPE, OpenMarketPayload.STREAM_CODEC, p -> fr.kodistan.interregne.client.blocks.MarketScreen.open(p));
     }
 

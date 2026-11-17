@@ -48,3 +48,7 @@ Contexte : mod NeoForge custom (`mod/`) pour un serveur Minecraft communautaire 
 - Pas d'abstraction ou de refactor au-delà de ce que la tâche demande. Un bug fix n'a pas besoin de nettoyage autour.
 - Pas de commentaires qui répètent ce que le code dit déjà ; un commentaire seulement si le POURQUOI n'est pas évident (contrainte cachée, contournement d'un bug précis, invariant subtil).
 - Si tu introduis une incohérence ou un truc à moitié fini, dis-le explicitement plutôt que de livrer en silence.
+
+## Nouvelle hutte (bâtiment MineColonies à nous)
+
+Toute nouvelle hutte suit la checklist `mod/docs/procedure-nouvelle-hutte.md` : blueprints des 5 niveaux **à la même taille** (`mod/tools/pad_blueprints.py`), fiche hutte commune (`HutBody`, jamais un écran à part), pose depuis le catalogue, fantôme niveau max des voisins (`/voisins`), tests en jeu. Chaque point vient d'un défaut déjà rencontré en playtest.

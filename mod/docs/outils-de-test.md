@@ -138,6 +138,31 @@ Pour tout ce qui a besoin d'une vraie colonie. Le jeu tourne aussi vite que la m
 
 ---
 
+## 4 bis. Commerce : commandes d'admin sur un vrai monde
+
+Pour tester contrats et caravanes sans client, sur un serveur de test (`./gradlew runServer` avec un monde à deux colonies reliées par une route, par exemple `ColoniesV2` copié dans `run/server/world`), via rcon ou la console. Les colonies sont données par numéro (`/mc colony list`).
+
+```
+/diplomatie allier 1 2          # alliance, requise pour commercer
+/commerce relais 1 2            # pose un Relais niveau 2 dans la colonie 1 (idem colonie 2)
+/commerce caisses 1 bois 40     # range 40 caisses de bois à l'entrepôt de la colonie 1
+/commerce tresor 2 1000         # 1000 Couronnes au trésor régional de la colonie 2
+/commerce offre 1 2 bois 10 5   # la colonie 1 propose 10 caisses de bois à 5 pièce à la colonie 2
+/commerce offre 1 2 bois 10 5 3 # idem avec une escorte de palier 3 (0 à 5), payée au trésor régional du vendeur
+/commerce accepter 2 1          # la colonie 2 accepte le contrat n° 1 : la caravane part
+/commerce retirer 1 2           # la colonie 1 retire son offre n° 2 (l'escorte payée est rendue)
+/commerce etat                  # stocks, trésors et contrats (progression sur la route)
+/commerce chantier 1 [niveau]   # pose un Relais non construit et construit le niveau voulu (1 par défaut, hôtel de ville relevé si besoin)
+```
+
+Une caravane parcourt la route à `caravanBlocksPerSecond` (3 par défaut). Sans joueur à moins de `caravanShowDistance` blocs, elle n'avance que sur le papier ; l'animal n'apparaît que près d'un joueur (couvert par `CommerceTests`, lancés avec `runGameTestServer`). `/diplomatie rompre 1 2` pendant le trajet rend les caisses au vendeur et le prix à l'acheteur.
+
+Le Relais commercial se construit depuis un pack de blueprints à nous, `Couronne Vacante`, ajouté à tous les styles du catalogue. Ses blueprints sont générés par `python -I -X utf8 mod/tools/gen_relais_blueprints.py` (`pip install nbtlib`), rendus en PNG isométriques (voxels, pas des captures en jeu) par `mod/tools/render_relais.py` vers `screenshots/relais/` ; `RelaisBlueprintTest` (JUnit) vérifie qu'ils se chargent et contiennent la hutte. Écran : `screen=block:relais` dans UiShot. Écran des routes (clic sur un Poste commercial dont la route est à améliorer) : `screen=block:route` (variantes `-pauvre`, `-travaux`, `-max`).
+
+Caravane : une mule avec coffre et son conducteur (citoyen MineColonies générique) à un bloc d'elle, plus les soldats de l'escorte quand le contrat en a. `GameTests` : mule + conducteur, mort du conducteur, soldats qui suivent et ne reviennent pas une fois morts, entités orphelines retirées, et un duel palier 1 contre un joueur en fer (le palier 1 doit le laisser à moins de 8 PV ou le tuer). `EscortTest` (JUnit) couvre les paliers et la sauvegarde. Touche `M` en jeu : carte du royaume.
+
+---
+
 ## 5. Outils de routes (à venir)
 
 RouteBench (tracé de route testé hors du jeu en ~2 s), TerrainDump (copie d'un vrai terrain) et RouteShot (captures des routes en jeu) sont sur la branche `feature/route-commerciale-test`, pas encore sur `main`. Leur mode d'emploi sera ajouté ici avec la PR des routes.
@@ -145,3 +170,12 @@ RouteBench (tracé de route testé hors du jeu en ~2 s), TerrainDump (copie d'un
 ## 6. Contenu de test : des mondes prêts, pas des scripts
 
 Si ta PR apporte un monde ou une structure (donjon, arène…), livre un **dossier de sauvegarde prêt à copier** dans `mod/run/client/saves/`. Personne ne doit avoir à créer un monde ou taper une commande pour tester, même « juste une minute ».
+
+## Bot de playtest (`/playtest`)
+
+Pour jouer ta colonie face à une colonie pilotée par le serveur, sans second client. Le bot n'est pas un joueur : il passe par les mêmes chemins admin que `/commerce` et `/diplomatie`, donc il **ne teste pas** les règles que ces chemins sautent (coût en Influence, rang requis) : ça reste un test à la main.
+
+- `/playtest start <humain> <bot>` (op) : pose l'alliance, un Relais niveau 1 et 5000 au trésor aux deux colonies, puis le bot joue la colonie `<bot>`. Il faut un monde qui a déjà une route entre les deux (ex. `ColoniesV2`).
+- Toutes les 5 s le bot accepte les offres qui lui sont faites et garde **une** offre ouverte vers toi (bois, blé, pierre en rotation, 5 caisses à 10).
+- `/playtest etat` : contrats du bot et derniers événements ; les événements s'affichent aussi dans le chat des ops. `/playtest stop` l'arrête.
+- Pilotable par Claude avec le MCP `playtest` (`mod/tools/playtest_mcp`).

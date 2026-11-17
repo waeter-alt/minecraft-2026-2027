@@ -3,7 +3,11 @@ package fr.kodistan.interregne.mixin;
 import com.ldtteam.structurize.api.RotationMirror;
 import com.ldtteam.structurize.blueprints.v1.Blueprint;
 import com.minecolonies.core.placementhandlers.main.SurvivalHandler;
+import com.minecolonies.api.colony.IColonyManager;
 import fr.kodistan.interregne.colony.BuildNow;
+import fr.kodistan.interregne.colony.UniqueHuts;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -42,6 +46,30 @@ public abstract class SurvivalHandlerMixin
     private void interregne$keepInventory(final IItemHandler handler, final ItemStack stack, final int quantity)
     {
         // No hut block is consumed
+    }
+
+    /**
+     * A colony has one relais, one bank, one depot: a second blueprint of them is refused before anything is placed.
+     */
+    @Inject(method = "handle", at = @At("HEAD"), cancellable = true)
+    private void interregne$oneOfEach(
+      final Blueprint blueprint,
+      final String packName,
+      final String blueprintPath,
+      final boolean clientPack,
+      final Level world,
+      final Player player,
+      final BlockPos blockPos,
+      final RotationMirror rotMir,
+      final CallbackInfo ci)
+    {
+        final Block hut = blueprint.getBlockState(blueprint.getPrimaryBlockOffset()).getBlock();
+        final String refusal = UniqueHuts.refusal(IColonyManager.getInstance().getColonyByPosFromWorld(world, blockPos), hut);
+        if (refusal != null)
+        {
+            player.sendSystemMessage(Component.literal(refusal).withStyle(ChatFormatting.RED));
+            ci.cancel();
+        }
     }
 
     @Inject(method = "handle", at = @At("RETURN"))

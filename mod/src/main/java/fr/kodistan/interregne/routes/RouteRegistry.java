@@ -54,8 +54,39 @@ public final class RouteRegistry extends SavedData
      * A road already built: the cells of its centre line that one walks on in the open (ground and bridge decks;
      * a tunnel is left out, the ground above it is still ground).
      */
-    private record Road(int[] x, int[] y, int[] z, int colonyA, int gateA, int colonyB, int gateB)
+    private record Road(int[] x, int[] y, int[] z, int colonyA, int gateA, int colonyB, int gateB, int pairA, int pairB, @Nullable Decay decay, int level)
     {
+        Road withEnds(final int a, final int gA, final int b, final int gB)
+        {
+            return new Road(x, y, z, a, gA, b, gB, pairA, pairB, decay, level);
+        }
+
+        Road withLevel(final int next)
+        {
+            return new Road(x, y, z, colonyA, gateA, colonyB, gateB, pairA, pairB, decay, next);
+        }
+    }
+
+    /**
+     * A road vanishing after its alliance broke: the order its cells go in and which already went.
+     */
+    static final class Decay
+    {
+        final int[] order;
+        final boolean[] gone;
+        int remaining;
+
+        Decay(final int[] order, final boolean[] gone)
+        {
+            this.order = order;
+            this.gone = gone;
+            int left = 0;
+            for (final boolean g : gone)
+            {
+                left += g ? 0 : 1;
+            }
+            remaining = left;
+        }
     }
 
     private final Set<Long> posts = new HashSet<>();
@@ -65,6 +96,8 @@ public final class RouteRegistry extends SavedData
     private final List<Road> roads = new ArrayList<>();
     /** The cells of every road's centre line, rebuilt when a road is added or changed. */
     private Set<Long> centres;
+    /** The level of the road under every column of every road (the highest where two roads meet), rebuilt like {@link #centres}. */
+    private java.util.Map<Long, Integer> levels;
 
     /**
      * One end of a road hooked to a colony.
@@ -149,8 +182,10 @@ public final class RouteRegistry extends SavedData
         {
             count += plan.mode[i] == RoutePlan.TUNNEL ? 0 : 1;
         }
-        final Road road = new Road(new int[count], new int[count], new int[count], endA == null ? 0 : endA.colony(), endA == null ? -1 : endA.gate(),
-          endB == null ? 0 : endB.colony(), endB == null ? -1 : endB.gate());
+        final int colA = endA == null ? 0 : endA.colony();
+        final int colB = endB == null ? 0 : endB.colony();
+        final Road road = new Road(new int[count], new int[count], new int[count], colA, endA == null ? -1 : endA.gate(),
+          colB, endB == null ? -1 : endB.gate(), colA, colB, null, 1);
         int at = 0;
         for (int i = 0; i < plan.length(); i++)
         {
@@ -163,6 +198,7 @@ public final class RouteRegistry extends SavedData
         }
         roads.add(road);
         centres = null;
+        levels = null;
         setDirty();
     }
 
@@ -198,9 +234,285 @@ public final class RouteRegistry extends SavedData
     public void rehook(final Hook hook, final int colony, final int gate)
     {
         final Road road = roads.get(hook.road());
-        roads.set(hook.road(), hook.first() ? new Road(road.x(), road.y(), road.z(), colony, gate, road.colonyB(), road.gateB())
-                                            : new Road(road.x(), road.y(), road.z(), road.colonyA(), road.gateA(), colony, gate));
+        roads.set(hook.road(), hook.first() ? road.withEnds(colony, gate, road.colonyB(), road.gateB())
+                                            : road.withEnds(road.colonyA(), road.gateA(), colony, gate));
         setDirty();
+    }
+
+    /**
+     * The alliance between these two colonies is over: its link is forgotten (a new route may be made) and the roads
+     * built for it start to vanish, their cells in random order.
+     *
+     * @return how many roads started to decay
+     */
+    public int beginDecay(final int a, final int b)
+    {
+        final boolean unlinked = colonyLinks.remove(Pair.ofColonies(a, b));
+        int started = 0;
+        final java.util.Random random = new java.util.Random();
+        final int low = Math.min(a, b);
+        final int high = Math.max(a, b);
+        for (int i = 0; i < roads.size(); i++)
+        {
+            final Road road = roads.get(i);
+            final boolean ours = Math.min(road.pairA(), road.pairB()) == low && Math.max(road.pairA(), road.pairB()) == high;
+            if (!ours || road.decay() != null || road.x().length == 0)
+            {
+                continue;
+            }
+            final int n = road.x().length;
+            final List<Integer> shuffled = new ArrayList<>(n);
+            for (int k = 0; k < n; k++)
+            {
+                shuffled.add(k);
+            }
+            java.util.Collections.shuffle(shuffled, random);
+            roads.set(i, new Road(road.x(), road.y(), road.z(), road.colonyA(), road.gateA(), road.colonyB(), road.gateB(), road.pairA(), road.pairB(),
+              new Decay(shuffled.stream().mapToInt(Integer::intValue).toArray(), new boolean[n]), road.level()));
+            started++;
+        }
+        if (unlinked || started > 0)
+        {
+            centres = null;
+            levels = null;
+            setDirty();
+            broadcast();
+        }
+        return started;
+    }
+
+    /**
+     * One step of every decaying road: a fraction of its cells go, among those whose chunk is loaded. A road with
+     * nothing left becomes an empty one (its index stays).
+     */
+    void decayStep(final net.minecraft.server.level.ServerLevel level, final double fraction)
+    {
+        boolean finished = false;
+        boolean any = false;
+        for (int i = 0; i < roads.size(); i++)
+        {
+            final Road road = roads.get(i);
+            final Decay decay = road.decay();
+            if (decay == null)
+            {
+                continue;
+            }
+            any = true;
+            final int budget = Math.max(1, (int) Math.ceil(road.x().length * fraction));
+            int done = 0;
+            for (int k = 0; k < decay.order.length && done < budget; k++)
+            {
+                final int cell = decay.order[k];
+                if (decay.gone[cell])
+                {
+                    continue;
+                }
+                final BlockPos at = new BlockPos(road.x()[cell], road.y()[cell], road.z()[cell]);
+                if (!level.hasChunkAt(at))
+                {
+                    continue;
+                }
+                RoadDecay.erase(level, at, ROAD_D2, ROAD_REACH);
+                decay.gone[cell] = true;
+                decay.remaining--;
+                done++;
+            }
+            if (decay.remaining <= 0)
+            {
+                roads.set(i, new Road(new int[0], new int[0], new int[0], 0, -1, 0, -1, road.pairA(), road.pairB(), null, 1));
+                finished = true;
+            }
+        }
+        if (any)
+        {
+            setDirty();
+        }
+        if (finished)
+        {
+            centres = null;
+            levels = null;
+            broadcast();
+        }
+    }
+
+    /**
+     * The road joining two colonies as cells from {@code from} to {@code to}, tunnels bridged by straight lines; null
+     * when none is built or it is vanishing.
+     */
+    @Nullable
+    public BlockPos[] pathBetween(final int from, final int to)
+    {
+        for (final Road road : roads)
+        {
+            if (road.decay() != null || road.x().length == 0)
+            {
+                continue;
+            }
+            final boolean forward = road.pairA() == from && road.pairB() == to;
+            if (!forward && !(road.pairA() == to && road.pairB() == from))
+            {
+                continue;
+            }
+            return path(road, forward);
+        }
+        return null;
+    }
+
+    private static BlockPos[] path(final Road road, final boolean forward)
+    {
+        final List<BlockPos> cells = new ArrayList<>();
+        final int n = road.x().length;
+        for (int k = 0; k < n; k++)
+        {
+            final int i = forward ? k : n - 1 - k;
+            final BlockPos cell = new BlockPos(road.x()[i], road.y()[i], road.z()[i]);
+            if (!cells.isEmpty())
+            {
+                final BlockPos last = cells.getLast();
+                final int gap = Math.max(Math.abs(cell.getX() - last.getX()), Math.abs(cell.getZ() - last.getZ()));
+                for (int g = 1; g < gap; g++)
+                {
+                    final double t = g / (double) gap;
+                    cells.add(new BlockPos((int) Math.round(last.getX() + (cell.getX() - last.getX()) * t),
+                      (int) Math.round(last.getY() + (cell.getY() - last.getY()) * t), (int) Math.round(last.getZ() + (cell.getZ() - last.getZ()) * t)));
+                }
+            }
+            cells.add(cell);
+        }
+        return cells.toArray(new BlockPos[0]);
+    }
+
+    /**
+     * A road's centre line from its A end to its B end, tunnels bridged by straight lines (empty once it has vanished).
+     */
+    public BlockPos[] path(final int road)
+    {
+        return path(roads.get(road), true);
+    }
+
+    public int roadCount()
+    {
+        return roads.size();
+    }
+
+    /**
+     * The standing road (not vanishing) joining these two colonies, or -1.
+     */
+    public int roadBetween(final int a, final int b)
+    {
+        for (int i = 0; i < roads.size(); i++)
+        {
+            final Road road = roads.get(i);
+            if (road.decay() == null && road.x().length > 0
+                  && (road.pairA() == a && road.pairB() == b || road.pairA() == b && road.pairB() == a))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * The standing road of this colony passing closest to pos, within maxDist blocks across, or -1.
+     */
+    public int nearestRoad(final int colony, final BlockPos pos, final int maxDist)
+    {
+        int best = -1;
+        long bestD2 = (long) maxDist * maxDist + 1;
+        for (int i = 0; i < roads.size(); i++)
+        {
+            final Road road = roads.get(i);
+            if (road.decay() != null || road.pairA() != colony && road.pairB() != colony)
+            {
+                continue;
+            }
+            for (int k = 0; k < road.x().length; k++)
+            {
+                final long dx = road.x()[k] - pos.getX();
+                final long dz = road.z()[k] - pos.getZ();
+                if (dx * dx + dz * dz < bestD2)
+                {
+                    bestD2 = dx * dx + dz * dz;
+                    best = i;
+                }
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Whether this road still stands (built, not vanishing).
+     */
+    public boolean standing(final int road)
+    {
+        return road >= 0 && road < roads.size() && roads.get(road).decay() == null && roads.get(road).x().length > 0;
+    }
+
+    public int level(final int road)
+    {
+        return roads.get(road).level();
+    }
+
+    /**
+     * The two colonies a road was built between.
+     */
+    public int[] colonies(final int road)
+    {
+        return new int[] {roads.get(road).pairA(), roads.get(road).pairB()};
+    }
+
+    public void setLevel(final int road, final int level)
+    {
+        final Road current = roads.get(road);
+        final int next = Math.clamp(level, 1, RoadLevels.MAX);
+        if (current.level() != next)
+        {
+            roads.set(road, current.withLevel(next));
+            levels = null;
+            setDirty();
+        }
+    }
+
+    /**
+     * The level of the road one stands on here: 0 off every standing road, or a column more than a few blocks above or
+     * below its deck (under a bridge, over a tunnel).
+     */
+    public int levelAt(final BlockPos pos)
+    {
+        if (levels == null)
+        {
+            final java.util.Map<Long, Integer> next = new java.util.HashMap<>();
+            for (final Road road : roads)
+            {
+                if (road.decay() != null)
+                {
+                    continue;
+                }
+                for (final BlockPos cell : path(road, true))
+                {
+                    for (int dz = -ROAD_REACH; dz <= ROAD_REACH; dz++)
+                    {
+                        for (int dx = -ROAD_REACH; dx <= ROAD_REACH; dx++)
+                        {
+                            if (dx * dx + dz * dz <= ROAD_D2)
+                            {
+                                final long key = BlockPos.asLong(cell.getX() + dx, 0, cell.getZ() + dz);
+                                final int packed = road.level() << 16 | (cell.getY() & 0xFFFF);
+                                next.merge(key, packed, Math::max);
+                            }
+                        }
+                    }
+                }
+            }
+            levels = next;
+        }
+        final Integer packed = levels.get(BlockPos.asLong(pos.getX(), 0, pos.getZ()));
+        if (packed == null)
+        {
+            return 0;
+        }
+        final int y = (short) (packed & 0xFFFF);
+        return Math.abs(pos.getY() - y - 1) <= 3 ? packed >>> 16 : 0;
     }
 
     /**
@@ -222,6 +534,10 @@ public final class RouteRegistry extends SavedData
             final Set<Long> next = new HashSet<>();
             for (final Road road : roads)
             {
+                if (road.decay() != null)
+                {
+                    continue;
+                }
                 for (int i = 0; i < road.x().length; i++)
                 {
                     next.add(WallRegistry.cell(road.x()[i], road.z()[i]));
@@ -237,6 +553,10 @@ public final class RouteRegistry extends SavedData
         final List<Integer> data = new ArrayList<>();
         for (final Road road : roads)
         {
+            if (road.decay() != null || road.x().length == 0)
+            {
+                continue;
+            }
             data.add(road.colonyA());
             data.add(road.colonyB());
             data.add(road.x().length);
@@ -271,6 +591,10 @@ public final class RouteRegistry extends SavedData
     {
         for (final Road road : roads)
         {
+            if (road.decay() != null)
+            {
+                continue;
+            }
             for (int i = 0; i < road.x().length; i++)
             {
                 for (int dz = -ROAD_REACH; dz <= ROAD_REACH; dz++)
@@ -329,8 +653,22 @@ public final class RouteRegistry extends SavedData
         for (int i = 0; i < roads.size(); i++)
         {
             final CompoundTag road = roads.getCompound(i);
+            Decay decay = null;
+            if (road.contains("decayOrder"))
+            {
+                final int[] order = road.getIntArray("decayOrder");
+                final byte[] gone = road.getByteArray("decayGone");
+                final boolean[] flags = new boolean[order.length];
+                for (int k = 0; k < Math.min(flags.length, gone.length); k++)
+                {
+                    flags[k] = gone[k] != 0;
+                }
+                decay = new Decay(order, flags);
+            }
             registry.roads.add(new Road(road.getIntArray("x"), road.getIntArray("y"), road.getIntArray("z"), road.getInt("colonyA"),
-              road.contains("gateA") ? road.getInt("gateA") : -1, road.getInt("colonyB"), road.contains("gateB") ? road.getInt("gateB") : -1));
+              road.contains("gateA") ? road.getInt("gateA") : -1, road.getInt("colonyB"), road.contains("gateB") ? road.getInt("gateB") : -1,
+              road.contains("pairA") ? road.getInt("pairA") : road.getInt("colonyA"), road.contains("pairB") ? road.getInt("pairB") : road.getInt("colonyB"), decay,
+              road.contains("level") ? Math.max(1, road.getInt("level")) : 1));
         }
         final long[] low = tag.getLongArray("linksLow");
         final long[] high = tag.getLongArray("linksHigh");
@@ -366,6 +704,19 @@ public final class RouteRegistry extends SavedData
             entry.putInt("gateA", road.gateA());
             entry.putInt("colonyB", road.colonyB());
             entry.putInt("gateB", road.gateB());
+            entry.putInt("pairA", road.pairA());
+            entry.putInt("pairB", road.pairB());
+            entry.putInt("level", road.level());
+            if (road.decay() != null)
+            {
+                entry.putIntArray("decayOrder", road.decay().order);
+                final byte[] gone = new byte[road.decay().gone.length];
+                for (int k = 0; k < gone.length; k++)
+                {
+                    gone[k] = (byte) (road.decay().gone[k] ? 1 : 0);
+                }
+                entry.putByteArray("decayGone", gone);
+            }
             list.add(entry);
         }
         tag.put("roads", list);

@@ -119,7 +119,7 @@ def sheet_skins():
 if __name__ == "__main__":
     sheet_icons()
     sheet_skins()
-    names = ["poste_commercial", "guichet_imperial", "banque_regionale", "comptoir_regional",
+    names = ["poste_commercial", "guichet_imperial", "banque_regionale", "depot_regional",
              "caisse_ble", "caisse_bois", "caisse_brique", "caisse_minerai", "caisse_pierre"]
     tiles = [render_block(n, 340, 340) for n in names]
     cols = 3

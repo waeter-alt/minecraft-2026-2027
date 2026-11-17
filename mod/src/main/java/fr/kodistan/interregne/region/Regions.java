@@ -70,9 +70,9 @@ public final class Regions
         {
             return;
         }
-        if (payload.action() == RegionActionPayload.COMPTOIR_UPGRADE || payload.action() == RegionActionPayload.COMPTOIR_TAKE)
+        if (payload.action() == RegionActionPayload.COMPTOIR_OPEN || payload.action() == RegionActionPayload.COMPTOIR_TAKE)
         {
-            ComptoirBlock.onAction(payload, player);
+            DepotRegional.onAction(payload, player);
         }
         else
         {
@@ -194,18 +194,25 @@ public final class Regions
         final RegionData data = RegionData.get(server);
         for (final IColony colony : IColonyManager.getInstance().getAllColonies())
         {
-            final RegionData.Comptoir comptoir = data.existingComptoir(colony);
+            final BuildingDepotRegional depot = DepotRegional.of(colony);
+            if (depot == null || !(colony.getWorld() instanceof ServerLevel level) || !level.isLoaded(depot.getPosition()))
+            {
+                continue;
+            }
+            DepotDecor.refresh(level, depot);
             final Crate crate = data.regionOf(colony);
-            if (comptoir == null || comptoir.pos == null || crate == null || !(colony.getWorld() instanceof ServerLevel level) || !level.isLoaded(comptoir.pos))
+            if (crate == null)
             {
                 continue;
             }
-            if (!(level.getBlockState(comptoir.pos).getBlock() instanceof ComptoirBlock))
+            final RegionData.Comptoir comptoir = data.comptoir(colony);
+            if (comptoir.pos == null)
             {
-                comptoir.pos = null;
-                data.touch();
-                continue;
+                // No catch-up for the time it was not standing
+                comptoir.lastTime = level.getGameTime();
             }
+            comptoir.pos = depot.getPosition();
+            comptoir.level = depot.getBuildingLevel();
             produce(level, colony, comptoir, crate);
             data.touch();
         }
