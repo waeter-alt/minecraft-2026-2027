@@ -15,7 +15,9 @@ Tout se lance depuis ce dossier, et rien ne touche à une installation Minecraft
 | `./gradlew test` | Tests JUnit (pièces, règles de prix) | — |
 | `./gradlew runGameTestServer` | GameTests (comptoir de banque avec un faux joueur) | — |
 
-- Le pack de test ne contient que MineColonies, Structurize, BlockUI et Domum Ornamentum, dans les versions exactes du serveur 2025 (dans `libs/`), plus notre mod.
+- Le client de test charge MineColonies, Structurize, BlockUI et Domum Ornamentum (versions exactes du serveur 2025, dans `libs/`), notre mod, et les mods RPG listés dans `env/mods.txt` (Spell Engine, Relics, Gacha Addiction, RPG Series…).
+- **Première installation, ou mise à jour après un `git pull`** : `./gradlew syncEnv`. Elle installe les mods (hash vérifié), les configs de référence et les mondes de test. `runClient` et `runServer` la lancent déjà en version douce. `./gradlew checkEnv` signale ce qui n'existe que sur ta machine. Prérequis : JDK 21 (Temurin) ; le chemin du JDK n'est plus écrit en dur dans `gradle.properties`.
+- Mode d'emploi complet, y compris pour ajouter un mod, une config ou un monde : section « Environnement partagé » de `CLAUDE.md`.
 - Pour repartir de zéro, supprime `run/client/saves` ou `run/server/world`.
 - Le premier lancement télécharge NeoForge et Minecraft : compte quelques minutes.
 

@@ -207,3 +207,6 @@ idea {
         downloadJavadoc = true
     }
 }
+
+// Environnement de dev partagé (mods, configs, mondes de test) : voir env.gradle et CLAUDE.md
+apply from: 'env.gradle'

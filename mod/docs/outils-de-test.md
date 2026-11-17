@@ -23,7 +23,7 @@ Toutes les commandes se lancent depuis `mod/`, en **Git Bash** (pas PowerShell).
 ./gradlew build --console=plain -q
 ```
 
-**Les mondes de test ne sont pas dans git** (`mod/run/` est ignoré). Il faut au moins `Test_citadelle` (~20 Mo, une colonie complète). Demande l'archive à Duncan et dézippe-la dans `mod/run/client/saves/`.
+**Les mondes de test ne sont pas dans git** (`mod/run/` est ignoré) mais ils s'installent tout seuls : `./gradlew syncEnv` (ou simplement `runClient`) télécharge `Test_citadelle`, `ColoniesV2`, `Routes_A`, `Arene Hub` et `rpgtest` dans `mod/run/client/saves/`. Pour en partager un nouveau : `./gradlew publishSave -Psave="Nom"` (voir « Environnement partagé » dans `CLAUDE.md`).
 
 **Signale qu'un test tourne.** Pendant qu'un build, un serveur ou un client de test tourne, crée le fichier `.claude/testing.flag` à la racine du repo, et supprime-le dès que c'est fini (règle du `CLAUDE.md`). Si ton agent affiche une barre de statut, il peut s'en servir pour indiquer « tests en cours ».
 

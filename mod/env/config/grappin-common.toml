@@ -1,0 +1,76 @@
+#Portee maximale du tir, en blocs.
+# Default: 30.0
+# Range: 4.0 ~ 64.0
+portee = 30.0
+#Vitesse du crochet en vol, en blocs par tick.
+# Default: 2.5
+# Range: 0.5 ~ 6.0
+vitesseCrochet = 2.5
+#Le crochet s'accroche a un point d'ancrage qu'il frole a moins de cette distance, en blocs (0 = il faut le toucher).
+# Default: 1.5
+# Range: 0.0 ~ 4.0
+aimantAncrage = 1.5
+#Temps de recharge apres un tir, en ticks (20 = 1 s).
+# Default: 6
+# Range: 0 ~ 200
+recharge = 6
+#Gravite pendant le balancier, en multiple de la gravite normale (1 = normale).
+# Default: 1.25
+# Range: 0.2 ~ 4.0
+graviteBalancier = 1.25
+#Poussee des touches de deplacement pendant le balancier, en blocs par tick (par tick).
+# Default: 0.025
+# Range: 0.0 ~ 0.2
+influenceTouches = 0.025
+#Part de la vitesse gardee au lacher (1 = toute).
+# Default: 1.0
+# Range: 0.0 ~ 2.0
+vitesseAuLacher = 1.0
+#Saut au lacher : vitesse vers le haut ajoutee quand on lache la corde, en blocs par tick (0,42 = un saut normal, 0 = pas de saut).
+# Default: 0.42
+# Range: 0.0 ~ 1.5
+sautAuLacher = 0.42
+#Force de rappel quand la corde est trop tendue (0 a 1).
+# Default: 0.5
+# Range: 0.05 ~ 1.0
+raideurCorde = 0.5
+#Longueur minimale de corde, en blocs.
+# Default: 2.0
+# Range: 1.0 ~ 10.0
+cordeMin = 2.0
+#Vitesse du treuil : corde rembobinee par tick quand on maintient la touche de saut, en blocs (0,3 = 6 blocs/s).
+# Default: 0.3
+# Range: 0.0 ~ 2.0
+vitesseTreuil = 0.3
+#Blocs de corde gagnes ou perdus par cran de molette.
+# Default: 1.0
+# Range: 0.25 ~ 4.0
+pasMolette = 1.0
+#Voile des Profondeurs : duree de respiration sous l'eau, en secondes.
+# Default: 40
+# Range: 5 ~ 600
+voileReserveSecondes = 40
+#Voile des Profondeurs : temps pour le recharger entierement a la surface, en secondes.
+# Default: 12
+# Range: 1 ~ 600
+voileRechargeSecondes = 12
+#Voile des Profondeurs : il avertit (message et son) quand il lui reste moins de ce nombre de secondes.
+# Default: 10
+# Range: 1 ~ 60
+voileAlerteSecondes = 10
+#Paravoile : duree de vol, en secondes (la jauge se vide en vol).
+# Default: 10
+# Range: 3 ~ 300
+paravoileEnduranceSecondes = 10
+#Paravoile : temps pour recharger la jauge entierement, au sol ou dans l'eau, en secondes.
+# Default: 6
+# Range: 1 ~ 300
+paravoileRechargeSecondes = 6
+#Paravoile : vitesse de vol en avant, en blocs par tick (0,36 = 7 blocs/s).
+# Default: 0.36
+# Range: 0.1 ~ 1.0
+paravoileVitesse = 0.36
+#Paravoile : vitesse de descente a plat, en blocs par tick (0,09 = 1,8 bloc/s).
+# Default: 0.09
+# Range: 0.0 ~ 0.5
+paravoileDescente = 0.09
