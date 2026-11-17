@@ -64,6 +64,12 @@ public abstract class BOWindowMixin
                 net.neoforged.neoforge.network.PacketDistributor.sendToServer(new fr.kodistan.interregne.network.RegionalBankActionPayload(
                   building.getPosition(), fr.kodistan.interregne.network.RegionalBankActionPayload.OPEN, 0));
             }
+            else if (building instanceof fr.kodistan.interregne.region.BuildingDepotRegional.View)
+            {
+                // The Dépôt Régional has its own window: the server answers with the state it shows
+                net.neoforged.neoforge.network.PacketDistributor.sendToServer(new fr.kodistan.interregne.network.RegionActionPayload(
+                  building.getPosition(), fr.kodistan.interregne.network.RegionActionPayload.COMPTOIR_OPEN, 0, 0));
+            }
             else if (building instanceof fr.kodistan.interregne.commerce.BuildingRelaisCommercial.View)
             {
                 // The Relais commercial has its own window: the server answers with the state it shows

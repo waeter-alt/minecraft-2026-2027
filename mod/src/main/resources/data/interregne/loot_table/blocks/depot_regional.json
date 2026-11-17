@@ -7,7 +7,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "interregne:comptoir_regional"
+          "name": "interregne:depot_regional"
         }
       ],
       "conditions": [
