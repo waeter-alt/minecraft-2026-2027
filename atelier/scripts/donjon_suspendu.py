@@ -20,6 +20,9 @@ import suspendu_salle1 as salle1  # noqa: E402
 import suspendu_ss1_blocs as ss1  # noqa: E402
 import suspendu_ss2_blocs as ss2  # noqa: E402
 import suspendu_ss2_fonctions  # noqa: E402
+import suspendu_ss3_blocs as ss3  # noqa: E402
+import suspendu_ss3_fonctions  # noqa: E402
+from nbtlib import Compound, String  # noqa: E402
 from suspendu_outils import ecrire_structure  # noqa: E402
 
 RACINE = Path(__file__).resolve().parent.parent
@@ -30,8 +33,20 @@ COUCHES = [("minecraft:bedrock", 1), ("minecraft:stone", 90), ("minecraft:dirt",
 HERBE = -64 + 1 + 90 + 2                                  # Y monde du bloc d'herbe (29)
 Y_SOL = salle1.Y0                                         # Y local du sol du rez-de-chaussee
 ORIGINE = (-74, HERBE - Y_SOL, -86)                       # monde = local + ORIGINE ; l'entree de la salle 1 est donc en (0, 30, 0)
-SX, SY, SZ = 240, 120, 208                                # gabarit reserve a tout le donjon (agrandi quand une salle ne tient plus)
-SALLES = {"salle1": salle1, "ss1": ss1, "ss2": ss2}
+SX, SY, SZ = 336, 120, 208                                # gabarit reserve a tout le donjon (agrandi quand une salle ne tient plus)
+def _objet(nom, poids, mini, maxi=None):
+    e = {"type": "minecraft:item", "name": nom, "weight": poids}
+    if maxi is not None:
+        e["functions"] = [{"function": "minecraft:set_count", "count": {"type": "minecraft:uniform", "min": mini, "max": maxi}}]
+    return e
+
+
+# PROVISOIRE (Luca definira le vrai butin) : de quoi se soigner, tirer et se payer quelques ameliorations ; chaque coffre en tire 3 a 5
+TABLE_BUTIN_TUNNEL = {"type": "minecraft:chest", "pools": [{"rolls": {"type": "minecraft:uniform", "min": 3, "max": 5}, "entries": [
+    _objet("minecraft:cooked_beef", 10, 3, 6), _objet("minecraft:arrow", 10, 8, 20), _objet("minecraft:iron_ingot", 8, 2, 5), _objet("minecraft:gold_ingot", 5, 1, 3),
+    _objet("minecraft:emerald", 4, 1, 3), _objet("minecraft:experience_bottle", 5, 2, 6), _objet("minecraft:golden_apple", 2, 1, 1), _objet("minecraft:torch", 4, 8, 16), _objet("minecraft:lapis_lazuli", 4, 4, 9)]}]}
+
+SALLES = {"salle1": salle1, "ss1": ss1, "ss2": ss2, "ss3": ss3}
 DUREE_GLISSE = 36                                          # ticks que met une dalle de porte a monter
 HAUTEUR_GLISSE = 8.6                                       # de combien elle monte (toute sa hauteur, jusque dans le linteau)
 NOMS_CLES = {"1": "Clé bleu", "2": "Clé jaune", "3": "Clé rouge"}      # la cle de chaque porte porte la couleur de la porte (le nom « Clé bleu » est celui voulu par Luca)
@@ -92,7 +107,7 @@ def fonctions_porte(f, nom, p, dalles, materiaux, cle_ouverture=None):
         f"kill @e[type=minecraft:block_display,tag=porte{nom}_dalle]", f"playsound minecraft:block.anvil.land master @a {p['centre']} 2 0.5"]) + "\n"
 
 
-def fonctions(infos, decalages, infos2, infos3=None):
+def fonctions(infos, decalages, infos2, infos3=None, infos4=None):
     """Texte des fonctions de datapack : {nom: texte}. `infos` : le rez-de-chaussee, `infos2` : le sous-sol 1."""
     f = {}
     coffre = txt(infos["coffre"])
@@ -274,13 +289,20 @@ def fonctions(infos, decalages, infos2, infos3=None):
     f.update(f_ss2)
     f["suspendu_tick"] = f["suspendu_tick"] + "\n".join(tick_ss2) + "\n"
     f["suspendu_reset"] = f["suspendu_reset"] + "\n".join(reset_ss2) + "\n"
+    # la salle 3 : le combat contre le Gardien des Racines (la salle du boss de l'ancien donjon 1)
+    infos4 = infos4 or ss3.construire()[1]
+    f_ss3, tick_ss3, reset_ss3 = suspendu_ss3_fonctions.fonctions(infos4, txt)
+    f.update(f_ss3)
+    f["suspendu_tick"] = f["suspendu_tick"] + "\n".join(tick_ss3) + "\n"
+    f["suspendu_reset"] = f["suspendu_reset"] + "\n".join(reset_ss3) + "\n"
     cx_porte, cz_porte = infos2["centre_porte"]
     scene_m1 = suspendu_cine.scene_porte_generique((cx_porte, cz_porte), (0.0, 1.0), ss1.YF, distance=8.5)       # on regarde la porte depuis la petite salle (elle est au sud de la porte)
     f.update(suspendu_cine.fonctions(infos, salle1, ORIGINE, centre, {**{n: c[2] for n, c in salle1.COULEURS_PORTES.items()}, "m1": salle1.COULEURS_PORTES["1"][2]},
                                      extras={"m1": (scene_m1, txt((round(cx_porte), ss1.YF + 3, round(cz_porte))))},
                                      coffres={"boss": (suspendu_cine.scene_coffre_generique(infos2["coffre_grappin"]), txt(infos2["coffre_grappin"]), "suspendu_ss1_boss_coffre", "Le coffre du grappin est apparu sur l'estrade")},
                                      perso=perso_ss2))
-    plages = [(ORIGINE[0], ORIGINE[2], ORIGINE[0] + SX - 1, ORIGINE[2] + SZ - 1)]
+    moitie = SX // 2                                          # `forceload add` ne charge que 256 chunks a la fois : le gabarit se charge en deux moities
+    plages = [(ORIGINE[0], ORIGINE[2], ORIGINE[0] + moitie - 1, ORIGINE[2] + SZ - 1), (ORIGINE[0] + moitie, ORIGINE[2], ORIGINE[0] + SX - 1, ORIGINE[2] + SZ - 1)]
     f["suspendu_pose"] = "\n".join([
         "# [claude-build] Pose le donjon (sans pause).", *[f"forceload add {a} {b} {c} {d}" for (a, b, c, d) in plages],
         'tellraw @a {"text":"Donjon Suspendu : 30 secondes de chargement, puis la pose par morceaux (environ une minute, le jeu peut ralentir). Ne mets pas en pause.","color":"gold"}',
@@ -329,7 +351,11 @@ def main():
     blocs3, infos3 = ss2.construire()
     decalages["ss2"] = ecrire_structure(blocs3, exports / "suspendu_ss2.nbt")
     (dp / "data/atelier/structure" / "suspendu_ss2.nbt").write_bytes((exports / "suspendu_ss2.nbt").read_bytes())
-    textes, portes = fonctions(infos, decalages, infos2, infos3)
+    blocs4, infos4 = ss3.construire()
+    coffres_nbt = {c["pos"]: Compound({"id": String("minecraft:chest"), "LootTable": String(ss3.TABLE_BUTIN)}) for c in infos4["tunnel"]["coffres"]}         # les coffres du tunnel se remplissent a la premiere ouverture
+    decalages["ss3"] = ecrire_structure(blocs4, exports / "suspendu_ss3.nbt", nbt=coffres_nbt)
+    (dp / "data/atelier/structure" / "suspendu_ss3.nbt").write_bytes((exports / "suspendu_ss3.nbt").read_bytes())
+    textes, portes = fonctions(infos, decalages, infos2, infos3, infos4)
     fn = dp / "data/atelier/function"
     for nom, texte in textes.items():
         (fn / f"{nom}.mcfunction").write_text(texte, encoding="utf-8")
@@ -361,7 +387,16 @@ def main():
                "piliers_cyan": {str(k): [{"ancrage": list(p["ancrage"]), "cases": [list(c) for c in p["cases"]], "dessus": [list(d) for d in p["dessus"]], "lumiere": list(p["lumiere"])} for p in v] for k, v in infos3["piliers_cyan"].items()},
                "ennemis": {k: [list(m) for m in v] for k, v in infos3["ennemis"].items()}, "sources": [list(s) for s in infos3["sources"]], "decalages": {k: list(v) for k, v in decalages.items()}}
     (exports / "suspendu_ss2_cibles.json").write_text(json.dumps(cibles3, ensure_ascii=False), encoding="utf-8")
-    print(f"Ecrit : {len(blocs)} blocs (salle 1) + {len(blocs2)} (sous-sol 1) + {len(blocs3)} (salle -2), {len(textes)} fonctions ; entree en {txt(infos['entree'])}")
+    (dp / "data/atelier/loot_table").mkdir(parents=True, exist_ok=True)
+    (dp / "data/atelier/loot_table" / (ss3.TABLE_BUTIN.split(":")[1] + ".json")).write_text(json.dumps(TABLE_BUTIN_TUNNEL, indent=2), encoding="utf-8")
+    (dp / "data/grappin/tags/function").mkdir(parents=True, exist_ok=True)
+    (dp / "data/grappin/tags/function" / f"{suspendu_ss3_fonctions.TAG_MORT}.json").write_text(json.dumps({"values": ["atelier:suspendu_ss3_mort"]}, indent=2), encoding="utf-8")      # le mod appelle ce tag a la mort du golem
+    cibles4 = {"_marque": "[claude-build]", "arrivee": list(infos4["arrivee"]), "marches": [list(m) for m in infos4["marches"]], "sources": [list(s) for s in infos4["sources"]], "depart_boss": list(infos4["depart_boss"]),
+               "golem": {k: (list(v) if isinstance(v, tuple) else v) for k, v in infos4["golem"].items()}, "plateformes": {n: {"bbox": list(q["bbox"]), "dessus": q["dessus"], "boss": list(q["boss"]) if q["boss"] else None} for n, q in infos4["plateformes"].items()},
+               "retour_rampe": list(infos4["retour_rampe"]), "tunnel": {"trous": infos4["tunnel"]["trous"], "ile": infos4["tunnel"]["ile"], "coffres": [{"nom": c["nom"], "pos": list(c["pos"]), "acces": list(c["acces"])} for c in infos4["tunnel"]["coffres"]], "passages": [{k: list(v) for k, v in q.items()} for q in infos4["tunnel"]["passages"]]}, "rampe_trous": infos4["rampe_trous"], "rampe_theta": infos4["rampe_theta"], "pont": [list(c) for c in infos4["pont"]], "trous": infos4["trous"], "troncons": infos4["troncons"], "corniches": {n: list(c) for n, c in infos4["corniches"].items()},
+               "ancrages_boss": [list(a) for a in infos4["ancrages_boss"]], "rampe": infos4["rampe"] | {"rayon": list(infos4["rampe"]["rayon"])}, "balcon": list(infos4["balcon"]), "alcove": list(infos4["alcove"]), "sortie": [list(c) for c in infos4["sortie"]], "decalages": {k: list(v) for k, v in decalages.items()}}
+    (exports / "suspendu_ss3_cibles.json").write_text(json.dumps(cibles4, ensure_ascii=False), encoding="utf-8")
+    print(f"Ecrit : {len(blocs)} blocs (salle 1) + {len(blocs2)} (sous-sol 1) + {len(blocs3)} (salle -2) + {len(blocs4)} (salle 3), {len(textes)} fonctions ; entree en {txt(infos['entree'])}")
     if args.zip:
         monde_atelier.zipper_monde(save, args.monde, RACINE / "mondes", **options)
 

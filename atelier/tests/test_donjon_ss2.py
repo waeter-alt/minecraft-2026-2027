@@ -284,7 +284,7 @@ class TestFonctionsSalleMoins2(unittest.TestCase):
         _, cls.infos = rdc.construire()
         _, cls.infos2 = ss1.construire()
         cls.infos3 = ss2.construire()[1]
-        decalages = {n: (0, 0, 0) for n in ("salle1", "ss1", "ss2", "porte1", "porte2", "porte3", "portem1")}
+        decalages = {n: (0, 0, 0) for n in ("salle1", "ss1", "ss2", "ss3", "porte1", "porte2", "porte3", "portem1")}
         cls.f, _ = dj.fonctions(cls.infos, decalages, cls.infos2, cls.infos3)
         cls.blocs_ss2 = ss2.construire()[0]
 

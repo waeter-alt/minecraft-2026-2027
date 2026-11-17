@@ -84,7 +84,7 @@ class TestFonctions(unittest.TestCase):
     def setUpClass(cls):
         _, cls.infos = salle1.construire()
         _, cls.infos2 = ss1.construire()
-        decalages = {"salle1": (0, 0, 0), "ss1": (0, 0, 0), "ss2": (0, 0, 0), "porte1": (0, 0, 0), "porte2": (0, 0, 0), "porte3": (0, 0, 0), "portem1": (0, 0, 0)}
+        decalages = {"salle1": (0, 0, 0), "ss1": (0, 0, 0), "ss2": (0, 0, 0), "ss3": (0, 0, 0), "porte1": (0, 0, 0), "porte2": (0, 0, 0), "porte3": (0, 0, 0), "portem1": (0, 0, 0)}
         cls.f, _ = dj.fonctions(cls.infos, decalages, cls.infos2)
 
     def test_toutes_les_fonctions_appelees_existent(self):

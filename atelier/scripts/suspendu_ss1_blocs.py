@@ -11,6 +11,7 @@ import math
 from functools import lru_cache
 
 import suspendu_salle1 as rdc
+import suspendu_ss2_deco as deco
 from suspendu_outils import AIR, S, h01
 from suspendu_ss1 import (ANCRAGES, ANCRAGES_PLUS, BLOC_MUSICAL, BULBE, CAVERNE, COFFRE_CLE_2, COFFRE_GRAPPIN, COFFRES, COULOIR_EST, COULOIR_MONSTRES, DEC, ECHELLE, ESTRADE, FOSSES, HALL_HAUT,
                           LARGEUR_COULOIR_MONSTRES, MINI_BOSS, MONSTRES_PETITE_SALLE, MONSTRES_SALLE_MUSICALE, PASSAGE_ARC, PETITE_SALLE, SALLE_MUSICALE, vers_plan)
@@ -317,6 +318,46 @@ def construire():
             blocs[(ex + 1, bas + 1, ez)] = S("light", level=LUM_NIVEAU, waterlogged=False)
             lumieres.append((ex + 1, bas + 1, ez))
             sources.append((ex + 1, bas + 1, ez, LUM_NIVEAU))
+    # la decoration organique (memes elements que la salle -2) : plaques de mousse, stalactites sous la voute, stalagmites contre les parois, lianes a baies lumineuses ; rien pres des echelles, ancrages, coffres,
+    # blocs musicaux, monstres ni du mini-boss, et toujours au moins 4 blocs libres au dessus du sol
+    proteges = set()
+    for (x, y, z) in [*ancrages, *coffres, *pads, *lampes, pos(COFFRE_GRAPPIN), pos(COFFRE_CLE_2), pos(MINI_BOSS), depart_enigme, *(pos(m) for m in MONSTRES_PETITE_SALLE + MONSTRES_SALLE_MUSICALE)]:
+        proteges |= {(x + dx, z + dz) for dx in range(-2, 3) for dz in range(-2, 3)}
+    for (ex, bas, haut_e, ez) in echelles + [echelle_estrade, echelle_balcon]:
+        proteges |= {(ex + dx, ez + dz) for dx in range(-2, 3) for dz in range(-2, 3)}
+    deco_nb = {"mousse": 0, "stalactites": 0, "stalagmites": 0, "lianes": 0}
+    baies = []
+
+    def libre(cellules):
+        return all(blocs.get(q) == AIR for q in cellules)
+
+    for (x, z), (sol, haut, genre) in sorted(cases.items()):
+        if genre not in NATUREL or genre == "balcon" or protege(x, z) or (x, z) in proteges:
+            continue
+        clair = haut - sol
+        if blocs.get((x, sol, z), ("",))[0] in ("minecraft:stone", "minecraft:andesite", "minecraft:tuff", "minecraft:mossy_cobblestone") and deco.bruit(x, z, 7, 31) > 0.64 and deco.h01(x, 1, z, 32) < 0.75:
+            blocs[(x, sol, z)] = S("moss_block")
+            deco_nb["mousse"] += 1
+        if clair < 7:
+            continue
+        grappe = deco.bruit(x, z, 9, 41)
+        if deco.h01(x, 3, z, 42) < 0.004 + 0.05 * grappe ** 2:
+            n = min(1 + int(deco.h01(x, 4, z, 43) * (1 + 4 * grappe)), 4, clair - 4)
+            if n >= 1 and libre([(x, haut - i, z) for i in range(n)]):
+                deco.stalactite(blocs, x, haut, z, n)
+                deco_nb["stalactites"] += 1
+                continue
+        if deco.h01(x, 5, z, 44) < 0.004 + 0.03 * deco.bruit(x, z, 11, 45) ** 2:
+            n = min(2 + int(deco.h01(x, 6, z, 46) * 3), clair - 4)
+            if libre([(x, haut - i, z) for i in range(n)]):
+                baies += deco.liane(blocs, x, haut, z, n, deco.h01(x, 7, z, 47) < 0.6)
+                deco_nb["lianes"] += 1
+                continue
+        contre_mur = any((x + dx, z + dz) not in cases for dx, dz in deco.VOISINS)
+        if contre_mur and genre != "porte" and deco.h01(x, 9, z, 75) < 0.14 and libre([(x, sol + 1 + i, z) for i in range(3)]) and blocs.get((x, sol, z), (AIR,))[0] != "minecraft:air":
+            deco.stalagmite(blocs, x, sol + 1, z, 1 + int(deco.h01(x, 10, z, 76) * 3))
+            deco_nb["stalagmites"] += 1
+    sources += [(x, y, z, 14) for (x, y, z) in baies]
     infos = {"cases": {c: tuple(v) for c, v in cases.items()}, "cases_porte": cases_porte, "dalles": dalles, "colonnes_porte": colonnes, "largeur_porte": largeur, "centre_porte": (centre_x, 77.0),
              "ancrages": ancrages, "coffres": coffres, "coffre_grappin": pos(COFFRE_GRAPPIN), "coffre_cle": pos(COFFRE_CLE_2), "lumieres": lumieres, "sources": sources,
              "monstres_petite": [pos(m) for m in MONSTRES_PETITE_SALLE], "monstres_musicale": [pos(m) for m in MONSTRES_SALLE_MUSICALE], "mini_boss": pos(MINI_BOSS),
@@ -324,6 +365,6 @@ def construire():
              "fosses": [(cellule(*a), cellule(*b)) for a, b in FOSSES], "hall_ouest": pos((450, 100)), "hall_milieu": pos((680, 100)), "hall_est": pos((860, 100)),
              "alcove": pos(COFFRE_GRAPPIN), "corniche": pos(ANCRAGES[5]), "plateformes": [(cx, haut_p + 1, cz) for (cx, cz, haut_p) in ancrages_caverne + ancrages_plus], "piliers_plus": len(ancrages_plus),
              "sol_haut": SOL_HALL, "echelles": echelles, "echelle_estrade": echelle_estrade, "echelle_balcon": echelle_balcon, "garde_corps": sorted(garde_corps),
-             "enigme": {"pads": pads, "lampes": lampes, "depart": depart_enigme, "sequence": ENIGME_SEQUENCE, "notes": ENIGME_NOTES,
+             "deco": deco_nb, "enigme": {"pads": pads, "lampes": lampes, "depart": depart_enigme, "sequence": ENIGME_SEQUENCE, "notes": ENIGME_NOTES,
                         "instruments": [n for _, n in ENIGME_INSTRUMENTS], "couleurs": ENIGME_COULEURS}}
     return blocs, infos
