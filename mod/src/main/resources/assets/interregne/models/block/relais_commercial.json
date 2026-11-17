@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "interregne:block/relais_commercial_side",
+    "down": "interregne:block/relais_commercial_bottom",
+    "up": "interregne:block/relais_commercial_top",
+    "north": "interregne:block/relais_commercial_side",
+    "south": "interregne:block/relais_commercial_side",
+    "east": "interregne:block/relais_commercial_front",
+    "west": "interregne:block/relais_commercial_side"
+  }
+}

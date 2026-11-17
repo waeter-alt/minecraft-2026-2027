@@ -48,6 +48,20 @@ public final class ClientRoads
     }
 
     /**
+     * Every road cell as {x, z, colonyA, colonyB}, for the kingdom map.
+     */
+    public static List<int[]> cellList()
+    {
+        final List<int[]> list = new java.util.ArrayList<>(cells.size());
+        for (final Map.Entry<Long, int[]> entry : cells.entrySet())
+        {
+            final long key = entry.getKey();
+            list.add(new int[] {(int) (key >> 32), (int) key, entry.getValue()[0], entry.getValue()[1]});
+        }
+        return list;
+    }
+
+    /**
      * Changes each time the roads do, for caches keyed on them.
      */
     public static int version()

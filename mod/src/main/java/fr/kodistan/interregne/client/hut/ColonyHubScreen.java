@@ -71,7 +71,8 @@ public final class ColonyHubScreen extends ParchmentScreen
         BUILDINGS("Bâtiments", Icon.of(Items.BRICKS)),
         CITIZENS("Citoyens", Icon.module("workers")),
         INTENDANCE("Intendance", Icon.of(Items.GOLD_INGOT)),
-        WALLS("Murailles", Icon.of(Items.STONE_BRICK_WALL));
+        WALLS("Murailles", Icon.of(Items.STONE_BRICK_WALL)),
+        DIPLOMACY("Diplomatie", Icon.of(Items.WRITABLE_BOOK));
 
         private final String label;
         private final Icon icon;
@@ -151,6 +152,7 @@ public final class ColonyHubScreen extends ParchmentScreen
     private final HubCitizensPage citizensPage = new HubCitizensPage(this);
     private final HubIntendancePage intendancePage = new HubIntendancePage(this);
     private final HubWallsPage wallsPage = new HubWallsPage(this);
+    private final HubDiplomacyPage diplomacyPage = new HubDiplomacyPage(this);
 
     private ColonyHubScreen(final ITownHallView townHall)
     {
@@ -177,6 +179,7 @@ public final class ColonyHubScreen extends ParchmentScreen
             final ColonyHubScreen screen = new ColonyHubScreen(view);
             screen.page = Page.valueOf(page.toUpperCase(java.util.Locale.ROOT));
             screen.intendanceList = intendanceList;
+            screen.diplomacyPage.asked = ClientDiplomacy.of(view.getColony().getID()) != null;
             screen.revealList = intendanceList != 0;
             Minecraft.getInstance().setScreen(screen);
         }
@@ -436,6 +439,7 @@ public final class ColonyHubScreen extends ParchmentScreen
             case CITIZENS -> citizensPage.renderCitizens(graphics, mouseX, my, x, y, width);
             case INTENDANCE -> intendancePage.renderIntendance(graphics, mouseX, my, x, y, width);
             case WALLS -> wallsPage.renderWalls(graphics, mouseX, my, x, y, width);
+            case DIPLOMACY -> diplomacyPage.renderDiplomacy(graphics, mouseX, my, x, y, width);
         };
         graphics.disableScissor();
         contentHeight = y + scroll - top;
@@ -485,7 +489,6 @@ public final class ColonyHubScreen extends ParchmentScreen
           new Tool("Statistiques", Icon.module("stats"), false, () -> StatsScreen.openColony(townHall, this)),
           new Tool("Réglages", Icon.module("settings"), false, () -> SettingsScreen.open(townHall, view.getModuleView(BuildingModules.TOWNHALL_SETTINGS), this)),
           new Tool("Permissions", Icon.module("scepter"), false, () -> PermissionsScreen.open(view, this)),
-          new Tool("Alliances", Icon.of(Items.WHITE_BANNER), false, () -> AlliancesScreen.open(view, this)),
           new Tool("Apparence", Icon.module("domum"), false, () -> AppearanceScreen.open(view, this)));
     }
 

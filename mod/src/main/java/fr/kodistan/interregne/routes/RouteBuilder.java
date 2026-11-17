@@ -38,7 +38,7 @@ import java.util.Set;
  * </ul>
  * Nothing a player built is ever touched: such a column is left as it stands.
  */
-public final class RouteBuilder
+public final class RouteBuilder implements RouteWork
 {
     private static final int REACH = 7;
     private static final int ROAD = 12;
@@ -198,9 +198,16 @@ public final class RouteBuilder
         }
     }
 
+    @Override
     public int cells()
     {
         return n;
+    }
+
+    @Override
+    public BlockPos cell(final int i)
+    {
+        return new BlockPos(plan.x[i], plan.y[i], plan.z[i]);
     }
 
     public RoutePlan plan()
@@ -211,6 +218,7 @@ public final class RouteBuilder
     /**
      * Every block to set for one cell of the centre line: the columns of road, shoulder and structure nearest to it.
      */
+    @Override
     public List<RouteStep> slice(final int i)
     {
         final List<RouteStep> out = new ArrayList<>(256);

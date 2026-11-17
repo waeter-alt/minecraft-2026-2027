@@ -16,6 +16,10 @@
   "block.interregne.caisse_minerai": "Caisse de minerai",
   "block.interregne.poste_commercial": "Poste commercial (test des routes)",
   "block.interregne.comptoir_regional": "Comptoir régional",
+  "block.interregne.relais_commercial": "Relais commercial",
+  "item.interregne.relais_commercial": "Relais commercial",
+  "com.interregne.building.relais_commercial": "Relais commercial",
+  "com.interregne.building.relais_commercial.desc": "Conclut des contrats de commerce avec les colonies alliées et envoie des caravanes par la route.",
   "block.interregne.marche_imperial": "Marché impérial",
   "block.interregne.banner.couronne.white": "Couronne impériale blanche",
   "block.interregne.banner.couronne.orange": "Couronne impériale orange",
@@ -193,5 +197,9 @@
   "block.interregne.banner.tour.green": "Tour verte",
   "block.interregne.banner.tour.red": "Tour rouge",
   "block.interregne.banner.tour.black": "Tour noire",
-  "block.interregne.trone_imperial": "Trône impérial"
+  "block.interregne.trone_imperial": "Trône impérial",
+  "key.categories.interregne": "Interrègne",
+  "key.interregne.carte": "Carte du royaume",
+  "entity.interregne.conducteur": "Conducteur de caravane",
+  "entity.interregne.escorte": "Soldat d'escorte"
 }
