@@ -39,8 +39,26 @@ def nom_part(e, n):
     return f"{e['name'].rstrip('_')}_{n}"
 
 
+def normaliser(modele):
+    """Blockbench 5 range les os dans `groups` et ne laisse que leurs uuid dans l'outliner, et met `rotation: null` aux cubes
+    droits : on remet le modele sous la forme des fichiers 4.x (os complets dans l'outliner) pour le reste du script."""
+    groupes = {g["uuid"]: g for g in modele.get("groups", [])}
+
+    def complet(noeud):
+        if not isinstance(noeud, dict):
+            return noeud
+        g = dict(groupes.get(noeud["uuid"], {}), **noeud)
+        g["children"] = [complet(c) for c in noeud.get("children", [])]
+        return g
+    m = dict(modele)
+    m["outliner"] = [complet(n) for n in modele["outliner"]]
+    m["elements"] = [dict(e, rotation=e.get("rotation") or [0, 0, 0]) for e in modele["elements"]]
+    return m
+
+
 def parcourir(modele):
     """Liste (chemin de l'os, groupe, parent, [elements]) dans l'ordre de l'arbre ; le chemin part de la racine (exclue)."""
+    modele = normaliser(modele)
     elements = {e["uuid"]: e for e in modele["elements"]}
     resultat = []
 
@@ -169,7 +187,7 @@ def java_animations(modele, paquet, classe, source=SOURCE_GOLEM):
                 continue
             for nom, cible, conv in (("rotation", "ROTATION", lambda x, y, z: f"KeyframeAnimations.degreeVec({f(-x)}, {f(-y)}, {f(z)})"),
                                      ("position", "POSITION", lambda x, y, z: f"KeyframeAnimations.posVec({f(-x)}, {f(y)}, {f(z)})")):
-                c = canal(anim["keyframes"], nom, cible, conv)
+                c = canal(anim.get("keyframes", []), nom, cible, conv)
                 if c:
                     lignes.append(f'            .addAnimation("{anim["name"]}", {c})')
         lignes[-1] += "\n            .build();"
@@ -199,7 +217,7 @@ def java_squelette(modele, paquet, classe, source=SOURCE_GOLEM):
         canaux = []
         for anim in a.get("animators", {}).values():
             for nom, rotation in (("rotation", True), ("position", False)):
-                ks = sorted((k for k in anim["keyframes"] if k["channel"] == nom), key=lambda k: k["time"])
+                ks = sorted((k for k in anim.get("keyframes", []) if k["channel"] == nom), key=lambda k: k["time"])
                 if not ks:
                     continue
                 vals = []
