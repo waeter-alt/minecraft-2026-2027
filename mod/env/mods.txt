@@ -4,7 +4,7 @@
 #          ou local:<chemin depuis la racine du repo> pour un jar versionné dans le repo
 # Un mod utilisé pour tester DOIT être déclaré ici (voir CLAUDE.md, « Environnement partagé »).
 
-client accessories
+both accessories
 client archers
 client armor-model-api
 client armory-rpg-series
@@ -20,7 +20,7 @@ client gachaaddiction
 client gazebos
 client jewelry
 client more-rpg-library
-client owo-lib
+both owo-lib
 client paladins-and-priests
 client playeranimator
 client puffish-skills
@@ -34,4 +34,4 @@ client spell-engine
 client spell-power
 client structure-pool-api
 client wizards
-both local:atelier/exports/grappin-2.6.1.jar
+both local:atelier/exports/grappin-3.5.0.jar
