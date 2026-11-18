@@ -449,7 +449,7 @@ ENTREE = (0, 1, 41)
 CMD.append("gamerule commandBlockOutput false")
 CMD.append("gamerule doMobSpawning false")
 CMD.append("scoreboard objectives add donjon dummy")
-CMD.append(f"execute positioned {rel(*ENTREE)} as @a[dx=4,dy=3,dz=2] unless items entity @s container.* grappin:grappin run give @s grappin:grappin")
+CMD.append(f"execute positioned {rel(*ENTREE)} as @a[dx=4,dy=3,dz=2] unless items entity @s container.* donjon:grappin run give @s donjon:grappin")
 CMD.append(f"execute positioned {rel(*ENTREE)} as @a[dx=4,dy=3,dz=2] unless score @s donjon matches 0.. run scoreboard players set @s donjon 0")
 for k, (n_, texte) in enumerate(POINTS[1:], 1):
     (bx, by, bz), (dx, dy, dz) = boite(n_)

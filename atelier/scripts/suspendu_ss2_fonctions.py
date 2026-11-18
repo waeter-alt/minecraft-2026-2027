@@ -62,7 +62,7 @@ def lignes_ancrage(a, pilier, infos, txt):
         lignes += lignes_pilier(pilier, txt, yf2, y_fond, niveau)
         lignes.append(f"execute positioned {txt((x, yf2 + 1, z))} run particle minecraft:poof ~ ~ ~ 1.2 0.2 1.2 0.05 40")
         lignes.append(f"execute positioned {txt((x, yf2, z))} run playsound minecraft:block.stone.place master @a[distance=..60] ~ ~ ~ 3 0.6")
-    lignes += [f"fill {txt((x, y + 1, z))} {txt((x, plafond, z))} minecraft:chain[axis=y]", f"setblock {txt((x, y, z))} grappin:ancrage",
+    lignes += [f"fill {txt((x, y + 1, z))} {txt((x, plafond, z))} minecraft:chain[axis=y]", f"setblock {txt((x, y, z))} donjon:ancrage",
                f"execute positioned {txt((x, y, z))} run particle minecraft:end_rod ~ ~ ~ 0.3 0.6 0.3 0.05 30",
                f"execute positioned {txt((x, y, z))} run playsound minecraft:block.chain.place master @a[distance=..60] ~ ~ ~ 2 0.8"]
     return lignes
