@@ -48,14 +48,9 @@
   "item.grappin.seraphin_spawn_egg": "Œuf d'apparition de Séraphin",
   "entity.grappin.rodeur": "Rôdeur des Racines",
   "item.grappin.rodeur_spawn_egg": "Œuf d'apparition de Rôdeur des Racines",
-  "block.grappin.porte_bleue": "Pierre gravée bleue",
-  "block.grappin.porte_jaune": "Pierre gravée jaune",
-  "block.grappin.porte_rouge": "Pierre gravée rouge",
-  "block.grappin.sceau_bleu": "Sceau de saphir",
-  "block.grappin.sceau_jaune": "Sceau d'ambre",
-  "block.grappin.sceau_rouge": "Sceau de rubis",
   "block.grappin.levier_racine": "Levier de racine",
   "item.grappin.cle_bleue": "Clé bleu",
   "item.grappin.cle_jaune": "Clé jaune",
-  "item.grappin.cle_rouge": "Clé rouge"
+  "item.grappin.cle_rouge": "Clé rouge",
+  "entity.grappin.porte_donjon": "Porte du donjon"
 }

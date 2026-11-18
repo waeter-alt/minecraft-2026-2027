@@ -1,3 +1,6 @@
 {
-  "parent": "grappin:block/levier_racine"
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "grappin:item/levier_racine"
+  }
 }

@@ -154,7 +154,7 @@ public class Grappin {
             .build());
 
     public Grappin(IEventBus modBus, ModContainer container) {
-        DonjonBlocs.charger();
+        DonjonBlocs.charger(modBus);
         BLOCS.register(modBus);
         ITEMS.register(modBus);
         ENTITES.register(modBus);

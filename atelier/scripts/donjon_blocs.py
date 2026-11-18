@@ -323,15 +323,42 @@ def butin(nom):
                                                    "conditions": [{"condition": "minecraft:survives_explosion"}]}]}
 
 
+ICONE_LEVIER = [
+    "......aAa.......",
+    ".....aAAAa......",
+    ".....aAAAa......",
+    "......aAa.......",
+    ".......r........",
+    "......rR........",
+    "......Rr........",
+    ".....rR.........",
+    ".....Rr.........",
+    "....rR..........",
+    "...SSrSS........",
+    "..SPPPPPS.......",
+    "..SPPpPPS.......",
+    "..SPpPPPS.......",
+    ".rSSSSSSSr......",
+    "................",
+]
+
+
+def icone_levier():
+    """Icone d'inventaire du levier de racine (le bloc lui-meme est dessine par le code, depuis levier_racine.bbmodel)."""
+    pal = {"a": (200, 130, 30), "A": (255, 210, 90), "r": BOIS[1], "R": BOIS[2], "S": PIERRE[1], "P": PIERRE[3], "p": MOUSSE[1]}
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    q = img.load()
+    for y, ligne in enumerate(ICONE_LEVIER):
+        for x, c in enumerate(ligne):
+            if c != ".":
+                q[x, y] = pal[c] + (255,)
+    return img
+
+
 def main():
+    # Les portes et les sceaux en blocs ont ete abandonnes (Luca, 2026-11-18) : la porte est une entite (atelier/scripts/donjon_3d.py).
     tb, tm = ASSETS / "textures/block", ASSETS / "textures/item"
-    for couleur, (masc, _) in COULEURS.items():
-        for nom, img in ((f"porte_{couleur}", porte(couleur)), (f"sceau_{masc}", sceau(couleur))):
-            png(img, tb / f"{nom}.png")
-            ecrire(ASSETS / f"blockstates/{nom}.json", {"variants": {"": {"model": f"grappin:block/{nom}"}}})
-            ecrire(ASSETS / f"models/block/{nom}.json", {"parent": "minecraft:block/cube_all", "textures": {"all": f"grappin:block/{nom}"}})
-            ecrire(ASSETS / f"models/item/{nom}.json", {"parent": f"grappin:block/{nom}"})
-            ecrire(DATA / f"loot_table/blocks/{nom}.json", butin(nom))
+    for couleur in COULEURS:
         png(icone_cle(couleur), tm / f"cle_{couleur}.png")
         png(texture_cle_modele(couleur), tm / f"cle_{couleur}_modele.png")
         modele = cle_modele(couleur)
@@ -341,21 +368,20 @@ def main():
                                                             "base": {"parent": f"grappin:item/cle_{couleur}_main"},
                                                             "perspectives": {"gui": {"parent": f"grappin:item/cle_{couleur}_icone"}}})
         ecrire(BBMODELES / f"cle_{couleur}.bbmodel", bbmodel(f"cle_{couleur}", modele, {"0": texture_cle_modele(couleur)}))
-    textures_levier = {"socle": socle_levier(), "racine": racine_levier(), "ambre": ambre(False), "ambre_allume": ambre(True)}
-    for nom in ("socle", "racine"):
-        png(textures_levier[nom], tb / f"levier_{nom}.png")
-    png(textures_levier["ambre"], tb / "levier_ambre.png")
-    png(textures_levier["ambre_allume"], tb / "levier_ambre_allume.png")
-    for allume, suffixe in ((False, ""), (True, "_baisse")):
-        m = levier(allume)
-        ecrire(ASSETS / f"models/block/levier_racine{suffixe}.json", m)
-        tex = {"socle": textures_levier["socle"], "racine": textures_levier["racine"],
-               "ambre": textures_levier["ambre_allume" if allume else "ambre"]}
-        ecrire(BBMODELES / f"levier_racine{suffixe}.bbmodel", bbmodel(f"levier_racine{suffixe}", m, tex))
-    ecrire(ASSETS / "blockstates/levier_racine.json", etats_levier())
-    ecrire(ASSETS / "models/item/levier_racine.json", {"parent": "grappin:block/levier_racine"})
+    # Le levier de racine est dessine par le code (LevierRendu, depuis levier_racine.bbmodel de donjon_3d.py) : son modele de bloc ne
+    # sert qu'aux particules quand on le casse, et son objet a une icone a plat.
+    png(socle_levier(), tb / "levier_socle.png")
+    png(icone_levier(), tm / "levier_racine.png")
+    ecrire(ASSETS / "models/block/levier_racine.json", {"textures": {"particle": "grappin:block/levier_socle"}})
+    etats = etats_levier()
+    for v in etats["variants"].values():
+        v["model"] = "grappin:block/levier_racine"
+    ecrire(ASSETS / "blockstates/levier_racine.json", etats)
+    ecrire(ASSETS / "models/item/levier_racine.json", {"parent": "minecraft:item/generated", "textures": {"layer0": "grappin:item/levier_racine"}})
     ecrire(DATA / "loot_table/blocks/levier_racine.json", butin("levier_racine"))
-    print("donjon : portes, sceaux, levier de racine et cles ecrits")
+    for vieux in (ASSETS / "models/block/levier_racine_baisse.json", tb / "levier_racine.png", tb / "levier_ambre.png", tb / "levier_ambre_allume.png"):
+        vieux.unlink(missing_ok=True)
+    print("donjon : levier de racine et cles ecrits")
 
 
 if __name__ == "__main__":

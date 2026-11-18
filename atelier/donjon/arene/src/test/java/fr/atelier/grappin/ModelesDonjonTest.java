@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 class ModelesDonjonTest {
     private static final Path ASSETS = Path.of("src/main/resources/assets/grappin");
     private static final Path DATA = Path.of("src/main/resources/data/grappin");
-    private static final List<String> BLOCS = List.of("porte_bleue", "porte_jaune", "porte_rouge", "sceau_bleu", "sceau_jaune", "sceau_rouge",
+    private static final List<String> BLOCS = List.of(   // les portes et sceaux en blocs ont ete abandonnes : la porte est une entite
             "levier_racine");
     private static final List<String> CLES = List.of("cle_bleue", "cle_jaune", "cle_rouge");
 
