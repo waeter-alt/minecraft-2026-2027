@@ -32,7 +32,7 @@ class TestScenes(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.blocs, cls.infos = salle1.construire()
-        cls.scenes = {"coffre": cine.scene_coffre(cls.infos, salle1.Y0), **{f"porte{n}": cine.scene_porte(n, cls.infos, salle1) for n in "123"}}
+        cls.scenes = {"coffre": cine.scene_coffre(cls.infos, salle1.Y0)}                    # les portes a cle n'ont plus de cinematique
 
     def test_la_camera_ne_tourne_pas_pendant_le_travelling(self):
         """Fluidite : le serveur n'envoie l'orientation d'une entite que par pas de 1,4 degre, une rotation lente se verrait par a-coups. La camera avance donc en ligne droite sans tourner."""
@@ -70,13 +70,11 @@ class TestScenes(unittest.TestCase):
                 self.assertGreater(y, salle1.Y0 + 2.5, nom)
                 self.assertLess(y, salle1.Y0 + salle1.HAUT_SALLE, nom)
 
-    def test_les_portes_sont_regardees(self):
-        for n in "123":
-            cam, vise = self.scenes[f"porte{n}"]
-            porte = vise[0][1]
-            premier = cine.images(cam, vise)[0]
-            yaw, pitch = cine.angles(premier[:3], porte)
-            self.assertAlmostEqual(premier[3], yaw, places=3)
+    def test_la_camera_regarde_le_coffre(self):
+        cam, vise = self.scenes["coffre"]
+        premier = cine.images(cam, vise)[0]
+        yaw, pitch = cine.angles(premier[:3], vise[0][1])
+        self.assertAlmostEqual(premier[3], yaw, places=3)
 
 
 class TestFonctions(unittest.TestCase):
@@ -93,12 +91,11 @@ class TestFonctions(unittest.TestCase):
                 self.assertIn(appelee, self.f, f"{nom} appelle {appelee}")
 
     def test_une_image_par_tick_et_les_evenements(self):
-        for nom in ("coffre", "porte1", "porte2", "porte3"):
+        for nom in ("coffre", "portem1"):
             texte = self.f[f"suspendu_cine_{nom}"]
             self.assertEqual(len(re.findall(r"tp @e\[type=minecraft:armor_stand,tag=cine_cam\] ", texte)), cine.DUREE, nom)
         self.assertIn("matches 25 run function atelier:suspendu_s1_coffre", self.f["suspendu_cine_coffre"])           # le coffre apparait en pleine scene
-        for n in "123":
-            self.assertIn(f"matches {cine.LEVER} run function atelier:suspendu_p{n}_lever", self.f[f"suspendu_cine_porte{n}"])
+        self.assertIn(f"matches {cine.LEVER} run function atelier:suspendu_pm1_lever", self.f["suspendu_cine_portem1"])   # la porte du sous-sol 1 (sans cle) garde sa scene
 
     def test_la_dalle_glisse_au_lieu_de_disparaitre_par_rangs(self):
         for n in "123":
@@ -122,11 +119,19 @@ class TestFonctions(unittest.TestCase):
             self.assertIn(attendu, retour)
         self.assertIn("matches 112..", self.f["suspendu_cine_cadre"])                                       # la scene s'arrete d'elle-meme
 
-    def test_la_cle_lance_la_scene_sauf_si_une_autre_est_en_cours(self):
+    def test_la_cle_ouvre_la_porte_tout_de_suite_sans_cinematique(self):
+        """Demande de Luca : plus de cinematique quand on ouvre une porte avec sa cle."""
         for n in "123":
             t = self.f[f"suspendu_ouvrir_p{n}"]
-            self.assertIn(f"execute if score #libre cine matches 0 run function atelier:suspendu_cine_debut_porte{n}", t)
-            self.assertIn(f"execute unless score #libre cine matches 0 run function atelier:suspendu_p{n}_lever", t)
+            self.assertIn(f"function atelier:suspendu_p{n}_lever", t)                                                # la dalle se leve tout de suite
+            self.assertIn("clear @s minecraft:tripwire_hook", t)                                                      # la cle est consommee
+            self.assertFalse([l for l in t.splitlines() if not l.startswith("#") and "cine" in l], n)                # aucune commande de cinematique
+            self.assertNotIn(f"suspendu_cine_porte{n}", self.f)
+            self.assertNotIn(f"suspendu_cine_debut_porte{n}", self.f)
+            self.assertFalse(any(f"suspendu_cine_porte{n}" in texte for texte in self.f.values()), n)               # aucune fonction ne l'appelle plus
+        m1 = self.f["suspendu_ouvrir_pm1"]                                                                            # la porte du sous-sol 1 s'ouvre sans cle, aux monstres vaincus : elle garde sa scene
+        self.assertIn("execute if score #libre cine matches 0 run function atelier:suspendu_cine_debut_portem1", m1)
+        self.assertIn("execute unless score #libre cine matches 0 run function atelier:suspendu_pm1_lever", m1)
         self.assertIn("suspendu_cine_debut_coffre", self.f["suspendu_s1_fin"])
         self.assertIn("setblock", self.f["suspendu_s1_coffre"])
 
@@ -245,7 +250,7 @@ class TestFonctions(unittest.TestCase):
 
     def test_le_coffre_n_est_pose_qu_une_fois_et_garde_sa_cle(self):
         """Bug vu en jeu : tester `#t cine` APRES avoir lance la scene (qui met #t a 1) posait le coffre deux fois ; le second setblock vide le coffre (setblock le vide, puis refuse de remplacer un bloc par le meme)."""
-        for nom, direct in (("suspendu_s1_fin", "suspendu_s1_coffre"), ("suspendu_ouvrir_p1", "suspendu_p1_lever"), ("suspendu_ouvrir_p3", "suspendu_p3_lever")):
+        for nom, direct in (("suspendu_s1_fin", "suspendu_s1_coffre"), ("suspendu_ouvrir_pm1", "suspendu_pm1_lever")):
             lignes = self.f[nom].splitlines()
             memo = lignes.index("scoreboard players operation #libre cine = #t cine")
             lance = next(i for i, l in enumerate(lignes) if "suspendu_cine_debut_" in l)

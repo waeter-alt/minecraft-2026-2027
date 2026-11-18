@@ -77,7 +77,7 @@ def tuiles(x0, x1, y0, y1, z0, z1, bloc):
 
 
 def fonctions_porte(f, nom, p, dalles, materiaux, cle_ouverture=None):
-    """Les fonctions d'une porte de pierre : ouvrir (la cle est consommee, puis cinematique), lever (la dalle devient des blocs affiches), glisser, fin. `p` : {'centre', 'a', 'b'} en coordonnees
+    """Les fonctions d'une porte de pierre : ouvrir (porte a cle : la cle est consommee, la dalle se leve tout de suite ; porte sans cle : cinematique), lever (la dalle devient des blocs affiches), glisser, fin. `p` : {'centre', 'a', 'b'} en coordonnees
     monde (texte), la zone etant celle ou la dalle se trouve ; `dalles` : [(x, y, z, bloc)] du gabarit ; `materiaux` : (bloc de la dalle, bloc de la spirale, nom de la couleur) ;
     `cle_ouverture` : l'objet-cle (texte) ou None si la porte s'ouvre autrement (les monstres vaincus)."""
     dalle_bloc, spirale_bloc, couleur = materiaux
@@ -85,13 +85,16 @@ def fonctions_porte(f, nom, p, dalles, materiaux, cle_ouverture=None):
     invoques = [f"summon minecraft:block_display {txt((x, y, z))} {{block_state:{{Name:\"{bloc}\"}},Tags:[\"porte{nom}_dalle\"],transformation:{{{rotation},translation:[0.001f,0.001f,0.001f]}}}}"
                 for (x, y, z, bloc) in dalles]
     zone = f"{p['a']} {p['b']}"
-    debut = [f"# [claude-build] Ouvre la porte {nom} ({couleur}) : une cinematique montre la porte qui se leve (ou elle se leve tout de suite si une cinematique est en cours)."]
-    if cle_ouverture:
-        debut += [f"clear @s {cle_ouverture} 1"]
-    f[f"suspendu_ouvrir_p{nom}"] = "\n".join(debut + [
-        f"scoreboard players set #p{nom} suspendu 1", "scoreboard players operation #libre cine = #t cine",
-        f"execute if score #libre cine matches 0 run function atelier:suspendu_cine_debut_porte{nom}",
-        f"execute unless score #libre cine matches 0 run function atelier:suspendu_p{nom}_lever"]) + "\n"
+    if cle_ouverture:                                                   # porte a cle : plus de cinematique (demande de Luca), la dalle se leve tout de suite
+        f[f"suspendu_ouvrir_p{nom}"] = "\n".join([
+            f"# [claude-build] Ouvre la porte {nom} ({couleur}) avec sa cle : la cle est consommee et la dalle se leve tout de suite, sans cinematique.",
+            f"clear @s {cle_ouverture} 1", f"scoreboard players set #p{nom} suspendu 1", f"function atelier:suspendu_p{nom}_lever"]) + "\n"
+    else:
+        f[f"suspendu_ouvrir_p{nom}"] = "\n".join([
+            f"# [claude-build] Ouvre la porte {nom} ({couleur}) : une cinematique montre la porte qui se leve (ou elle se leve tout de suite si une cinematique est en cours).",
+            f"scoreboard players set #p{nom} suspendu 1", "scoreboard players operation #libre cine = #t cine",
+            f"execute if score #libre cine matches 0 run function atelier:suspendu_cine_debut_porte{nom}",
+            f"execute unless score #libre cine matches 0 run function atelier:suspendu_p{nom}_lever"]) + "\n"
     f[f"suspendu_p{nom}_lever"] = "\n".join([
         f"# [claude-build] La dalle de la porte {nom} se leve : elle devient des blocs affiches (meme couleur, meme spirale) ; ils montent au tick suivant.",
         *invoques, f"fill {zone} minecraft:air replace {dalle_bloc}", f"fill {zone} minecraft:air replace {spirale_bloc}",
