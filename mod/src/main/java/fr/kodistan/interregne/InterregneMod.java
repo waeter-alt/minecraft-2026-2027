@@ -69,6 +69,8 @@ public class InterregneMod
         RegionalBanks.register(modEventBus);
         Crates.register(modEventBus);
         fr.kodistan.interregne.war.WarEntities.register(modEventBus);
+        fr.kodistan.interregne.war.WarItems.register(modEventBus);
+        fr.kodistan.interregne.war.WarSounds.register(modEventBus);
         fr.kodistan.interregne.routes.Routes.register(modEventBus);
         fr.kodistan.interregne.commerce.Commerce.register(modEventBus);
     }
