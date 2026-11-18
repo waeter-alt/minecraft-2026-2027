@@ -36,8 +36,11 @@ def nom_part(e, n):
 
 
 def normaliser(modele):
-    """Blockbench 5 range les os dans `groups` et ne laisse que leurs uuid dans l'outliner, et met `rotation: null` aux cubes
-    droits : on remet le modele sous la forme des fichiers 4.x (os complets dans l'outliner) pour le reste du script."""
+    """Remet un fichier de Blockbench 5 sous la forme des fichiers 4.x pour le reste du script : Blockbench 5 range les os dans
+    `groups` (l'outliner ne garde que leurs uuid), met `rotation: null` aux cubes droits, et enregistre les rotations animees avec
+    x et y de signe oppose (en reenregistrant un fichier 4.10, il les inverse pour garder le meme mouvement a l'ecran)."""
+    if str(modele.get("meta", {}).get("format_version", "4")).split(".")[0] < "5" and "groups" not in modele:
+        return modele
     groupes = {g["uuid"]: g for g in modele.get("groups", [])}
 
     def complet(noeud):
@@ -49,6 +52,20 @@ def normaliser(modele):
     m = dict(modele)
     m["outliner"] = [complet(n) for n in modele["outliner"]]
     m["elements"] = [dict(e, rotation=e.get("rotation") or [0, 0, 0]) for e in modele["elements"]]
+    m.pop("groups", None)
+    m["meta"] = dict(modele.get("meta", {}), format_version="4.10")         # deja normalise : un second passage ne change rien
+    if int(str(modele.get("meta", {}).get("format_version", "4")).split(".")[0]) >= 5:
+        m["animations"] = []
+        for a in modele.get("animations", []):
+            animateurs = {}
+            for cle, anim in a.get("animators", {}).items():
+                images = []
+                for k in anim.get("keyframes", []):
+                    if k["channel"] == "rotation":
+                        k = dict(k, data_points=[dict(p, x=str(-float(p["x"])), y=str(-float(p["y"]))) for p in k["data_points"]])
+                    images.append(k)
+                animateurs[cle] = dict(anim, keyframes=images)
+            m["animations"].append(dict(a, animators=animateurs))
     return m
 
 
@@ -173,6 +190,7 @@ def canal(keyframes, nom, cible, conv):
 
 
 def java_animations(modele, paquet, classe):
+    modele = normaliser(modele)
     champs = []
     for a in modele.get("animations", []):
         lignes = [f"    public static final AnimationDefinition {a['name'].upper()} = AnimationDefinition.Builder.withLength({f(a['length'])})"]
@@ -200,6 +218,7 @@ def java_animations(modele, paquet, classe):
 
 def java_squelette(modele, paquet, classe):
     """Le meme modele pour le serveur (classe Squelette, sans Minecraft) : os, pivots et canaux, valeurs dans le repere de Minecraft."""
+    modele = normaliser(modele)
     os_lignes = []
     for chemin, g, parent, _ in parcourir(modele):
         assert all(abs(r) < 1e-9 for r in g.get("rotation", [0, 0, 0])), f"os {g['name']} : rotation de repos non geree par Squelette"
