@@ -275,7 +275,7 @@ def construire():
     infos["ecluses"] = ecluses
 
     # --- secteur A
-    vannes_a = [barreaux("station_a", boite(GAL_A[0], GAL_A[1], GAL_A[4], GAL_A[5], z, z)) for z in VANNES_A]
+    vannes_a = []                                                                  # plus de vannes chronometrees (demande de Luca) : la galerie est libre
     for (x0, x1, z0, z1) in LITS:                                                   # les lits de filtration : sable, gravier, une arete de gres
         for x in range(x0, x1 + 1):
             for z in range(z0, z1 + 1):
@@ -290,7 +290,7 @@ def construire():
         for (dx, dz) in ((0, 0), (1, 0), (0, 1), (1, 1)):
             poser("station_a", (px + dx, y, pz + dz), S("waxed_copper_block") if y % 2 else S("waxed_cut_copper"))
             pompe_a.append((px + dx, y, pz + dz))
-    vannes_cache = [barreaux("station_a", boite(FENTE[0], FENTE[0], 62, 63, z, z)) for z in (44, 46)]
+    vannes_cache = []                                                              # la fente de la chambre cachee est libre
     coffre_a = (52, 62, 50)
     poser("station_a", coffre_a, S("chest", facing="north", type="single", waterlogged=True))
     infos["a"] = {"vannes": vannes_a, "depart": (GAL_A[0], GAL_A[1], 64, 66, 88, 91), "relances": [(GAL_A[0], GAL_A[1], 64, 66, z0, z1) for (z0, z1) in ((75, 78), (63, 66), (51, 54))],
@@ -360,7 +360,7 @@ def construire():
             poser("station_b", (x, Y_PASS, z), S("waxed_cut_copper"))
     ancrages_b.append(("b_ilot", (ILOT[0] + ILOT[1]) // 2, Y_PASS + 4, (ILOT[2] + ILOT[3]) // 2))
     for (nom, x, y, z) in ancrages_b:                                               # sous une poutre de fer, tenus au plafond par une chaine
-        poser("station_b", (x, y, z), S("grappin:ancrage"))
+        poser("station_b", (x, y, z), S("donjon:ancrage"))
         for yy in range(y + 1, B3[5] + 1):
             poser("station_b", (x, yy, z), S("chain", axis="y", waterlogged=False))
     for z in range(B3[2], B3[3] + 1):
@@ -442,7 +442,7 @@ def construire():
     vannes_d = []
     for v in VANNES_D:
         cases = [(x, y, z) for (x, z), ll in galerie_d.items() if v <= ll < v + 1 for y in range(31, 34)]
-        vannes_d.append(barreaux("station_cheminee", cases))
+        pass                                                                       # la galerie de la Cheminee est libre
     rampe = []
     hx, hz = CHEM
     for (x, z) in cyl(CHEM, R_CHEM):
@@ -480,7 +480,7 @@ def construire():
                 poser("station_cheminee", (x, 84, z), S("polished_tuff") if (x + z) % 2 else S("waxed_cut_copper"))
     ancrages_d = [("d_rebord", 177, 88, 46), ("d_f1", 167, 88, 46), ("d_f2", 158, 88, 46), ("d_poste", 147, 88, 46)]
     for (nom, x, y, z) in ancrages_d:
-        poser("station_cheminee", (x, y, z), S("grappin:ancrage"))
+        poser("station_cheminee", (x, y, z), S("donjon:ancrage"))
         for yy in range(y + 1, 93):
             poser("station_cheminee", (x, yy, z), S("chain", axis="y", waterlogged=False))
     for x in range(POSTE[0], POSTE[1] + 1):                                          # le Poste : une cabine vitree (sa vitre sud regarde la Cuve), des cadrans, le levier general
@@ -567,6 +567,8 @@ def construire():
 
     infos["ancrages"] = ancrages_b + ancrages_d
     infos["creux"] = creux
+    import station_create
+    station_create.decor_secteurs(parts, infos)
     return parts, infos
 
 
@@ -577,6 +579,8 @@ def tout():
     blocs = dict(base)
     for nom in ORDRE:
         blocs.update(parts[nom])
+    import station_retouches
+    blocs.update(station_retouches.charger())                              # les retouches a la main de Luca, par-dessus tout
     return blocs
 
 

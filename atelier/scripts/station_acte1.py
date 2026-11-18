@@ -26,13 +26,14 @@ NB_MARCHES = 24                                # de y 107 a y 84 : la derniere e
 PLONGEON = (66, 89, 166, 189)                  # le bassin du plongeon : 24 x 24, creux de 12
 FOND_PLONGEON = SOL - 12
 PLATEFORMES = {"P1": ((69, 73, 169, 173), SOL - 8), "P2": ((82, 86, 169, 173), SOL - 4), "P3": ((75, 79, 178, 182), SOL)}       # la tour de plongeoirs : +4, +8, +12 au dessus du fond
-BASSIN50 = (96, 145, 190, 203)                 # le bassin de 50 m, peu profond (3)
+BASSIN50 = (90, 139, 170, 185)                 # le bassin de 50 m, peu profond (3) : il debouche a l'ouest dans la fosse du plongeoir (le grand bain)
 FOND50 = SOL - 3
-TOUR = (162, 185)                              # la tour du toboggan : 16 de diametre (noyau de rayon 4, corniches jusqu'a 8)
+TOUR = (150, 178)                              # la tour du toboggan, au bout est du bassin : noyau de rayon 4, corniches jusqu'a 8, la goulotte du toboggan autour (rayon 9,5 a 11,5)
 R_NOYAU = 4.0
 CORNICHES_TOUR = (("L1", 180, 86), ("L2", 270, 89), ("L3", 0, 91))       # azimut (0 = nord, 90 = est), sol
 SOMMET_TOUR = 94
 BASSIN_ESSAI = (170, 177, 159, 166)            # 8 x 8, plein (3 de profondeur) : la bouche du Drain
+TOBOGGAN = {"r": (9.5, 11.5), "haut": SOMMET_TOUR - 3, "marches": 11, "pas": 6, "fin": 270}     # goulotte en spirale : une marche de 1 tous les 6 blocs, du sommet (on y saute de 3 : on ne remonte pas) au bassin, arrivee a l'ouest
 CUVE = (120.0, 95.0)
 R_CUVE, R_COURSIVE = 30.0, 35.0
 FOND_CUVE, PLAFOND_CUVE = 30, 96               # air de 31 a 95
@@ -40,11 +41,11 @@ NIVEAUX = {"haut": 76, "median": 58, "bas": 42}
 BOUCHES = {"A": (270, 64, 70), "C": (0, 48, 54), "B": (90, 32, 38), "D": (40, 31, 36)}       # azimut, y bas, y haut : scellees tant que les secteurs n'existent pas
 TUYAUX = (22, 110, 160, 200, 250, 320)         # les six colonnes de tuyaux de la Cuve (azimuts)
 PLONGEOIRS = (60, 135, 225, 300)               # les ouvertures du garde-corps de la Coursive, avec un plongeoir
-LEVIERS = {1: (77, SOL + 1, 180), 2: (147, SOL + 1, 196), 3: (162, SOMMET_TOUR + 1, 185)}
+LEVIERS = {1: (77, SOL + 1, 180), 2: (141, SOL + 1, 188), 3: (150, SOMMET_TOUR + 1, 178)}
 TEMOINS_SAS = ((118, 91, 157), (120, 91, 157), (122, 91, 157))
 TEMOINS_POMPES = ((118, 91, 130), (120, 91, 130), (122, 91, 130))
 CASIER = (34, SOL + 1, 175)                    # le casier de la cape (une case de la rangee nord du Vestiaire)
-EMBUSCADE = ((106, FOND50 + 1, 195), (121, FOND50 + 1, 199), (136, FOND50 + 1, 194), (128, FOND50 + 1, 192))   # 3 zombies puis un squelette
+EMBUSCADE = ((100, FOND50 + 1, 173), (115, FOND50 + 1, 182), (130, FOND50 + 1, 175), (122, FOND50 + 1, 178))   # 3 zombies et un squelette
 
 
 def az(x, z, c):
@@ -60,11 +61,17 @@ def carrelage(x, z):
 
 
 def mur_hall(x, y, z):
-    if y == SOL + 2:
-        return S("light_blue_terracotta")                          # la bande de « terre cuite cyan clair » a hauteur d'epaule
-    if (x % 8 == 0 or z % 8 == 0) and y < PLAFOND:
-        return S("quartz_pillar", axis="y")                        # les pilastres repetes
-    return S("quartz_bricks")
+    if y < SOL:
+        return carreau_bassin(x, y, z)                              # les parois des bassins : carreaux bleus
+    if y in (SOL + 1, SOL + 2):
+        return S("light_blue_concrete") if (x + z) % 2 else S("cyan_concrete")      # la frise de carreaux bleus, a hauteur de hanche
+    if y == SOL + 3:
+        return S("white_concrete")
+    return S("white_concrete") if (x // 2 + y // 2 + z // 2) % 2 else S("smooth_quartz")   # le carrelage blanc
+
+
+def carreau_bassin(x, y, z):
+    return S("white_concrete") if (x + y + z) % 5 == 0 else S("light_blue_concrete")
 
 
 @lru_cache(maxsize=None)
@@ -122,8 +129,9 @@ def construire():
     sol(COULOIR_V[0], COULOIR_V[1], SOL, COULOIR_V[2], COULOIR_V[3])
     sol(SAS[0], SAS[1], SOL, SAS[2], SAS[3])
     sol(ESCALIER_X[0], ESCALIER_X[1], SOL, HALL[3] + 1, ESC_Z0 - NB_MARCHES + 1)
-    sol(PLONGEON[0], PLONGEON[1], FOND_PLONGEON, PLONGEON[2], PLONGEON[3], lambda x, z: S("light_blue_terracotta") if (x + z) % 6 == 0 else S("white_concrete"))
-    sol(BASSIN50[0], BASSIN50[1], FOND50, BASSIN50[2], BASSIN50[3], lambda x, z: S("light_blue_terracotta") if (z - BASSIN50[2]) % 3 == 1 and x % 2 else S("white_concrete"))
+    sol(PLONGEON[0], PLONGEON[1], FOND_PLONGEON, PLONGEON[2], PLONGEON[3], lambda x, z: S("blue_concrete") if (x - PLONGEON[0]) in (11, 12) and 4 <= z - PLONGEON[2] <= 19 or (z - PLONGEON[2]) in (11, 12) and 4 <= x - PLONGEON[0] <= 19 else S("light_blue_concrete"))      # le grand bain : une croix de reperes au fond
+    lignes = [z for z in range(BASSIN50[2] + 2, BASSIN50[3] - 1, 3)]
+    sol(BASSIN50[0], BASSIN50[1], FOND50, BASSIN50[2], BASSIN50[3], lambda x, z: S("black_concrete") if (z in lignes and BASSIN50[0] + 2 <= x <= BASSIN50[1] - 2) or (z in lignes and x == BASSIN50[1] - 2) else S("light_blue_concrete"))      # les lignes de nage noires au fond
     sol(BASSIN_ESSAI[0], BASSIN_ESSAI[1], SOL - 3, BASSIN_ESSAI[2], BASSIN_ESSAI[3], lambda x, z: S("light_blue_terracotta"))
     for (z, y) in marches:
         for x in range(ESCALIER_X[0], ESCALIER_X[1] + 1):
@@ -194,6 +202,12 @@ def construire():
         for p in ((PLONGEON[0] - 1, FOND_PLONGEON + 6, PLONGEON[2] + i), (PLONGEON[1] + 1, FOND_PLONGEON + 6, PLONGEON[2] + i),
                   (PLONGEON[0] + i, FOND_PLONGEON + 6, PLONGEON[2] - 1), (PLONGEON[0] + i, FOND_PLONGEON + 6, PLONGEON[3] + 1)):
             lampe(p)
+    for x in range(HALL[0] + 3, HALL[1], 6):                                         # au-dessus des bancs du mur nord
+        lampe((x, SOL + 4, HALL[2] - 1))
+        if not (ESCALIER_X[0] - 1 <= x <= ESCALIER_X[1] + 1):
+            lampe((x, SOL + 4, HALL[3] + 1))                                       # et le long du mur sud
+    for (x, z) in ((VESTIAIRE[0] - 1, VESTIAIRE[2] + 1), (VESTIAIRE[0] - 1, VESTIAIRE[3] - 1), (VESTIAIRE[1] + 1, VESTIAIRE[2] + 1), (VESTIAIRE[1] + 1, VESTIAIRE[3] - 1)):
+        lampe((x, SOL + 3, z))
     for z in (HALL[2] + 1, HALL[3] - 1):                                            # les deux coins est du Hall
         lampe((HALL[1] - 1, SOL, z))
     for k in range(4, 360, 8):                                                   # le plafond est a 11 blocs : des feux dans le sol de la Coursive, sinon on y marche dans le noir
@@ -210,11 +224,21 @@ def construire():
             z, y = ESC_Z0 - k, PLAINE - 1 - k
             lampe((x if x == ESCALIER_X[0] else ESCALIER_X[1], y + 7, z))
 
-    # ---------------------------------------------------------- la tuyauterie apparente du Hall : des conduites de cuivre sous le plafond
-    for z in (HALL[2] + 1, HALL[3] - 1):
-        for x in range(HALL[0], HALL[1] + 1):
-            if blocs.get((x, PLAFOND - 1, z)) == AIR:
-                blocs[(x, PLAFOND - 1, z)] = S("waxed_cut_copper") if x % 9 else S("waxed_copper_block")
+    # ---------------------------------------------------------- les margelles : une bordure de quartz lisse autour des bassins, puis une bande bleue
+    creux_bassins = {(x, z) for (x, y, z) in air if y == SOL and HALL[0] <= x <= HALL[1] and HALL[2] <= z <= HALL[3]}
+    for (x, z) in creux_bassins:
+        for dx in (-2, -1, 0, 1, 2):
+            for dz in (-2, -1, 0, 1, 2):
+                q = (x + dx, z + dz)
+                if q in creux_bassins or blocs.get((q[0], SOL, q[1])) in (None, AIR) or blocs[(q[0], SOL, q[1])][0] == "minecraft:sea_lantern":
+                    continue
+                if not (HALL[0] <= q[0] <= HALL[1] and HALL[2] <= q[1] <= HALL[3]):
+                    continue
+                d = max(abs(dx), abs(dz))
+                if d == 1:
+                    blocs[(q[0], SOL, q[1])] = S("smooth_quartz")
+                elif blocs[(q[0], SOL, q[1])][0] != "minecraft:smooth_quartz":
+                    blocs[(q[0], SOL, q[1])] = S("light_blue_concrete")
 
     # ---------------------------------------------------------- le plongeon : trois plateformes (+4, +8, +12), chacune sur sa colonne, des echelles aux coins
     for nom, ((x0, x1, z0, z1), y) in PLATEFORMES.items():
@@ -228,7 +252,7 @@ def construire():
     for (x, z, face) in ((PLONGEON[0], PLONGEON[2], "east"), (PLONGEON[1], PLONGEON[2], "west"), (PLONGEON[0], PLONGEON[3], "east"), (PLONGEON[1], PLONGEON[3], "west")):
         for y in range(FOND_PLONGEON + 1, SOL + 1):
             blocs[(x, y, z)] = S("ladder", facing=face, waterlogged=False)
-    for (x, z, face) in ((BASSIN50[0], (BASSIN50[2] + BASSIN50[3]) // 2, "east"), (BASSIN50[1], (BASSIN50[2] + BASSIN50[3]) // 2, "west")):
+    for (x, z, face) in ((100, BASSIN50[2], "south"), (125, BASSIN50[2], "south"), (100, BASSIN50[3], "north"), (125, BASSIN50[3], "north"), (BASSIN50[1], 172, "west")):
         for y in range(FOND50 + 1, SOL + 1):
             blocs[(x, y, z)] = S("ladder", facing=face, waterlogged=False)
 
@@ -241,7 +265,7 @@ def construire():
                 for y in range(SOL + 1, SOMMET_TOUR + 1):
                     a = az(x, z, TOUR)
                     bande = r > R_NOYAU - 1 and (a + (y - SOL) * 45) % 120 < 30
-                    blocs[(x, y, z)] = S("light_blue_terracotta") if bande else S("quartz_bricks")
+                    blocs[(x, y, z)] = S("blue_concrete") if bande else S("white_concrete")
                     tour[(x, y, z)] = True
                 blocs[(x, SOMMET_TOUR, z)] = S("smooth_quartz")
     corniches = {}
@@ -254,6 +278,56 @@ def construire():
         corniches[nom] = (cx, y, cz)
         lampe((cx - 2, y, cz - 2))
     lampe((TOUR[0] + 2, SOMMET_TOUR, TOUR[1] + 2))
+
+    # ---------------------------------------------------------- le toboggan : une goulotte seche en spirale autour de la tour, du sommet jusqu'au bassin de 50 m (sans eau, demande de Luca).
+    # Une marche de 1 tous les 6 blocs : on la descend a pied ; du sommet on y saute de 3 blocs, on ne la remonte donc pas.
+    r0, r1 = TOBOGGAN["r"]
+    pas_deg = TOBOGGAN["pas"] / (2 * math.pi * (r0 + r1) / 2) * 360
+    balayage = TOBOGGAN["marches"] * pas_deg
+    depart = (TOBOGGAN["fin"] - balayage) % 360
+    toboggan = []
+    for x in range(TOUR[0] - 13, TOUR[0] + 14):
+        for z in range(TOUR[1] - 13, TOUR[1] + 14):
+            r = r_de(x, z, TOUR)
+            if not (r0 - 0.6 <= r < r1 + 0.6):
+                continue
+            for tour_k in (0, 1):
+                u = (az(x, z, TOUR) - depart) % 360 + 360 * tour_k
+                if u >= balayage:
+                    continue
+                i = int(u // pas_deg)
+                y_sol = TOBOGGAN["haut"] - i
+                if r0 <= r < r1:
+                    blocs[(x, y_sol, z)] = S("light_blue_concrete") if (x + z) % 3 else S("white_concrete")
+                    blocs[(x, y_sol + 1, z)] = AIR
+                    air.add((x, y_sol + 1, z))
+                    for yy in range(y_sol + 2, max(y_sol + 4, SOL + 1)):
+                        if yy <= SOL or blocs.get((x, yy, z)) == AIR:
+                            blocs[(x, yy, z)] = AIR
+                            air.add((x, yy, z))
+                    toboggan.append((x, y_sol + 1, z))
+                else:
+                    for yy in range(y_sol, max(y_sol + 2, SOL + 1)):
+                        blocs[(x, yy, z)] = S("light_blue_concrete")
+                    blocs[(x, max(y_sol + 1, SOL + 1), z)] = S("diorite_wall", east="none", west="none", north="none", south="none", up=True, waterlogged=False)     # un muret d'1,5 : on ne l'enjambe pas
+                    if y_sol > SOL + 1 and r < r0 and int(u) % 40 < 3:
+                        for yy in range(SOL + 1, y_sol):
+                            blocs[(x, yy, z)] = S("quartz_pillar", axis="y")           # les piliers qui portent la goulotte
+    for k in range(0, 360, 45):                                                   # des lanternes dans la tour, face a la goulotte
+        for y in (SOL + 2, SOL + 5, SOL + 8):
+            ang = math.radians(k + y * 10)
+            lampe((int(math.floor(TOUR[0] + 3.6 * math.sin(ang))), y, int(math.floor(TOUR[1] - 3.6 * math.cos(ang)))))
+    # la passerelle du sommet au-dessus du depart de la goulotte (3 blocs plus bas : on saute dedans)
+    a = math.radians(depart + pas_deg * 0.3)
+    for d in [k * 0.5 for k in range(8, 21)]:
+        for e in (-1.0, 0.0, 1.0):
+            x = int(math.floor(TOUR[0] + d * math.sin(a) + e * math.cos(a)))
+            z = int(math.floor(TOUR[1] - d * math.cos(a) + e * math.sin(a)))
+            if r_de(x, z, TOUR) < r0:
+                blocs[(x, SOMMET_TOUR, z)] = S("smooth_quartz")
+                for yy in (SOMMET_TOUR + 1, SOMMET_TOUR + 2):
+                    if blocs.get((x, yy, z)) not in (None,):
+                        blocs[(x, yy, z)] = AIR
 
     # ---------------------------------------------------------- les ancrages du grappin (tenus au plafond par une chaine) : trois au dessus des plateformes, quatre au dessus du bord, un par corniche et le sommet
     ancrages = []
@@ -268,7 +342,82 @@ def construire():
         for yy in range(y + 1, PLAFOND):
             if blocs.get((x, yy, z)) == AIR:
                 blocs[(x, yy, z)] = S("chain", axis="y", waterlogged=False)
-        blocs[(x, y, z)] = S("grappin:ancrage")
+        blocs[(x, y, z)] = S("donjon:ancrage")
+
+    # ---------------------------------------------------------- l'esprit piscine : chaise de maitre-nageur, parasols et transats, serviettes, bancs, plantes
+    def poser_si_libre(p, b):
+        if blocs.get(p) == AIR and blocs.get((p[0], p[1] - 1, p[2])) not in (None, AIR):
+            blocs[p] = b
+            return True
+        return False
+
+    cx = 112                                                                      # la chaise du maitre-nageur, face au bassin
+    for y in (SOL + 1, SOL + 2):
+        for x in (cx, cx + 1):
+            blocs[(x, y, 188)] = S("white_concrete")
+    blocs[(cx, SOL + 3, 188)] = S("quartz_stairs", facing="south", half="bottom", shape="straight", waterlogged=False)
+    blocs[(cx + 1, SOL + 3, 188)] = S("quartz_stairs", facing="south", half="bottom", shape="straight", waterlogged=False)
+    for x in (cx, cx + 1):
+        blocs[(x, SOL + 1, 189)] = S("ladder", facing="south", waterlogged=False)
+    blocs[(cx - 1, SOL + 4, 188)] = S("red_wool")
+    toiles = ("red_wool", "yellow_wool", "light_blue_wool", "white_wool", "lime_wool")
+    for i, x in enumerate((92, 102, 132, 152, 162)):                                # parasols et transats, sur la plage sud
+        z = 199
+        for y in range(SOL + 1, SOL + 4):
+            blocs[(x, y, z)] = S("birch_fence", east=False, west=False, north=False, south=False, waterlogged=False)
+        for dx in (-1, 0, 1):
+            for dz in (-1, 0, 1):
+                blocs[(x + dx, SOL + 4, z + dz)] = S(toiles[i % len(toiles)]) if (dx + dz) % 2 == 0 else S("white_wool")
+        for dx in (-2, 2):
+            blocs[(x + dx, SOL + 1, z - 1)] = S("birch_stairs", facing="south", half="bottom", shape="straight", waterlogged=False)
+            blocs[(x + dx, SOL + 1, z)] = S("birch_slab", type="bottom", waterlogged=False)
+            blocs[(x + dx, SOL + 1, z + 1)] = S("birch_slab", type="bottom", waterlogged=False)
+        poser_si_libre((x, SOL + 1, z + 3), S(("red_carpet", "yellow_carpet", "light_blue_carpet", "orange_carpet", "lime_carpet")[i % 5]))
+        poser_si_libre((x + 1, SOL + 1, z + 3), S(("red_carpet", "yellow_carpet", "light_blue_carpet", "orange_carpet", "lime_carpet")[i % 5]))
+    for (x0, x1) in ((92, 112), (126, 166)):                                       # des gradins le long du mur nord : trois rangs
+        for x in range(x0, x1 + 1):
+            for rang in range(3):
+                z = HALL[2] + 2 - rang
+                for y in range(SOL + 1, SOL + 1 + rang):
+                    blocs[(x, y, z)] = S("white_concrete")
+                blocs[(x, SOL + 1 + rang, z)] = S("quartz_stairs", facing="north", half="bottom", shape="straight", waterlogged=False) if x % 6 else S("light_blue_concrete")
+    for (px, pz) in ((64, 162), (64, 208), (90, 208), (150, 208), (176, 208), (176, 196)):     # des palmiers dans des bacs de sable
+        for dx in (-1, 0, 1):
+            for dz in (-1, 0, 1):
+                blocs[(px + dx, SOL + 1, pz + dz)] = S("sand") if (dx, dz) == (0, 0) or True else None
+                if (dx, dz) != (0, 0):
+                    blocs[(px + dx, SOL + 1, pz + dz)] = S("birch_slab", type="top", waterlogged=False)
+        for y in range(SOL + 2, SOL + 8):
+            blocs[(px, y, pz)] = S("jungle_log", axis="y")
+        for (dx, dz) in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1), (2, 0), (-2, 0), (0, 2), (0, -2), (3, 0), (-3, 0), (0, 3), (0, -3), (1, 1), (-1, -1), (1, -1), (-1, 1)):
+            yy = SOL + 8 if max(abs(dx), abs(dz)) < 2 else SOL + 7
+            blocs[(px + dx, yy, pz + dz)] = S("jungle_leaves", persistent=True, distance=1, waterlogged=False)
+    for x in (70, 76, 82):                                                         # des plongeoirs au bord du grand bain (des planches au-dessus du vide)
+        for z in range(PLONGEON[3] - 2, PLONGEON[3] + 2):
+            if blocs.get((x, SOL, z)) == AIR:
+                blocs[(x, SOL, z)] = S("quartz_slab", type="top", waterlogged=False)
+        blocs[(x, SOL + 1, PLONGEON[3] + 2)] = S("quartz_stairs", facing="south", half="bottom", shape="straight", waterlogged=False)
+    bx0, bx1, bz = 164, 174, 202                                                   # la buvette : un comptoir, des tabourets, des fruits
+    for x in range(bx0, bx1 + 1):
+        blocs[(x, SOL + 1, bz)] = S("stripped_birch_log", axis="x")
+        blocs[(x, SOL + 2, bz)] = S("smooth_quartz_slab", type="bottom", waterlogged=False)
+        if x % 2 == 0:
+            blocs[(x, SOL + 1, bz - 2)] = S("birch_fence", east=False, west=False, north=False, south=False, waterlogged=False)
+            blocs[(x, SOL + 2, bz - 2)] = S("birch_pressure_plate", powered=False)
+    for (x, b) in ((bx0 + 1, S("melon")), (bx0 + 4, S("pumpkin")), (bx0 + 7, S("hay_block", axis="y"))):
+        blocs[(x, SOL + 1, bz + 2)] = b
+    for x in range(bx0, bx1 + 1, 2):
+        blocs[(x, SOL + 5, bz)] = S("light_blue_wool") if x % 4 else S("white_wool")
+    for x in range(64, 80, 3):                                                     # les douches, pres du couloir du Vestiaire
+        blocs[(x, SOL + 4, 211)] = S("iron_bars", waterlogged=False)
+        blocs[(x, SOL + 3, 211)] = S("lightning_rod", facing="down", powered=False, waterlogged=False)
+        blocs[(x, SOL, 210)] = S("waxed_copper_grate", waterlogged=False)
+    for (x, z) in ((92, 190), (138, 190), (92, 166), (138, 166)):                     # des bouees de sauvetage (laine rouge et blanche) aux angles du bassin
+        poser_si_libre((x, SOL + 1, z), S("red_wool"))
+        if blocs.get((x, SOL + 1, z)) == S("red_wool"):
+            blocs[(x, SOL + 2, z)] = S("white_carpet")
+    for (x, z) in ((HALL[0] + 1, HALL[2] + 1), (HALL[0] + 1, HALL[3] - 1), (HALL[1] - 3, HALL[3] - 1), (114, HALL[3] - 1), (125, HALL[3] - 1), (HALL[1] - 1, 172)):
+        poser_si_libre((x, SOL + 1, z), S("potted_fern"))
 
     # ---------------------------------------------------------- les volants (des leviers), les temoins du Sas et des pompes, la vanne du Sas, le casier
     for k, p in LEVIERS.items():
@@ -278,14 +427,23 @@ def construire():
     vanne = [(x, y, SAS[3]) for x in range(SAS[0], SAS[1] + 1) for y in range(SOL + 1, SOL + HAUT_SAS + 1)]
     for p in vanne:
         blocs[p] = S("iron_bars", waterlogged=False)
-    for z in (175, 194):                                                          # deux rangees de casiers d'acier dans le Vestiaire
+    couleurs = ("bleu_clair", "cyan", "vert", "jaune", "orange")
+    for z in (175, 194):                                                          # deux rangees de vrais casiers (donjon:casier) dans le Vestiaire, la porte vers le banc
+        face = "south" if z == 175 else "north"
         for x in range(20, 50):
             if x % 6 == 2:
                 continue
-            for y in (SOL + 1, SOL + 2):
-                blocs[(x, y, z)] = S("iron_block")
-            blocs[(x, SOL + 3, z)] = S("light_gray_concrete")
-    blocs[CASIER] = S("iron_block")
+            c = couleurs[(x // 6) % len(couleurs)]
+            blocs[(x, SOL + 1, z)] = S("donjon:casier", facing=face, couleur=c, half="lower", open=False)
+            blocs[(x, SOL + 2, z)] = S("donjon:casier", facing=face, couleur=c, half="upper", open=False)
+            blocs[(x, SOL + 3, z)] = S("white_concrete")
+        for x in range(21, 49):
+            if x % 6 != 2:
+                blocs[(x, SOL + 1, z + (3 if z == 175 else -3))] = S("birch_slab", type="bottom", waterlogged=False)
+    blocs[CASIER] = S("donjon:casier", facing="south", couleur="orange", half="lower", open=False)        # le casier de la cape (vide au depart)
+    blocs[(CASIER[0], CASIER[1] + 1, CASIER[2])] = S("donjon:casier", facing="south", couleur="orange", half="upper", open=False)
+    for (x, z) in ((16, 165), (53, 165), (16, 204), (53, 204), (35, 184), (35, 185)):
+        blocs[(x, SOL + 1, z)] = S("potted_fern")
 
     # ---------------------------------------------------------- la Cuve : garde-corps et plongeoirs, colonnes de tuyaux, bouches scellees, ancrages au dessus de A et C
     for x in range(int(CUVE[0] - R_COURSIVE) - 1, int(CUVE[0] + R_COURSIVE) + 2):
@@ -331,7 +489,7 @@ def construire():
     for nom, y in (("A", BOUCHES["A"][2] + 4), ("C", BOUCHES["C"][2] + 4)):
         a = math.radians(BOUCHES[nom][0])
         x, z = int(math.floor(CUVE[0] + 30.4 * math.sin(a))), int(math.floor(CUVE[1] - 30.4 * math.cos(a)))
-        blocs[(x, y, z)] = S("grappin:ancrage")
+        blocs[(x, y, z)] = S("donjon:ancrage")
         ancrages_cuve.append((f"cuve_{nom}", x, y, z))
 
     # ---------------------------------------------------------- l'eau de la Cuve, par couches (la mise en eau la pose) : pour chaque y, les rangees (x0, x1, z) de l'interieur
@@ -347,4 +505,7 @@ def construire():
              "corniches": {n: (x, y + 1, z) for n, (x, y, z) in corniches.items()}, "sommet": (TOUR[0], SOMMET_TOUR + 1, TOUR[1]), "cuve": {"centre": CUVE, "rayon": R_CUVE, "fond": FOND_CUVE, "rangees": couches,
              "niveaux": NIVEAUX}, "coursive": (120, SOL + 1, 128), "bouches": bouches, "plongeoirs": plongeoirs, "sources": sources, "marches": [(x, y + 1, z) for (z, y) in marches for x in range(ESCALIER_X[0], ESCALIER_X[1] + 1)],
              "bassin_essai": BASSIN_ESSAI}
+    import sys
+    import station_create
+    station_create.decor_acte1(blocs, infos, sys.modules[__name__])
     return blocs, infos

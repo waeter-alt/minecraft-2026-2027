@@ -48,10 +48,12 @@ class TestFonctions(unittest.TestCase):
 
     def test_le_volant_du_bassin_attend_la_fin_de_l_embuscade(self):
         tick = lignes("station_tick")
-        v2 = [ligne for ligne in tick if "station_volant_2" in ligne and "refus" not in ligne]
-        self.assertEqual(len(v2), 1)
-        self.assertIn("#emb station matches 2", v2[0])
-        self.assertIn("lever[face=floor,facing=north,powered=false]", F["station_volant_2_refus"])
+        compte = [ligne for ligne in tick if "scoreboard players add #cv2 station 1" in ligne]
+        self.assertEqual(len(compte), 1)
+        self.assertIn("if score #emb station matches 2", compte[0])                     # tourne avant la fin de l'embuscade, il ne compte pas
+        refus = [ligne for ligne in tick if "station_volant_2_refus" in ligne]
+        self.assertEqual(len(refus), 1)
+        self.assertIn("unless score #emb station matches 2", refus[0])
         self.assertIn("set #emb station 2", F["station_embuscade_fin"])
         emb = F["station_embuscade"]
         self.assertEqual(emb.count("summon minecraft:zombie"), 3)
@@ -69,8 +71,11 @@ class TestFonctions(unittest.TestCase):
         self.assertIn(ds.CAPE, F["station_casier"])
         x, y, z = INFOS["casier"]
         haut = ds.txt((x, y + 1, z))
-        self.assertIn(f"setblock {haut} minecraft:air", F["station_casier"])          # un coffre sous un bloc plein ne s'ouvre pas
-        self.assertIn(f"setblock {haut} minecraft:iron_block", F["station_reset"])
+        self.assertIn(f"setblock {haut} minecraft:air", F["station_casier"])          # on vide les deux moitiés avant de reposer le casier plein
+        self.assertIn("donjon:casier[facing=south,couleur=orange]{Items:", F["station_casier"])
+        self.assertIn(f"setblock {ds.txt((x, y, z))} donjon:casier[facing=south,couleur=orange]\n", F["station_reset"])
+        self.assertEqual(BLOCS[(x, y, z)][0], "donjon:casier")
+        self.assertEqual(dict(BLOCS[(x, y + 1, z)][1])["half"], "upper")
         appels = [nom for nom, texte in F.items() if "function atelier:station_casier" in texte]
         self.assertEqual(sorted(appels), ["station_cine_sas", "station_trois_volants"])
 
@@ -123,14 +128,17 @@ class TestGeometrie(unittest.TestCase):
         for p in INFOS["temoins_sas"] + INFOS["temoins_pompes"]:
             self.assertEqual(BLOCS[p][0], "minecraft:waxed_copper_bulb", p)
 
-    def test_les_volants_sont_des_leviers_au_sol(self):
-        for p in INFOS["leviers"].values():
-            self.assertEqual(BLOCS[p][0], "minecraft:lever", p)
+    def test_les_volants_sont_des_volants_create_lus_par_le_datapack(self):
+        for k, p in INFOS["leviers"].items():
+            self.assertRegex(BLOCS[p][0], r"^create:[a-z_]*valve_handle$", p)
             self.assertNotIn(BLOCS[(p[0], p[1] - 1, p[2])][0], ("minecraft:air", "minecraft:water"), p)
+            self.assertIn(f"run data get block {ds.txt(p)} InUse", F["station_tick"])
+        for cle in ("pA", "pB", "pC"):
+            self.assertIn(f"scoreboard players add #c{cle} station 1", F["station_tick"])
 
     def test_les_ancrages_sont_poses(self):
         for (nom, x, y, z) in INFOS["ancrages"]:
-            self.assertEqual(BLOCS[(x, y, z)][0], "grappin:ancrage", nom)
+            self.assertEqual(BLOCS[(x, y, z)][0], "donjon:ancrage", nom)
 
     def test_l_escalier_a_vingt_quatre_marches(self):
         self.assertEqual(len({(y, z) for (_, y, z) in INFOS["marches"]}), a1.NB_MARCHES)
@@ -165,12 +173,23 @@ class TestSuite(unittest.TestCase):
         for y in range(a1.NIVEAUX["bas"] + 1, a1.NIVEAUX["haut"] + 1):
             self.assertEqual(F["station_cine_median"].count(f"station_vide_{y}\n") + F["station_cine_bas"].count(f"station_vide_{y}\n"), 1, y)
 
-    def test_les_ecluses_n_ouvrent_jamais_les_deux_vannes(self):
-        for s in ("a", "b", "c"):
-            ext, int_ = F[f"station_ecluse_{s}_ext"], F[f"station_ecluse_{s}_int"]
-            self.assertIn("iron_bars[waterlogged=true]", ext)              # l'interieure se ferme
-            self.assertIn("iron_bars[waterlogged=false]", int_)             # l'exterieure se ferme
-        self.assertIn("if score #niv station matches 1.. run function atelier:station_ecluses", F["station_tick"])
+    def test_les_bouches_s_ouvrent_pour_de_bon_quand_la_cuve_est_pleine(self):
+        self.assertIn("function atelier:station_bouches_ouvrir", F["station_eau_tout"])
+        self.assertIn("function atelier:station_bouches_ouvrir", F["station_cine_eau"])
+        for s_, e in INFOS2["ecluses"].items():
+            for p in e["externe"] + e["interne"]:
+                self.assertIn(f"setblock {ds.txt(p)} minecraft:water", F["station_bouches_ouvrir"])
+        self.assertNotIn("station_ecluses_fermer", F["station_pompe_faite"])          # baisser la Cuve ne rescelle rien
+        self.assertIn("function atelier:station_ecluses_fermer", F["station_reset"])
+
+    def test_le_toboggan_descend_du_sommet_au_bassin(self):
+        r0, r1 = a1.TOBOGGAN["r"]
+        anneau = [p for p, b in BLOCS.items() if r0 <= math.hypot(p[0] + 0.5 - a1.TOUR[0], p[2] + 0.5 - a1.TOUR[1]) < r1]
+        self.assertFalse([p for p in anneau if BLOCS[p][0] == "minecraft:water"])                     # sans eau (demande de Luca)
+        sols = {p[1] for p in anneau if BLOCS[p][0] in ("minecraft:light_blue_concrete", "minecraft:white_concrete") and BLOCS.get((p[0], p[1] + 1, p[2])) == ("minecraft:air", ())}
+        self.assertIn(a1.TOBOGGAN["haut"], sols)
+        self.assertIn(a1.FOND50, sols)                                                                  # la derniere marche est au niveau du fond du bassin
+        self.assertGreaterEqual(a1.SOMMET_TOUR - a1.TOBOGGAN["haut"], 3)                                 # on saute dans la goulotte, on ne la remonte pas jusqu'au sommet
 
     def test_les_courants_ne_poussent_que_qui_flotte(self):
         poussees = [ligne for ligne in F["station_tick"].splitlines() if " run tp @s ~" in ligne]
@@ -187,9 +206,16 @@ class TestSuite(unittest.TestCase):
                 appui = TOUT.get(q, ("minecraft:stone", ()))[0]
                 self.assertNotIn(appui, ("minecraft:air", "minecraft:water", "minecraft:ladder"), (p, q))
 
+    def test_chaque_pompe_a_son_volant_create_au_bon_endroit(self):
+        for cle, sect in (("pA", "a"), ("pB", "b"), ("pC", "c")):
+            p = INFOS2[sect]["volant_pos"]
+            self.assertRegex(TOUT[p][0], r"^create:[a-z_]*valve_handle$", (cle, p))         # un volant pose dans la roche ne se voit pas (bug du 18/11)
+            self.assertNotIn(TOUT.get((p[0], p[1] - 1, p[2]), ("minecraft:water",))[0], ("minecraft:water", "minecraft:air"), (cle, p))
+            self.assertIn(f"data get block {ds.txt(p)} InUse", F["station_tick"])
+
     def test_le_boss_est_dans_une_fonction_a_part(self):
         for nom, texte in F.items():
-            if "summon grappin:leviathan" in texte:
+            if "summon donjon:leviathan" in texte:
                 self.assertEqual(nom, "station_boss_apparition")
         self.assertIn("unless entity @e[tag=station_boss] run function atelier:station_boss_vaincu", F["station_tick"])
 

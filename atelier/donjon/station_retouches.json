@@ -1,0 +1,31 @@
+{
+ "description": "Retouches faites a la main en jeu par Luca sur le Donjon de la Station (coordonnees du gabarit) ; reposees par le generateur par-dessus tout.",
+ "blocs": {
+  "207,51,96": "minecraft:waxed_weathered_copper",
+  "210,45,78": "minecraft:iron_trapdoor[facing=north,half=bottom,open=false,powered=false,waterlogged=true]",
+  "210,45,79": "minecraft:iron_trapdoor[facing=west,half=bottom,open=false,powered=false,waterlogged=true]",
+  "210,45,80": "minecraft:iron_trapdoor[facing=north,half=bottom,open=false,powered=false,waterlogged=true]",
+  "210,45,81": "minecraft:iron_trapdoor[facing=north,half=bottom,open=false,powered=false,waterlogged=true]",
+  "210,45,82": "minecraft:water[level=0]",
+  "211,45,78": "minecraft:iron_trapdoor[facing=north,half=bottom,open=false,powered=false,waterlogged=true]",
+  "211,45,79": "minecraft:iron_trapdoor[facing=west,half=bottom,open=false,powered=false,waterlogged=true]",
+  "211,45,80": "minecraft:iron_trapdoor[facing=west,half=bottom,open=false,powered=false,waterlogged=true]",
+  "211,45,81": "minecraft:iron_trapdoor[facing=west,half=bottom,open=false,powered=false,waterlogged=true]",
+  "211,45,82": "minecraft:water[level=0]",
+  "212,45,78": "minecraft:iron_trapdoor[facing=north,half=bottom,open=false,powered=false,waterlogged=true]",
+  "212,45,79": "minecraft:iron_trapdoor[facing=south,half=bottom,open=false,powered=false,waterlogged=true]",
+  "212,45,80": "minecraft:iron_trapdoor[facing=south,half=bottom,open=false,powered=false,waterlogged=true]",
+  "212,45,81": "minecraft:iron_trapdoor[facing=south,half=bottom,open=false,powered=false,waterlogged=true]",
+  "212,45,82": "minecraft:water[level=0]",
+  "213,45,78": "minecraft:iron_trapdoor[facing=north,half=bottom,open=false,powered=false,waterlogged=true]",
+  "213,45,79": "minecraft:iron_trapdoor[facing=south,half=bottom,open=false,powered=false,waterlogged=true]",
+  "213,45,80": "minecraft:iron_trapdoor[facing=south,half=bottom,open=false,powered=false,waterlogged=true]",
+  "213,45,81": "minecraft:iron_trapdoor[facing=west,half=bottom,open=false,powered=false,waterlogged=true]",
+  "213,45,82": "minecraft:water[level=0]",
+  "214,45,78": "minecraft:iron_trapdoor[facing=east,half=bottom,open=false,powered=false,waterlogged=true]",
+  "214,45,79": "minecraft:iron_trapdoor[facing=east,half=bottom,open=false,powered=false,waterlogged=true]",
+  "214,45,80": "minecraft:iron_trapdoor[facing=east,half=bottom,open=false,powered=false,waterlogged=true]",
+  "214,45,81": "minecraft:iron_trapdoor[facing=east,half=bottom,open=false,powered=false,waterlogged=true]",
+  "214,45,82": "minecraft:water[level=0]"
+ }
+}

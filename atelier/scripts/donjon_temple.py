@@ -45,7 +45,7 @@ LOG, BOIS = S("jungle_log", axis="y"), S("jungle_wood", axis="y")
 FEUILLE = S("jungle_leaves", persistent=True, distance=1, waterlogged=False)
 MRAC, RACP = S("mangrove_roots", waterlogged=False), S("hanging_roots", waterlogged=False)
 LUM = S("light", level=15, waterlogged=False)
-ANC = S("grappin:ancrage")
+ANC = S("donjon:ancrage")
 LANT, LANT_P = S("lantern", hanging=False, waterlogged=False), S("lantern", hanging=True, waterlogged=False)
 CHAINE = S("chain", axis="y", waterlogged=False)
 TOILE, OS, BARRES, PLANCHE = S("cobweb"), S("bone_block", axis="y"), S("iron_bars", waterlogged=False), S("spruce_planks")
@@ -900,7 +900,7 @@ CMD.append("gamerule doMobSpawning false")
 CMD.append("scoreboard objectives add temple dummy")
 for v_ in ("#se", "#ss", "#porte", "#t1", "#t2", "#fe", "#fw", "#fp", "#boss"):
     CMD.append(f"scoreboard players add {v_} temple 0")
-CMD.append(f"execute positioned {rel(54, 83, 54)} as @a[dx=22,dy=10,dz=22] unless items entity @s container.* grappin:grappin run give @s grappin:grappin")
+CMD.append(f"execute positioned {rel(54, 83, 54)} as @a[dx=22,dy=10,dz=22] unless items entity @s container.* donjon:grappin run give @s donjon:grappin")
 # aile des Serpents : six dalles dans l'ordre du serpent peint ; une erreur ramene a l'entree de l'aile
 ENTREE_E = (97, 63, 23)
 for k, p in enumerate(PLAQUES_E, 1):
@@ -1103,7 +1103,7 @@ if True:
         monde_atelier.message_entree("Le temple est prêt.", w((65, 83, 62)))]) + "\n", encoding="utf-8")
     sx_, sy_, sz_ = POINTS["S12"]
     (FN / "temple_decrocher.mcfunction").write_text("# [claude-build] Supprime le crochet du grappin du joueur dont l identifiant est passe en parametre.\n"
-                                                    "$kill @e[type=grappin:crochet,nbt={Owner:$(uuid)}]\n", encoding="utf-8")
+                                                    "$kill @e[type=donjon:crochet,nbt={Owner:$(uuid)}]\n", encoding="utf-8")
     (FN / "temple_chute_boss.mcfunction").write_text("\n".join([
         "# [claude-build] Un joueur est tombe dans le gouffre du boss : on decroche son grappin, chute lente (pas de degats), retour sur la plateforme de depart.",
         "data modify storage atelier:temple chute.uuid set from entity @s UUID",
@@ -1130,12 +1130,12 @@ if True:
     # positioned en premier : une fonction programmee s'execute a l'origine du monde, pas dans la salle ; Rotation 180 : le golem regarde vers la plateforme de depart (au nord de lui)
     (FN / "temple_boss_invoque.mcfunction").write_text("\n".join([
         "# [claude-build] Fait surgir le Gardien des Racines de la lave, au centre de la salle (jamais deux a la fois).",
-        f"execute positioned {bx} {by} {bz} unless entity @e[type=grappin:golem,distance=..150] run summon grappin:golem {bx + 0.5} {by} {bz + 0.5} {{Rotation:[180f,0f]}}",
-        f"execute positioned {bx} {by} {bz} if entity @e[type=grappin:golem,distance=..150] run scoreboard players set #boss temple 2",
-        f"execute positioned {bx} {by} {bz} unless entity @e[type=grappin:golem,distance=..150] run scoreboard players set #boss temple 0",
+        f"execute positioned {bx} {by} {bz} unless entity @e[type=donjon:golem,distance=..150] run summon donjon:golem {bx + 0.5} {by} {bz + 0.5} {{Rotation:[180f,0f]}}",
+        f"execute positioned {bx} {by} {bz} if entity @e[type=donjon:golem,distance=..150] run scoreboard players set #boss temple 2",
+        f"execute positioned {bx} {by} {bz} unless entity @e[type=donjon:golem,distance=..150] run scoreboard players set #boss temple 0",
         f"{arene} playsound minecraft:entity.ender_dragon.growl master @a[distance=..90] ~ ~ ~ 5 0.6"]) + "\n", encoding="utf-8")
-    (SAVE / "datapacks/atelier/data/grappin/tags/function").mkdir(parents=True, exist_ok=True)
-    (SAVE / "datapacks/atelier/data/grappin/tags/function/golem_mort.json").write_text(json.dumps({"values": ["atelier:temple_boss_mort"]}, indent=2), encoding="utf-8")     # le mod appelle ce tag a la mort du golem
+    (SAVE / "datapacks/atelier/data/donjon/tags/function").mkdir(parents=True, exist_ok=True)
+    (SAVE / "datapacks/atelier/data/donjon/tags/function/golem_mort.json").write_text(json.dumps({"values": ["atelier:temple_boss_mort"]}, indent=2), encoding="utf-8")     # le mod appelle ce tag a la mort du golem
     (FN / "temple_boss_mort.mcfunction").write_text(
         "# [claude-build] Appelee par le mod a la mort du golem : la sortie ne s'ouvre que si le boss a bien ete invoque (pas lors d'une remise a zero).\n"
         "execute if score #boss temple matches 2 run function atelier:temple_boss_vaincu\n", encoding="utf-8")
@@ -1164,7 +1164,7 @@ if True:
     for p in BALISES.values():
         reset.append(f"setblock {w(p)} minecraft:chiseled_stone_bricks")
     reset += ["scoreboard objectives add temple dummy"] + [f"scoreboard players set {v_} temple 0" for v_ in ("#se", "#ss", "#porte", "#t1", "#t2", "#fe", "#fw", "#fp", "#boss")]
-    reset += ["kill @e[type=grappin:golem]", "schedule clear atelier:temple_boss_invoque"]
+    reset += ["kill @e[type=donjon:golem]", "schedule clear atelier:temple_boss_invoque"]
     reset += [f"clear @a {CLE}", 'tellraw @a {"text":"Temple remis a zero.","color":"gray"}']
     (FN / "temple_reset.mcfunction").write_text("\n".join(reset) + "\n", encoding="utf-8")
 conf = {"_marque": "[claude-build]", "taille": [SX, SY, SZ], "origine": ORIGINE, "zones": ZONES, "portes": PORTES, "ancrages": ANCRAGES,

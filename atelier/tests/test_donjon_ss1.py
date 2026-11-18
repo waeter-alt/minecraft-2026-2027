@@ -213,7 +213,7 @@ class TestSousSol1(unittest.TestCase):
     def test_les_ancrages_tiennent_au_plafond_par_une_chaine(self):
         self.assertEqual(len(self.infos["ancrages"]), 10)                                  # 5 piliers, la corniche, 2 fosses (au dessus de leur rive est), puis les 2 piliers ajoutes
         for (x, y, z) in self.infos["ancrages"]:
-            self.assertEqual(self.blocs[(x, y, z)][0], "grappin:ancrage")
+            self.assertEqual(self.blocs[(x, y, z)][0], "donjon:ancrage")
             plafond = self.infos["cases"][(x, z)][1]
             self.assertTrue(all(self.blocs[(x, yy, z)][0] == "minecraft:chain" for yy in range(y + 1, plafond + 1)), (x, y, z))
         for (x, y, z), (px, py, pz) in zip(self.infos["ancrages"][:5], self.infos["plateformes"]):

@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import monde_atelier  # noqa: E402
 import station_acte1 as a1  # noqa: E402
 import station_cine  # noqa: E402
+import station_create  # noqa: E402
 import station_logique  # noqa: E402
 import station_secteurs  # noqa: E402
 import suspendu_cine as sc  # noqa: E402
@@ -32,7 +33,7 @@ SX, SY, SZ = a1.SX, a1.SY, a1.SZ
 Z_COUPURE = 131                                              # deux structures : la Cuve (z <= 130) et le Hall, le Sas, le Vestiaire, l'escalier et le pavillon (z >= 131)
 DUREE_EAU = 300                                              # la mise en eau : 15 s, la camera monte avec la surface
 DUREE_SAS = 110
-CAPE = "grappin:cape_lestee"
+CAPE = "donjon:cape_lestee"
 CADENCE_DRAIN = 50                                            # le bruit d'eau du bassin d'essai (la bouche du Drain), toutes les 2,5 s
 
 
@@ -73,6 +74,33 @@ def scene_eau(infos):
     return cam, vise
 
 
+def panneau(p, face, lignes):
+    textes = ",".join("'" + '{"text":"' + l + '"}' + "'" for l in (list(lignes) + ["", "", "", ""])[:4])
+    return f"setblock {txt(p)} minecraft:oak_wall_sign[facing={face}]{{front_text:{{color:\"white\",has_glowing_text:1b,messages:[{textes}]}},is_waxed:1b}}"
+
+
+def panneau_debout(p, rotation, lignes, eau):
+    textes = ",".join("'" + '{"text":"' + l + '"}' + "'" for l in (list(lignes) + ["", "", "", ""])[:4])
+    return f"setblock {txt(p)} minecraft:oak_sign[rotation={rotation},waterlogged={'true' if eau else 'false'}]{{front_text:{{color:\"white\",has_glowing_text:1b,messages:[{textes}]}},is_waxed:1b}}"
+
+
+def panneaux(infos):
+    """(case du panneau, sens ou il regarde, lignes). Les panneaux du Hall sont contre les murs ; ceux de la Cuve, au-dessus des bouches, sur la Coursive."""
+    x0, x1, z0, z1 = a1.HALL
+    return [((125, a1.SOL + 3, z1), "north", ("STATION", "Hall des Bassins", "3 volants", "a tourner")),
+            ((x0, a1.SOL + 3, 189), "east", ("<- Vestiaire", "", "", "")),
+            ((125, a1.SOL + 3, z0), "south", ("^ SAS", "Grande Cuve", "", "")),
+            ((80, a1.SOL + 3, z0), "south", ("VOLANT 1", "plongeoir", "au grappin", "")),
+            ((141, a1.SOL + 3, z1), "north", ("VOLANT 2", "bassin de 50 m", "", "")),
+            ((x1, a1.SOL + 3, 172), "west", ("VOLANT 3", "toboggan", "au grappin", "")),
+            ((86, a1.SOL + 2, 101), "east", ("A  Filtration", "nager vite", "bouche en bas", "")),
+            ((154, a1.SOL + 2, 89), "west", ("B  Chaufferie", "se lester", "bouche au fond", "")),
+            ((114, a1.SOL + 2, 60), "south", ("C  Turbines", "tourbillon", "bouche en bas", "")),
+            ((120, a1.NIVEAUX["haut"] + 1, 124), "north", ("HAUT", "76", "", "")),
+            ((120, a1.NIVEAUX["median"] + 1, 124), "north", ("MEDIAN", "58", "", "")),
+            ((120, a1.NIVEAUX["bas"] + 1, 124), "north", ("BAS", "42", "", ""))]
+
+
 def tick_couche(y):
     """Le tick de la mise en eau ou la couche y se remplit : la surface suit la camera (qui demarre et s'arrete en douceur), elle reste 2 blocs sous l'objectif."""
     images = sc.images(*scene_eau(None), DUREE_EAU)
@@ -89,6 +117,7 @@ def fonctions(infos, decalages):
     f["station_charger"] = ("# [claude-build] A chaque chargement : les objectifs du donjon et des cinematiques, pas d'apparition de monstres.\n"
                             "scoreboard objectives add station dummy\nscoreboard objectives add cine dummy\nscoreboard objectives add cine_mode dummy\n"
                             "execute unless score #t cine matches 0.. run scoreboard players set #t cine 0\ngamerule doMobSpawning false\n"
+                            "bossbar add atelier:station \"Station : pompes 0/3\"\nbossbar set atelier:station max 3\nbossbar set atelier:station color blue\nbossbar set atelier:station style notched_6\n"
                             + "".join(f"execute unless score {v} station matches -2147483648.. run scoreboard players set {v} station 0\n" for v in station_logique.VARIABLES))
     x0, x1, z0, z1 = infos["bassin50"]
     coin50, boite50 = boite(x0, infos["fond50"] + 1, z0, x1, a1.SOL, z1)
@@ -98,10 +127,10 @@ def fonctions(infos, decalages):
     tick = ["# [claude-build] Chaque tick : les cinematiques, les volants, l'embuscade, la mise en eau, le bruit du Drain.",
             "execute if score #t cine matches 1.. run function atelier:station_cine_cadre",
             "execute unless score #t cine matches 1.. as @a[tag=cine] run function atelier:station_cine_retour_joueur",
-            f"execute if score #v1 station matches 0 if block {lev[1]} minecraft:lever[powered=true] run function atelier:station_volant_1",
-            f"execute if score #v3 station matches 0 if block {lev[3]} minecraft:lever[powered=true] run function atelier:station_volant_3",
-            f"execute if score #v2 station matches 0 if score #emb station matches 2 if block {lev[2]} minecraft:lever[powered=true] run function atelier:station_volant_2",
-            f"execute if score #v2 station matches 0 unless score #emb station matches 2 if block {lev[2]} minecraft:lever[powered=true] run function atelier:station_volant_2_refus",
+            *station_create.lignes_volant("v1", lev[1], "station_volant_1", "#v1"),
+            *station_create.lignes_volant("v3", lev[3], "station_volant_3", "#v3"),
+            *station_create.lignes_volant("v2", lev[2], "station_volant_2", "#v2", condition="if score #emb station matches 2", refus="station_volant_2_refus"),
+            "scoreboard players add #obj station 1", "execute if score #obj station matches 40.. run function atelier:station_objectif",
             f"execute if score #emb station matches 0 positioned {coin50} if entity @a[gamemode=!spectator,{boite50}] run function atelier:station_embuscade",
             "execute if score #emb station matches 1 unless entity @e[tag=station_emb] run function atelier:station_embuscade_fin",
             f"execute if score #eau station matches 0 positioned {coin_cuve} if entity @a[gamemode=!spectator,{boite_cuve}] run function atelier:station_mise_en_eau",
@@ -120,8 +149,7 @@ def fonctions(infos, decalages):
             f'execute as @a[x={monde(infos["leviers"][k])[0]},y={monde(infos["leviers"][k])[1]},z={monde(infos["leviers"][k])[2]},distance=..12] run title @s actionbar {{"text":"Un témoin du Sas s\'allume","color":"aqua"}}',
             "execute if score #temoins station matches 3 run function atelier:station_trois_volants"]) + "\n"
     f["station_volant_2_refus"] = "\n".join([
-        "# [claude-build] Le volant du bassin de 50 m ne repond pas tant que l'embuscade n'est pas vaincue : il revient en place.",
-        f"setblock {lev[2]} minecraft:lever[face=floor,facing=north,powered=false]",
+        "# [claude-build] Le volant du bassin de 50 m est grippe tant que l'embuscade n'est pas vaincue.",
         f'execute positioned {lev[2]} run title @a[distance=..8] actionbar {{"text":"Le volant est grippé : le bassin n\'est pas sûr","color":"gray"}}']) + "\n"
     f["station_embuscade"] = "\n".join([
         "# [claude-build] Un joueur descend dans le bassin de 50 m : embuscade (une seule fois) : trois zombies et un squelette surgissent du fond.",
@@ -145,8 +173,8 @@ def fonctions(infos, decalages):
         f"playsound minecraft:block.iron_door.open master @a {txt(vanne[len(vanne) // 2])} 3 0.6",
         'tellraw @a {"text":"La vanne du Sas se lève.","color":"gray"}']) + "\n"
     f["station_casier"] = "\n".join([
-        "# [claude-build] Le casier de la cape s'ouvre au Vestiaire : un coffre avec la Cape lestee (on repart d'une case vide : setblock viderait un coffre deja la).",
-        f"setblock {txt((infos['casier'][0], infos['casier'][1] + 1, infos['casier'][2]))} minecraft:air", f"setblock {txt(infos['casier'])} minecraft:air", f"setblock {txt(infos['casier'])} minecraft:chest[facing=south]{{Items:[{{Slot:13b,id:\"{CAPE}\",count:1}}]}}",
+        "# [claude-build] Le casier orange du Vestiaire recoit la Cape lestee : on le vide puis on le repose plein, il pose lui-meme sa moitie haute (on repart d'une case vide : setblock viderait un coffre deja la).",
+        f"setblock {txt((infos['casier'][0], infos['casier'][1] + 1, infos['casier'][2]))} minecraft:air", f"setblock {txt(infos['casier'])} minecraft:air", f"setblock {txt(infos['casier'])} donjon:casier[facing=south,couleur=orange]{{Items:[{{Slot:13b,id:\"{CAPE}\",count:1}}]}}",
         f"execute positioned {txt(infos['casier'])} run particle minecraft:happy_villager ~ ~0.5 ~ 0.4 0.4 0.4 0.1 30",
         f"execute positioned {txt(infos['casier'])} run playsound minecraft:block.chest.open master @a[distance=..60] ~ ~ ~ 2 1",
         'tellraw @a {"text":"Au Vestiaire, un casier s\'est ouvert.","color":"gold"}']) + "\n"
@@ -156,7 +184,7 @@ def fonctions(infos, decalages):
     for y in range(bas, haut + 1):
         f[f"station_eau_{y}"] = "\n".join([f"# [claude-build] La mise en eau : la couche {y} de la Grande Cuve.",
                                           *[f"fill {txt((xa, y, z))} {txt((xb, y, z))} minecraft:water replace minecraft:air" for (xa, xb, z) in rangees]]) + "\n"
-    f["station_eau_tout"] = "\n".join(["# [claude-build] La Cuve se remplit d'un coup (une autre cinematique est en cours).", *[f"function atelier:station_eau_{y}" for y in range(bas, haut + 1)], f"scoreboard players set #niv station {haut}",
+    f["station_eau_tout"] = "\n".join(["# [claude-build] La Cuve se remplit d'un coup (une autre cinematique est en cours).", *[f"function atelier:station_eau_{y}" for y in range(bas, haut + 1)], f"scoreboard players set #niv station {haut}", "function atelier:station_bouches_ouvrir",
                                        'tellraw @a {"text":"La Grande Cuve est pleine.","color":"aqua"}']) + "\n"
     f["station_vider"] = "\n".join(["# [claude-build] Vide la Grande Cuve (remise a zero) : l'eau redevient de l'air, couche par couche.",
                                     *[f"fill {txt((xa, y, z))} {txt((xb, y, z))} minecraft:air replace minecraft:water" for y in range(bas, a1.SOL) for (xa, xb, z) in rangees]]) + "\n"
@@ -181,20 +209,45 @@ def fonctions(infos, decalages):
     ev_eau.setdefault(DUREE_EAU - 14, []).extend([station_cine.son("chime", 1.0), 'title @a[tag=cine] actionbar {"text":"La Grande Cuve est pleine. Plonge !","color":"aqua"}'])
     ev_eau.setdefault(DUREE_EAU - 10, []).append(station_cine.son("chime", 1.26))
     ev_eau.setdefault(DUREE_EAU - 6, []).append(station_cine.son("chime", 1.5))
-    ev_eau.setdefault(DUREE_EAU - 4, []).append(f"scoreboard players set #niv station {haut}")
+    ev_eau.setdefault(DUREE_EAU - 4, []).extend([f"scoreboard players set #niv station {haut}", "function atelier:station_bouches_ouvrir"])
     scenes = {"sas": {"cles": scene_sas(infos), "duree": DUREE_SAS, "centre": txt((120, a1.SOL + 1, 190)), "rayon": 90, "evenements": ev_sas},
               "eau": {"cles": scene_eau(infos), "duree": DUREE_EAU, "centre": txt(cuve_c), "rayon": 50, "evenements": ev_eau}}
     scenes.update(scenes_suite)
     f.update(station_cine.fonctions(scenes, ORIGINE))
+    # l'objectif du moment (toutes les 2 s, en barre d'action) et la barre de progression des pompes, pour qui est dans la station
+    zone = f"x={ORIGINE[0]},y={ORIGINE[1]},z={ORIGINE[2]},dx={SX - 1},dy={SY + 4},dz={SZ - 1}"
+    obj = ["# [claude-build] L'objectif du moment, en barre d'action, et la barre des pompes, pour qui est dans la station (toutes les 2 s).",
+           "scoreboard players set #obj station 0",
+           f"bossbar set atelier:station players @a[{zone}]",
+           f'execute if score #temoins station matches ..2 run title @a[{zone}] actionbar [{{"text":"Hall : tourne les 3 volants (","color":"aqua"}},{{"score":{{"name":"#temoins","objective":"station"}},"color":"white"}},{{"text":"/3) — clic droit maintenu","color":"aqua"}}]',
+           f'execute if score #temoins station matches 3 if score #eau station matches 0 run title @a[{zone}] actionbar {{"text":"Prends la Cape lestée au Vestiaire (à l\'ouest), puis passe le Sas (au nord)","color":"aqua"}}',
+           f'execute if score #eau station matches 1 unless score #niv station matches 1.. run title @a[{zone}] actionbar {{"text":"La Grande Cuve se remplit…","color":"aqua"}}',
+           f'execute if score #niv station matches 1.. if score #pompes station matches ..2 run title @a[{zone}] actionbar [{{"text":"Plonge : bouches A (ouest), B (est), C (nord). Pompes ","color":"aqua"}},{{"score":{{"name":"#pompes","objective":"station"}},"color":"white"}},{{"text":"/3","color":"aqua"}}]',
+           f'execute if score #pompes station matches 3 if score #lg station matches 0 run title @a[{zone}] actionbar {{"text":"La vanne D est ouverte : la Cheminée, au fond nord-est de la Cuve","color":"gold"}}',
+           f'execute if score #lg station matches 1 if score #boss station matches 0 run title @a[{zone}] actionbar {{"text":"Saute du plongeoir dans le tourbillon","color":"gold"}}',
+           f'execute if score #boss station matches 1 run title @a[{zone}] actionbar {{"text":"Abats le Léviathan","color":"red"}}',
+           f'execute if score #boss station matches 2 run title @a[{zone}] actionbar {{"text":"L\'Exutoire est ouvert, au sud du Réservoir","color":"gold"}}']
+    i2 = station_secteurs.construire()[1]
+    for drapeau, b, texte in (("#pA", (2, 88, 60, 74, 3, 99), "Filtration : la pompe A est au bout, à l'ouest. Suis la ligne verte au sol."),
+                              ("#pB", (151, 228, 30, 72, 70, 121), "Chaufferie : marche au fond contre le courant, 3 plaques, puis la pompe B au grappin, à l'est de la halle haute."),
+                              ("#pC", (100, 140, 47, 95, 2, 64), "Turbines : nage contre chaque turbine pour la lancer ; la pompe C est tout en haut.")):
+        x0, x1, y0, y1, z0, z1 = b
+        sel = f"x={ORIGINE[0] + x0},y={ORIGINE[1] + y0},z={ORIGINE[2] + z0},dx={x1 - x0},dy={y1 - y0},dz={z1 - z0}"
+        obj.append(f'execute if score {drapeau} station matches 0 run title @a[{sel}] actionbar {{"text":"{texte}","color":"yellow"}}')
+    f["station_objectif"] = "\n".join(obj) + "\n"
+    # les panneaux : ou l'on est, ou l'on va (poses a la pose et a chaque remise a zero)
+    f["station_panneaux"] = "\n".join(["# [claude-build] Les panneaux de la station (une seule rangee de texte par ligne).",
+                                       *[panneau(p, face, lignes) for (p, face, lignes) in panneaux(infos)],
+                                       *[panneau_debout(p, rot, lignes, eau) for (p, rot, lignes, eau) in station_secteurs.construire()[1]["panneaux_secteurs"]]]) + "\n"
     # la remise a zero
     f["station_reset"] = "\n".join([
         "# [claude-build] Remise a zero : cinematique arretee, monstres retires, volants baisses, temoins eteints, Sas referme, casier referme, Cuve videe, scores a zero.",
         "function atelier:station_cine_fin", "kill @e[tag=station_emb]",
-        *[f"setblock {lev[k]} minecraft:lever[face=floor,facing=north,powered=false]" for k in (1, 2, 3)],
+        "function atelier:station_panneaux", "bossbar set atelier:station value 0", "bossbar set atelier:station name \"Station : pompes 0/3\"",
         *[f"setblock {txt(p)} minecraft:waxed_copper_bulb[lit=false,powered=false]" for p in infos["temoins_sas"] + infos["temoins_pompes"]],
-        f"fill {va} {vb} minecraft:iron_bars", f"setblock {txt(infos['casier'])} minecraft:air", f"setblock {txt(infos['casier'])} minecraft:iron_block", f"setblock {txt((infos['casier'][0], infos['casier'][1] + 1, infos['casier'][2]))} minecraft:iron_block",
+        f"fill {va} {vb} minecraft:iron_bars", f"setblock {txt((infos['casier'][0], infos['casier'][1] + 1, infos['casier'][2]))} minecraft:air", f"setblock {txt(infos['casier'])} minecraft:air", f"setblock {txt(infos['casier'])} donjon:casier[facing=south,couleur=orange]",
         "function atelier:station_vider", *reset_suite,
-        *[f"scoreboard players set {v} station 0" for v in ("#v1", "#v2", "#v3", "#temoins", "#emb", "#eau", "#tic")],
+        *[f"scoreboard players set {v} station 0" for v in ("#v1", "#v2", "#v3", "#cv1", "#cv2", "#cv3", "#temoins", "#emb", "#eau", "#tic", "#obj")],
         'tellraw @a {"text":"Station remise à zéro.","color":"gray"}']) + "\n"
     # la pose : le gabarit tient en 225 chunks (moins des 256 d'un forceload)
     a, b = monde((0, 0, 0)), monde((SX - 1, 0, SZ - 1))
@@ -205,7 +258,7 @@ def fonctions(infos, decalages):
     haut_pierre = a1.PLAINE - 3
     terrain = [*tuiles(0, SX - 1, 0, haut_pierre, 0, SZ - 1, "minecraft:stone"), *tuiles(0, SX - 1, haut_pierre + 1, a1.PLAINE - 1, 0, SZ - 1, "minecraft:dirt"),
                *tuiles(0, SX - 1, a1.PLAINE, a1.PLAINE, 0, SZ - 1, "minecraft:grass_block"), *tuiles(0, SX - 1, a1.PLAINE + 1, SY - 1, 0, SZ - 1, "minecraft:air")]
-    places = [f"place template atelier:{nom} {txt(decalages[nom])}" for nom in ("station_cuve", "station_hall") + station_secteurs.ORDRE]
+    places = [f"place template atelier:{nom} {txt(decalages[nom])}" for nom in ("station_cuve", "station_hall") + station_secteurs.ORDRE + ("station_retouches",) if nom in decalages]
     etapes = [terrain[i:i + 40] for i in range(0, len(terrain), 40)] + [[ligne] for ligne in places]
     for i, cmds in enumerate(etapes):
         suite = [f"schedule function atelier:station_pose_2_{i + 1} 2t"] if i + 1 < len(etapes) else ["kill @e[type=item]", "function atelier:station_reset", "schedule function atelier:station_pose_3 100t"]
@@ -231,6 +284,13 @@ def main():
     parts, _ = station_secteurs.construire()
     for nom in station_secteurs.ORDRE:
         decalages[nom] = ecrire_structure(parts[nom], exports / f"{nom}.nbt")
+    import station_retouches
+    retouches = station_retouches.charger()                                 # les retouches a la main de Luca : posees en dernier, par-dessus tout
+    if retouches:
+        decalages["station_retouches"] = ecrire_structure(retouches, exports / "station_retouches.nbt")
+        print(f"{len(retouches)} retouche(s) a la main reposee(s)")
+    elif (dp / "data/atelier/structure/station_retouches.nbt").exists():
+        (dp / "data/atelier/structure/station_retouches.nbt").unlink()
     (dp / "data/atelier/predicate").mkdir(parents=True, exist_ok=True)
     (dp / "data/atelier/predicate/nage.json").write_text(json.dumps({"condition": "minecraft:entity_properties", "entity": "this",
                                                                     "predicate": {"flags": {"is_swimming": True}}}, indent=2), encoding="utf-8")

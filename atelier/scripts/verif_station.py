@@ -50,7 +50,7 @@ def verifier(exports=RACINE / "exports"):
     leviers = infos["leviers"]
     t = Terrain(blocs, a1.PLAINE)
     a_pied = marcher(t, depart, CHUTE)
-    for nom, cible, attendu in (("le Hall", (120, a1.SOL + 1, 170), True), ("le Vestiaire", (30, a1.SOL + 1, 185), True), ("le volant 2", leviers[2], True),
+    for nom, cible, attendu in (("le Hall", (120, a1.SOL + 1, 200), True), ("le Vestiaire", (30, a1.SOL + 1, 185), True), ("le volant 2", leviers[2], True),
                                 ("le fond du plongeon", (78, a1.FOND_PLONGEON + 1, 168), True), ("le volant 1", leviers[1], False), ("le volant 3", leviers[3], False),
                                 ("la coursive de la Cuve", infos["coursive"], False)):
         if a_cote(a_pied, cible) != attendu:

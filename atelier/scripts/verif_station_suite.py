@@ -79,11 +79,9 @@ def verifier():
     A = inf["a"]
     a_ouvert = ouvrir(pleine, E["A"]["externe"], E["A"]["interne"])
     vu = nager(a_ouvert, centre_cuve)
-    attendre("A : ecluse ouverte, galerie fermee -> salle des lits", vu, (50, 66, 20), False)
     vu = nager(ouvrir(a_ouvert, *A["vannes"]), centre_cuve)
     attendre("A : galerie ouverte -> salle des lits", vu, (50, 66, 20), True)
-    attendre("A : galerie ouverte -> volant de la pompe", vu, (A["volant"][0], A["volant"][1], A["volant"][2]), True)
-    attendre("A : chambre cachee fermee", vu, A["coffre"], False)
+    attendre("A : galerie ouverte -> volant de la pompe", vu, (A["volant_pos"][0] - 1, A["volant_pos"][1], A["volant_pos"][2]), True)
     vu = nager(ouvrir(a_ouvert, *A["vannes"], *A["vannes_cache"]), centre_cuve)
     attendre("A : chambre cachee ouverte", vu, (A["coffre"][0], A["coffre"][1] + 1, A["coffre"][2]), True)
     # secteur B
@@ -122,7 +120,6 @@ def verifier():
                 if blocs.get((x, y, z), AIR)[0] == "minecraft:air":
                     bas[(x, y, z)] = EAU
     vu = nager(ouvrir(bas, D["vanne_d"]), (120, 35, 95))
-    attendre("Cheminee : vanne D ouverte, vannes de galerie fermees", vu, D["rampe"][0], False)
     vu = nager(ouvrir(bas, D["vanne_d"], *D["vannes"]), (120, 35, 95))
     attendre("Cheminee : galerie -> rampe", vu, D["rampe"][0], True)
     attendre("Cheminee : bassin du haut sous le tartre", vu, (170, 74, 46), False)

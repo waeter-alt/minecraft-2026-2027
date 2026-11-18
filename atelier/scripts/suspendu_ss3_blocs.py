@@ -257,7 +257,7 @@ def construire():
         assert blocs.get((x, yh + 1, z)) is not None and yh - y <= 12, (nom, yh)
         for yy in range(y + 1, yh + 1):
             blocs[(x, yy, z)] = S("chain", axis="y", waterlogged=False)
-        blocs[(x, y, z)] = S("grappin:ancrage")
+        blocs[(x, y, z)] = S("donjon:ancrage")
     # la lumiere : une lanterne au bout d'une chaine au bord et au milieu de chaque trou ; dans le tunnel, des champignons lumineux dans les parois (tous les 6 rangs, un cote puis l'autre) et des lianes a baies
     protege = set()
     for nom, x, y, z in ancrages_t:
@@ -447,7 +447,7 @@ def construire():
             yh += 1
         for yy in range(y + 1, yh + 1):
             blocs[(x, yy, z)] = S("chain", axis="y", waterlogged=False)
-        blocs[(x, y, z)] = S("grappin:ancrage")
+        blocs[(x, y, z)] = S("donjon:ancrage")
         ancrages.append((nom, x, y, z))
     # les eclats : un morceau d'anneau de moins de 12 cases, coupe du reste (bords arraches des deux cotes), n'est pas un lieu ou l'on se tient : on le retire
     restantes, eclats = set(theta_de), []
@@ -485,7 +485,7 @@ def construire():
                 u = h01(x, yy, z, 93)
                 blocs[(x, yy, z)] = S("mossy_stone_bricks") if u < 0.3 else (S("cracked_stone_bricks") if u < 0.55 else S("stone_bricks"))
             theta_de.pop((x, y + 1, z), None)                                                                   # la colonne occupe cette case : on ne s'y tient plus
-            blocs[(x, y + 4, z)] = S("grappin:ancrage")
+            blocs[(x, y + 4, z)] = S("donjon:ancrage")
             ancrages.append((f"rampe_{i}{cote}", x, y + 4, z))
             blocs[(x, y + 5, z)] = S("light", level=12, waterlogged=False)                                       # un bloc de lumiere invisible au dessus de l'ancrage
             lumieres.append((x, y + 5, z, 12))
@@ -516,7 +516,7 @@ def construire():
                 if mur is None or d < mur[0]:
                     mur = (d, (x, y, z))
         assert mur is not None, nom
-        blocs[mur[1]] = S("grappin:ancrage")
+        blocs[mur[1]] = S("donjon:ancrage")
         ancrages.append(("corniche_" + nom, *mur[1]))
         refuges[nom] = (int(round(milieu[0])), cfg["sol"] + 1, int(round(milieu[1])))
         for x, z in sorted(((x, z) for x in range(x0, x1 + 1) for z in range(z0, z1 + 1)), key=lambda c: abs(c[0] - mur[1][0]) + abs(c[1] - mur[1][2])):

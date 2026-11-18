@@ -81,9 +81,9 @@ for dz in (3, 4, 6):
     c(f'summon drowned 18.5 {SOL + 1} {18 + dz}.5 {{NoAI:1b,PersistenceRequired:1b,CustomName:\'"Cible a {dz} blocs"\',Silent:1b}}')
 
 # 7. Points d'ancrage du grappin
-poser(23, RIM + 1, Z0, "grappin:ancrage")
-poser(12, EAU_HAUT, 15, "grappin:ancrage")
-poser(23, SOL + 6, 18, "grappin:ancrage")
+poser(23, RIM + 1, Z0, "donjon:ancrage")
+poser(12, EAU_HAUT, 15, "donjon:ancrage")
+poser(23, SOL + 6, 18, "donjon:ancrage")
 
 # 7b. Ancrages hors de portee depuis la surface, a attraper en plein bond (sortie de l'eau vers le haut) :
 #     tubes de verre suspendus au dessus de l'eau, ouverts par le bas, ancrage au plafond. Du plus facile au plus dur.
@@ -94,7 +94,7 @@ TUBES = [(16, 27, -17, "lime_stained_glass"), (27, 27, -12, "yellow_stained_glas
 for x, z, haut, verre in TUBES:
     fill(x - 3, RIM + 2, z - 3, x + 3, haut + 1, z + 3, verre)
     fill(x - 2, RIM + 2, z - 2, x + 2, haut, z + 2, "air")
-    poser(x, haut, z, "grappin:ancrage")
+    poser(x, haut, z, "donjon:ancrage")
 
 # 8. Lumiere : lanternes marines encastrees dans le fond
 for x in range(8, 40, 8):
@@ -121,8 +121,8 @@ c('tellraw @a [{"text":"Bond : ","color":"gray"},{"text":"les tubes de verre au 
 
 KIT = [
     "gamemode survival @s",
-    "give @s grappin:cape_lestee",
-    "give @s grappin:grappin",
+    "give @s donjon:cape_lestee",
+    "give @s donjon:grappin",
     "give @s minecraft:iron_sword",
     "give @s minecraft:iron_pickaxe",
     "give @s minecraft:cooked_beef 16",

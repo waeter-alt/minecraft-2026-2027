@@ -51,7 +51,7 @@ def sequence(var, noms, porte_nom):
         CMD.append(f"execute {ouverte(nm)} run setblock {rel(*VANNES[nm][0])} {fermee(nm)}")
 
 
-VOILE = "grappin:voile"
+VOILE = "donjon:voile"
 CLE = "minecraft:tripwire_hook[minecraft:custom_name='\"Clé du Récif\"']"
 CLE_DON = "minecraft:tripwire_hook[minecraft:custom_name='\"Clé du Récif\"',minecraft:lore=['\"Ouvre la porte du Cœur du Temple\"']]"
 # la herse de depart est la toute premiere commande de la premiere chaine : elle part des le tick du clic, sans compteur ni son (le fill est sans effet une fois la herse ouverte)
@@ -102,7 +102,7 @@ CMD.append("execute if score #cd aqua matches 1.. run scoreboard players remove 
 assert PLAFOND_CLOCHES >= 1 and len(CLOCHES_BOSS) - PLAFOND_CLOCHES >= 1, "au moins une cloche doit rester utilisable"
 for i, (cx, yb, cz) in enumerate(CLOCHES_BOSS, 1):
     CMD.append(f"execute if score #phase aqua matches 1 if score #cd aqua matches 0 if score #c{i} aqua matches 0 if score #inond aqua matches ..{PLAFOND_CLOCHES - 1} positioned {rel(cx, yb, cz)} "
-               f"if entity @e[type=grappin:leviathan,distance=..8] run function atelier:aqua_cloche_inonde_{i}")
+               f"if entity @e[type=donjon:leviathan,distance=..8] run function atelier:aqua_cloche_inonde_{i}")
     CMD.append(f"execute if score #c{i} aqua matches 2.. run scoreboard players remove #c{i} aqua 1")
     CMD.append(f"execute if score #c{i} aqua matches 1 run function atelier:aqua_cloche_regen_{i}")
 assert len(CMD) <= 32 * len(CHAINES), len(CMD)
@@ -248,13 +248,13 @@ if True:
     # positioned en premier : une fonction programmee s'execute a l'origine du monde, pas dans la salle
     (FN / "aqua_boss_invoque.mcfunction").write_text("\n".join([
         "# [claude-build] Fait surgir le Leviathan au fond de la cuvette (jamais deux a la fois).",
-        f"execute positioned {bx} {by} {bz} unless entity @e[type=grappin:leviathan,distance=..150] run summon grappin:leviathan {bx + 0.5} {by} {bz + 0.5} {{Rotation:[90f,0f]}}",
-        f"execute positioned {bx} {by} {bz} if entity @e[type=grappin:leviathan,distance=..150] run scoreboard players set #boss aqua 2",
-        f"execute positioned {bx} {by} {bz} unless entity @e[type=grappin:leviathan,distance=..150] run scoreboard players set #boss aqua 0",
+        f"execute positioned {bx} {by} {bz} unless entity @e[type=donjon:leviathan,distance=..150] run summon donjon:leviathan {bx + 0.5} {by} {bz + 0.5} {{Rotation:[90f,0f]}}",
+        f"execute positioned {bx} {by} {bz} if entity @e[type=donjon:leviathan,distance=..150] run scoreboard players set #boss aqua 2",
+        f"execute positioned {bx} {by} {bz} unless entity @e[type=donjon:leviathan,distance=..150] run scoreboard players set #boss aqua 0",
         f"{arene} playsound minecraft:entity.ender_dragon.growl master @a[distance=..90] ~ ~ ~ 5 0.5"]) + "\n", encoding="utf-8")
-    (DP / "data/grappin/tags/function").mkdir(parents=True, exist_ok=True)
-    (DP / "data/grappin/tags/function/leviathan_mort.json").write_text(json.dumps({"values": ["atelier:aqua_boss_mort"]}, indent=2), encoding="utf-8")        # le mod appelle ce tag a la mort du serpent
-    (DP / "data/grappin/tags/function/leviathan_phase2.json").write_text(json.dumps({"values": ["atelier:aqua_boss_phase2"]}, indent=2), encoding="utf-8")   # et celui-ci quand il passe en phase 2
+    (DP / "data/donjon/tags/function").mkdir(parents=True, exist_ok=True)
+    (DP / "data/donjon/tags/function/leviathan_mort.json").write_text(json.dumps({"values": ["atelier:aqua_boss_mort"]}, indent=2), encoding="utf-8")        # le mod appelle ce tag a la mort du serpent
+    (DP / "data/donjon/tags/function/leviathan_phase2.json").write_text(json.dumps({"values": ["atelier:aqua_boss_phase2"]}, indent=2), encoding="utf-8")   # et celui-ci quand il passe en phase 2
     (FN / "aqua_boss_mort.mcfunction").write_text(
         "# [claude-build] Appelee par le mod a la mort du serpent : la sortie ne s'ouvre que si le boss a bien ete invoque (pas lors d'une remise a zero).\n"
         "execute if score #boss aqua matches 2 run function atelier:aqua_boss_vaincu\n", encoding="utf-8")
@@ -283,7 +283,7 @@ if True:
     for n_, (p, f_) in VANNES.items():
         reset.append(f"setblock {w(p)} minecraft:oak_trapdoor[half=bottom,facing={f_},open=false,powered=false,waterlogged=true]")
     reset += ["scoreboard objectives add aqua dummy"] + [f"scoreboard players set {v_} aqua 0" for v_ in VARS]
-    reset += ["kill @e[type=grappin:leviathan]", "schedule clear atelier:aqua_boss_invoque"]
+    reset += ["kill @e[type=donjon:leviathan]", "schedule clear atelier:aqua_boss_invoque"]
     reset += [f"fill {w((cx - 1, yb, cz - 1))} {w((cx + 1, yb + 1, cz + 1))} minecraft:air replace minecraft:water" for (cx, yb, cz) in CLOCHES_BOSS]
     reset += [f"clear @a {CLE}", 'tellraw @a {"text":"Sanctuaire remis a zero.","color":"gray"}']
     (FN / "aqua_reset.mcfunction").write_text("\n".join(reset) + "\n", encoding="utf-8")

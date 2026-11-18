@@ -51,7 +51,7 @@ a("- Les blocs de commande règlent `doMobSpawning` sur `false` dans tout le mon
 a("")
 a("## Le Voile des Profondeurs (lu dans le code du mod)")
 a("")
-a("- Objet `grappin:voile`, un casque. Il est **donné automatiquement** en entrant dans le Débarcadère (une fois : pas si on l'a déjà sur la tête ou dans l'inventaire).")
+a("- Objet `donjon:voile`, un casque. Il est **donné automatiquement** en entrant dans le Débarcadère (une fois : pas si on l'a déjà sur la tête ou dans l'inventaire).")
 a("- Tant que les yeux sont sous l'eau et qu'il reste de la réserve, l'air du porteur est maintenu au maximum ; la réserve dure **40 s** (`voileReserveSecondes`).")
 a("- À l'air libre il se recharge entièrement en **12 s** (`voileRechargeSecondes`). Il prévient (message et son) sous **10 s** (`voileAlerteSecondes`).")
 a("- Réserve vide : le voile ne protège plus, on se noie normalement (15 s d'air, puis les dégâts). Les coups reçus n'usent pas le voile.")

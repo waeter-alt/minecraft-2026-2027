@@ -6,10 +6,11 @@ import math
 
 import station_acte1 as a1
 import station_cine
+import station_create
 import suspendu_cine as sc
 
 DUREE_BAISSE = 170
-DUREE_VANNE_D = 110
+DUREE_VANNE_D = 180                     # la troisieme pompe : la camera plonge du haut de la Cuve jusqu'a la vanne D (9 s)
 NAGE = "predicate=atelier:nage"
 NIVEAUX = (a1.NIVEAUX["haut"], a1.NIVEAUX["median"], a1.NIVEAUX["bas"])
 
@@ -37,6 +38,13 @@ def fonctions(infos, infos1, blocs, txt):
     def remettre(cases):
         return [f"setblock {txt(p)} {etat(blocs.get(p, ('minecraft:stone', ())))}" for p in cases]
 
+    def pompe_bb(pompe, marche):
+        """La pompe Blockbench de la salle : ses voyants s'allument (en_marche) quand la pompe repart."""
+        if "pompe_bb" not in pompe:
+            return []
+        p, face, eau = pompe["pompe_bb"]
+        return [f"setblock {txt(p)} donjon:pompe_station[facing={face},en_marche={'true' if marche else 'false'},waterlogged={'true' if eau else 'false'}]"]
+
     def pousser(b, v, nom):
         """Un courant : pousse de v (blocs par tick) tout joueur qui flotte (de l'eau sous les pieds), si la case d'arrivee est de l'eau ; qui marche au fond (ou tient une echelle) n'est pas pousse."""
         coin, sel = boite(b)
@@ -58,75 +66,40 @@ def fonctions(infos, infos1, blocs, txt):
     for (b, v) in infos["drain"]["poussees"]:
         pousser(b, v, "drain")
 
-    # ================================================================= les ecluses (des que la Cuve est pleine)
-    tick.append("execute if score #niv station matches 1.. run function atelier:station_ecluses")
-    lignes_ecl = ["# [claude-build] Les trois ecluses : un joueur cote Cuve ouvre la vanne exterieure (le sas prend le niveau de la Cuve) ; un joueur cote secteur ouvre la vanne interieure (le sas se remplit). Jamais les deux a la fois."]
-    fermer = ["# [claude-build] Ferme les trois ecluses (vannes en place, sas pleins) : a chaque changement de niveau de la Cuve, et a la remise a zero."]
-    for s, e in infos["ecluses"].items():
-        cx, sx_ = boite(e["zone_ext"])
-        ci, si = boite(e["zone_int"])
+    # ================================================================= les bouches A, B, C : scellees tant que la Cuve est seche, grandes ouvertes ensuite (plus de sas a double vanne)
+    ouvrir, fermer = ["# [claude-build] La Cuve est pleine : les bouches des secteurs A, B, C s'ouvrent pour de bon (leurs barreaux et ceux du fond du couloir disparaissent)."], \
+        ["# [claude-build] Rescelle les bouches A, B, C (remise a zero) : barreaux en place, couloirs pleins."]
+    for s_, e in infos["ecluses"].items():
         sas = e["sas"]
-        a = txt(min(sas)), txt(max(sas))
-        lignes_ecl.append(f"execute positioned {cx} if entity @a[{sx_},gamemode=!spectator] positioned {ci} unless entity @a[{si},gamemode=!spectator] unless score #ec{s} station matches 1 run function atelier:station_ecluse_{s.lower()}_ext")
-        lignes_ecl.append(f"execute positioned {ci} if entity @a[{si},gamemode=!spectator] positioned {cx} unless entity @a[{sx_},gamemode=!spectator] unless score #ec{s} station matches 2 run function atelier:station_ecluse_{s.lower()}_int")
-        f[f"station_ecluse_{s.lower()}_ext"] = "\n".join([
-            f"# [claude-build] Ecluse {s}, cote Cuve : la vanne interieure se ferme, le sas prend le niveau de la Cuve, la vanne exterieure s'ouvre.",
-            f"scoreboard players set #ec{s} station 1", *poser_cases(e["interne"], "minecraft:iron_bars[waterlogged=true]"),
-            f"execute if score #niv station matches {e['haut']}.. run fill {a[0]} {a[1]} minecraft:water",
-            f"execute unless score #niv station matches {e['haut']}.. run fill {a[0]} {a[1]} minecraft:air",
-            *[f"execute if score #niv station matches {e['haut']}.. run setblock {txt(p)} minecraft:water" for p in e["externe"]],
-            *[f"execute unless score #niv station matches {e['haut']}.. run setblock {txt(p)} minecraft:air" for p in e["externe"]],
-            f"execute positioned {txt(sas[len(sas) // 2])} run playsound minecraft:block.iron_door.open master @a[distance=..24] ~ ~ ~ 1.5 0.5",
-            f"execute positioned {txt(sas[len(sas) // 2])} run particle minecraft:bubble_column_up ~ ~ ~ 2 2 2 0.1 60"]) + "\n"
-        f[f"station_ecluse_{s.lower()}_int"] = "\n".join([
-            f"# [claude-build] Ecluse {s}, cote secteur : la vanne exterieure se ferme, le sas se remplit, la vanne interieure s'ouvre.",
-            f"scoreboard players set #ec{s} station 2", *poser_cases(e["externe"], "minecraft:iron_bars[waterlogged=false]"),
-            f"fill {a[0]} {a[1]} minecraft:water", *poser_cases(e["interne"], "minecraft:water"),
-            f"execute positioned {txt(sas[len(sas) // 2])} run playsound minecraft:block.iron_door.open master @a[distance=..24] ~ ~ ~ 1.5 0.7",
-            f"execute positioned {txt(sas[len(sas) // 2])} run particle minecraft:bubble ~ ~ ~ 2 2 2 0.1 60"]) + "\n"
-        fermer += [f"scoreboard players set #ec{s} station 0", *poser_cases(e["externe"], "minecraft:iron_bars[waterlogged=false]"),
-                   *poser_cases(e["interne"], "minecraft:iron_bars[waterlogged=true]"), f"fill {a[0]} {a[1]} minecraft:water"]
-    f["station_ecluses"] = "\n".join(lignes_ecl) + "\n"
+        ouvrir += poser_cases(e["externe"] + e["interne"], "minecraft:water")
+        fermer += [*poser_cases(e["externe"], "minecraft:iron_bars[waterlogged=false]"), *poser_cases(e["interne"], "minecraft:iron_bars[waterlogged=true]"),
+                   f"fill {txt(min(sas))} {txt(max(sas))} minecraft:water"]
+    ouvrir.append('tellraw @a {"text":"Les bouches des secteurs A, B et C sont ouvertes.","color":"aqua"}')
+    f["station_bouches_ouvrir"] = "\n".join(ouvrir) + "\n"
     f["station_ecluses_fermer"] = "\n".join(fermer) + "\n"
     reset.append("function atelier:station_ecluses_fermer")
 
+    # ================================================================= les pompes : une balise (colonne de particules) tant qu'elles ne sont pas faites ; leur moteur Create au retour
+    P = infos["pompes"]
+    for k, drapeau in (("A", "#pA"), ("B", "#pB"), ("C", "#pC")):
+        v = txt(P[k]["volant"])
+        tick.append(f"execute if score #niv station matches 1.. if score {drapeau} station matches 0 positioned {v} run particle minecraft:end_rod ~0.5 ~1.5 ~0.5 0.15 2 0.15 0.01 3 force @a[distance=..96]")
+        reset.extend(remettre([P[k]["moteur"]]))
+        reset.extend(pompe_bb(P[k], False))
+    reset += [f"setblock {txt(p)} donjon:pompe_station[facing={face},en_marche=false,waterlogged=true]" for p, face in infos["blockbench"]["pompes_reservoir"]]
     # ================================================================= secteur A
     A = infos["a"]
-    vannes = [p for v in A["vannes"] for p in v]
-    f["station_a_vannes_ouvrir"] = "\n".join([
-        "# [claude-build] Galerie des vannes : le depart (ou un relais entre deux vannes) ouvre les quatre vannes pour 5,0 s.",
-        "execute unless score #galA station matches 1.. run playsound minecraft:block.piston.contract master @a[distance=..60] ~ ~ ~ 2 0.6",
-        "scoreboard players set #galA station 100", *[f"fill {txt(v[0])} {txt(v[-1])} minecraft:water" for v in A["vannes"]]]) + "\n"
-    f["station_a_vannes_fermer"] = "\n".join([
-        "# [claude-build] Les quatre vannes de la galerie se referment.", "scoreboard players set #galA station 0",
-        *[f"fill {txt(v[0])} {txt(v[-1])} minecraft:iron_bars[waterlogged=true]" for v in A["vannes"]],
-        f"execute positioned {txt(vannes[0])} run playsound minecraft:block.piston.extend master @a[distance=..60] ~ ~ ~ 2 0.6"]) + "\n"
-    for b in [A["depart"]] + A["relances"]:
-        coin, sel = boite(b)
-        tick.append(f"execute unless score #pA station matches 1 positioned {coin} if entity @a[{sel},gamemode=!spectator] run function atelier:station_a_vannes_ouvrir")
-    tick += ["execute if score #galA station matches 2.. run scoreboard players remove #galA station 1",
-             "execute if score #galA station matches 1 unless score #pA station matches 1 run function atelier:station_a_vannes_fermer"]
-    cache = [p for v in A["vannes_cache"] for p in v]
-    f["station_a_cache"] = "\n".join(["# [claude-build] La fente de la chambre cachee : ses deux vannes s'ouvrent pour 2,5 s.", "scoreboard players set #cache station 50",
-                                      *poser_cases(cache, "minecraft:water")]) + "\n"
-    coin, sel = boite(A["fente"])
-    tick += [f"execute unless score #cache station matches 1.. positioned {coin} if entity @a[{sel},gamemode=!spectator] run function atelier:station_a_cache",
-             "execute if score #cache station matches 2.. run scoreboard players remove #cache station 1",
-             "execute if score #cache station matches 1 run scoreboard players set #cache station 0",
-             f"execute if score #cache station matches 0 if block {txt(cache[0])} minecraft:water run fill {txt(cache[0])} {txt(cache[1])} minecraft:iron_bars[waterlogged=true]",
-             f"execute if score #cache station matches 0 if block {txt(cache[2])} minecraft:water run fill {txt(cache[2])} {txt(cache[3])} minecraft:iron_bars[waterlogged=true]"]
     monstres("a3", [("guardian", p, "") for p in A["gardiens_a3"]] + [("drowned", p, "") for p in A["noyes_a3"]], (A["a3"][0], A["a3"][1], A["a3"][4], A["a3"][5], A["a3"][2], A["a3"][3]), "#a3")
     monstres("a4", [("guardian", p, "") for p in A["gardiens_a4"]], (A["a4"][0], A["a4"][1], A["a4"][4], A["a4"][5], A["a4"][2], A["a4"][3]), "#a4")
-    coin, sel = boite(A["volant"])
-    tick.append(f"execute if score #pA station matches 0 positioned {coin} if entity @a[{sel},gamemode=!spectator] run function atelier:station_pompe_a")
+    tick += station_create.lignes_volant("pA", txt(A["volant_pos"]), "station_pompe_a", "#pA")
     f["station_pompe_a"] = "\n".join([
-        "# [claude-build] Le volant A est tourne : la pompe A repart, la galerie reste ouverte pour le retour.",
-        "scoreboard players set #pA station 1", *[f"fill {txt(v[0])} {txt(v[-1])} minecraft:water" for v in A["vannes"]],
+        "# [claude-build] Le volant A est tourne : la pompe A repart.",
+        "scoreboard players set #pA station 1",
         f"execute positioned {txt(A['pompe'][0])} run particle minecraft:bubble_column_up ~ ~2 ~ 1 3 1 0.2 200",
         f"execute positioned {txt(A['pompe'][0])} run playsound minecraft:block.beacon.power_select master @a[distance=..80] ~ ~ ~ 2 0.6",
-        'tellraw @a {"text":"La pompe A (Filtration) tourne.","color":"aqua"}', "function atelier:station_pompe_faite"]) + "\n"
-    reset += [f"fill {txt(v[0])} {txt(v[-1])} minecraft:iron_bars[waterlogged=true]" for v in A["vannes"]]
-    reset += poser_cases(cache, "minecraft:iron_bars[waterlogged=true]") + ["scoreboard players set #galA station 0", "scoreboard players set #cache station 0", "scoreboard players set #pA station 0"]
+        'tellraw @a {"text":"La pompe A (Filtration) tourne.","color":"aqua"}', f"setblock {txt(P['A']['moteur'])} create:creative_motor[facing={P['A']['facing']}]", *pompe_bb(P['A'], True), *[f"setblock {txt(p)} donjon:pompe_station[facing={face},en_marche=true,waterlogged=true]" for p, face in infos["salle_lits"]["pompes"]], "function atelier:station_pompe_faite"]) + "\n"
+    reset += [f"setblock {txt(p)} donjon:pompe_station[facing={face},en_marche=false,waterlogged=true]" for p, face in infos["salle_lits"]["pompes"]]
+    reset += ["scoreboard players set #pA station 0", "scoreboard players set #cpA station 0", "scoreboard players set #cpB station 0", "scoreboard players set #cpC station 0"]
 
     # ================================================================= secteur B
     B = infos["b"]
@@ -160,14 +133,14 @@ def fonctions(infos, infos1, blocs, txt):
                  f"execute if score #vap station matches 5 positioned {coin} as @a[{sel},gamemode=!spectator] run damage @s 2 minecraft:hot_floor",
                  f"execute if score #vap station matches 15 positioned {coin} as @a[{sel},gamemode=!spectator] run damage @s 2 minecraft:hot_floor"]
     lev = txt(B["levier"])
-    tick.append(f"execute if score #pB station matches 0 if block {lev} minecraft:lever[powered=true] run function atelier:station_pompe_b")
+    tick += station_create.lignes_volant("pB", txt(B["volant_pos"]), "station_pompe_b", "#pB")
     f["station_pompe_b"] = "\n".join([
         "# [claude-build] Le volant B est tourne : la pompe B repart ; l'echelle de sortie vers les chaudieres s'ouvre.",
         "scoreboard players set #pB station 1", *poser_cases(B["vanne_sortie"], "minecraft:air"),
         f"execute positioned {txt(B['pompe'][0])} run particle minecraft:large_smoke ~ ~2 ~ 0.5 2 0.5 0.05 60",
         f"execute positioned {txt(B['pompe'][0])} run playsound minecraft:block.beacon.power_select master @a[distance=..80] ~ ~ ~ 2 0.6",
-        'tellraw @a {"text":"La pompe B (Chaufferie) tourne. Une echelle redescend vers les chaudieres.","color":"aqua"}', "function atelier:station_pompe_faite"]) + "\n"
-    reset += [f"setblock {lev} minecraft:lever[face=floor,facing=west,powered=false]", *poser_cases(B["vanne_sortie"], "minecraft:iron_bars[waterlogged=false]"),
+        'tellraw @a {"text":"La pompe B (Chaufferie) tourne. Une echelle redescend vers les chaudieres.","color":"aqua"}', f"setblock {txt(P['B']['moteur'])} create:creative_motor[facing={P['B']['facing']}]", *pompe_bb(P['B'], True), "function atelier:station_pompe_faite"]) + "\n"
+    reset += [*poser_cases(B["vanne_sortie"], "minecraft:iron_bars[waterlogged=false]"),
               "scoreboard players set #pB station 0", "scoreboard players set #vap station 0"]
 
     # ================================================================= secteur C : turbines (nager contre elles 2 s), tartre (nager contre lui, turbine lancee), gardien du rotor
@@ -184,6 +157,8 @@ def fonctions(infos, infos1, blocs, txt):
                   f"execute positioned {centre} run playsound minecraft:block.beacon.activate master @a[distance=..60] ~ ~ ~ 2 0.6",
                   f'tellraw @a {{"text":"La turbine T{k} tourne.","color":"aqua"}}']
         lignes += [f"summon minecraft:{t} {txt(p)} {{Tags:[\"station_emb\"],PersistenceRequired:1b}}" for (t, p, _) in vague]
+        lignes.append(f"setblock {txt(C['moteurs'][k])} create:creative_motor[facing=up]")
+        reset.append(f"setblock {txt(C['moteurs'][k])} create:shaft[axis=y]")
         if k == 1:
             lignes += poser_cases(C["sable"], "minecraft:soul_sand")
         if k == 3:
@@ -206,13 +181,13 @@ def fonctions(infos, infos1, blocs, txt):
              (int(cx) - r, int(cx) + r, C["grilles"][0] + 1, C["grilles"][1] - 1, int(cz) - r, int(cz) + r), "#rotor")
     f["station_rotor_monstres"] = f["station_rotor_monstres"].replace('{Tags:["station_emb"],PersistenceRequired:1b,Tags:["station_emb","station_rotor"]', '{PersistenceRequired:1b,Tags:["station_emb","station_rotor"]')
     lev = txt(C["levier"])
-    tick.append(f"execute if score #pC station matches 0 if block {lev} minecraft:lever[powered=true] run function atelier:station_pompe_c")
+    tick += station_create.lignes_volant("pC", txt(C["volant_pos"]), "station_pompe_c", "#pC")
     f["station_pompe_c"] = "\n".join([
         "# [claude-build] Le volant C est tourne : la pompe C repart.", "scoreboard players set #pC station 1",
         f"execute positioned {txt(C['pompe'][0])} run particle minecraft:bubble_column_up ~ ~2 ~ 1 2 1 0.2 100",
         f"execute positioned {txt(C['pompe'][0])} run playsound minecraft:block.beacon.power_select master @a[distance=..80] ~ ~ ~ 2 0.6",
-        'tellraw @a {"text":"La pompe C (Turbines) tourne.","color":"aqua"}', "function atelier:station_pompe_faite"]) + "\n"
-    reset += [f"setblock {lev} minecraft:lever[face=floor,facing=north,powered=false]", "scoreboard players set #pC station 0"]
+        'tellraw @a {"text":"La pompe C (Turbines) tourne.","color":"aqua"}', f"setblock {txt(P['C']['moteur'])} create:creative_motor[facing={P['C']['facing']}]", *pompe_bb(P['C'], True), "function atelier:station_pompe_faite"]) + "\n"
+    reset += ["scoreboard players set #pC station 0"]
 
     # ================================================================= les pompes : un temoin, la Cuve baisse d'un cran (Haut -> Median -> Bas), a la troisieme la vanne D se leve
     cuve = infos1["cuve"]
@@ -220,12 +195,16 @@ def fonctions(infos, infos1, blocs, txt):
     f["station_pompe_faite"] = "\n".join([
         "# [claude-build] Une pompe de plus : son temoin s'allume sur la Coursive ; la Cuve baisse d'un cran (cinematique, ou tout de suite si une autre est en cours) ; a la troisieme, la vanne D se leve.",
         "scoreboard players add #pompes station 1",
+        "execute store result bossbar atelier:station value run scoreboard players get #pompes station",
+        *[f'execute if score #pompes station matches {k} run bossbar set atelier:station name "Station : pompes {k}/3"' for k in (1, 2, 3)],
         *[f"execute if score #pompes station matches {k + 1} run setblock {txt(p)} minecraft:waxed_copper_bulb[lit=true,powered=false]" for k, p in enumerate(temoins)],
-        "function atelier:station_ecluses_fermer", "scoreboard players operation #libre cine = #t cine",
+        "scoreboard players operation #libre cine = #t cine",
         "execute if score #pompes station matches 1 if score #libre cine matches 0 run function atelier:station_cine_debut_median",
         "execute if score #pompes station matches 1 unless score #libre cine matches 0 run function atelier:station_baisse_median",
         "execute if score #pompes station matches 2 if score #libre cine matches 0 run function atelier:station_cine_debut_bas",
         "execute if score #pompes station matches 2 unless score #libre cine matches 0 run function atelier:station_baisse_bas",
+        *[f"execute if score #pompes station matches 3 run setblock {txt(p)} donjon:pompe_station[facing={face},en_marche=true,waterlogged=true]"
+          for p, face in infos["blockbench"]["pompes_reservoir"]],                    # les pompes du Reservoir repartent avec la troisieme
         "execute if score #pompes station matches 3 if score #libre cine matches 0 run function atelier:station_cine_debut_vanne_d",
         "execute if score #pompes station matches 3 unless score #libre cine matches 0 run function atelier:station_vanne_d"]) + "\n"
     rangees = cuve["rangees"]
@@ -238,7 +217,9 @@ def fonctions(infos, infos1, blocs, txt):
     D = infos["d"]
     f["station_vanne_d"] = "\n".join(["# [claude-build] La vanne D se leve : la Cheminee est ouverte.", "scoreboard players set #d station 1", *poser_cases(D["vanne_d"], "minecraft:water"),
                                       f"execute positioned {txt(D['vanne_d'][0])} run playsound minecraft:block.piston.contract master @a[distance=..80] ~ ~ ~ 3 0.5",
-                                      'tellraw @a {"text":"Au fond de la Cuve, au nord-est, la vanne D se leve.","color":"gold"}']) + "\n"
+                                      'tellraw @a {"text":"Au fond de la Cuve, au nord-est, la vanne D se leve.","color":"gold"}',
+                                      'title @a title {"text":"Va au fond de la Cuve","color":"gold"}',
+                                      'title @a subtitle {"text":"la vanne D est ouverte, au nord-est : la Cheminée","color":"aqua"}']) + "\n"
     reset += poser_cases(D["vanne_d"], "minecraft:iron_bars[waterlogged=false]") + ["scoreboard players set #d station 0"]
 
     # les cinematiques : la camera suit la surface qui descend (elle reste 3 blocs au dessus) ; la vanne D vue de la Cuve
@@ -259,22 +240,26 @@ def fonctions(infos, infos1, blocs, txt):
         scenes[nom] = {"cles": (cam, vise), "duree": DUREE_BAISSE, "centre": txt((int(cxu), a1.SOL, int(czu))), "rayon": 400, "evenements": ev}
     d0 = D["vanne_d"][len(D["vanne_d"]) // 2]
     cible = (d0[0] + 0.5, d0[1] + 0.5, d0[2] + 0.5)
-    ev_d = {25: ["function atelier:station_vanne_d"], 40: [station_cine.son("chime", 0.75)], 46: [station_cine.son("chime", 1.0)], 52: [station_cine.son("chime", 1.5)]}
-    scenes["vanne_d"] = {"cles": sc.travelling(cible, (cible[0] - 14.0, cible[1] + 6.0, cible[2] + 16.0)), "duree": DUREE_VANNE_D, "centre": txt((int(cxu), a1.SOL, int(czu))),
-                         "rayon": 400, "evenements": ev_d}
+    # la camera part du haut de la Cuve, cote oppose (sud-ouest), et plonge en ligne droite vers la vanne D, au fond : elle ne tourne jamais (fluidite) ;
+    # la vanne se leve quand on la voit de pres, puis le message dit ou aller
+    a_dep = math.radians(220)
+    depart = (cxu + 18 * math.sin(a_dep), 82.0, czu - 18 * math.cos(a_dep))
+    point = lambda k: tuple(depart[i] + (cible[i] - depart[i]) * k for i in range(3))                     # noqa: E731
+    cam_d = [(1, depart), (70, point(0.55)), (130, point(0.8)), (DUREE_VANNE_D, point(0.88))]
+    vise_d = [(1, cible), (DUREE_VANNE_D, cible)]
+    ev_d = {2: ['title @a[tag=cine] actionbar {"text":"Troisième pompe : la station est prête…","color":"gray"}',
+                "execute as @a[tag=cine] at @s run playsound minecraft:block.beacon.power_select master @s ~ ~ ~ 1 0.6"],
+            30: ['title @a[tag=cine] title {"text":"Va au fond de la Cuve","color":"gold"}', 'title @a[tag=cine] subtitle {"text":"au nord-est, la vanne D","color":"aqua"}'],
+            100: ["function atelier:station_vanne_d", f"execute positioned {txt(d0)} run particle minecraft:bubble_column_up ~0.5 ~ ~0.5 1.5 2 1.5 0.2 120 force"],
+            112: [station_cine.son("chime", 0.75)], 118: [station_cine.son("chime", 1.0)], 124: [station_cine.son("chime", 1.5)],
+            150: ['title @a[tag=cine] actionbar {"text":"Plonge jusqu\'au fond de la Cuve : la Cheminée t\'attend","color":"gold"}']}
+    scenes["vanne_d"] = {"cles": (cam_d, vise_d), "duree": DUREE_VANNE_D, "centre": txt((int(cxu), a1.SOL, int(czu))), "rayon": 400, "evenements": ev_d}
+    # une balise sur la vanne D tant que personne n'y est alle
+    tick += [f"execute if score #d station matches 1 if score #dvu station matches 0 positioned {txt(d0)} run particle minecraft:end_rod ~0.5 ~1 ~0.5 0.3 5 0.3 0.02 6 force @a[distance=..120]",
+             f"execute if score #d station matches 1 if score #dvu station matches 0 positioned {txt(d0)} if entity @a[distance=..5,gamemode=!spectator] run scoreboard players set #dvu station 1"]
+    reset.append("scoreboard players set #dvu station 0")
 
     # ================================================================= la Cheminee
-    dep = D["depart"]
-    mx = sum(p[0] for p in dep) / len(dep)
-    mz = sum(p[2] for p in dep) / len(dep)
-    vd = [p for v in D["vannes"] for p in v]
-    f["station_d_vannes_ouvrir"] = "\n".join(["# [claude-build] Cheminee, galerie : les trois vannes s'ouvrent pour 3,0 s.", "scoreboard players set #galD station 60", *poser_cases(vd, "minecraft:water"),
-                                              f"execute positioned {txt(vd[0])} run playsound minecraft:block.piston.contract master @a[distance=..40] ~ ~ ~ 2 0.6"]) + "\n"
-    tick += [f"execute if score #d station matches 1 unless score #galD station matches 1.. positioned {txt((round(mx), 32, round(mz)))} if entity @a[distance=..3] run function atelier:station_d_vannes_ouvrir",
-             "execute if score #galD station matches 2.. run scoreboard players remove #galD station 1",
-             "execute if score #galD station matches 1 run function atelier:station_d_vannes_fermer"]
-    f["station_d_vannes_fermer"] = "\n".join(["# [claude-build] Les trois vannes de la Cheminee se referment.", "scoreboard players set #galD station 0", *poser_cases(vd, "minecraft:iron_bars[waterlogged=true]")]) + "\n"
-    reset += poser_cases(vd, "minecraft:iron_bars[waterlogged=true]") + ["scoreboard players set #galD station 0"]
     pousser(D["rampe_boite"], (0, -0.3, 0), "rampe")
     ct = txt(D["centre_tartre"])
     tick.append(f"execute if score #tard station matches 0 positioned {ct} if entity @a[distance=..4,{NAGE}] run function atelier:station_d_tartre")
@@ -288,8 +273,9 @@ def fonctions(infos, infos1, blocs, txt):
              "execute if score #td station matches 40 run function atelier:station_d_turbine",
              f"execute if score #td station matches 1000 positioned {tc} run particle minecraft:bubble_column_up ~ ~ ~ 2 0.4 2 0.2 6"]
     f["station_d_turbine"] = "\n".join(["# [claude-build] La turbine de la Cheminee tourne : un courant ascendant (colonne de bulles) monte jusqu'au bassin du haut.", "scoreboard players set #td station 1000",
-                                        *poser_cases(D["sable"], "minecraft:soul_sand"), f"execute positioned {tc} run playsound minecraft:block.beacon.activate master @a[distance=..60] ~ ~ ~ 2 0.6"]) + "\n"
-    reset += poser_cases(D["sable"], "minecraft:dripstone_block") + ["scoreboard players set #td station 0"]
+                                        *poser_cases(D["sable"], "minecraft:soul_sand"), f"setblock {txt(D['moteur'])} create:creative_motor[facing=up]",
+                                        f"execute positioned {tc} run playsound minecraft:block.beacon.activate master @a[distance=..60] ~ ~ ~ 2 0.6"]) + "\n"
+    reset += poser_cases(D["sable"], "minecraft:dripstone_block") + [f"setblock {txt(D['moteur'])} create:shaft[axis=y]", "scoreboard players set #td station 0"]
     lev = txt(D["levier"])
     tick.append(f"execute if score #lg station matches 0 if block {lev} minecraft:lever[powered=true] run function atelier:station_levier_general")
     f["station_levier_general"] = "\n".join([
@@ -310,7 +296,7 @@ def fonctions(infos, infos1, blocs, txt):
         "# [claude-build] Un joueur arrive dans le Reservoir : le Leviathan surgit.", "scoreboard players set #boss station 1", "function atelier:station_boss_apparition",
         'title @a title {"text":"Le Léviathan","color":"dark_aqua"}', "execute unless entity @e[tag=station_boss] run tellraw @a {\"text\":\"(Le Léviathan n'existe pas dans ce jar du grappin : l'Exutoire s'ouvre.)\",\"color\":\"gray\"}"]) + "\n"
     f["station_boss_apparition"] = ("# [claude-build] Le Leviathan (mod grappin). A part : si l'entite manque, seule cette fonction est refusee au chargement.\n"
-                                    f"summon grappin:leviathan {txt(R['boss'])} {{Tags:[\"station_boss\",\"station_emb\"],PersistenceRequired:1b}}\n")
+                                    f"summon donjon:leviathan {txt(R['boss'])} {{Tags:[\"station_boss\",\"station_emb\"],PersistenceRequired:1b}}\n")
     tick.append("execute if score #boss station matches 1 unless entity @e[tag=station_boss] run function atelier:station_boss_vaincu")
     f["station_boss_vaincu"] = "\n".join([
         "# [claude-build] Le Leviathan est vaincu : l'Exutoire s'ouvre, un courant ascendant ramene a la surface.", "scoreboard players set #boss station 2",
@@ -326,6 +312,6 @@ def fonctions(infos, infos1, blocs, txt):
     return f, tick, reset, scenes
 
 
-VARIABLES = ("#niv", "#pompes", "#ecA", "#ecB", "#ecC", "#galA", "#cache", "#pA", "#pB", "#pC", "#a3", "#a4", "#b2", "#b3", "#rotor", "#pl1", "#pl2", "#pl3", "#vap",
-             "#t1", "#t2", "#t3", "#tar1", "#tar2", "#d", "#galD", "#tard", "#td", "#lg", "#boss")
+VARIABLES = ("#niv", "#pompes", "#pA", "#pB", "#pC", "#a3", "#a4", "#b2", "#b3", "#rotor", "#pl1", "#pl2", "#pl3", "#vap",
+             "#cpA", "#cpB", "#cpC", "#t1", "#t2", "#t3", "#tar1", "#tar2", "#d", "#dvu", "#tard", "#td", "#lg", "#boss")
 

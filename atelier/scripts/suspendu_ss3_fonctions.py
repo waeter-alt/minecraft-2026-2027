@@ -3,11 +3,11 @@
 `fonctions(infos, txt)` renvoie (fonctions {nom: texte}, lignes ajoutees a suspendu_tick, lignes ajoutees a suspendu_reset).
 Les trois fosses du tunnel (avant le gouffre) ont chacune sa fonction de retour au bord (suspendu_ss3_fosse_N).
 Quand un joueur arrive sur la tete du pont (le bout du pont en ruine, ou commence la rampe) : annonce, puis 5 s apres le Gardien surgit de la lave au centre de la salle (une seule fois). Le mod appelle le tag de
-fonctions grappin:golem_mort a sa mort : la sortie, scellee par des barreaux, s'ouvre. Un joueur qui tombe dans le gouffre (son crochet decroche, chute lente, pas de degats) revient au depart du pont s'il est tombe du pont,
+fonctions donjon:golem_mort a sa mort : la sortie, scellee par des barreaux, s'ouvre. Un joueur qui tombe dans le gouffre (son crochet decroche, chute lente, pas de degats) revient au depart du pont s'il est tombe du pont,
 en tete de pont s'il est tombe de la rampe."""
 
 DELAI_BOSS = 100                       # 5 s entre l'annonce et l'apparition du golem
-TAG_MORT = "golem_mort"                # le tag de fonctions que le mod appelle a la mort du golem (data/grappin/tags/function/golem_mort.json)
+TAG_MORT = "golem_mort"                # le tag de fonctions que le mod appelle a la mort du golem (data/donjon/tags/function/golem_mort.json)
 
 
 def fonctions(infos, txt):
@@ -37,11 +37,11 @@ def fonctions(infos, txt):
     # positioned en premier : une fonction programmee s'execute a l'origine du monde, pas dans la salle ; Rotation 180 : le golem regarde vers la plateforme de depart (au nord de lui)
     f["suspendu_ss3_invoque"] = "\n".join([
         "# [claude-build] Fait surgir le Gardien des Racines de la lave, au centre de la salle (jamais deux a la fois).",
-        f"execute positioned {bx} {by} {bz} unless entity @e[type=grappin:golem,distance=..150] run summon grappin:golem {bx + 0.5} {by} {bz + 0.5} {{Rotation:[180f,0f]}}",
-        f"execute positioned {bx} {by} {bz} if entity @e[type=grappin:golem,distance=..150] run scoreboard players set #boss suspendu 2",
-        f"execute positioned {bx} {by} {bz} unless entity @e[type=grappin:golem,distance=..150] run scoreboard players set #boss suspendu 0",
+        f"execute positioned {bx} {by} {bz} unless entity @e[type=donjon:golem,distance=..150] run summon donjon:golem {bx + 0.5} {by} {bz + 0.5} {{Rotation:[180f,0f]}}",
+        f"execute positioned {bx} {by} {bz} if entity @e[type=donjon:golem,distance=..150] run scoreboard players set #boss suspendu 2",
+        f"execute positioned {bx} {by} {bz} unless entity @e[type=donjon:golem,distance=..150] run scoreboard players set #boss suspendu 0",
         f"{arene} playsound minecraft:entity.ender_dragon.growl master @a[distance=..90] ~ ~ ~ 5 0.6"]) + "\n"
-    f["suspendu_ss3_mort"] = ("# [claude-build] Appelee par le mod (tag grappin:golem_mort) a la mort du golem : la sortie ne s'ouvre que si le boss a bien ete invoque (pas lors d'une remise a zero).\n"
+    f["suspendu_ss3_mort"] = ("# [claude-build] Appelee par le mod (tag donjon:golem_mort) a la mort du golem : la sortie ne s'ouvre que si le boss a bien ete invoque (pas lors d'une remise a zero).\n"
                               "execute if score #boss suspendu matches 2 run function atelier:suspendu_ss3_vaincu\n")
     f["suspendu_ss3_vaincu"] = "\n".join([
         "# [claude-build] Le Gardien des Racines est mort : la sortie de la salle du boss s'ouvre.",
@@ -52,7 +52,7 @@ def fonctions(infos, txt):
                                        f"playsound minecraft:block.iron_door.open master @a {txt(a)} 2 0.6\n")
     f["suspendu_ss3_fermer_sortie"] = f"# [claude-build] Referme la sortie du boss (remise a zero).\nfill {txt(a)} {txt(b)} {infos['sortie_bloc']}[waterlogged=false]\n"
     f["suspendu_ss3_decrocher"] = ("# [claude-build] Supprime le crochet du grappin du joueur dont l'identifiant est passe en parametre.\n"
-                                   "$kill @e[type=grappin:crochet,nbt={Owner:$(uuid)}]\n")
+                                   "$kill @e[type=donjon:crochet,nbt={Owner:$(uuid)}]\n")
     px, py, pz = (float(v) for v in txt((sx, sy, sz)).split())
     rx, ry, rz = (float(v) for v in txt(infos["retour_rampe"]).split())
     dz_pont = infos["chute_pont_dz"]
@@ -77,5 +77,5 @@ def fonctions(infos, txt):
             "effect give @s minecraft:slow_falling 3 0 true",
             f"tp @s {tx + 0.5} {ty} {tz + 0.5} 0 0",
             'title @s actionbar {"text":"Tu es tombé !","color":"red"}']) + "\n"
-    reset += ["scoreboard players set #boss suspendu 0", "kill @e[type=grappin:golem]", "kill @e[type=grappin:graine]", "schedule clear atelier:suspendu_ss3_invoque", "function atelier:suspendu_ss3_fermer_sortie"]
+    reset += ["scoreboard players set #boss suspendu 0", "kill @e[type=donjon:golem]", "kill @e[type=donjon:graine]", "schedule clear atelier:suspendu_ss3_invoque", "function atelier:suspendu_ss3_fermer_sortie"]
     return f, tick, reset

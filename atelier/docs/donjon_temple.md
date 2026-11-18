@@ -17,7 +17,7 @@ Style jungle, comme la Gorge suspendue : briques de pierre moussues et fissurée
 - Accroché, **clic droit maintenu** : traction (la corde se rembobine, on est tiré vers l'ancrage). **Clic relâché** : on reste accroché, la corde garde sa longueur, on se balance.
 - **ESPACE** (à l'appui) : lâche le crochet, avec un petit saut et la vitesse conservée. S'accroupir lâche aussi. **Molette** : allonge ou raccourcit la corde.
 - Pas de dégâts de chute tant qu'on est accroché ; ils reviennent dès le lâcher. Le crochet ne traverse pas les blocs et ne blesse personne.
-- Réglages : `config/grappin-common.toml` (portée, aimant, gravité du balancier, élan des touches, vitesse et saut au lâcher, raideur, corde minimale, vitesse du treuil, pas de molette).
+- Réglages : `config/donjon-common.toml` (portée, aimant, gravité du balancier, élan des touches, vitesse et saut au lâcher, raideur, corde minimale, vitesse du treuil, pas de molette).
 - Technique : le balancier est calculé chez le joueur à chaque tick ; ESPACE passe par un petit message client → serveur. Limite connue : maintenir le clic droit pendant un lâcher relance le crochet dans les 4 ticks ; pas testé sur serveur dédié.
 
 ## Le parcours (≈ 31 min pour qui découvre)
