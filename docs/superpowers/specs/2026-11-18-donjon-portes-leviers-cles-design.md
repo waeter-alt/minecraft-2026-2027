@@ -42,3 +42,19 @@ Les portes à clé sont en béton coloré (lisse, « plastique ») et les levier
 1. Captures **dans Blockbench** du levier (levé, baissé) et des clés, plus une planche des textures des portes et sceaux, envoyées à Luca avant le jeu.
 2. Tests : modèles, états de blocs et textures présents et valides (JUnit) ; tests du donjon (les portes utilisent les nouveaux blocs, les leviers et les clés sont détectés par leurs nouveaux noms, la remise à zéro les remet).
 3. En jeu : chaque porte, de jour et dans le noir ; ouvrir chaque porte avec sa clé ; actionner les 5 leviers ; remise à zéro.
+
+---
+
+## Révision 2 (2026-11-18) : vraies portes et vrai levier en 3D
+
+Luca, après les aperçus : « abandonne les blocs, fais un vrai modèle 3D de porte » (choix : **double porte de pierre sculptée**), et « pour les leviers, refais un modèle 3D de zéro (ne reprends pas le levier de base), plus grand et plus détaillé ». Support choisi par Luca : **A, la porte est une entité**.
+
+**Ce qui change :**
+- **Les blocs de porte et de sceau sont abandonnés** (retirés du mod). Les clés restent.
+- **Porte** (`grappin:porte_donjon`) : une entité immobile posée dans l'arche, modèle et animation faits dans Blockbench (comme le Gardien). Deux grands battants de pierre sculptée de racines, encadrés de fer, avec au milieu le **sceau de pierre précieuse coupé en deux** (saphir, ambre, rubis selon la porte). **Ouverture** (environ 2,5 s) : le sceau s'illumine, se fend, puis les battants pivotent lourdement vers l'intérieur. Un seul modèle pour les 4 portes, mis à la largeur et à la hauteur de chaque arche (portes 1 et 2 en diagonale, porte 3 de 12 blocs) et tourné dans l'axe de l'arche ; une texture par couleur. Une porte déjà ouverte quand on arrive est dessinée ouverte.
+- **On ne passe pas tant qu'elle est fermée** : l'arche est bouchée par des blocs invisibles (`minecraft:barrier`), posés et retirés par les fonctions du donjon à la place des dalles d'aujourd'hui ; les fonctions ouvrent et referment la porte en changeant une donnée de l'entité (`Ouverte`).
+- **Levier** (`grappin:levier_racine`, même identifiant, mêmes états, donc énigmes inchangées) : un nouveau modèle fait de zéro, d'environ 2 blocs de haut — socle de pierre sculptée envahi de racines, grande poignée de racine tordue, mécanisme à cliquet, cristal d'ambre qui s'allume — dessiné par le code à partir du modèle Blockbench, avec une **vraie animation** quand on le tire et quand il revient.
+
+**Mes choix :** la porte se règle par ses données à l'apparition (`Couleur`, `Largeur`, `Hauteur`, `Rotation`), écrites par le générateur du donjon ; l'orientation vient de la position de chaque porte par rapport au centre de sa salle ; jar `grappin-3.7.0.jar`.
+
+**Validation ajoutée :** captures de Blockbench de la porte (fermée, à mi-ouverture, ouverte) et du levier (levé, tiré) avant le jeu ; tests (modèles et animations ; le donjon fait apparaître une porte par arche, à la bonne couleur, largeur et orientation, pose et retire les barrières, ouvre et referme).

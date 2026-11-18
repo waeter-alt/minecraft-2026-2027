@@ -38,3 +38,24 @@
 
 ### Task 4 : jar 3.6.0, déclaration, essai
 - [ ] `mod_version=3.6.0`, jar dans `atelier/exports`, déclaré dans `mods.txt` (dossier principal, commit de ce seul fichier + jar), synchro, `checkEnv` ; générateur vers le monde de test ; essai par Luca.
+
+---
+
+## Révision 2 : porte entité et levier animé (remplace les portes en blocs)
+
+### Task 5 : porte et levier dans Blockbench
+- [ ] Tests Python d'abord (échouent) : `test_porte_bbmodel.py` (os `racine` > `cadre`, `battant_g` > `sceau_g`, `battant_d` > `sceau_d` ; animation `ouverture` 2,5 s, non bouclée ; battants à ±85° à la fin) ; `test_levier_bbmodel.py` (os `socle`, `manche`, `cliquet`, `cristal` ; animations `tirer` et `relacher` de 0,6 s ; hauteur 28 à 36 unités).
+- [ ] `porte_vers_bbmodel.py` et `levier_vers_bbmodel.py` (format `modded_entity`, 16 unités par bloc ; porte dessinée pour une arche de 8 × 8 blocs) ; textures 64 × 64 dessinées par script (une par couleur pour la porte).
+- [ ] Ouverture dans Blockbench, captures envoyées à Luca. **Arrêt jusqu'à son accord.** Commit.
+
+### Task 6 : dans le mod
+- [ ] Retirer `porte_*`, `sceau_*` (Java, ressources, test).
+- [ ] `PorteDonjon` (entité immobile : `Couleur`, `Largeur`, `Hauteur`, `Ouverte` en NBT et synchronisés ; ouverture animée ; ouverte d'emblée si elle l'était au chargement) + `PorteRendu` (échelle `largeur/8`, `hauteur/8`, texture selon la couleur).
+- [ ] `LevierRacine` : `LeverBlock` + `EntityBlock`, rendu par `LevierRendu` (bloc dessiné par le code, animation `tirer`/`relacher` au changement de `powered`, boîte de rendu de 2 blocs, sol, mur, plafond).
+- [ ] JUnit : `PorteLogiqueTest` (échelle, choix de la texture, pose ouverte au chargement) ; build OK ; commit.
+
+### Task 7 : dans le donjon
+- [ ] Tests d'abord : une `grappin:porte_donjon` par arche (couleur, largeur, hauteur, lacet perpendiculaire au mur) ; barrières à la place des dalles ; ouverture = `Ouverte:1b` + barrières retirées ; remise à zéro = barrières reposées + `Ouverte:0b`.
+- [ ] Scripts ; 107+ tests OK ; régénération dans le monde de test ; commit.
+
+### Task 8 : jar 3.7.0, déclaration, essai.
