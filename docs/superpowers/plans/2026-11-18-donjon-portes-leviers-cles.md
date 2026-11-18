@@ -44,7 +44,7 @@
 ## Révision 2 : porte entité et levier animé (remplace les portes en blocs)
 
 ### Task 5 : porte et levier dans Blockbench
-- [ ] Tests Python d'abord (échouent) : `test_porte_bbmodel.py` (os `racine` > `cadre`, `battant_g` > `sceau_g`, `battant_d` > `sceau_d` ; animation `ouverture` 2,5 s, non bouclée ; battants à ±85° à la fin) ; `test_levier_bbmodel.py` (os `socle`, `manche`, `cliquet`, `cristal` ; animations `tirer` et `relacher` de 0,6 s ; hauteur 28 à 36 unités).
+- [ ] Tests Python d'abord (échouent) : `test_porte_bbmodel.py` (os `racine` > `dalle` > `sceau` ; animation `ouverture` 3 s, non bouclée ; à la fin, la `dalle` est montée d'au moins 128 unités (8 blocs) et n'a pas tourné) ; `test_levier_bbmodel.py` (os `socle`, `manche`, `cliquet`, `cristal` ; animations `tirer` et `relacher` de 0,6 s ; hauteur 28 à 36 unités).
 - [ ] `porte_vers_bbmodel.py` et `levier_vers_bbmodel.py` (format `modded_entity`, 16 unités par bloc ; porte dessinée pour une arche de 8 × 8 blocs) ; textures 64 × 64 dessinées par script (une par couleur pour la porte).
 - [ ] Ouverture dans Blockbench, captures envoyées à Luca. **Arrêt jusqu'à son accord.** Commit.
 
