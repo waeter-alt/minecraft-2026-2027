@@ -228,7 +228,7 @@ def fonctions(infos, decalages):
            f'execute if score #boss station matches 1 run title @a[{zone}] actionbar {{"text":"Abats le Léviathan","color":"red"}}',
            f'execute if score #boss station matches 2 run title @a[{zone}] actionbar {{"text":"L\'Exutoire est ouvert, au sud du Réservoir","color":"gold"}}']
     i2 = station_secteurs.construire()[1]
-    for drapeau, b, texte in (("#pA", (2, 88, 60, 74, 3, 99), "Filtration : la pompe A est au bout, à l'ouest. Suis la ligne verte au sol."),
+    for drapeau, b, texte in (("#pA", (2, 88, 60, 74, 3, 99), "Filtration : la pompe A est au bout, à l'ouest, après la salle des lits."),
                               ("#pB", (151, 228, 30, 72, 70, 121), "Chaufferie : marche au fond contre le courant, 3 plaques, puis la pompe B au grappin, à l'est de la halle haute."),
                               ("#pC", (100, 140, 47, 95, 2, 64), "Turbines : nage contre chaque turbine pour la lancer ; la pompe C est tout en haut.")):
         x0, x1, y0, y1, z0, z1 = b
@@ -257,7 +257,7 @@ def fonctions(infos, decalages):
         "schedule function atelier:station_pose_2 600t"]) + "\n"
     haut_pierre = a1.PLAINE - 3
     terrain = [*tuiles(0, SX - 1, 0, haut_pierre, 0, SZ - 1, "minecraft:stone"), *tuiles(0, SX - 1, haut_pierre + 1, a1.PLAINE - 1, 0, SZ - 1, "minecraft:dirt"),
-               *tuiles(0, SX - 1, a1.PLAINE, a1.PLAINE, 0, SZ - 1, "minecraft:grass_block"), *tuiles(0, SX - 1, a1.PLAINE + 1, SY - 1, 0, SZ - 1, "minecraft:air")]
+               *tuiles(0, SX - 1, a1.PLAINE, a1.PLAINE, 0, SZ - 1, "minecraft:grass_block"), *tuiles(0, SX - 1, a1.PLAINE + 1, SY + 9, 0, SZ - 1, "minecraft:air")]     # 10 de plus au-dessus du gabarit : efface les debris d'une ancienne pose
     places = [f"place template atelier:{nom} {txt(decalages[nom])}" for nom in ("station_cuve", "station_hall") + station_secteurs.ORDRE + ("station_retouches",) if nom in decalages]
     etapes = [terrain[i:i + 40] for i in range(0, len(terrain), 40)] + [[ligne] for ligne in places]
     for i, cmds in enumerate(etapes):

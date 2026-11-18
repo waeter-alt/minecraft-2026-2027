@@ -126,7 +126,7 @@ def main():
     nouvelles, manque = {}, 0
     for x in range(ds.SX):
         for z in range(ds.SZ):
-            for y in range(0, a1.PLAINE + 12):
+            for y in range(0, ds.SY):                                     # au-dessus du gabarit : des debris, jamais des retouches
                 p = (x, y, z)
                 if p in dyn:
                     continue
