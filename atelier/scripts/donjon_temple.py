@@ -1130,12 +1130,12 @@ if True:
     # positioned en premier : une fonction programmee s'execute a l'origine du monde, pas dans la salle ; Rotation 180 : le golem regarde vers la plateforme de depart (au nord de lui)
     (FN / "temple_boss_invoque.mcfunction").write_text("\n".join([
         "# [claude-build] Fait surgir le Gardien des Racines de la lave, au centre de la salle (jamais deux a la fois).",
-        f"execute positioned {bx} {by} {bz} unless entity @e[type=grappin:golem,distance=..150] run summon grappin:golem {bx + 0.5} {by} {bz + 0.5} {{Rotation:[180f,0f]}}",
-        f"execute positioned {bx} {by} {bz} if entity @e[type=grappin:golem,distance=..150] run scoreboard players set #boss temple 2",
-        f"execute positioned {bx} {by} {bz} unless entity @e[type=grappin:golem,distance=..150] run scoreboard players set #boss temple 0",
+        f"execute positioned {bx} {by} {bz} unless entity @e[type=donjon:golem,distance=..150] run summon donjon:golem {bx + 0.5} {by} {bz + 0.5} {{Rotation:[180f,0f]}}",
+        f"execute positioned {bx} {by} {bz} if entity @e[type=donjon:golem,distance=..150] run scoreboard players set #boss temple 2",
+        f"execute positioned {bx} {by} {bz} unless entity @e[type=donjon:golem,distance=..150] run scoreboard players set #boss temple 0",
         f"{arene} playsound minecraft:entity.ender_dragon.growl master @a[distance=..90] ~ ~ ~ 5 0.6"]) + "\n", encoding="utf-8")
-    (SAVE / "datapacks/atelier/data/grappin/tags/function").mkdir(parents=True, exist_ok=True)
-    (SAVE / "datapacks/atelier/data/grappin/tags/function/golem_mort.json").write_text(json.dumps({"values": ["atelier:temple_boss_mort"]}, indent=2), encoding="utf-8")     # le mod appelle ce tag a la mort du golem
+    (SAVE / "datapacks/atelier/data/donjon/tags/function").mkdir(parents=True, exist_ok=True)
+    (SAVE / "datapacks/atelier/data/donjon/tags/function/golem_mort.json").write_text(json.dumps({"values": ["atelier:temple_boss_mort"]}, indent=2), encoding="utf-8")     # le mod appelle ce tag a la mort du golem
     (FN / "temple_boss_mort.mcfunction").write_text(
         "# [claude-build] Appelee par le mod a la mort du golem : la sortie ne s'ouvre que si le boss a bien ete invoque (pas lors d'une remise a zero).\n"
         "execute if score #boss temple matches 2 run function atelier:temple_boss_vaincu\n", encoding="utf-8")
@@ -1164,7 +1164,7 @@ if True:
     for p in BALISES.values():
         reset.append(f"setblock {w(p)} minecraft:chiseled_stone_bricks")
     reset += ["scoreboard objectives add temple dummy"] + [f"scoreboard players set {v_} temple 0" for v_ in ("#se", "#ss", "#porte", "#t1", "#t2", "#fe", "#fw", "#fp", "#boss")]
-    reset += ["kill @e[type=grappin:golem]", "schedule clear atelier:temple_boss_invoque"]
+    reset += ["kill @e[type=donjon:golem]", "schedule clear atelier:temple_boss_invoque"]
     reset += [f"clear @a {CLE}", 'tellraw @a {"text":"Temple remis a zero.","color":"gray"}']
     (FN / "temple_reset.mcfunction").write_text("\n".join(reset) + "\n", encoding="utf-8")
 conf = {"_marque": "[claude-build]", "taille": [SX, SY, SZ], "origine": ORIGINE, "zones": ZONES, "portes": PORTES, "ancrages": ANCRAGES,

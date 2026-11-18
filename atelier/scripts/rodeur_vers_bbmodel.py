@@ -197,7 +197,7 @@ def construire():
         "modded_entity_flip_y": True, "visible_box": [2, 2.5, 0], "variable_placeholders": "", "variable_placeholder_buttons": [],
         "timeline_setups": [], "unhandled_root_fields": {}, "resolution": {"width": 512, "height": 512},
         "elements": elements, "outliner": [groupe("racine")],
-        "textures": [{"path": "", "name": "golem.png", "folder": "entity", "namespace": "grappin", "id": "0", "width": 512, "height": 512,
+        "textures": [{"path": "", "name": "golem.png", "folder": "entity", "namespace": "donjon", "id": "0", "width": 512, "height": 512,
                       "uv_width": 512, "uv_height": 512, "particle": False, "use_as_default": True, "layers_enabled": False,
                       "render_mode": "default", "render_sides": "auto", "frame_time": 1, "frame_order_type": "loop", "frame_order": "",
                       "frame_interpolate": False, "visible": True, "internal": True, "saved": True, "uuid": ident("texture"),

@@ -413,11 +413,11 @@ if True:
     # positioned en premier : une fonction programmee s'execute a l'origine du monde, pas a l'arene
     (FN / "ciel_boss_invoque.mcfunction").write_text("\n".join([
         "# [claude-build] Fait apparaitre le Seraphin au-dessus de la plateforme centrale (jamais deux a la fois).",
-        f"execute positioned {bx} {by} {bz} unless entity @e[type=grappin:seraphin,distance=..150] run summon grappin:seraphin {bx + 0.5} {by + 5} {bz + 0.5}",
+        f"execute positioned {bx} {by} {bz} unless entity @e[type=donjon:seraphin,distance=..150] run summon donjon:seraphin {bx + 0.5} {by + 5} {bz + 0.5}",
         "scoreboard players set #ec ciel 3",
         f"{arene} playsound minecraft:entity.ender_dragon.growl master @a[distance=..90] ~ ~ ~ 5 0.8"]) + "\n", encoding="utf-8")
-    (DP / "data/grappin/tags/function").mkdir(parents=True, exist_ok=True)
-    (DP / "data/grappin/tags/function/seraphin_mort.json").write_text(json.dumps({"values": ["atelier:ciel_boss_mort"]}, indent=2), encoding="utf-8")     # le mod appelle ce tag a la mort du Seraphin
+    (DP / "data/donjon/tags/function").mkdir(parents=True, exist_ok=True)
+    (DP / "data/donjon/tags/function/seraphin_mort.json").write_text(json.dumps({"values": ["atelier:ciel_boss_mort"]}, indent=2), encoding="utf-8")     # le mod appelle ce tag a la mort du Seraphin
     (FN / "ciel_boss_mort.mcfunction").write_text(
         "# [claude-build] Appelee par le mod a la mort du Seraphin : la sortie ne s'ouvre que si l'archipel est bien en etat « boss invoque » (pas lors d'une remise a zero).\n"
         "execute if score #ec ciel matches 3 run function atelier:ciel_boss_vaincu\n", encoding="utf-8")
@@ -441,7 +441,7 @@ if True:
     for cases_ in ANNEAUX_CASES:
         (a, b, c), (d_, e, f_) = plage(cases_)
         reset.append(f"fill {w((a, b, c))} {w((d_, e, f_))} minecraft:ochre_froglight replace minecraft:verdant_froglight")
-    reset += ["kill @e[type=grappin:seraphin]", "schedule clear atelier:ciel_boss_invoque"]
+    reset += ["kill @e[type=donjon:seraphin]", "schedule clear atelier:ciel_boss_invoque"]
     reset += [f"tag @a remove {tg_}" for tg_ in TAGS_E.values()]
     reset += [f"clear @a {CLE}", "clear @a minecraft:amethyst_shard", 'tellraw @a {"text":"Archipel remis a zero.","color":"gray"}']
     (FN / "ciel_reset.mcfunction").write_text("\n".join(reset) + "\n", encoding="utf-8")
