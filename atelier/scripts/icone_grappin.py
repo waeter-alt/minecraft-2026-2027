@@ -20,6 +20,6 @@ for x, y in ((9, 3), (8, 2), (8, 1), (14, 3), (15, 2), (15, 1)):   # deux griffe
 for x, y in ((10, 4), (13, 4)):
     p[x, y] = FER_C
 p[11, 1], p[12, 1], p[11, 0] = FER, FER, FER_C       # pointe centrale
-img.save(R / "mods_src/grappin/src/main/resources/assets/grappin/textures/item/grappin.png")
+img.save(R / "mods_src/grappin/src/main/resources/assets/donjon/textures/item/grappin.png")
 img.resize((128, 128), Image.NEAREST).save(R / "exports/grappin_icone.png")
 print("icone ecrite")
