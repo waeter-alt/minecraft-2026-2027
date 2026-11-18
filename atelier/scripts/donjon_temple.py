@@ -45,7 +45,7 @@ LOG, BOIS = S("jungle_log", axis="y"), S("jungle_wood", axis="y")
 FEUILLE = S("jungle_leaves", persistent=True, distance=1, waterlogged=False)
 MRAC, RACP = S("mangrove_roots", waterlogged=False), S("hanging_roots", waterlogged=False)
 LUM = S("light", level=15, waterlogged=False)
-ANC = S("grappin:ancrage")
+ANC = S("donjon:ancrage")
 LANT, LANT_P = S("lantern", hanging=False, waterlogged=False), S("lantern", hanging=True, waterlogged=False)
 CHAINE = S("chain", axis="y", waterlogged=False)
 TOILE, OS, BARRES, PLANCHE = S("cobweb"), S("bone_block", axis="y"), S("iron_bars", waterlogged=False), S("spruce_planks")
@@ -834,7 +834,7 @@ CMD.append("gamerule doMobSpawning false")
 CMD.append("scoreboard objectives add temple dummy")
 for v_ in ("#se", "#ss", "#porte", "#t1", "#t2", "#fe", "#fw", "#fp"):
     CMD.append(f"scoreboard players add {v_} temple 0")
-CMD.append(f"execute positioned {rel(54, 83, 54)} as @a[dx=22,dy=10,dz=22] unless items entity @s container.* grappin:grappin run give @s grappin:grappin")
+CMD.append(f"execute positioned {rel(54, 83, 54)} as @a[dx=22,dy=10,dz=22] unless items entity @s container.* donjon:grappin run give @s donjon:grappin")
 # aile des Serpents : six dalles dans l'ordre du serpent peint ; une erreur ramene a l'entree de l'aile
 ENTREE_E = (97, 63, 23)
 for k, p in enumerate(PLAQUES_E, 1):
@@ -1024,7 +1024,7 @@ if True:
         monde_atelier.message_entree("Le temple est prêt.", w((65, 83, 62)))]) + "\n", encoding="utf-8")
     sx_, sy_, sz_ = POINTS["S12"]
     (FN / "temple_decrocher.mcfunction").write_text("# [claude-build] Supprime le crochet du grappin du joueur dont l identifiant est passe en parametre.\n"
-                                                    "$kill @e[type=grappin:crochet,nbt={Owner:$(uuid)}]\n", encoding="utf-8")
+                                                    "$kill @e[type=donjon:crochet,nbt={Owner:$(uuid)}]\n", encoding="utf-8")
     (FN / "temple_chute_boss.mcfunction").write_text("\n".join([
         "# [claude-build] Un joueur est tombe dans le gouffre du boss : on decroche son grappin, chute lente (pas de degats), retour sur la plateforme de depart.",
         "data modify storage atelier:temple chute.uuid set from entity @s UUID",

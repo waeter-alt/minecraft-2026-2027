@@ -46,7 +46,7 @@ print(f"[4] lumiere : {nl} blocs de lumiere ajoutes | cases sombres {len(noirs)}
 # ====================================================================== blocs de commande
 CLE = "minecraft:tripwire_hook[minecraft:custom_name='\"Clé des Nuées\"']"
 CLE_DON = "minecraft:tripwire_hook[minecraft:custom_name='\"Clé des Nuées\"',minecraft:lore=['\"Ouvre la porte de la Citadelle haute\"']]"
-PARAVOILE = "grappin:paravoile"
+PARAVOILE = "donjon:paravoile"
 VARS = ("#l1", "#l2", "#l3", "#kp", "#cle", "#gl", "#an", "#sm", "#sq", "#e1", "#e2", "#e3", "#ec")
 
 

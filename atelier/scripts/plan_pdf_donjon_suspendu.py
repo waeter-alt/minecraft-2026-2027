@@ -425,7 +425,7 @@ th {{ background: #efe8f7; }} .leg td:first-child {{ width: 26px; text-align: ce
 <p>Luca dessine ses plans sur GIMP avec ces codes (expliqués le 2026-11-16 pour le sous-sol 1, puis pour le sous-sol 2). Les plans de ce document les reprennent.</p>
 <table class="leg"><tr><th></th><th>Code</th><th>Sens</th><th>Où on le trouve ici</th></tr>
 <tr><td>{SVG['croix']}</td><td>Croix rouge</td><td>Monstre (zombie / squelette)</td><td>Zombies du rez-de-chaussée ; gardiens et monstres du sous-sol 1 ; ennemis des îles du sous-sol 2</td></tr>
-<tr><td>{SVG['M']}</td><td>Gros « M »</td><td>Mini-boss</td><td>Sous-sol 1, grande salle : le Rôdeur des Racines (grappin:rodeur, mod grappin 3.4.0+)</td></tr>
+<tr><td>{SVG['M']}</td><td>Gros « M »</td><td>Mini-boss</td><td>Sous-sol 1, grande salle : le Rôdeur des Racines (donjon:rodeur, mod grappin 3.4.0+)</td></tr>
 <tr><td>{SVG['bleu']}</td><td>Rond bleu</td><td>Point d'ancrage permanent du grappin (avec plateforme quand il est dans le vide)</td><td>Piliers et corniche du sous-sol 1 ; piliers bleus du sous-sol 2 ; tous les ancrages de la salle 3</td></tr>
 <tr><td>{SVG['cyan']}</td><td>Rond cyan (numéroté)</td><td>Point d'ancrage qui apparaît quand on tire le levier du même numéro</td><td>Sous-sol 2</td></tr>
 <tr><td>{SVG['orange']}</td><td>Carré orange numéroté</td><td>Levier ; le numéro donne l'<b>ordre</b></td><td>Les 5 leviers du sous-sol 2 ; « D » = bouton de départ de l'énigme musicale</td></tr>
@@ -541,11 +541,11 @@ th {{ background: #efe8f7; }} .leg td:first-child {{ width: 26px; text-align: ce
 
 <h2>10. Le boss : le Gardien des Racines</h2>
 <ul>
-<li>Un <b>golem d'arbre</b> géant, enfoncé dans le lac de lave au centre de l'arène (entité <code>grappin:golem</code> du mod). Il surgit 5 s après l'annonce, quand un joueur arrive en <b>tête de pont</b> (une seule fois).</li>
+<li>Un <b>golem d'arbre</b> géant, enfoncé dans le lac de lave au centre de l'arène (entité <code>donjon:golem</code> du mod). Il surgit 5 s après l'annonce, quand un joueur arrive en <b>tête de pont</b> (une seule fois).</li>
 <li><b>Il se tourne lentement vers le joueur le plus proche</b> et <b>ouvre un point faible du côté opposé</b> : il faut faire le tour de l'anneau pour aller le frapper. Cinq points faibles (masque, plastron, poing, dos gauche, dos droit), des <b>bourgeons au bout de branches</b> qui sortent du corps : ce qu'on voit est exactement ce qu'on frappe. Un seul ouvert à la fois, pendant 20 s ; un faisceau de particules rouges le signale de loin. Il lance aussi des graines depuis son poing.</li>
 <li><b>Frappable à l'épée</b> : pour chaque point faible et chaque orientation du golem (pas de 15°), une case de la rampe est à moins de 3 blocs de sa boîte (au pire 2,8 ; vérifié par script). Les trous de l'anneau ne font perdre aucune orientation.</li>
 <li><b>Le grappin</b> sert à franchir les trous du haut de l'anneau, à rejoindre les corniches (refuges) et le balcon de la sortie.</li>
-<li><b>Mort</b> : le mod appelle le tag <code>grappin:golem_mort</code> → la sortie s'ouvre, message « Le Gardien est vaincu ». <b>Chute</b> dans la lave : retour en tête de pont (ou au départ du pont si l'on tombait du pont). La remise à zéro tue le golem et referme la sortie.</li>
+<li><b>Mort</b> : le mod appelle le tag <code>donjon:golem_mort</code> → la sortie s'ouvre, message « Le Gardien est vaincu ». <b>Chute</b> dans la lave : retour en tête de pont (ou au départ du pont si l'on tombait du pont). La remise à zéro tue le golem et referme la sortie.</li>
 </ul>
 
 <h2>11. Scénario attendu du joueur</h2>

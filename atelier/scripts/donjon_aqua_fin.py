@@ -51,7 +51,7 @@ def sequence(var, noms, porte_nom):
         CMD.append(f"execute {ouverte(nm)} run setblock {rel(*VANNES[nm][0])} {fermee(nm)}")
 
 
-VOILE = "grappin:voile"
+VOILE = "donjon:voile"
 CLE = "minecraft:tripwire_hook[minecraft:custom_name='\"Clé du Récif\"']"
 CLE_DON = "minecraft:tripwire_hook[minecraft:custom_name='\"Clé du Récif\"',minecraft:lore=['\"Ouvre la porte du Cœur du Temple\"']]"
 # la herse de depart est la toute premiere commande de la premiere chaine : elle part des le tick du clic, sans compteur ni son (le fill est sans effet une fois la herse ouverte)
