@@ -67,6 +67,7 @@ public final class GrappinClient {
             event.registerLayerDefinition(SeraphinModele.COUCHE, SeraphinModele::creerCouche);
             event.registerLayerDefinition(GolemModele.COUCHE, GolemModele::creerCouche);
             event.registerLayerDefinition(RodeurModele.COUCHE, RodeurModele::creerCouche);
+            event.registerLayerDefinition(ScaphandrierModele.COUCHE, ScaphandrierModele::creerCouche);
             event.registerLayerDefinition(PorteRendu.COUCHE, PorteGeometrie::creerCouche);
             event.registerLayerDefinition(LevierRendu.COUCHE, LevierGeometrie::creerCouche);
             event.registerLayerDefinition(CasierRendu.COUCHE, CasierGeometrie::creerCouche);
@@ -81,6 +82,8 @@ public final class GrappinClient {
             event.registerEntityRenderer(Grappin.GRAINE.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);   // la graine n'est que sa traînee de particules
             event.registerEntityRenderer(Grappin.GOLEM.get(), GolemRendu::new);
             event.registerEntityRenderer(Grappin.RODEUR.get(), RodeurRendu::new);
+            event.registerEntityRenderer(Grappin.SCAPHANDRIER.get(), ScaphandrierRendu::new);
+            event.registerEntityRenderer(Grappin.HARPON.get(), ScaphandrierRendu.Harpon::new);
             event.registerEntityRenderer(DonjonBlocs.PORTE.get(), PorteRendu::new);
             event.registerBlockEntityRenderer(DonjonBlocs.LEVIER_ENTITE.get(), LevierRendu::new);
             event.registerBlockEntityRenderer(DonjonBlocs.CASIER_ENTITE.get(), CasierRendu::new);

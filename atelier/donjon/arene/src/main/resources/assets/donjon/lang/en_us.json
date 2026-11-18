@@ -52,5 +52,8 @@
   "item.donjon.cle_bleue": "Blue Key",
   "item.donjon.cle_jaune": "Yellow Key",
   "item.donjon.cle_rouge": "Red Key",
-  "entity.donjon.porte_donjon": "Dungeon Door"
+  "entity.donjon.porte_donjon": "Dungeon Door",
+  "entity.donjon.scaphandrier": "Rusty Diver",
+  "item.donjon.scaphandrier_spawn_egg": "Rusty Diver Spawn Egg",
+  "entity.donjon.harpon_scaphandrier": "Diver's Harpoon"
 }

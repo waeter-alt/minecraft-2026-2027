@@ -80,6 +80,21 @@ public class Grappin {
                     .sized(1.6F, 2.4F)
                     .clientTrackingRange(10)
                     .build("rodeur"));
+    /** Le Scaphandrier rouille, mini-boss du Donjon de la Station (armure de plongee de 2,6 blocs), et son harpon a chaine. */
+    public static final DeferredHolder<EntityType<?>, EntityType<Scaphandrier>> SCAPHANDRIER = ENTITES.register("scaphandrier",
+            () -> EntityType.Builder.<Scaphandrier>of(Scaphandrier::new, MobCategory.MONSTER)
+                    .sized(1.3F, 2.6F)
+                    .clientTrackingRange(10)
+                    .build("scaphandrier"));
+    public static final DeferredHolder<EntityType<?>, EntityType<HarponScaphandrier>> HARPON = ENTITES.register("harpon_scaphandrier",
+            () -> EntityType.Builder.<HarponScaphandrier>of(HarponScaphandrier::new, MobCategory.MISC)
+                    .sized(0.3F, 0.3F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .noSave()
+                    .build("harpon_scaphandrier"));
+    public static final DeferredItem<DeferredSpawnEggItem> SCAPHANDRIER_OEUF = ITEMS.register("scaphandrier_spawn_egg",
+            () -> new DeferredSpawnEggItem(SCAPHANDRIER, 0xA0762F, 0x3E7A66, new Item.Properties()));
     /** Le Leviathan, serpent de mer du Donjon 2 (boite de la tete de 5 x 5 blocs), et son oeuf d'apparition. */
     public static final DeferredHolder<EntityType<?>, EntityType<Leviathan>> LEVIATHAN = ENTITES.register("leviathan",
             () -> EntityType.Builder.<Leviathan>of(Leviathan::new, MobCategory.MONSTER)
@@ -133,6 +148,7 @@ public class Grappin {
                 sortie.accept(GOLEM_OEUF.get());
                 sortie.accept(RODEUR_OEUF.get());
                 sortie.accept(LEVIATHAN_OEUF.get());
+                sortie.accept(SCAPHANDRIER_OEUF.get());
             })
             .build());
 
@@ -152,6 +168,7 @@ public class Grappin {
         event.put(GOLEM.get(), Golem.attributs().build());
         event.put(RODEUR.get(), Rodeur.attributs().build());
         event.put(LEVIATHAN.get(), Leviathan.attributs().build());
+        event.put(SCAPHANDRIER.get(), Scaphandrier.attributs().build());
     }
 
     private void reseau(RegisterPayloadHandlersEvent event) {

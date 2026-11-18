@@ -5041,11 +5041,62 @@
         "f0a222f7-b02b-5120-812c-3a9cb1a14b13",
         "00eaf552-9a11-53cc-a596-7b50aec53482",
         "86b4cb77-d2eb-55c7-aa09-f9f94f1e646b",
-        "d0de2de7-794f-5530-b7d9-0039430bde0d",
-        "d7c60fb2-3d22-5dcf-baa2-dc045909cbbf",
-        "2580c5c0-c3e9-5d5d-a4e9-bec311c40ca2",
         "9a34b316-0d3f-56c0-9b43-70f2a4da0a09",
-        "3a626e68-0197-5171-acff-8339f3fb4662"
+        "3a626e68-0197-5171-acff-8339f3fb4662",
+        {
+         "name": "fissure1",
+         "origin": [
+          0,
+          29,
+          0
+         ],
+         "color": 0,
+         "uuid": "13376a70-3376-5ddd-b4d9-d298df8a714c",
+         "export": true,
+         "isOpen": true,
+         "locked": false,
+         "visibility": true,
+         "autouv": 0,
+         "children": [
+          "d0de2de7-794f-5530-b7d9-0039430bde0d"
+         ]
+        },
+        {
+         "name": "fissure2",
+         "origin": [
+          0,
+          29,
+          0
+         ],
+         "color": 0,
+         "uuid": "f5771dbd-1b42-5df2-aac8-d97d82eb67a4",
+         "export": true,
+         "isOpen": true,
+         "locked": false,
+         "visibility": true,
+         "autouv": 0,
+         "children": [
+          "d7c60fb2-3d22-5dcf-baa2-dc045909cbbf"
+         ]
+        },
+        {
+         "name": "hublot_brise",
+         "origin": [
+          0,
+          29,
+          0
+         ],
+         "color": 0,
+         "uuid": "cdc8ab7f-5bc8-5481-8f97-969ea7d1ce33",
+         "export": true,
+         "isOpen": true,
+         "locked": false,
+         "visibility": true,
+         "autouv": 0,
+         "children": [
+          "2580c5c0-c3e9-5d5d-a4e9-bec311c40ca2"
+         ]
+        }
        ]
       },
       {

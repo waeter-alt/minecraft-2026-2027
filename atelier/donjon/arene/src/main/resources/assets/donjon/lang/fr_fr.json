@@ -52,5 +52,8 @@
   "item.donjon.cle_bleue": "Clé bleu",
   "item.donjon.cle_jaune": "Clé jaune",
   "item.donjon.cle_rouge": "Clé rouge",
-  "entity.donjon.porte_donjon": "Porte du donjon"
+  "entity.donjon.porte_donjon": "Porte du donjon",
+  "entity.donjon.scaphandrier": "Scaphandrier rouillé",
+  "item.donjon.scaphandrier_spawn_egg": "Œuf d'apparition de Scaphandrier rouillé",
+  "entity.donjon.harpon_scaphandrier": "Harpon du Scaphandrier"
 }

@@ -24,7 +24,7 @@ class TestScaphandrier(unittest.TestCase):
             visiter(g, None)
 
     def test_os(self):
-        self.assertEqual({"racine": None, "corps": "racine", "casque": "corps", "bras_g": "corps", "cle": "bras_g", "bras_d": "corps",
+        self.assertEqual({"racine": None, "corps": "racine", "casque": "corps", "bras_g": "corps", "cle": "bras_g", "fissure1": "casque", "fissure2": "casque", "hublot_brise": "casque", "bras_d": "corps",
                           "harpon": "bras_d", "tuyaux": "corps", "jambe_g": "racine", "jambe_d": "racine"}, self.os)
 
     def test_taille(self):

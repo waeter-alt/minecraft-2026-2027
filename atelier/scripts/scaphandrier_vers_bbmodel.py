@@ -79,6 +79,8 @@ def scaphandrier():
     os_("racine", None, (0, 0, 0))
     os_("corps", "racine", (0, 14, 0))
     os_("casque", "corps", (0, 29, 0))
+    for n in ("fissure1", "fissure2", "hublot_brise"):
+        os_(n, "casque", (0, 29, 0))                                             # os a part : le rendu les montre selon la vie
     os_("bras_g", "corps", (8, 27, 0))
     os_("cle", "bras_g", (9, 12, 0))
     os_("bras_d", "corps", (-8, 27, 0))
@@ -118,9 +120,9 @@ def scaphandrier():
     c("casque", "cadre_d", "laiton", (-4.5, 31.5, -7), (-3.5, 38.5, -6))
     c("casque", "grille_v", "fer_sombre", (-0.4, 31.5, -6.9), (0.4, 38.5, -6.6))
     c("casque", "lueur_hublot", "vitre", (-3.5, 31.5, -6.5), (3.5, 38.5, -6))
-    c("casque", "fissure1", "fissure", (-3.4, 31.6, -6.6), (3.4, 38.4, -6.55))
-    c("casque", "fissure2", "fissure", (-3.4, 31.6, -6.65), (3.4, 38.4, -6.6))
-    c("casque", "hublot_brise", "trou", (-3.5, 31.5, -6.55), (3.5, 38.5, -6.1))
+    c("fissure1", "fissure1", "fissure", (-3.4, 31.6, -6.6), (3.4, 38.4, -6.55))
+    c("fissure2", "fissure2", "fissure", (-3.4, 31.6, -6.65), (3.4, 38.4, -6.6))
+    c("hublot_brise", "hublot_brise", "trou", (-3.5, 31.5, -6.55), (3.5, 38.5, -6.1))
     c("casque", "hublot_g", "vitre_sombre", (6.5, 33, -2), (7, 37, 2))
     c("casque", "hublot_d", "vitre_sombre", (-7, 33, -2), (-6.5, 37, 2))
     for s, b in ((1, "bras_g"), (-1, "bras_d")):
