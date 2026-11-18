@@ -1086,11 +1086,11 @@
       "allow_mirror_modeling": true,
       "from": [
         9,
-        13,
+        10,
         7.5
       ],
       "to": [
-        11,
+        10,
         14,
         8.5
       ],
@@ -1109,54 +1109,54 @@
       "faces": {
         "north": {
           "uv": [
-            9,
             12,
-            11,
-            13
+            8,
+            13,
+            12
           ],
           "texture": 0
         },
         "east": {
           "uv": [
             12,
-            12,
+            8,
             13.0,
-            13
+            12
           ],
           "texture": 0
         },
         "south": {
           "uv": [
-            9,
             12,
-            11,
-            13
+            8,
+            13,
+            12
           ],
           "texture": 0
         },
         "west": {
           "uv": [
             12,
-            12,
+            8,
             13.0,
-            13
+            12
           ],
           "texture": 0
         },
         "up": {
           "uv": [
-            9,
             12,
-            11,
+            12,
+            13,
             13.0
           ],
           "texture": 0
         },
         "down": {
           "uv": [
-            9,
             12,
-            11,
+            12,
+            13,
             13.0
           ],
           "texture": 0
@@ -1166,20 +1166,20 @@
       "uuid": "c6562424-bc66-5cc4-aef7-13f7b3303389"
     },
     {
-      "name": "griffe_est_coude",
+      "name": "griffe_est_pointe",
       "box_uv": false,
       "rescale": false,
       "locked": false,
       "render_order": "default",
       "allow_mirror_modeling": true,
       "from": [
-        11,
-        11,
+        9,
+        9,
         7.5
       ],
       "to": [
-        12,
-        14,
+        10,
+        10,
         8.5
       ],
       "autouv": 0,
@@ -1197,77 +1197,77 @@
       "faces": {
         "north": {
           "uv": [
-            15,
-            9,
-            16,
-            12
+            31,
+            1,
+            32,
+            2
           ],
           "texture": 0
         },
         "east": {
           "uv": [
-            15,
-            9,
-            16.0,
-            12
+            31,
+            1,
+            32.0,
+            2
           ],
           "texture": 0
         },
         "south": {
           "uv": [
-            15,
-            9,
-            16,
-            12
+            31,
+            1,
+            32,
+            2
           ],
           "texture": 0
         },
         "west": {
           "uv": [
-            15,
-            9,
-            16.0,
-            12
+            31,
+            1,
+            32.0,
+            2
           ],
           "texture": 0
         },
         "up": {
           "uv": [
-            15,
+            31,
             1,
-            16,
+            32,
             2.0
           ],
           "texture": 0
         },
         "down": {
           "uv": [
-            15,
+            31,
             1,
-            16,
+            32,
             2.0
           ],
           "texture": 0
         }
       },
       "type": "cube",
-      "uuid": "c147699c-3c3c-54d8-b542-c476b396d237"
+      "uuid": "fe88864a-8362-5642-8823-fcd130dd9aa7"
     },
     {
-      "name": "griffe_est_pointe",
+      "name": "griffe_ouest_bras",
       "box_uv": false,
       "rescale": false,
       "locked": false,
       "render_order": "default",
       "allow_mirror_modeling": true,
       "from": [
-        11,
+        6,
         10,
         7.5
       ],
       "to": [
-        12,
-        11,
+        7,
+        14,
         8.5
       ],
       "autouv": 0,
@@ -1285,77 +1285,77 @@
       "faces": {
         "north": {
           "uv": [
-            26,
-            6,
-            27,
-            7
+            10,
+            5,
+            11,
+            9
           ],
           "texture": 0
         },
         "east": {
           "uv": [
-            26,
-            6,
-            27.0,
-            7
+            10,
+            5,
+            11.0,
+            9
           ],
           "texture": 0
         },
         "south": {
           "uv": [
-            26,
-            6,
-            27,
-            7
+            10,
+            5,
+            11,
+            9
           ],
           "texture": 0
         },
         "west": {
           "uv": [
-            26,
-            6,
-            27.0,
-            7
+            10,
+            5,
+            11.0,
+            9
           ],
           "texture": 0
         },
         "up": {
           "uv": [
-            26,
+            10,
             6,
-            27,
+            11,
             7.0
           ],
           "texture": 0
         },
         "down": {
           "uv": [
-            26,
+            10,
             6,
-            27,
+            11,
             7.0
           ],
           "texture": 0
         }
       },
       "type": "cube",
-      "uuid": "fe88864a-8362-5642-8823-fcd130dd9aa7"
+      "uuid": "0a5371b8-0987-5ade-b148-1e6e194ca4e1"
     },
     {
-      "name": "griffe_ouest_bras",
+      "name": "griffe_ouest_pointe",
       "box_uv": false,
       "rescale": false,
       "locked": false,
       "render_order": "default",
       "allow_mirror_modeling": true,
       "from": [
-        5,
-        13,
+        6,
+        9,
         7.5
       ],
       "to": [
         7,
-        14,
+        10,
         8.5
       ],
       "autouv": 0,
@@ -1373,78 +1373,78 @@
       "faces": {
         "north": {
           "uv": [
-            11,
-            11,
-            13,
-            12
+            29,
+            3,
+            30,
+            4
           ],
           "texture": 0
         },
         "east": {
           "uv": [
-            13,
-            11,
-            14.0,
-            12
+            29,
+            3,
+            30.0,
+            4
           ],
           "texture": 0
         },
         "south": {
           "uv": [
-            11,
-            11,
-            13,
-            12
+            29,
+            3,
+            30,
+            4
           ],
           "texture": 0
         },
         "west": {
           "uv": [
-            13,
-            11,
-            14.0,
-            12
+            29,
+            3,
+            30.0,
+            4
           ],
           "texture": 0
         },
         "up": {
           "uv": [
-            11,
-            11,
-            13,
-            12.0
+            29,
+            3,
+            30,
+            4.0
           ],
           "texture": 0
         },
         "down": {
           "uv": [
-            11,
-            11,
-            13,
-            12.0
+            29,
+            3,
+            30,
+            4.0
           ],
           "texture": 0
         }
       },
       "type": "cube",
-      "uuid": "0a5371b8-0987-5ade-b148-1e6e194ca4e1"
+      "uuid": "3014dd44-b43c-5a1a-af51-c9614a855447"
     },
     {
-      "name": "griffe_ouest_coude",
+      "name": "griffe_sud_bras",
       "box_uv": false,
       "rescale": false,
       "locked": false,
       "render_order": "default",
       "allow_mirror_modeling": true,
       "from": [
-        4,
-        11,
-        7.5
+        7.5,
+        10,
+        9
       ],
       "to": [
-        5,
+        8.5,
         14,
-        8.5
+        10
       ],
       "autouv": 0,
       "color": 0,
@@ -1462,36 +1462,36 @@
         "north": {
           "uv": [
             8,
-            10,
-            9,
-            13
+            2,
+            9.0,
+            6
           ],
           "texture": 0
         },
         "east": {
           "uv": [
             8,
-            10,
-            9.0,
-            13
+            2,
+            9,
+            6
           ],
           "texture": 0
         },
         "south": {
           "uv": [
             8,
-            10,
-            9,
-            13
+            2,
+            9.0,
+            6
           ],
           "texture": 0
         },
         "west": {
           "uv": [
             8,
-            10,
-            9.0,
-            13
+            2,
+            9,
+            6
           ],
           "texture": 0
         },
@@ -1499,8 +1499,8 @@
           "uv": [
             8,
             0,
-            9,
-            1.0
+            9.0,
+            1
           ],
           "texture": 0
         },
@@ -1508,31 +1508,31 @@
           "uv": [
             8,
             0,
-            9,
-            1.0
+            9.0,
+            1
           ],
           "texture": 0
         }
       },
       "type": "cube",
-      "uuid": "0ea81ad1-5eed-516a-926e-c5e22830d909"
+      "uuid": "3a01fef9-237a-5a55-b591-3254dde74fce"
     },
     {
-      "name": "griffe_ouest_pointe",
+      "name": "griffe_sud_pointe",
       "box_uv": false,
       "rescale": false,
       "locked": false,
       "render_order": "default",
       "allow_mirror_modeling": true,
       "from": [
-        4,
-        10,
-        7.5
+        7.5,
+        9,
+        9
       ],
       "to": [
-        5,
-        11,
-        8.5
+        8.5,
+        10,
+        10
       ],
       "autouv": 0,
       "color": 1,
@@ -1551,7 +1551,7 @@
           "uv": [
             27,
             5,
-            28,
+            28.0,
             6
           ],
           "texture": 0
@@ -1560,7 +1560,7 @@
           "uv": [
             27,
             5,
-            28.0,
+            28,
             6
           ],
           "texture": 0
@@ -1569,7 +1569,7 @@
           "uv": [
             27,
             5,
-            28,
+            28.0,
             6
           ],
           "texture": 0
@@ -1578,7 +1578,7 @@
           "uv": [
             27,
             5,
-            28.0,
+            28,
             6
           ],
           "texture": 0
@@ -1587,8 +1587,8 @@
           "uv": [
             27,
             5,
-            28,
-            6.0
+            28.0,
+            6
           ],
           "texture": 0
         },
@@ -1596,17 +1596,17 @@
           "uv": [
             27,
             5,
-            28,
-            6.0
+            28.0,
+            6
           ],
           "texture": 0
         }
       },
       "type": "cube",
-      "uuid": "3014dd44-b43c-5a1a-af51-c9614a855447"
+      "uuid": "475ccaa0-9f19-5048-87a9-cf808f31a27d"
     },
     {
-      "name": "griffe_sud_bras",
+      "name": "griffe_nord_bras",
       "box_uv": false,
       "rescale": false,
       "locked": false,
@@ -1614,13 +1614,13 @@
       "allow_mirror_modeling": true,
       "from": [
         7.5,
-        13,
-        9
+        10,
+        6
       ],
       "to": [
         8.5,
         14,
-        11
+        7
       ],
       "autouv": 0,
       "color": 2,
@@ -1638,63 +1638,63 @@
         "north": {
           "uv": [
             14,
-            10,
+            12,
             15.0,
-            11
+            16
           ],
           "texture": 0
         },
         "east": {
           "uv": [
-            13,
-            10,
+            14,
+            12,
             15,
-            11
+            16
           ],
           "texture": 0
         },
         "south": {
           "uv": [
             14,
-            10,
+            12,
             15.0,
-            11
+            16
           ],
           "texture": 0
         },
         "west": {
           "uv": [
-            13,
-            10,
+            14,
+            12,
             15,
-            11
+            16
           ],
           "texture": 0
         },
         "up": {
           "uv": [
             14,
-            0,
+            10,
             15.0,
-            2
+            11
           ],
           "texture": 0
         },
         "down": {
           "uv": [
             14,
-            0,
+            10,
             15.0,
-            2
+            11
           ],
           "texture": 0
         }
       },
       "type": "cube",
-      "uuid": "3a01fef9-237a-5a55-b591-3254dde74fce"
+      "uuid": "01e48995-5d6d-558d-82c6-6916b54706d2"
     },
     {
-      "name": "griffe_sud_coude",
+      "name": "griffe_nord_pointe",
       "box_uv": false,
       "rescale": false,
       "locked": false,
@@ -1702,13 +1702,13 @@
       "allow_mirror_modeling": true,
       "from": [
         7.5,
-        11,
-        11
+        9,
+        6
       ],
       "to": [
         8.5,
-        14,
-        12
+        10,
+        7
       ],
       "autouv": 0,
       "color": 3,
@@ -1725,407 +1725,55 @@
       "faces": {
         "north": {
           "uv": [
-            9,
-            11,
-            10.0,
-            14
+            25,
+            7,
+            26.0,
+            8
           ],
           "texture": 0
         },
         "east": {
           "uv": [
-            9,
-            11,
-            10,
-            14
+            25,
+            7,
+            26,
+            8
           ],
           "texture": 0
         },
         "south": {
           "uv": [
-            9,
-            11,
-            10.0,
-            14
+            25,
+            7,
+            26.0,
+            8
           ],
           "texture": 0
         },
         "west": {
           "uv": [
-            9,
-            11,
-            10,
-            14
+            25,
+            7,
+            26,
+            8
           ],
           "texture": 0
         },
         "up": {
           "uv": [
-            9,
-            15,
-            10.0,
-            16
+            25,
+            7,
+            26.0,
+            8
           ],
           "texture": 0
         },
         "down": {
           "uv": [
-            9,
-            15,
-            10.0,
-            16
-          ],
-          "texture": 0
-        }
-      },
-      "type": "cube",
-      "uuid": "6cfb6414-f79f-5bc6-a3ba-af1f902f4929"
-    },
-    {
-      "name": "griffe_sud_pointe",
-      "box_uv": false,
-      "rescale": false,
-      "locked": false,
-      "render_order": "default",
-      "allow_mirror_modeling": true,
-      "from": [
-        7.5,
-        10,
-        11
-      ],
-      "to": [
-        8.5,
-        11,
-        12
-      ],
-      "autouv": 0,
-      "color": 4,
-      "origin": [
-        8,
-        8,
-        8
-      ],
-      "rotation": [
-        0,
-        0,
-        -45
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            28,
-            4,
-            29.0,
-            5
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            28,
-            4,
-            29,
-            5
-          ],
-          "texture": 0
-        },
-        "south": {
-          "uv": [
-            28,
-            4,
-            29.0,
-            5
-          ],
-          "texture": 0
-        },
-        "west": {
-          "uv": [
-            28,
-            4,
-            29,
-            5
-          ],
-          "texture": 0
-        },
-        "up": {
-          "uv": [
-            28,
-            4,
-            29.0,
-            5
-          ],
-          "texture": 0
-        },
-        "down": {
-          "uv": [
-            28,
-            4,
-            29.0,
-            5
-          ],
-          "texture": 0
-        }
-      },
-      "type": "cube",
-      "uuid": "475ccaa0-9f19-5048-87a9-cf808f31a27d"
-    },
-    {
-      "name": "griffe_nord_bras",
-      "box_uv": false,
-      "rescale": false,
-      "locked": false,
-      "render_order": "default",
-      "allow_mirror_modeling": true,
-      "from": [
-        7.5,
-        13,
-        5
-      ],
-      "to": [
-        8.5,
-        14,
-        7
-      ],
-      "autouv": 0,
-      "color": 5,
-      "origin": [
-        8,
-        8,
-        8
-      ],
-      "rotation": [
-        0,
-        0,
-        -45
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            15,
-            9,
-            16.0,
-            10
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            8,
-            9,
-            10,
-            10
-          ],
-          "texture": 0
-        },
-        "south": {
-          "uv": [
-            15,
-            9,
-            16.0,
-            10
-          ],
-          "texture": 0
-        },
-        "west": {
-          "uv": [
-            8,
-            9,
-            10,
-            10
-          ],
-          "texture": 0
-        },
-        "up": {
-          "uv": [
-            15,
-            0,
-            16.0,
-            2
-          ],
-          "texture": 0
-        },
-        "down": {
-          "uv": [
-            15,
-            0,
-            16.0,
-            2
-          ],
-          "texture": 0
-        }
-      },
-      "type": "cube",
-      "uuid": "01e48995-5d6d-558d-82c6-6916b54706d2"
-    },
-    {
-      "name": "griffe_nord_coude",
-      "box_uv": false,
-      "rescale": false,
-      "locked": false,
-      "render_order": "default",
-      "allow_mirror_modeling": true,
-      "from": [
-        7.5,
-        11,
-        4
-      ],
-      "to": [
-        8.5,
-        14,
-        5
-      ],
-      "autouv": 0,
-      "color": 6,
-      "origin": [
-        8,
-        8,
-        8
-      ],
-      "rotation": [
-        0,
-        0,
-        -45
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            10,
-            12,
-            11.0,
-            15
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            10,
-            12,
-            11,
-            15
-          ],
-          "texture": 0
-        },
-        "south": {
-          "uv": [
-            10,
-            12,
-            11.0,
-            15
-          ],
-          "texture": 0
-        },
-        "west": {
-          "uv": [
-            10,
-            12,
-            11,
-            15
-          ],
-          "texture": 0
-        },
-        "up": {
-          "uv": [
-            10,
-            14,
-            11.0,
-            15
-          ],
-          "texture": 0
-        },
-        "down": {
-          "uv": [
-            10,
-            14,
-            11.0,
-            15
-          ],
-          "texture": 0
-        }
-      },
-      "type": "cube",
-      "uuid": "79ae5d01-e2cc-592f-8936-5cdc05d14c86"
-    },
-    {
-      "name": "griffe_nord_pointe",
-      "box_uv": false,
-      "rescale": false,
-      "locked": false,
-      "render_order": "default",
-      "allow_mirror_modeling": true,
-      "from": [
-        7.5,
-        10,
-        4
-      ],
-      "to": [
-        8.5,
-        11,
-        5
-      ],
-      "autouv": 0,
-      "color": 7,
-      "origin": [
-        8,
-        8,
-        8
-      ],
-      "rotation": [
-        0,
-        0,
-        -45
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            29,
-            3,
-            30.0,
-            4
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            29,
-            3,
-            30,
-            4
-          ],
-          "texture": 0
-        },
-        "south": {
-          "uv": [
-            29,
-            3,
-            30.0,
-            4
-          ],
-          "texture": 0
-        },
-        "west": {
-          "uv": [
-            29,
-            3,
-            30,
-            4
-          ],
-          "texture": 0
-        },
-        "up": {
-          "uv": [
-            29,
-            3,
-            30.0,
-            4
-          ],
-          "texture": 0
-        },
-        "down": {
-          "uv": [
-            29,
-            3,
-            30.0,
-            4
+            25,
+            7,
+            26.0,
+            8
           ],
           "texture": 0
         }
@@ -2148,16 +1796,12 @@
     "4cc53cad-07fa-506e-adc9-dc853170475d",
     "2e995081-1b3a-57cb-bb94-37ab93ae1c54",
     "c6562424-bc66-5cc4-aef7-13f7b3303389",
-    "c147699c-3c3c-54d8-b542-c476b396d237",
     "fe88864a-8362-5642-8823-fcd130dd9aa7",
     "0a5371b8-0987-5ade-b148-1e6e194ca4e1",
-    "0ea81ad1-5eed-516a-926e-c5e22830d909",
     "3014dd44-b43c-5a1a-af51-c9614a855447",
     "3a01fef9-237a-5a55-b591-3254dde74fce",
-    "6cfb6414-f79f-5bc6-a3ba-af1f902f4929",
     "475ccaa0-9f19-5048-87a9-cf808f31a27d",
     "01e48995-5d6d-558d-82c6-6916b54706d2",
-    "79ae5d01-e2cc-592f-8936-5cdc05d14c86",
     "79dd36a7-89bb-557f-b357-a0d3ba349ac6"
   ],
   "textures": [

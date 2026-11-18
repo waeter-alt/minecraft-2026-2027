@@ -54,6 +54,20 @@ public class Crochet extends ThrowableItemProjectile {
         return this.entityData.get(ACCROCHE);
     }
 
+    private int accrocheA = -1;                 // cote client : tick ou le crochet s'est accroche (les griffes serrent alors l'ancrage)
+
+    int accrocheA() {
+        return accrocheA;
+    }
+
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> donnee) {
+        super.onSyncedDataUpdated(donnee);
+        if (ACCROCHE.equals(donnee) && estAccroche() && accrocheA < 0) {
+            accrocheA = this.tickCount;
+        }
+    }
+
     @Override
     protected Item getDefaultItem() {
         return Grappin.GRAPPIN.get();
