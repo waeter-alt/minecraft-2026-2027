@@ -54,6 +54,15 @@ class TestBbmodelVersJava(unittest.TestCase):
             self.assertEqual(4, len(ch["PETALES"][i]))
         self.assertIn("String[][] PETALES", bj.java_geometrie(modele, "fr.test", "Geo"))
 
+    def test_format_blockbench_5(self):
+        """Blockbench 5 enregistre les os a part (groups) et ne garde que leurs uuid dans l'outliner : meme Java qu'avant."""
+        v5 = json.loads(json.dumps(MINI))
+        g = v5["outliner"][0]
+        v5["groups"] = [{k: g[k] for k in ("name", "origin", "rotation", "uuid")}]
+        v5["outliner"] = [{"uuid": g["uuid"], "isOpen": True, "children": g["children"]}]
+        v5["elements"][0]["rotation"] = None
+        self.assertEqual(bj.java_geometrie(MINI, "fr.test", "Geo"), bj.java_geometrie(v5, "fr.test", "Geo"))
+
     def test_boucle(self):
         boucle = json.loads(json.dumps(MINI))
         boucle["animations"][0]["loop"] = "loop"
