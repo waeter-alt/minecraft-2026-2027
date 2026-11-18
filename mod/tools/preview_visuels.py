@@ -89,36 +89,8 @@ def sheet_icons():
     im.save(OUT / "icones.png")
 
 
-def skin_faces(path):
-    sk = Image.open(path).convert("RGBA")
-
-    def crop(x, y, w, h):
-        return sk.crop((x, y, x + w, y + h))
-    head = crop(8, 8, 8, 8); body = crop(20, 20, 8, 12); arm = crop(44, 20, 4, 12); leg = crop(4, 20, 4, 12)
-    back = [crop(24, 8, 8, 8), crop(32, 20, 8, 12), crop(52, 20, 4, 12), crop(12, 20, 4, 12)]
-    out = Image.new("RGBA", (16, 32), (0, 0, 0, 0))
-    out.paste(head, (4, 0)); out.paste(body, (4, 8)); out.paste(arm, (0, 8)); out.paste(arm.transpose(Image.FLIP_LEFT_RIGHT), (12, 8))
-    out.paste(leg, (4, 20)); out.paste(leg.transpose(Image.FLIP_LEFT_RIGHT), (8, 20))
-    outb = Image.new("RGBA", (16, 32), (0, 0, 0, 0))
-    outb.paste(back[0], (4, 0)); outb.paste(back[1], (4, 8)); outb.paste(back[2], (12, 8)); outb.paste(back[2], (0, 8))
-    outb.paste(back[3], (4, 20)); outb.paste(back[3], (8, 20))
-    return out, outb
-
-
-def sheet_skins():
-    z = 12
-    im = Image.new("RGBA", (4 * (16 * z + 20), 32 * z + 20), (70, 74, 82, 255))
-    for i, n in enumerate(("legionnaire", "archer")):
-        f, b = skin_faces(ROOT / "textures/entity/war" / f"{n}.png")
-        for j, t in enumerate((f, b)):
-            t = t.resize((16 * z, 32 * z), Image.NEAREST)
-            im.paste(t, ((i * 2 + j) * (16 * z + 20) + 10, 10), t)
-    im.save(OUT / "skins.png")
-
-
 if __name__ == "__main__":
     sheet_icons()
-    sheet_skins()
     names = ["poste_commercial", "guichet_imperial", "banque_regionale", "depot_regional",
              "caisse_ble", "caisse_bois", "caisse_brique", "caisse_minerai", "caisse_pierre"]
     tiles = [render_block(n, 340, 340) for n in names]

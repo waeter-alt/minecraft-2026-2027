@@ -260,6 +260,7 @@ public class AssaultRangedGoal extends Goal
       * from {@link WarAssaults#onHit} regardless, same as a melee blow. */
     private void shootAt(final ServerLevel level, final double x, final double y, final double z)
     {
+        troop.onShoot();
         final Arrow arrow = new Arrow(level, troop, new ItemStack(Items.ARROW), null);
         arrow.setBaseDamage(troop.getAttributeValue(RaiderMobUtils.MOB_ATTACK_DAMAGE));
         final double dx = x - troop.getX();

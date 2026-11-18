@@ -38,6 +38,7 @@
     "QuestJsonListenerMixin",
     "RaidManagerAccessor",
     "RaidManagerMixin",
+    "RaiderColonylessMixin",
     "RaiderWalkAiMixin",
     "ResearchManagerMixin",
     "SurvivalHandlerMixin",

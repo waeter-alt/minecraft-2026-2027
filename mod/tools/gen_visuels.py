@@ -3,7 +3,7 @@
 Génère les visuels « finis » du mod Interrègne (remplace les placeholders) :
   - icônes d'objets et du HUD (16x16),
   - textures + modèles 3D des blocs : poste commercial, guichet impérial, banque régionale, comptoir régional, 5 caisses,
-  - skins du Légionnaire et de l'Archer (64x32, mise en page « armure » de HumanoidModel).
+  (le légionnaire et l'archère ont leurs propres modèles Blockbench : art/legionnaire et art/archere.)
 
 Tout est dessiné par code (aucune dépendance à un état local) : relancer le script réécrit les fichiers à l'identique.
     python mod/tools/gen_visuels.py
@@ -173,6 +173,23 @@ def make_lingot():
     s.rect(3, 9, 3, 10, GOLD["l"])
     s.stamp(6, 5, ["x.x.x", "xxxxx"], GOLD["g"])
     s.stamp(6, 9, ["x.x.x", "xxxxx"], GOLD["d"])
+    s.outline()
+    return s.im
+
+
+def make_baguette():
+    s = Sprite()
+    wood, wood_d = rgb("a0693a"), rgb("6b4222")
+    for i in range(8):                       # manche en diagonale, du bas-gauche vers le haut-droit
+        s.px(2 + i, 13 - i, wood)
+        s.px(3 + i, 13 - i, wood_d)
+    s.px(2, 14, wood_d)
+    s.px(3, 14, wood_d)
+    star = [".x.", "xxx", ".x."]              # étoile dorée au bout, étincelles bleutées autour
+    s.stamp(10, 2, star, GOLD["l"])
+    s.px(11, 3, GOLD["h"])
+    for x, y in ((9, 1), (13, 5), (13, 1)):
+        s.px(x, y, rgb("8fe3ff"))
     s.outline()
     return s.im
 
@@ -713,185 +730,12 @@ def noise(c, rnd, a=0.05):
     return shade(c, 1 + rnd.uniform(-a, a))
 
 
-def skin_legionnaire():
-    rnd = random.Random(101)
-    s = Skin()
-    N = lambda c: noise(c, rnd)
-
-    # TÊTE : casque d'acier à cimier rouge, visage ouvert, paragnathides
-    f = s.box_faces(0, 0, 8, 8, 8)
-    s.fill(f["top"], lambda i, j, w, h: N(RED["m"]) if 3 <= i <= 4 else N(STEEL["m"]))
-    s.fill(f["bottom"], lambda i, j, w, h: N(STEEL["d"]))
-    s.fill(f["back"], lambda i, j, w, h: N(RED["m"]) if (3 <= i <= 4 and j < 6) else N(STEEL["m"]) if j < 6 else N(SKIN_D))
-    s.fill(f["right"], lambda i, j, w, h: N(STEEL["m"]) if (j < 3 or i > 5 or (j < 6 and i > 4)) else N(SKIN))
-    s.fill(f["left"], lambda i, j, w, h: N(STEEL["m"]) if (j < 3 or i < 2 or (j < 6 and i < 3)) else N(SKIN))
-
-    def face(i, j, w, h):
-        if j < 3:
-            return N(STEEL["l"]) if j == 0 else N(STEEL["m"])
-        if j == 3:
-            return GOLD["g"]                                    # bandeau doré
-        if i in (3, 4) and j < 6:
-            return N(STEEL["m"])                                # nasal
-        if j == 5 and i in (1, 2, 5, 6):
-            return BLACK if i in (2, 5) else WHITE
-        if j >= 6 and 2 <= i <= 5 and j == 6 and i in (3, 4):
-            return SKIN_D
-        if j == 7 and 2 <= i <= 5:
-            return rgb("6a3a2a")
-        return N(SKIN) if 1 <= i <= 6 else N(STEEL["m"])
-    s.fill(f["front"], face)
-
-    # CORPS : tunique rouge, ceinture dorée, cuirasse d'acier avec couronne
-    f = s.box_faces(16, 16, 8, 12, 4)
-    s.fill(f["top"], lambda i, j, w, h: N(STEEL["m"]))
-    s.fill(f["bottom"], lambda i, j, w, h: N(BROWN["d"]))
-    def torso(i, j, w, h, front=True):
-        if j == 9:
-            return GOLD["l"] if i % 3 else GOLD["g"]            # ceinture
-        if j == 10:
-            return GOLD["d"]
-        if j >= 11:
-            return N(RED["d"])                                  # pteruges
-        if j < 8:
-            c = N(STEEL["m"]) if (j % 3 != 2) else N(STEEL["d"])  # plates horizontales
-            if front and 2 <= i <= 5 and 1 <= j <= 4:
-                return GOLD["l"] if CROWN_FRONT.get((i - 2, j - 1)) else N(STEEL["l"])
-            return c
-        return N(RED["m"])
-    CROWN_FRONT = {(0, 0): 1, (3, 0): 1, (1, 1): 1, (2, 1): 1, (0, 2): 1, (1, 2): 1, (2, 2): 1, (3, 2): 1, (0, 3): 1, (1, 3): 1, (2, 3): 1, (3, 3): 1}
-    s.fill(f["front"], lambda i, j, w, h: torso(i, j, w, h, True))
-    s.fill(f["back"], lambda i, j, w, h: (RED["l"] if (j < 8 and i in (3, 4)) else torso(i, j, w, h, False)))  # cape rouge au dos
-    s.fill(f["right"], lambda i, j, w, h: torso(i, j, w, h, False))
-    s.fill(f["left"], lambda i, j, w, h: torso(i, j, w, h, False))
-
-    # BRAS : épaulière acier, manche rouge, brassard acier, main
-    def arm(i, j, w, h):
-        if j < 3:
-            return N(STEEL["l"]) if j == 0 else N(STEEL["m"])
-        if j == 3:
-            return GOLD["g"]
-        if j < 7:
-            return N(RED["m"])
-        if j < 10:
-            return N(STEEL["m"]) if j != 7 else GOLD["d"]
-        return N(SKIN)
-    f = s.box_faces(40, 16, 4, 12, 4)
-    for k in ("top", "bottom"):
-        s.fill(f[k], lambda i, j, w, h: N(STEEL["m"]) if k == "top" else N(SKIN))
-    for k in ("front", "back", "right", "left"):
-        s.fill(f[k], arm)
-
-    # JAMBES : cuir brun, jambières d'acier, bottes
-    def leg(i, j, w, h):
-        if j < 2:
-            return N(RED["d"])
-        if j < 8:
-            return N(BROWN["m"])
-        if j < 10:
-            return N(STEEL["m"]) if j == 8 else N(STEEL["d"])
-        return N(BROWN["d"])
-    f = s.box_faces(0, 16, 4, 12, 4)
-    s.fill(f["top"], lambda i, j, w, h: N(BROWN["m"]))
-    s.fill(f["bottom"], lambda i, j, w, h: N(BROWN["d"]))
-    for k in ("front", "back", "right", "left"):
-        s.fill(f[k], leg)
-    return s.im
-
-
-def skin_archer():
-    rnd = random.Random(202)
-    s = Skin()
-    N = lambda c: noise(c, rnd)
-    GREEN = {"d": rgb("1f4a24"), "m": rgb("2f6a34"), "l": rgb("4a9050")}
-    LEAF = rgb("7ab05a")
-
-    # TÊTE : capuchon vert forêt, ouverture sur le visage, masque de tissu sombre
-    f = s.box_faces(0, 0, 8, 8, 8)
-    for k in ("top", "back", "right", "left"):
-        s.fill(f[k], lambda i, j, w, h, k=k: N(GREEN["m"]) if (i + j) % 5 else N(GREEN["l"]))
-    s.fill(f["bottom"], lambda i, j, w, h: N(GREEN["d"]))
-    s.fill(f["right"], lambda i, j, w, h: N(GREEN["d"]) if i < 2 else (N(SKIN) if (i > 5 and 2 <= j <= 5) else N(GREEN["m"])))
-    s.fill(f["left"], lambda i, j, w, h: N(GREEN["d"]) if i > 5 else (N(SKIN) if (i < 2 and 2 <= j <= 5) else N(GREEN["m"])))
-
-    def face(i, j, w, h):
-        if j == 0 or i in (0, 7):
-            return N(GREEN["d"])                                # bord du capuchon
-        if j == 1:
-            return N(GREEN["m"])
-        if 2 <= j <= 5 and 1 <= i <= 6:
-            if j == 3 and i in (2, 5):
-                return BLACK if True else WHITE
-            if j == 3 and i in (1, 6):
-                return WHITE
-            return N(SKIN)
-        if j >= 6:
-            return N(GREEN["d"]) if (i + j) % 2 else N(rgb("2a2f2a"))  # cache-nez
-        return N(GREEN["m"])
-    s.fill(f["front"], face)
-    # plume de chasseur sur le capuchon
-    for (x, y) in ((11, 3), (12, 2), (12, 1)):
-        s.im.putpixel((x, y), rgb("d84a3a"))
-
-    # CORPS : chemise verte, gilet de cuir, bandoulière de carquois
-    f = s.box_faces(16, 16, 8, 12, 4)
-    s.fill(f["top"], lambda i, j, w, h: N(GREEN["m"]))
-    s.fill(f["bottom"], lambda i, j, w, h: N(BROWN["d"]))
-    def torso(i, j, w, h, front=True):
-        if j == 9:
-            return BROWN["d"] if i not in (3, 4) else GOLD["l"]  # ceinture + boucle
-        if j == 10:
-            return BROWN["d"]
-        if j >= 11:
-            return N(GREEN["d"])
-        if front and 3 <= i <= 4 and j < 9:
-            return N(BROWN["l"]) if j % 2 == 0 else N(BROWN["d"])   # laçage
-        if front and abs(i - (j - 1)) <= 0 and j < 8:
-            return N(rgb("3a2412"))                                 # bandoulière en diagonale
-        if (i < 3 or i > 4) and j >= 1:
-            return N(BROWN["m"]) if (front or True) else N(GREEN["m"])
-        return N(GREEN["m"])
-    s.fill(f["front"], lambda i, j, w, h: torso(i, j, w, h, True))
-    s.fill(f["back"], lambda i, j, w, h: (N(rgb("3a2412")) if (i - (7 - j) == 0 and j < 8) else N(BROWN["m"]) if j > 0 else N(GREEN["m"])) if j < 9 else torso(i, j, w, h, False))
-    s.fill(f["right"], lambda i, j, w, h: torso(i, j, w, h, False))
-    s.fill(f["left"], lambda i, j, w, h: torso(i, j, w, h, False))
-    # carquois dans le dos : plumes
-    for (x, y) in ((37, 21), (38, 22), (36, 22), (37, 23)):
-        s.im.putpixel((x, y), rgb("e8e2c8"))
-
-    # BRAS : manches vertes, bracelet de cuir, mains
-    def arm(i, j, w, h):
-        if j < 7:
-            return N(GREEN["m"]) if j > 0 else N(GREEN["l"])
-        if j < 10:
-            return N(BROWN["m"]) if j != 7 else BROWN["d"]
-        return N(SKIN)
-    f = s.box_faces(40, 16, 4, 12, 4)
-    s.fill(f["top"], lambda i, j, w, h: N(GREEN["l"]))
-    s.fill(f["bottom"], lambda i, j, w, h: N(SKIN))
-    for k in ("front", "back", "right", "left"):
-        s.fill(f[k], arm)
-
-    # JAMBES : pantalon olive, bandes de cuir, bottes brunes souples
-    def leg(i, j, w, h):
-        if j < 7:
-            return N(rgb("4a5530"))
-        if j < 9:
-            return N(rgb("4a5530")) if j == 7 else BROWN["d"]
-        return N(BROWN["m"]) if j < 11 else N(BROWN["d"])
-    f = s.box_faces(0, 16, 4, 12, 4)
-    s.fill(f["top"], lambda i, j, w, h: N(rgb("4a5530")))
-    s.fill(f["bottom"], lambda i, j, w, h: N(BROWN["d"]))
-    for k in ("front", "back", "right", "left"):
-        s.fill(f[k], leg)
-    return s.im
-
-
 # ---------------------------------------------------------------- orchestration
 def main():
     # objets
     save(make_coin(), "item/couronne.png")
     save(make_lingot(), "item/lingot_imperial.png")
+    save(make_baguette(), "item/baguette_de_niveau.png")
     save(make_bourse(), "item/bourse.png")
     save(make_sac(), "item/sac_de_couronnes.png")
     save(make_coffret(), "item/coffret_imperial.png")
@@ -942,8 +786,6 @@ def main():
     depot_model()
 
     # skins des troupes
-    save(skin_legionnaire(), "entity/war/legionnaire.png")
-    save(skin_archer(), "entity/war/archer.png")
 
     # anciennes textures devenues inutiles
     for old in ("block/caisse_bottom.png", "block/banque_regionale.png", "block/banque_regionale_top.png", "block/banque_regionale_front.png",
