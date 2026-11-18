@@ -207,5 +207,16 @@
   "key.categories.interregne": "Interrègne",
   "key.interregne.carte": "Carte du royaume",
   "entity.interregne.conducteur": "Conducteur de caravane",
-  "entity.interregne.escorte": "Soldat d'escorte"
+  "entity.interregne.escorte": "Soldat d'escorte",
+  "item.interregne.legionnaire_spawn_egg": "Œuf d'apparition : légionnaire",
+  "item.interregne.archer_spawn_egg": "Œuf d'apparition : archère",
+  "item.interregne.baguette_de_niveau": "Baguette de niveau",
+  "entity.interregne.legionnaire": "Légionnaire",
+  "entity.interregne.archer": "Archère",
+  "subtitles.interregne.legionnaire.hurt": "Légionnaire blessé",
+  "subtitles.interregne.legionnaire.attack": "Cri de légionnaire",
+  "subtitles.interregne.legionnaire.death": "Légionnaire meurt",
+  "subtitles.interregne.archer.hurt": "Archère blessée",
+  "subtitles.interregne.archer.shoot": "Effort d'archère",
+  "subtitles.interregne.archer.death": "Archère meurt"
 }

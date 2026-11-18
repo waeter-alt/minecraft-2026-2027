@@ -26,6 +26,7 @@ import static net.minecraft.commands.Commands.literal;
  *   /war assault [legionnaires] [archers]       — assault the colony the player stands in (default 3 légionnaires, op)
  *   /war stop                                   — pull every troop out (op)
  *   /war debug archers-siege-only &lt;true|false&gt; — dev-only: archers skip their guard scan and bombard outright
+ *   /war debug troop-level &lt;1-5&gt;                — dev-only: look of every légionnaire and archer (one model per upgrade level)
  * </pre>
  */
 @EventBusSubscriber(modid = InterregneMod.MODID)
@@ -47,7 +48,10 @@ public final class WarCommands
           .then(literal("debug")
             .then(literal("archers-siege-only")
               .then(net.minecraft.commands.Commands.argument("on", BoolArgumentType.bool())
-                .executes(ctx -> debugArchersSiegeOnly(ctx, BoolArgumentType.getBool(ctx, "on"))))));
+                .executes(ctx -> debugArchersSiegeOnly(ctx, BoolArgumentType.getBool(ctx, "on")))))
+            .then(literal("troop-level")
+              .then(net.minecraft.commands.Commands.argument("level", IntegerArgumentType.integer(1, AssaultTroop.MAX_LEVEL))
+                .executes(ctx -> debugTroopLevel(ctx, IntegerArgumentType.getInteger(ctx, "level"))))));
         event.getDispatcher().register(war);
     }
 
@@ -94,6 +98,28 @@ public final class WarCommands
         ctx.getSource().sendSystemMessage(Component.literal(on
           ? "§6Debug§r : les archers ignorent les gardes et bombardent directement."
           : "§6Debug§r : comportement normal des archers restauré (priorité aux gardes)."));
+        return 1;
+    }
+
+    /** Dev-only: sets the level (1-5) of every troop already in the world and of the ones spawned from now on, to
+      * eyeball the five models one after the other. */
+    private static int debugTroopLevel(final CommandContext<CommandSourceStack> ctx, final int level)
+    {
+        AssaultTroop.setDefaultLevel(level);
+        int changed = 0;
+        for (final ServerLevel world : ctx.getSource().getServer().getAllLevels())
+        {
+            for (final net.minecraft.world.entity.Entity entity : world.getAllEntities())
+            {
+                if (entity instanceof AssaultTroop troop)
+                {
+                    troop.setTroopLevel(level);
+                    changed++;
+                }
+            }
+        }
+        final int count = changed;
+        ctx.getSource().sendSystemMessage(Component.literal("§6Debug§r : troupes niveau " + level + " (" + count + " déjà présente(s) mise(s) à jour)."));
         return 1;
     }
 

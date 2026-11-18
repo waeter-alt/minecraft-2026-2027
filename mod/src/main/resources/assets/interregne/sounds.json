@@ -1,0 +1,152 @@
+{
+  "legionnaire.hurt": {
+    "subtitle": "subtitles.interregne.legionnaire.hurt",
+    "sounds": [
+      {
+        "name": "interregne:troops/legionnaire/hurt1",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/legionnaire/hurt2",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/legionnaire/hurt3",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/legionnaire/hurt4",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/legionnaire/hurt5",
+        "volume": 0.9
+      }
+    ]
+  },
+  "legionnaire.attack": {
+    "subtitle": "subtitles.interregne.legionnaire.attack",
+    "sounds": [
+      {
+        "name": "interregne:troops/legionnaire/attack1",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/legionnaire/attack2",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/legionnaire/attack3",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/legionnaire/attack4",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/legionnaire/attack5",
+        "volume": 0.9
+      }
+    ]
+  },
+  "legionnaire.death": {
+    "subtitle": "subtitles.interregne.legionnaire.death",
+    "sounds": [
+      {
+        "name": "interregne:troops/legionnaire/death1",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/legionnaire/death2",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/legionnaire/death3",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/legionnaire/death4",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/legionnaire/death5",
+        "volume": 0.9
+      }
+    ]
+  },
+  "archer.hurt": {
+    "subtitle": "subtitles.interregne.archer.hurt",
+    "sounds": [
+      {
+        "name": "interregne:troops/archer/hurt1",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/archer/hurt2",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/archer/hurt3",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/archer/hurt4",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/archer/hurt5",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/archer/hurt6",
+        "volume": 0.9
+      }
+    ]
+  },
+  "archer.shoot": {
+    "subtitle": "subtitles.interregne.archer.shoot",
+    "sounds": [
+      {
+        "name": "interregne:troops/archer/shoot1",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/archer/shoot2",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/archer/shoot3",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/archer/shoot4",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/archer/shoot5",
+        "volume": 0.9
+      }
+    ]
+  },
+  "archer.death": {
+    "subtitle": "subtitles.interregne.archer.death",
+    "sounds": [
+      {
+        "name": "interregne:troops/archer/death1",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/archer/death2",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/archer/death3",
+        "volume": 0.9
+      },
+      {
+        "name": "interregne:troops/archer/death4",
+        "volume": 0.9
+      }
+    ]
+  }
+}

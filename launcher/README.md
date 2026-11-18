@@ -18,7 +18,7 @@ Contenu de ce dossier :
 
 | Chemin | Rôle |
 |---|---|
-| `pack/` | Le modpack au format packwiz (MC 1.21.1, NeoForge 21.1.216, 55 mods et 1 shaderpack). **C'est ce dossier qu'on publie.** |
+| `pack/` | Le modpack au format packwiz (MC 1.21.1, NeoForge 21.1.216, 56 mods et 1 shaderpack). **C'est ce dossier qu'on publie.** |
 | `prism-instance/` | Le modèle d'instance Prism : `instance.cfg`, `mmc-pack.json`, `minecraft/options.txt`. |
 | `scripts/` | `prepare-instance.ps1`, `make-zip.ps1`, `publish-jar.ps1` et `refresh-index.ps1`. |
 | `MISSING_MODS.md` | Ce qui n'est pas sur Modrinth (MineColonies & co.) et les actions à prévoir. |
@@ -111,7 +111,7 @@ Le script :
 
 Réglages de l'instance (`instance.cfg`) :
 
-- **Mémoire de 2 à 6 Go.** Avec Distant Horizons et environ 55 mods, 6 Go est confortable. Pour un ami qui n'a que 8 Go de RAM, descendre à 4 Go dans les paramètres de l'instance.
+- **Mémoire de 2 à 6 Go.** Avec Distant Horizons et environ 56 mods, 6 Go est confortable. Pour un ami qui n'a que 8 Go de RAM, descendre à 4 Go dans les paramètres de l'instance.
 - **JVM :** G1 réglé pour des pauses courtes (`MaxGCPauseMillis=100`, régions de 32 Mo) et `-Dfile.encoding=UTF-8` pour les accents.
 - **Auto-join :** `JoinServerOnLaunch=true`. Prism lance Minecraft avec `--quickPlayMultiplayer`.
 - **`options.txt` :** `lang:fr_fr`, distance de rendu 12 et de simulation 8 (Distant Horizons s'occupe du lointain), pas d'auto-jump, écran d'accessibilité et tutoriel sautés, voix de TownTalk activées.
@@ -120,7 +120,7 @@ Réglages de l'instance (`instance.cfg`) :
 ## Étape 5 : tester
 
 1. Dans Prism, ajoute **ton** compte Microsoft (en haut à droite → *Gérer les comptes* → *Ajouter Microsoft*).
-2. Lance l'instance. La fenêtre packwiz télécharge environ 55 mods au premier lancement, puis Minecraft démarre et se connecte au serveur.
+2. Lance l'instance. La fenêtre packwiz télécharge environ 56 mods au premier lancement, puis Minecraft démarre et se connecte au serveur.
 3. Vérifie :
    - les 6 mods CurseForge (MineColonies & co.) s'installent **sans** fenêtre « téléchargement manuel » (voir `MISSING_MODS.md` sinon) ;
    - le jeu est en français ;

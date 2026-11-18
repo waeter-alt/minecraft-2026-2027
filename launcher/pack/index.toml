@@ -121,6 +121,11 @@ hash = "897c27154e06bf4b589e0598ab4aa1d30b2c36a2ddafdb9921a4cab0f5f897eb"
 metafile = true
 
 [[files]]
+file = "mods/geckolib.pw.toml"
+hash = "009e9571a6858f57168decbfc546bd49de0d9624f98164148d9f9e3af2225e73"
+metafile = true
+
+[[files]]
 file = "mods/interregne.pw.toml"
 hash = "2d68e6cac769d0a5e013af4aebcb04b4d6ee106e6cea628d7036e84d3e63bba9"
 metafile = true
