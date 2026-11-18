@@ -1,52 +1,91 @@
 package fr.kodistan.interregne.economy;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * The visible wealth of a regional bank, laid around it by {@link Vault}: a pure decoration.
+ * The visible wealth of a regional bank, set into its vault room by {@link Vault}: a pure decoration.
  * It has no item, drops nothing and cannot be pushed, so the vault is never a gold mine.
- * Stages: 1-2 coin piles, 3-4 stacked ingots, 5 a treasure chest, 6 a hoard.
+ * Five kinds, each growing over six stages (see tools/gen_vault_assets.py): coin piles, stacked gold bars,
+ * open chests overflowing with gold, gem clusters and jewel cushions.
  */
 public class VaultHoardBlock extends Block
 {
     public static final int MAX_STAGE = 6;
 
     public static final IntegerProperty STAGE = IntegerProperty.create("stage", 1, MAX_STAGE);
+    public static final EnumProperty<Kind> KIND = EnumProperty.create("kind", Kind.class);
+    public static final DirectionProperty FACING = net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING;
 
-    private static final VoxelShape[] SHAPES = {
-      Block.box(3, 0, 3, 13, 2, 13),
-      Block.box(1, 0, 1, 15, 5, 15),
-      Block.box(1, 0, 1, 13, 3, 13),
-      Block.box(2, 0, 2, 13, 8, 14),
-      Block.box(1, 0, 2, 15, 11, 14),
-      Shapes.or(Block.box(0, 0, 0, 16, 4, 16), Block.box(2, 4, 2, 14, 8, 14), Block.box(4, 8, 4, 12, 12, 12), Block.box(6, 12, 5, 10, 14, 11))};
+    public enum Kind implements StringRepresentable
+    {
+        PILE("pile", new int[] {1, 2, 5, 7, 10, 14}),
+        INGOTS("ingots", new int[] {3, 5, 8, 11, 11, 13}),
+        CHEST("chest", new int[] {15, 15, 15, 15, 15, 15}),
+        GEMS("gems", new int[] {4, 5, 6, 6, 7, 8}),
+        JEWELS("jewels", new int[] {4, 5, 5, 8, 8, 9});
+
+        private final String id;
+        private final VoxelShape[] shapes = new VoxelShape[MAX_STAGE];
+
+        Kind(final String id, final int[] heights)
+        {
+            this.id = id;
+            for (int i = 0; i < MAX_STAGE; i++)
+            {
+                shapes[i] = Block.box(1, 0, 1, 15, heights[i], 15);
+            }
+        }
+
+        @Override
+        public String getSerializedName()
+        {
+            return id;
+        }
+    }
 
     public VaultHoardBlock(final Properties properties)
     {
         super(properties);
-        registerDefaultState(stateDefinition.any().setValue(STAGE, 1));
+        registerDefaultState(stateDefinition.any().setValue(STAGE, 1).setValue(KIND, Kind.PILE).setValue(FACING, Direction.NORTH));
     }
 
     @Override
     protected void createBlockStateDefinition(final StateDefinition.Builder<Block, BlockState> builder)
     {
-        builder.add(STAGE);
+        builder.add(STAGE, KIND, FACING);
     }
 
     @Override
     protected VoxelShape getShape(final BlockState state, final BlockGetter level, final BlockPos pos, final CollisionContext context)
     {
-        return SHAPES[state.getValue(STAGE) - 1];
+        return state.getValue(KIND).shapes[state.getValue(STAGE) - 1];
+    }
+
+    @Override
+    protected BlockState rotate(final BlockState state, final Rotation rotation)
+    {
+        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+    }
+
+    @Override
+    protected BlockState mirror(final BlockState state, final Mirror mirror)
+    {
+        return state.rotate(mirror.getRotation(state.getValue(FACING)));
     }
 
     @Override

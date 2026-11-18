@@ -186,6 +186,12 @@ public final class WarAssaults
         {
             return "Cette colonie subit déjà un assaut.";
         }
+        // The dev slice attacks as the defender itself; a real attacker needs a war it declared, its notice over
+        if (attacker.getID() != defender.getID()
+              && !fr.kodistan.interregne.politics.Diplomacy.mayAssault(level.getServer(), attacker.getID(), defender.getID()))
+        {
+            return "Impossible : aucune guerre ouverte contre cette colonie.";
+        }
         if (SafeZones.get(level.getServer()).at(level.dimension(), defender.getCenter()) != null)
         {
             return "Impossible : cette colonie est en zone sûre.";

@@ -1,0 +1,37 @@
+# Mods installés dans run/client/mods et/ou run/server/mods par ./gradlew syncEnv
+# Format : <cible> <source>   (cible = client | server | both)
+#   source = slug d'une entrée de launcher/pack/mods/<slug>.pw.toml (URL + hash vérifié)
+#          ou local:<chemin depuis la racine du repo> pour un jar versionné dans le repo
+# Un mod utilisé pour tester DOIT être déclaré ici (voir CLAUDE.md, « Environnement partagé »).
+
+both accessories
+client archers
+client armor-model-api
+client armory-rpg-series
+client arsenal-rpg-series
+client azurelib-armor
+client better-combat
+client bundle-api
+client cloth-config
+client critical-strike
+client elemental-wizards-rpg
+client forgified-fabric-api
+client gachaaddiction
+client gazebos
+client jewelry
+client more-rpg-library
+both owo-lib
+client paladins-and-priests
+client playeranimator
+client puffish-skills
+client ranged-weapon-api
+client relics-rpg
+client rogues-and-warriors
+client runes
+client shield-api
+client skill-tree
+client spell-engine
+client spell-power
+client structure-pool-api
+client wizards
+both local:atelier/exports/grappin-3.5.0.jar

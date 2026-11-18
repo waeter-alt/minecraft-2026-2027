@@ -25,10 +25,10 @@ C, P, V = conf["cibles"], conf["portes"], verif["trajets"]
 H = conf["cachees_detail"]
 L = []
 a = L.append
-a("<!-- [claude-build] fiche du donjon aquatique, ecrite par scripts/fiche_donjon_aqua.py -->")
-a("# Donjon aquatique « Le Sanctuaire des Marées »")
+a("<!-- [claude-build] fiche de l'ancien donjon 2 (aquatique), ecrite par scripts/fiche_donjon_aqua.py -->")
+a("# Ancien donjon 2 (aquatique) « Le Sanctuaire des Marées »")
 a("")
-a(f"Monde « Donjon 2 » (dossier `Donjon 2 (1)`, superflat, sol à Y-61 ; le Temple des Mille Racines est dans un autre monde, « Donjon 1 »), Minecraft 1.21.1 + NeoForge 21.1.216 + mod **Grappin 2.5.0** (il apporte le Voile des Profondeurs ; "
+a(f"Monde « Ancien donjon 2 » (superflat, sol à Y-61 ; le Temple des Mille Racines est dans un autre monde, « Ancien donjon 1 »), Minecraft 1.21.1 + NeoForge 21.1.216 + mod **Grappin 2.5.0** (il apporte le Voile des Profondeurs ; "
   f"obligatoire chez chaque joueur). Structure `aqua` {TX} × {TY} × {TZ}, posée en {OX} {OY} {OZ} (x {OX} à {OX + TX - 1}, z {OZ} à {OZ + TZ - 1}). "
   "Générateur : `scripts/donjon_aqua.py`, contrôle : `scripts/verif_donjon_aqua.py`, plan : `donjon_aquatique_plan.md`.")
 a("")
@@ -42,7 +42,7 @@ a("")
 a("## Poser et remettre à zéro")
 a("")
 a("- Le générateur crée lui-même le datapack `atelier` du monde visé (dossiers et `pack.mcmeta`) ; si le monde n'existe pas, il le dit et n'écrit que `atelier/exports`. "
-  "Le monde est désigné par son nom en jeu (`--monde \"Donjon 2\"` par défaut), pas par le nom de son dossier.")
+  "Le monde est désigné par son nom en jeu (`--monde \"Ancien donjon 2\"` par défaut), pas par le nom de son dossier.")
 a("- Datapack créé pendant que le monde est ouvert : quitter le monde et y revenir pour qu'il soit pris en compte.")
 a("- Pose : `/reload` puis `/function atelier:aqua_pose` (ne pas mettre en pause ; la zone au-dessus du sol est effacée avant la pose, on peut donc reposer une nouvelle version).")
 a(f"- Entrée : `/tp @s {w(conf['entree'])}`.")

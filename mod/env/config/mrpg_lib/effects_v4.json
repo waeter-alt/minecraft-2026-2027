@@ -1,0 +1,168 @@
+{
+  "effects": {
+    "mrpg_lib:molten_armor": {
+      "attributes": [
+        {
+          "attribute": "minecraft:generic.armor",
+          "value": -0.1,
+          "operation": "ADD_MULTIPLIED_TOTAL"
+        },
+        {
+          "attribute": "minecraft:generic.armor_toughness",
+          "value": -1.0,
+          "operation": "ADD_VALUE"
+        }
+      ]
+    },
+    "mrpg_lib:frozen_solid": {
+      "attributes": [
+        {
+          "attribute": "spell_engine:damage_taken",
+          "value": 0.15,
+          "operation": "ADD_MULTIPLIED_TOTAL"
+        }
+      ]
+    },
+    "mrpg_lib:collected_soul": {
+      "attributes": [
+        {
+          "attribute": "spell_power:soul",
+          "value": 0.1,
+          "operation": "ADD_VALUE"
+        }
+      ]
+    },
+    "mrpg_lib:grievous_wounds": {
+      "attributes": [
+        {
+          "attribute": "spell_engine:damage_taken",
+          "value": 0.05,
+          "operation": "ADD_MULTIPLIED_TOTAL"
+        },
+        {
+          "attribute": "spell_engine:healing_taken",
+          "value": -0.1,
+          "operation": "ADD_MULTIPLIED_TOTAL"
+        }
+      ]
+    },
+    "mrpg_lib:frosted": {
+      "attributes": [
+        {
+          "attribute": "minecraft:generic.movement_speed",
+          "value": -0.05,
+          "operation": "ADD_MULTIPLIED_TOTAL"
+        }
+      ]
+    },
+    "mrpg_lib:bleeding": {
+      "attributes": []
+    },
+    "mrpg_lib:fear": {
+      "attributes": [
+        {
+          "attribute": "minecraft:generic.attack_damage",
+          "value": -0.25,
+          "operation": "ADD_MULTIPLIED_TOTAL"
+        }
+      ]
+    },
+    "mrpg_lib:stagger": {
+      "attributes": [
+        {
+          "attribute": "minecraft:generic.attack_damage",
+          "value": -0.8,
+          "operation": "ADD_MULTIPLIED_TOTAL"
+        },
+        {
+          "attribute": "minecraft:generic.armor",
+          "value": -0.8,
+          "operation": "ADD_MULTIPLIED_TOTAL"
+        },
+        {
+          "attribute": "minecraft:generic.movement_speed",
+          "value": -0.8,
+          "operation": "ADD_MULTIPLIED_TOTAL"
+        }
+      ]
+    },
+    "mrpg_lib:soaked": {
+      "attributes": []
+    },
+    "mrpg_lib:carve": {
+      "attributes": [
+        {
+          "attribute": "minecraft:generic.armor",
+          "value": -0.1,
+          "operation": "ADD_MULTIPLIED_BASE"
+        },
+        {
+          "attribute": "spell_engine:damage_taken",
+          "value": 0.05,
+          "operation": "ADD_MULTIPLIED_BASE"
+        }
+      ]
+    },
+    "mrpg_lib:fatal_poison": {
+      "attributes": []
+    },
+    "mrpg_lib:ignited": {
+      "attributes": [
+        {
+          "attribute": "spell_engine:healing_taken",
+          "value": -0.1,
+          "operation": "ADD_MULTIPLIED_BASE"
+        }
+      ]
+    },
+    "mrpg_lib:withers_curse": {
+      "attributes": [
+        {
+          "attribute": "spell_engine:damage_taken",
+          "value": 0.05,
+          "operation": "ADD_MULTIPLIED_BASE"
+        }
+      ]
+    },
+    "mrpg_lib:arcane_precision": {
+      "attributes": []
+    },
+    "mrpg_lib:zephyrs_speed": {
+      "attributes": [
+        {
+          "attribute": "spell_power:critical_chance",
+          "value": 0.03,
+          "operation": "ADD_MULTIPLIED_BASE"
+        },
+        {
+          "attribute": "minecraft:generic.movement_speed",
+          "value": 0.05,
+          "operation": "ADD_MULTIPLIED_BASE"
+        }
+      ]
+    },
+    "mrpg_lib:sirens_tear": {
+      "attributes": []
+    },
+    "mrpg_lib:duelists_focus_owner": {
+      "attributes": []
+    },
+    "mrpg_lib:duelists_focus_target": {
+      "attributes": []
+    },
+    "mrpg_lib:dragonslayers_fury": {
+      "attributes": [
+        {
+          "attribute": "spell_power:critical_damage",
+          "value": 0.3,
+          "operation": "ADD_MULTIPLIED_BASE"
+        },
+        {
+          "attribute": "critical_strike:damage",
+          "value": 0.3,
+          "operation": "ADD_MULTIPLIED_BASE"
+        }
+      ]
+    }
+  }
+}

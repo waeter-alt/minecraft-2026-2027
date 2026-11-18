@@ -1,7 +1,7 @@
-<!-- [claude-build] fiche du donjon aquatique, ecrite par scripts/fiche_donjon_aqua.py -->
-# Donjon aquatique « Le Sanctuaire des Marées »
+<!-- [claude-build] fiche de l'ancien donjon 2 (aquatique), ecrite par scripts/fiche_donjon_aqua.py -->
+# Ancien donjon 2 (aquatique) « Le Sanctuaire des Marées »
 
-Monde « Donjon 2 » (dossier `Donjon 2 (1)`, superflat, sol à Y-61 ; le Temple des Mille Racines est dans un autre monde, « Donjon 1 »), Minecraft 1.21.1 + NeoForge 21.1.216 + mod **Grappin 2.5.0** (il apporte le Voile des Profondeurs ; obligatoire chez chaque joueur). Structure `aqua` 150 × 70 × 170, posée en 150 -61 260 (x 150 à 299, z 260 à 429). Générateur : `scripts/donjon_aqua.py`, contrôle : `scripts/verif_donjon_aqua.py`, plan : `donjon_aquatique_plan.md`.
+Monde « Ancien donjon 2 » (superflat, sol à Y-61 ; le Temple des Mille Racines est dans un autre monde, « Ancien donjon 1 »), Minecraft 1.21.1 + NeoForge 21.1.216 + mod **Grappin 2.5.0** (il apporte le Voile des Profondeurs ; obligatoire chez chaque joueur). Structure `aqua` 150 × 70 × 170, posée en 150 -61 260 (x 150 à 299, z 260 à 429). Générateur : `scripts/donjon_aqua.py`, contrôle : `scripts/verif_donjon_aqua.py`, plan : `donjon_aquatique_plan.md`.
 
 Un monument océanique englouti, dans le style de ceux de Minecraft : briques de prismarine, prismarine et prismarine sombre en bandeaux, sols en damier, lanternes de mer encastrées dans les murs, les sols et les plafonds, pilastres, éponges mouillées dans les salles cachées, noyau d'or dans la salle du boss. Les salles sont **noyées jusqu'au plafond** : on nage presque partout. Il ne reste à l'air que le Débarcadère (le départ), la salle du boss, les salles cachées d'air et des cloches d'air flottantes. Pas de grappin (aucun ancrage), pas de conduit, pas de lave, ni coffre, ni conteneur, ni générateur, ni monstre, ni boss.
 
@@ -9,7 +9,7 @@ Un monument océanique englouti, dans le style de ceux de Minecraft : briques de
 
 ## Poser et remettre à zéro
 
-- Le générateur crée lui-même le datapack `atelier` du monde visé (dossiers et `pack.mcmeta`) ; si le monde n'existe pas, il le dit et n'écrit que `atelier/exports`. Le monde est désigné par son nom en jeu (`--monde "Donjon 2"` par défaut), pas par le nom de son dossier.
+- Le générateur crée lui-même le datapack `atelier` du monde visé (dossiers et `pack.mcmeta`) ; si le monde n'existe pas, il le dit et n'écrit que `atelier/exports`. Le monde est désigné par son nom en jeu (`--monde "Ancien donjon 2"` par défaut), pas par le nom de son dossier.
 - Datapack créé pendant que le monde est ouvert : quitter le monde et y revenir pour qu'il soit pris en compte.
 - Pose : `/reload` puis `/function atelier:aqua_pose` (ne pas mettre en pause ; la zone au-dessus du sol est effacée avant la pose, on peut donc reposer une nouvelle version).
 - Entrée : `/tp @s 178 -17 272`.

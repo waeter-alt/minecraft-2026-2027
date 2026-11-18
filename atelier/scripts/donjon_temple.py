@@ -1,7 +1,7 @@
 # [claude-build]
 """
-donjon_temple.py - Donjon n°2 « Le Temple des Mille Racines » (2026-11-09) : 12 sections, ~31 min, style jungle, Grappin 2.4.
-Plan : docs/donjon_temple_plan.md. Gabarit 130 x 100 x 216, pose en (150, -61, -65) dans le monde « Donjon 2 ».
+donjon_temple.py - Ancien donjon 1 « Le Temple des Mille Racines » (2026-11-09) : 12 sections, ~31 min, style jungle, Grappin 2.4.
+Plan : docs/donjon_temple_plan.md. Gabarit 130 x 100 x 216, pose en (150, -61, -65) dans le monde « Ancien donjon 1 ».
 Eau et lave confinees, aucun coffre ni mob ni spawner. Portes et pieges par blocs de commande (3 chaines enterrees).
   test-local\\venv\\Scripts\\python.exe atelier\\scripts\\donjon_temple.py
 En jeu : /reload puis /function atelier:temple_pose ; remise a zero : /function atelier:temple_reset
@@ -10,6 +10,7 @@ Controle : atelier\\scripts\\verif_donjon_temple.py
 import argparse
 import json
 import math
+import sys
 from collections import Counter
 from pathlib import Path
 
@@ -18,10 +19,14 @@ import numpy as np
 from nbtlib import Byte, Compound, Int, List, String
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--monde", default="Donjon 2")
+ap.add_argument("--monde", default="Ancien donjon 1")
+ap.add_argument("--zip", action="store_true", help="ecrit aussi atelier/mondes/<monde>.zip : un monde pret a copier dans saves/")
 args = ap.parse_args()
 RACINE = Path(__file__).resolve().parent.parent                      # atelier/
-SAVE = RACINE.parent / "mod/run/client/saves" / args.monde                  # monde du client de test du depot (mod/ runClient)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import monde_atelier                                                  # cree le monde de test s'il n'existe pas
+
+SAVE = monde_atelier.trouver_ou_creer_monde(args.monde, RACINE.parent / "mod/run/client/saves")   # monde du client de test du depot (mod/ runClient)
 NOM = "temple"
 SX, SY, SZ = 130, 100, 216
 ORIGINE = (150, -61, -65)
@@ -1061,9 +1066,7 @@ def ecrire(cases, nbt_, nom_, taille):
                      "blocks": List[Compound](liste), "entities": List[Compound]([])}, gzipped=True)
     (RACINE / "exports").mkdir(exist_ok=True)
     f.save(RACINE / "exports" / f"{nom_}.nbt")
-    D = SAVE / "datapacks/atelier/data/atelier/structure"
-    if D.exists():
-        f.save(D / f"{nom_}.nbt")
+    f.save(monde_atelier.datapack(SAVE) / "data/atelier/structure" / f"{nom_}.nbt")
     return len(liste)
 
 
@@ -1078,8 +1081,9 @@ else:
     print(f"ATTENTION : le monde « {args.monde} » n'existe pas dans {SAVE.parent} ; seuls les fichiers de atelier/exports sont ecrits. "
           "Cree le monde dans le client de test (ou passe --monde) puis relance.", flush=True)
 n_total = ecrire(blocs, NBT, NOM, (SX, SY, SZ))
-FN = SAVE / "datapacks/atelier/data/atelier/function"
-if FN.exists():
+FN = monde_atelier.datapack(SAVE) / "data/atelier/function"
+monde_atelier.installer_pose_auto(SAVE, "temple_pose", "temple")
+if True:
     def w(p):
         return " ".join(str(v) for v in (ORIGINE[0] + p[0], ORIGINE[1] + p[1], ORIGINE[2] + p[2]))
 
@@ -1096,7 +1100,7 @@ if FN.exists():
         "function atelier:temple_reset", "schedule function atelier:temple_pose_3 100t"]) + "\n", encoding="utf-8")
     (FN / "temple_pose_3.mcfunction").write_text("\n".join([
         "# [claude-build] Nettoie et decharge.", "kill @e[type=item]", "forceload remove all",
-        f'tellraw @a {{"text":"Le temple est pret. Entree : /tp @s {w((65, 83, 62))} 0 0","color":"green"}}']) + "\n", encoding="utf-8")
+        monde_atelier.message_entree("Le temple est prêt.", w((65, 83, 62)))]) + "\n", encoding="utf-8")
     sx_, sy_, sz_ = POINTS["S12"]
     (FN / "temple_decrocher.mcfunction").write_text("# [claude-build] Supprime le crochet du grappin du joueur dont l identifiant est passe en parametre.\n"
                                                     "$kill @e[type=grappin:crochet,nbt={Owner:$(uuid)}]\n", encoding="utf-8")
@@ -1176,3 +1180,5 @@ conf = {"_marque": "[claude-build]", "taille": [SX, SY, SZ], "origine": ORIGINE,
 np.savez_compressed(RACINE / "exports" / f"{NOM}_vide.npz", C=np.packbits(C.ravel()), taille=np.array([SX, SY, SZ]))     # masque des volumes creux, pour le verificateur
 (RACINE / "exports" / f"{NOM}_cibles.json").write_text(json.dumps(conf, ensure_ascii=False), encoding="utf-8")
 print(f"Ecrit : {n_total} blocs | commandes {len(CMD)} | portes {list(PORTES)} | ancrages {len(ANCRAGES)}")
+if args.zip:
+    monde_atelier.zipper_monde(SAVE, args.monde, RACINE / "mondes")

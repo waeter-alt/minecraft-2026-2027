@@ -99,7 +99,7 @@ echo "eula=true" > eula.txt
 
 ## 5. Mods installés côté serveur (51)
 
-Ce sont les 55 mods du pack, moins les 4 mods client (Sodium, Iris Shaders, Team Capes, Enchantment Descriptions). Le shaderpack est exclu lui aussi. `packwiz-installer -s server` fait ce tri tout seul.
+Ce sont les 56 mods du pack, moins les 4 mods client (Sodium, Iris Shaders, Team Capes, Enchantment Descriptions). Le shaderpack est exclu lui aussi. `packwiz-installer -s server` fait ce tri tout seul.
 
 | Catégorie | Mods |
 |---|---|
@@ -110,7 +110,7 @@ Ce sont les 55 mods du pack, moins les 4 mods client (Sodium, Iris Shaders, Team
 | Monde et carte | Distant Horizons 2.4.5, Xaero's Minimap, Xaero's World Map (partage du world-ID) |
 | Outils et techniques | WorldEdit, Simple Voice Chat, JEI, AppleSkin (synchro de la saturation), Lithium, Forgified Fabric API, Architectury API, Cloth Config API, Bookshelf, Prickle |
 
-Total : 1 + 6 + 22 + 9 + 3 + 10 = **51 mods serveur**, Gazebos et Tree Harvester compris (55 mods dans le pack, moins 4 mods client).
+Total : 1 + 6 + 22 + 9 + 3 + 10 = **51 mods serveur**, Gazebos et Tree Harvester compris (56 mods dans le pack, moins 4 mods client).
 
 ## 6. Flags JVM conseillés (`user_jvm_args.txt`)
 
