@@ -52,6 +52,15 @@ class TestPorte(unittest.TestCase):
         self.assertAlmostEqual(128, a[1] - de[1], delta=1)
         self.assertLessEqual(a[2] - de[2], 20)
 
+    def test_en_arche(self):
+        """Demande de Luca : des portes en arche, pas carrees (meme profil que les arches du donjon, suspendu_salle1.profil : environ 6 blocs au bord, 8 au milieu)."""
+        def haut(x0, x1):
+            return max((e["to"][1] for e in self.m["elements"] if e["from"][0] < x1 and e["to"][0] > x0), default=0)
+        self.assertLessEqual(haut(-64, -56), 100)
+        self.assertLessEqual(haut(56, 64), 100)
+        self.assertGreaterEqual(haut(-4, 4), 124)
+        self.assertLess(haut(-40, -32), haut(-8, 0))
+
     def test_ouverture_monte_sans_tourner(self):
         anims = {a["name"]: a for a in self.m["animations"]}
         o = anims["ouverture"]

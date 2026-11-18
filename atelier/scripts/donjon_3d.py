@@ -177,29 +177,37 @@ def porte():
     m = Modele("porte_donjon", 512)
     m.os_("racine", None, (0, 0, 0))
     m.os_("dalle", "racine", (0, 0, 0))
-    m.os_("sceau", "dalle", (0, 64, 0))
-    m.cube("dalle", "panneau_g", "pierre_gravee", (-60, 4, -4), (-1, 120, 4))
-    m.cube("dalle", "panneau_d", "pierre_gravee", (1, 4, -4), (60, 120, 4))
-    m.cube("dalle", "joint", "fer_sombre", (-1, 4, -3), (1, 120, 3))
-    m.cube("dalle", "cadre_haut", "fer", (-64, 120, -6), (64, 128, 6))
+    m.os_("sceau", "dalle", (0, 96, 0))
+    # En arche, comme les arches du donjon (suspendu_salle1.profil) : 5 blocs de haut sur les cotes, 8 au milieu, arrondi entre les deux.
+    # La dalle est faite de bandes verticales de 8 unites (un demi-bloc), chacune a la hauteur de l'arche, coiffees d'une bande de fer.
+    def haut_arche(x):
+        u = x / 16
+        return round(16 * min(8, 5 + 3 * math.sqrt(max(0.0, 1 - (u / 4) ** 2))))
+    for i in range(16):
+        x0 = -64 + 8 * i
+        h = haut_arche(x0 + 4)
+        if i in (0, 15):
+            m.cube("dalle", f"montant{i}", "fer", (x0, 4, -6), (x0 + 8, h, 6))                  # montants de fer aux deux bords
+        else:
+            m.cube("dalle", f"panneau{i}", "pierre_gravee", (x0, 4, -4), (x0 + 8, h - 6, 4))
+            m.cube("dalle", f"arc{i}", "fer", (x0, h - 6, -6), (x0 + 8, h, 6))                  # le cintre de fer suit l'arche
+    m.cube("dalle", "joint", "fer_sombre", (-1, 4, -5), (1, haut_arche(0) - 6, 5))
     m.cube("dalle", "cadre_bas", "fer", (-64, 0, -6), (64, 4, 6))
-    m.cube("dalle", "montant_g", "fer", (-64, 4, -6), (-60, 120, 6))
-    m.cube("dalle", "montant_d", "fer", (60, 4, -6), (64, 120, 6))
-    for nom, y in (("traverse_basse", 22), ("traverse_haute", 96)):
-        m.cube("dalle", nom, "fer_sombre", (-60, y, -5), (60, y + 6, 5))
-        for xr in (-52, -36, -20, 20, 36, 52):                                      # rivets des deux cotes
+    for nom, y in (("traverse_basse", 22), ("traverse_haute", 60)):
+        m.cube("dalle", nom, "fer_sombre", (-56, y, -5), (56, y + 6, 5))
+        for xr in (-48, -32, -16, 16, 32, 48):                                      # rivets des deux cotes
             for z0 in (-6, 5):
                 m.cube("dalle", f"rivet_{nom}", "fer", (xr - 1.5, y + 1.5, z0), (xr + 1.5, y + 4.5, z0 + 1))
-    for k, (x0, angle) in enumerate(((-54, 22.5), (44, -22.5), (-30, -22.5), (24, 22.5))):   # racines qui grimpent sur la dalle
+    for k, (x0, angle) in enumerate(((-50, 22.5), (40, -22.5), (-30, -22.5), (24, 22.5))):   # racines qui grimpent sur la dalle
         for z0 in (-6, 4):
             m.cube("dalle", f"racine{k}", "racine", (x0, 8, z0), (x0 + 4, 52 + (k % 2) * 10, z0 + 2), ("z", angle))
-    m.cube("dalle", "mousse_g", "mousse", (-58, 4, -5), (-30, 7, 5))
+    m.cube("dalle", "mousse_g", "mousse", (-56, 4, -5), (-30, 7, 5))
     m.cube("dalle", "mousse_d", "mousse", (20, 4, -5), (50, 6, 5))
-    m.cube("sceau", "serti_haut", "fer", (-16, 78, -7), (16, 82, 7))
-    m.cube("sceau", "serti_bas", "fer", (-16, 46, -7), (16, 50, 7))
-    m.cube("sceau", "serti_g", "fer", (-16, 50, -7), (-12, 78, 7))
-    m.cube("sceau", "serti_d", "fer", (12, 50, -7), (16, 78, 7))
-    m.cube("sceau", "lueur_gemme", "gemme", (-9, 55, -8), (9, 73, 8), ("z", 45))
+    m.cube("sceau", "serti_haut", "fer", (-16, 110, -7), (16, 114, 7))
+    m.cube("sceau", "serti_bas", "fer", (-16, 78, -7), (16, 82, 7))
+    m.cube("sceau", "serti_g", "fer", (-16, 82, -7), (-12, 110, 7))
+    m.cube("sceau", "serti_d", "fer", (12, 82, -7), (16, 110, 7))
+    m.cube("sceau", "lueur_gemme", "gemme", (-9, 87, -8), (9, 105, 8), ("z", 45))
     Z = (0, 0, 0)
     anim = {"ouverture": (3.0, "once", {
         "sceau": {"position": [(0, Z), (0.2, (0.6, 0, 0)), (0.4, (-0.6, 0, 0)), (0.6, (0.5, 0, 0)), (0.8, Z), (3.0, Z)]},
