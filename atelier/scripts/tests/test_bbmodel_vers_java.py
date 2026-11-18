@@ -67,7 +67,13 @@ class TestBbmodelVersJava(unittest.TestCase):
         v5["groups"] = [{k: g[k] for k in ("name", "origin", "rotation", "uuid")}]
         v5["outliner"] = [{"uuid": g["uuid"], "isOpen": True, "children": g["children"]}]
         v5["elements"][0]["rotation"] = None
+        v5["meta"] = {"format_version": "5.0"}
+        for kf in v5["animations"][0]["animators"]["g1"]["keyframes"]:          # Blockbench 5 inverse x et y des rotations animees
+            if kf["channel"] == "rotation":
+                p = kf["data_points"][0]
+                p["x"], p["y"] = str(-float(p["x"])), str(-float(p["y"]))
         self.assertEqual(bj.java_geometrie(MINI, "fr.test", "Geo"), bj.java_geometrie(v5, "fr.test", "Geo"))
+        self.assertEqual(bj.java_animations(MINI, "fr.test", "Anims"), bj.java_animations(v5, "fr.test", "Anims"))
 
     def test_boucle(self):
         boucle = json.loads(json.dumps(MINI))
