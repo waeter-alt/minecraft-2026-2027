@@ -1,4 +1,4 @@
-// [claude-build] Mod Grappin 2.0 : grappin a balancier qui ne s'accroche qu'aux points d'ancrage (bloc grappin:ancrage, tag grappin:ancrages).
+// [claude-build] Mod Grappin 2.0 : grappin a balancier qui ne s'accroche qu'aux points d'ancrage (bloc donjon:ancrage, tag donjon:ancrages).
 package fr.atelier.grappin;
 
 import net.minecraft.core.registries.Registries;
@@ -28,14 +28,14 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 @Mod(Grappin.MODID)
 public class Grappin {
-    public static final String MODID = "grappin";
+    public static final String MODID = "donjon";
 
     public static final DeferredRegister.Blocks BLOCS = DeferredRegister.createBlocks(MODID);
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
     public static final DeferredRegister<EntityType<?>> ENTITES = DeferredRegister.create(Registries.ENTITY_TYPE, MODID);
     public static final DeferredRegister<CreativeModeTab> ONGLETS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
-    /** Les blocs ou le crochet tient : le point d'ancrage, et tout ce qu'on ajoute au tag grappin:ancrages. */
+    /** Les blocs ou le crochet tient : le point d'ancrage, et tout ce qu'on ajoute au tag donjon:ancrages. */
     public static final TagKey<Block> ANCRAGES = TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(MODID, "ancrages"));
 
     /** Point d'ancrage : anneau de fer scelle dans la pierre, faiblement lumineux pour qu'on le repere. */
@@ -117,7 +117,7 @@ public class Grappin {
 
     /** Onglet creatif dedie aux objets de donjon . */
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> ONGLET = ONGLETS.register("donjon", () -> CreativeModeTab.builder()
-            .title(Component.translatable("itemGroup.grappin.donjon"))
+            .title(Component.translatable("itemGroup.donjon.donjon"))
             .icon(() -> GRAPPIN.get().getDefaultInstance())
             .displayItems((parametres, sortie) -> {
                 sortie.accept(GRAPPIN.get());

@@ -36,7 +36,7 @@ class CasierLogiqueTest {
     @Test
     void uneTextureParCouleur() throws IOException {
         for (String c : CasierLogique.COULEURS) {
-            Path p = Path.of("src/main/resources/assets/grappin/textures/entity/casier_" + c + ".png");
+            Path p = Path.of("src/main/resources/assets/donjon/textures/entity/casier_" + c + ".png");
             assertTrue(Files.exists(p), "texture absente : " + p);
             BufferedImage img = ImageIO.read(p.toFile());
             assertEquals(256, img.getWidth(), p.toString());              // CasierGeometrie.creerCouche : texture 256 x 256

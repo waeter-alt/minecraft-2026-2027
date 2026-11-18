@@ -1,8 +1,8 @@
 {
   "replace": false,
   "values": [
-    "grappin:pompe_station",
-    "grappin:chaudiere",
-    "grappin:cadran"
+    "donjon:pompe_station",
+    "donjon:chaudiere",
+    "donjon:cadran"
   ]
 }

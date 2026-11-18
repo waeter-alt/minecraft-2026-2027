@@ -14,8 +14,8 @@ from pathlib import Path
 from PIL import Image
 
 RACINE = Path(__file__).resolve().parents[2]
-ASSETS = RACINE / "atelier/donjon/arene/src/main/resources/assets/grappin"
-DATA = RACINE / "atelier/donjon/arene/src/main/resources/data/grappin"
+ASSETS = RACINE / "atelier/donjon/arene/src/main/resources/assets/donjon"
+DATA = RACINE / "atelier/donjon/arene/src/main/resources/data/donjon"
 BBMODELES = RACINE / "atelier/modeles/donjon"
 GRAINE = uuid.UUID("9a1e4c2d-5b6f-4e70-8a1b-2c3d00000000")
 
@@ -236,8 +236,8 @@ def levier(allume):
         element("ambre", (6.5, 9.5, 6.5), (9.5, 12.5, 9.5), "ambre", rotation=rot),
     ]
     return {"parent": "minecraft:block/block", "ambientocclusion": False,
-            "textures": {"socle": "grappin:block/levier_socle", "racine": "grappin:block/levier_racine",
-                         "ambre": "grappin:block/levier_ambre" + ("_allume" if allume else ""), "particle": "grappin:block/levier_socle"},
+            "textures": {"socle": "donjon:block/levier_socle", "racine": "donjon:block/levier_racine",
+                         "ambre": "donjon:block/levier_ambre" + ("_allume" if allume else ""), "particle": "donjon:block/levier_socle"},
             "elements": elements}
 
 
@@ -247,7 +247,7 @@ def etats_levier():
     y_plafond = {"north": 180, "east": 270, "south": 0, "west": 90}
     variantes = {}
     for powered in ("false", "true"):
-        modele = "grappin:block/levier_racine" + ("_baisse" if powered == "true" else "")
+        modele = "donjon:block/levier_racine" + ("_baisse" if powered == "true" else "")
         for facing in y_sol:
             variantes[f"face=floor,facing={facing},powered={powered}"] = {"model": modele, "y": y_sol[facing]}
             variantes[f"face=ceiling,facing={facing},powered={powered}"] = {"model": modele, "x": 180, "y": y_plafond[facing]}
@@ -282,7 +282,7 @@ def cle_modele(couleur):
         element("dent_haute", (8.5, 3, 7.5), (10.5, 4, 8.5), "0", (9, 9), rot),
         element("dent_basse", (8.5, 1, 7.5), (11, 2, 8.5), "0", (9, 12), rot),
     ]
-    return {"texture_size": [16, 16], "textures": {"0": f"grappin:item/cle_{couleur}_modele", "particle": f"grappin:item/cle_{couleur}_modele"},
+    return {"texture_size": [16, 16], "textures": {"0": f"donjon:item/cle_{couleur}_modele", "particle": f"donjon:item/cle_{couleur}_modele"},
             "elements": els, "display": AFFICHAGE_CLE}
 
 
@@ -304,7 +304,7 @@ def bbmodel(nom, modele, textures):
     for k, c in enumerate(cles):
         tampon = io.BytesIO()
         textures[c].save(tampon, "PNG")
-        texs.append({"path": "", "name": c + ".png", "folder": "block", "namespace": "grappin", "id": str(k), "width": 16, "height": 16,
+        texs.append({"path": "", "name": c + ".png", "folder": "block", "namespace": "donjon", "id": str(k), "width": 16, "height": 16,
                      "uv_width": 16, "uv_height": 16, "particle": k == 0, "render_mode": "default", "visible": True, "internal": True,
                      "saved": True, "uuid": str(uuid.uuid5(GRAINE, f"{nom}/tex/{c}")),
                      "source": "data:image/png;base64," + base64.b64encode(tampon.getvalue()).decode()})
@@ -319,7 +319,7 @@ def ecrire(chemin, donnees):
 
 
 def butin(nom):
-    return {"type": "minecraft:block", "pools": [{"rolls": 1, "entries": [{"type": "minecraft:item", "name": f"grappin:{nom}"}],
+    return {"type": "minecraft:block", "pools": [{"rolls": 1, "entries": [{"type": "minecraft:item", "name": f"donjon:{nom}"}],
                                                    "conditions": [{"condition": "minecraft:survives_explosion"}]}]}
 
 
@@ -363,21 +363,21 @@ def main():
         png(texture_cle_modele(couleur), tm / f"cle_{couleur}_modele.png")
         modele = cle_modele(couleur)
         ecrire(ASSETS / f"models/item/cle_{couleur}_main.json", modele)
-        ecrire(ASSETS / f"models/item/cle_{couleur}_icone.json", {"parent": "minecraft:item/handheld", "textures": {"layer0": f"grappin:item/cle_{couleur}"}})
+        ecrire(ASSETS / f"models/item/cle_{couleur}_icone.json", {"parent": "minecraft:item/handheld", "textures": {"layer0": f"donjon:item/cle_{couleur}"}})
         ecrire(ASSETS / f"models/item/cle_{couleur}.json", {"loader": "neoforge:separate_transforms",
-                                                            "base": {"parent": f"grappin:item/cle_{couleur}_main"},
-                                                            "perspectives": {"gui": {"parent": f"grappin:item/cle_{couleur}_icone"}}})
+                                                            "base": {"parent": f"donjon:item/cle_{couleur}_main"},
+                                                            "perspectives": {"gui": {"parent": f"donjon:item/cle_{couleur}_icone"}}})
         ecrire(BBMODELES / f"cle_{couleur}.bbmodel", bbmodel(f"cle_{couleur}", modele, {"0": texture_cle_modele(couleur)}))
     # Le levier de racine est dessine par le code (LevierRendu, depuis levier_racine.bbmodel de donjon_3d.py) : son modele de bloc ne
     # sert qu'aux particules quand on le casse, et son objet a une icone a plat.
     png(socle_levier(), tb / "levier_socle.png")
     png(icone_levier(), tm / "levier_racine.png")
-    ecrire(ASSETS / "models/block/levier_racine.json", {"textures": {"particle": "grappin:block/levier_socle"}})
+    ecrire(ASSETS / "models/block/levier_racine.json", {"textures": {"particle": "donjon:block/levier_socle"}})
     etats = etats_levier()
     for v in etats["variants"].values():
-        v["model"] = "grappin:block/levier_racine"
+        v["model"] = "donjon:block/levier_racine"
     ecrire(ASSETS / "blockstates/levier_racine.json", etats)
-    ecrire(ASSETS / "models/item/levier_racine.json", {"parent": "minecraft:item/generated", "textures": {"layer0": "grappin:item/levier_racine"}})
+    ecrire(ASSETS / "models/item/levier_racine.json", {"parent": "minecraft:item/generated", "textures": {"layer0": "donjon:item/levier_racine"}})
     ecrire(DATA / "loot_table/blocks/levier_racine.json", butin("levier_racine"))
     for vieux in (ASSETS / "models/block/levier_racine_baisse.json", tb / "levier_racine.png", tb / "levier_ambre.png", tb / "levier_ambre_allume.png"):
         vieux.unlink(missing_ok=True)

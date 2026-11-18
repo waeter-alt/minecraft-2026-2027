@@ -25,8 +25,8 @@ import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 
 class ModelesStationTest {
-    private static final Path ASSETS = Path.of("src/main/resources/assets/grappin");
-    private static final Path DATA = Path.of("src/main/resources/data/grappin");
+    private static final Path ASSETS = Path.of("src/main/resources/assets/donjon");
+    private static final Path DATA = Path.of("src/main/resources/data/donjon");
     /** bloc -> sa propriete booleenne en plus de facing (ou null). */
     private static final Map<String, String> BLOCS = Map.of("pompe_station", "en_marche", "chaudiere", "allumee", "cadran", "");
 
@@ -72,7 +72,7 @@ class ModelesStationTest {
                 texturesValides(modele(v.getValue().getAsJsonObject().get("model").getAsString()));
             }
         }
-        texturesValides(modele("grappin:block/station/pompe_station_volant"));
+        texturesValides(modele("donjon:block/station/pompe_station_volant"));
     }
 
     @Test
@@ -93,7 +93,7 @@ class ModelesStationTest {
 
     private static int lumineux(String nom) throws IOException {
         int n = 0;
-        for (JsonElement e : modele("grappin:block/station/" + nom).getAsJsonArray("elements")) {
+        for (JsonElement e : modele("donjon:block/station/" + nom).getAsJsonArray("elements")) {
             n += e.getAsJsonObject().has("neoforge_data") ? 1 : 0;
         }
         return n;
@@ -106,9 +106,9 @@ class ModelesStationTest {
         for (String b : BLOCS.keySet()) {
             JsonObject t = json(DATA.resolve("loot_table/blocks/" + b + ".json"));
             String nom = t.getAsJsonArray("pools").get(0).getAsJsonObject().getAsJsonArray("entries").get(0).getAsJsonObject().get("name").getAsString();
-            assertEquals("grappin:" + b, nom);
-            assertTrue(fr.has("block.grappin." + b), "fr : " + b);
-            assertTrue(en.has("block.grappin." + b), "en : " + b);
+            assertEquals("donjon:" + b, nom);
+            assertTrue(fr.has("block.donjon." + b), "fr : " + b);
+            assertTrue(en.has("block.donjon." + b), "en : " + b);
         }
     }
 

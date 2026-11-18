@@ -279,7 +279,7 @@ public final class LeviathanComportement {
                         tirer();
                         boss.ouvrirPerle();
                         for (ServerPlayer j : niveau().getPlayers(p -> p.distanceToSqr(boss) < 90 * 90)) {
-                            j.displayClientMessage(Component.translatable("entity.grappin.leviathan.perle"), true);
+                            j.displayClientMessage(Component.translatable("entity.donjon.leviathan.perle"), true);
                         }
                         etat = Etat.ETOURDI;
                         minuteur = Reglages.LEVIATHAN_PERLE.get();

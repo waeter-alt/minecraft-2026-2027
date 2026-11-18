@@ -93,10 +93,10 @@ public final class ParavoileEvenements {
                     int usure = Math.min(ParavoileItem.CAPACITE, pile.getDamageValue() + conso);
                     pile.setDamageValue(usure);
                     if (usure >= ParavoileItem.CAPACITE) {
-                        j.displayClientMessage(Component.translatable("item.grappin.paravoile.epuisee").withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD), true);
+                        j.displayClientMessage(Component.translatable("item.donjon.paravoile.epuisee").withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD), true);
                         stop = true;
                     } else if (ParavoileItem.secondesRestantes(pile) <= 4) {
-                        j.displayClientMessage(Component.translatable("item.grappin.paravoile.alerte", Math.round(ParavoileItem.secondesRestantes(pile)))
+                        j.displayClientMessage(Component.translatable("item.donjon.paravoile.alerte", Math.round(ParavoileItem.secondesRestantes(pile)))
                                 .withStyle(ChatFormatting.GOLD), true);
                         j.level().playSound(null, j.getX(), j.getY(), j.getZ(), SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.PLAYERS, 0.7F, 1.2F);
                     }

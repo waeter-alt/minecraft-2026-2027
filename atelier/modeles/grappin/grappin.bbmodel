@@ -1809,7 +1809,7 @@
       "path": "",
       "name": "grappin_modele.png",
       "folder": "item",
-      "namespace": "grappin",
+      "namespace": "donjon",
       "id": "0",
       "width": 32,
       "height": 32,

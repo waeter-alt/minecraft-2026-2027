@@ -1,5 +1,5 @@
 // [claude-build] Le contenu du casier de vestiaire : 27 cases, sauvegardees comme celles d'un coffre (NBT Items, ou LootTable), pour que le
-// datapack du donjon puisse le poser plein : setblock ~ ~ ~ grappin:casier[facing=south]{Items:[{Slot:13b,id:"grappin:cape_lestee",count:1}]}.
+// datapack du donjon puisse le poser plein : setblock ~ ~ ~ donjon:casier[facing=south]{Items:[{Slot:13b,id:"donjon:cape_lestee",count:1}]}.
 // L'ouverture suit les joueurs qui regardent dedans (ContainerOpenersCounter, comme le tonneau) et se lit dans l'etat du bloc (open) ;
 // cote client, on garde quelle animation de la porte joue (ouvrir / fermer) et depuis quand, comme le levier de racine.
 package fr.atelier.grappin;
@@ -92,7 +92,7 @@ public class CasierEntite extends RandomizableContainerBlockEntity {
 
     @Override
     protected Component getDefaultName() {
-        return Component.translatable("container.grappin.casier");
+        return Component.translatable("container.donjon.casier");
     }
 
     @Override

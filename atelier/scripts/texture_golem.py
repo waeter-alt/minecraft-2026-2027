@@ -12,7 +12,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-SORTIE = Path(__file__).resolve().parent.parent / "donjon/arene/src/main/resources/assets/grappin/textures/entity/golem.png"
+SORTIE = Path(__file__).resolve().parent.parent / "donjon/arene/src/main/resources/assets/donjon/textures/entity/golem.png"
 random.seed(7)
 im = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
 d = ImageDraw.Draw(im)

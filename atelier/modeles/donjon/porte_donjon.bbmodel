@@ -13636,7 +13636,7 @@
    "path": "",
    "name": "porte_donjon.png",
    "folder": "entity",
-   "namespace": "grappin",
+   "namespace": "donjon",
    "id": "0",
    "width": 512,
    "height": 512,

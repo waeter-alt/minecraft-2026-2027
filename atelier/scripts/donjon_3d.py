@@ -16,7 +16,7 @@ from PIL import Image
 
 RACINE = Path(__file__).resolve().parents[2]
 SORTIE = RACINE / "atelier/modeles/donjon"
-TEXTURES = RACINE / "atelier/donjon/arene/src/main/resources/assets/grappin/textures/entity"
+TEXTURES = RACINE / "atelier/donjon/arene/src/main/resources/assets/donjon/textures/entity"
 GRAINE = uuid.UUID("c3d4e5f6-0718-4a29-8b3c-4d5e00000000")
 
 PIERRE = [(46, 46, 52), (58, 58, 64), (70, 70, 76), (84, 84, 90), (100, 100, 106)]
@@ -235,7 +235,7 @@ def bbmodel(m, places, texture, animations):
     return {"meta": {"format_version": "4.10", "model_format": "modded_entity", "box_uv": True}, "name": m.nom, "model_identifier": m.nom,
             "modded_entity_version": "Mojang", "modded_entity_flip_y": True, "visible_box": [8, 8, 0], "resolution": {"width": m.taille, "height": m.taille},
             "elements": elements, "outliner": [groupe("racine")],
-            "textures": [{"path": "", "name": m.nom + ".png", "folder": "entity", "namespace": "grappin", "id": "0", "width": m.taille,
+            "textures": [{"path": "", "name": m.nom + ".png", "folder": "entity", "namespace": "donjon", "id": "0", "width": m.taille,
                           "height": m.taille, "uv_width": m.taille, "uv_height": m.taille, "particle": False, "render_mode": "default",
                           "visible": True, "internal": True, "saved": True, "uuid": ident(m.nom, "tex"),
                           "source": "data:image/png;base64," + base64.b64encode(tampon.getvalue()).decode()}],

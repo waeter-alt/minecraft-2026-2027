@@ -166,7 +166,7 @@ public final class GrappinClient {
         private static boolean espaceAvant = false;         // etat d'ESPACE au tick precedent : on ne lache qu'a l'appui, pas en le maintenant
     }
 
-    /** Le crochet en vol : le modele 3D grappin:item/crochet (griffes vers +X), tourne comme une fleche dans le sens du vol. */
+    /** Le crochet en vol : le modele 3D donjon:item/crochet (griffes vers +X), tourne comme une fleche dans le sens du vol. */
     static class RenduCrochet extends EntityRenderer<Crochet> {
         private static final float ECHELLE_CROCHET = 0.75F;
         private static final float CHARNIERE_X = 2 / 16F, CHARNIERE_Y = 1 / 16F;

@@ -25,7 +25,7 @@ public class Seraphin extends Monster {
 
     private boolean aPortee = false;                  // vrai apres le tir : il descend a hauteur des joueurs pour qu'on le frappe a l'epee (pas sauvegarde)
 
-    private final ServerBossEvent barre = new ServerBossEvent(Component.translatable("entity.grappin.seraphin"),
+    private final ServerBossEvent barre = new ServerBossEvent(Component.translatable("entity.donjon.seraphin"),
             BossEvent.BossBarColor.WHITE, BossEvent.BossBarOverlay.NOTCHED_10);
 
     public Seraphin(EntityType<? extends Seraphin> type, Level level) {
@@ -117,7 +117,7 @@ public class Seraphin extends Monster {
         return super.hurt(source, (float) (amount * SeraphinLogique.facteurDegats(oeilOuvert(), Reglages.AILES_FERMEES.get())));
     }
 
-    /** Fonctions executees a la mort du boss : un monde (datapack) les declare dans le tag grappin:seraphin_mort, comme le donjon n°3 pour ouvrir sa sortie. */
+    /** Fonctions executees a la mort du boss : un monde (datapack) les declare dans le tag donjon:seraphin_mort, comme le donjon n°3 pour ouvrir sa sortie. */
     private static final net.minecraft.resources.ResourceLocation TAG_MORT = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(Grappin.MODID, "seraphin_mort");
 
     @Override
@@ -149,7 +149,7 @@ public class Seraphin extends Monster {
                 this.playSound(net.minecraft.sounds.SoundEvents.ENDER_DRAGON_GROWL, 6.0F, 0.8F);
                 niveau.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, getX(), getY() + 1.5, getZ(), 1, 0, 0, 0, 0);
                 for (ServerPlayer j : niveau.getPlayers(p -> p.distanceToSqr(this) < 80 * 80)) {
-                    j.displayClientMessage(Component.translatable("entity.grappin.seraphin.phase2"), true);
+                    j.displayClientMessage(Component.translatable("entity.donjon.seraphin.phase2"), true);
                 }
             }
         }

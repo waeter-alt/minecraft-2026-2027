@@ -2261,7 +2261,7 @@
    "path": "",
    "name": "casier.png",
    "folder": "entity",
-   "namespace": "grappin",
+   "namespace": "donjon",
    "id": "0",
    "width": 256,
    "height": 256,

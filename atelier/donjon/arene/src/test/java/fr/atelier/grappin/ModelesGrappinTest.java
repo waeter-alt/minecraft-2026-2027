@@ -25,7 +25,7 @@ import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 
 class ModelesGrappinTest {
-    private static final Path ASSETS = Path.of("src/main/resources/assets/grappin");
+    private static final Path ASSETS = Path.of("src/main/resources/assets/donjon");
     private static final List<String> MODELES = List.of("grappin", "grappin_tire", "grappin_main", "grappin_main_vide", "grappin_icone", "crochet_tige", "crochet_griffe");
     private static final Set<Double> ANGLES = Set.of(-45.0, -22.5, 0.0, 22.5, 45.0);
 
@@ -44,19 +44,19 @@ class ModelesGrappinTest {
     void grappinUtiliseSeparateTransforms() throws IOException {
         JsonObject m = modele("grappin");
         assertEquals("neoforge:separate_transforms", m.get("loader").getAsString());
-        assertEquals("grappin:item/grappin_main", m.getAsJsonObject("base").get("parent").getAsString());
-        assertEquals("grappin:item/grappin_icone", m.getAsJsonObject("perspectives").getAsJsonObject("gui").get("parent").getAsString());
+        assertEquals("donjon:item/grappin_main", m.getAsJsonObject("base").get("parent").getAsString());
+        assertEquals("donjon:item/grappin_icone", m.getAsJsonObject("perspectives").getAsJsonObject("gui").get("parent").getAsString());
     }
 
     @Test
     void grappinTireMontreLeLanceurVide() throws IOException {
         JsonObject override = modele("grappin").getAsJsonArray("overrides").get(0).getAsJsonObject();
-        assertEquals(1, override.getAsJsonObject("predicate").get("grappin:tire").getAsInt());
-        assertEquals("grappin:item/grappin_tire", override.get("model").getAsString());
+        assertEquals(1, override.getAsJsonObject("predicate").get("donjon:tire").getAsInt());
+        assertEquals("donjon:item/grappin_tire", override.get("model").getAsString());
         JsonObject tire = modele("grappin_tire");
         assertEquals("neoforge:separate_transforms", tire.get("loader").getAsString());
-        assertEquals("grappin:item/grappin_main_vide", tire.getAsJsonObject("base").get("parent").getAsString());
-        assertEquals("grappin:item/grappin_icone", tire.getAsJsonObject("perspectives").getAsJsonObject("gui").get("parent").getAsString());
+        assertEquals("donjon:item/grappin_main_vide", tire.getAsJsonObject("base").get("parent").getAsString());
+        assertEquals("donjon:item/grappin_icone", tire.getAsJsonObject("perspectives").getAsJsonObject("gui").get("parent").getAsString());
     }
 
     @Test
@@ -71,7 +71,7 @@ class ModelesGrappinTest {
     void iconeEstPlate() throws IOException {
         JsonObject m = modele("grappin_icone");
         assertEquals("minecraft:item/handheld", m.get("parent").getAsString());
-        assertEquals("grappin:item/grappin", m.getAsJsonObject("textures").get("layer0").getAsString());
+        assertEquals("donjon:item/grappin", m.getAsJsonObject("textures").get("layer0").getAsString());
     }
 
     @Test
@@ -96,10 +96,10 @@ class ModelesGrappinTest {
                 }
             }
         }
-        BufferedImage icone = texture("grappin:item/grappin");
+        BufferedImage icone = texture("donjon:item/grappin");
         assertEquals(16, icone.getWidth());
         assertEquals(16, icone.getHeight());
-        BufferedImage atlas = texture("grappin:item/grappin_modele");
+        BufferedImage atlas = texture("donjon:item/grappin_modele");
         assertEquals(32, atlas.getWidth());
         assertEquals(32, atlas.getHeight());
     }

@@ -1,0 +1,11 @@
+{
+  "loader": "neoforge:separate_transforms",
+  "base": {
+    "parent": "donjon:item/cle_jaune_main"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "donjon:item/cle_jaune_icone"
+    }
+  }
+}

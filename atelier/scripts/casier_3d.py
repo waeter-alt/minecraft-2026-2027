@@ -17,7 +17,7 @@ from donjon_3d import Modele, bbmodel  # noqa: E402  (meme format de .bbmodel qu
 
 RACINE = Path(__file__).resolve().parents[2]
 SORTIE = RACINE / "atelier/modeles/station"
-ASSETS = RACINE / "atelier/donjon/arene/src/main/resources/assets/grappin/textures"
+ASSETS = RACINE / "atelier/donjon/arene/src/main/resources/assets/donjon/textures"
 
 # Peinture de chaque couleur, du plus sombre au plus clair (ordre de CasierCouleur.java).
 COULEURS = {"bleu_clair": [(62, 112, 150), (96, 156, 200), (132, 188, 228), (190, 224, 246)],

@@ -1,5 +1,5 @@
 // [claude-build] Bloc de decor du Donjon de la Station : oriente (facing), peut etre sous l'eau (waterlogged), forme donnee pour
-// l'orientation nord et tournee pour les autres. Le modele (assets/grappin/models/block/station, exporte depuis atelier/modeles/station)
+// l'orientation nord et tournee pour les autres. Le modele (assets/donjon/models/block/station, exporte depuis atelier/modeles/station)
 // peut deborder du bloc : la forme, elle, reste celle qu'on lui donne. Mural : se pose contre la face visee (le dos au mur).
 package fr.atelier.grappin;
 

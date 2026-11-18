@@ -86,7 +86,7 @@ public final class CapeEvenements {
         HORS_EAU.remove(j.getUUID());
         appliquerAttributs(j, true);
         PacketDistributor.sendToPlayer(j, new LestePayload(j.getId(), true));
-        j.displayClientMessage(Component.translatable("message.grappin.cape_lestee.leste").withStyle(ChatFormatting.DARK_AQUA), true);
+        j.displayClientMessage(Component.translatable("message.donjon.cape_lestee.leste").withStyle(ChatFormatting.DARK_AQUA), true);
         j.level().playSound(null, j.getX(), j.getY(), j.getZ(), SoundEvents.ARMOR_EQUIP_CHAIN.value(), SoundSource.PLAYERS, 0.9F, 0.7F);
     }
 
@@ -98,7 +98,7 @@ public final class CapeEvenements {
         }
         PacketDistributor.sendToPlayer(j, new LestePayload(j.getId(), false));
         if (prevenir) {
-            j.displayClientMessage(Component.translatable("message.grappin.cape_lestee.deleste").withStyle(ChatFormatting.AQUA), true);
+            j.displayClientMessage(Component.translatable("message.donjon.cape_lestee.deleste").withStyle(ChatFormatting.AQUA), true);
             j.level().playSound(null, j.getX(), j.getY(), j.getZ(), SoundEvents.BUBBLE_COLUMN_UPWARDS_INSIDE, SoundSource.PLAYERS, 0.8F, 1.2F);
         }
     }

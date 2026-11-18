@@ -1,5 +1,5 @@
 # [claude-build] Exporte un modele Blockbench « Java Block » (.bbmodel) en modeles de bloc JSON de Minecraft 1.21.1 (NeoForge), dans
-# assets/grappin/models/block/station/ :
+# assets/donjon/models/block/station/ :
 #   <nom>.json                                  le modele ;
 #   --a-part <prefixe>                          les cubes <prefixe>* vont dans <nom>_<prefixe sans _>.json (piece animee par le jeu) ;
 #   --variantes <tex>:<suffixe>=<texture>,...   un modele <nom>_<suffixe>.json par variante, <texture> mise a la place de <tex> ;
@@ -19,7 +19,7 @@ from pathlib import Path
 from PIL import Image
 
 RACINE = Path(__file__).resolve().parents[2]
-ASSETS = RACINE / "atelier/donjon/arene/src/main/resources/assets/grappin"
+ASSETS = RACINE / "atelier/donjon/arene/src/main/resources/assets/donjon"
 MODELES = ASSETS / "models/block/station"
 VUES = {"gui": ([30, 225, 0], 0.625), "ground": ([0, 0, 0], 0.25), "fixed": ([0, 0, 0], 0.5),
         "thirdperson_righthand": ([75, 45, 0], 0.375), "firstperson_righthand": ([0, 45, 0], 0.4), "firstperson_lefthand": ([0, 225, 0], 0.4)}
@@ -56,7 +56,7 @@ def modele(source, elements, textures, display=None):
             e["neoforge_data"] = {"block_light": 15, "sky_light": 15}
         els.append(e)
     compte = Counter(f["texture"][1:] for e in els for f in e["faces"].values())
-    tex = {k: f"grappin:block/station/{v}" for k, v in textures.items()}
+    tex = {k: f"donjon:block/station/{v}" for k, v in textures.items()}
     tex["particle"] = "#" + compte.most_common(1)[0][0]
     m = {"credit": f"Genere par atelier/scripts/bbmodel_vers_bloc.py depuis {source}", "parent": "minecraft:block/block",
          "ambientocclusion": False, "textures": tex, "elements": els}

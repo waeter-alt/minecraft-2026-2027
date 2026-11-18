@@ -20,7 +20,7 @@ from pathlib import Path
 from PIL import Image
 
 RACINE = Path(__file__).resolve().parents[2]
-ASSETS = RACINE / "atelier/donjon/arene/src/main/resources/assets/grappin"
+ASSETS = RACINE / "atelier/donjon/arene/src/main/resources/assets/donjon"
 BBMODELES = RACINE / "atelier/modeles/grappin"
 
 # Couleurs (celles de l'ancienne icone, plus des tons intermediaires)
@@ -233,7 +233,7 @@ def modele_json(cubes, penche, affichage):
             el["faces"][face] = {"uv": [v / 2 for v in u], "texture": "#0"}
         elements.append(el)
     m = {"texture_size": [32, 32],
-         "textures": {"0": "grappin:item/grappin_modele", "particle": "grappin:item/grappin_modele"},
+         "textures": {"0": "donjon:item/grappin_modele", "particle": "donjon:item/grappin_modele"},
          "elements": elements}
     if affichage:
         m["display"] = affichage
@@ -267,7 +267,7 @@ def bbmodel(nom, cubes, penche, affichage, texture):
         "elements": elements,
         "outliner": [e["uuid"] for e in elements],
         "textures": [{
-            "path": "", "name": "grappin_modele.png", "folder": "item", "namespace": "grappin", "id": "0",
+            "path": "", "name": "grappin_modele.png", "folder": "item", "namespace": "donjon", "id": "0",
             "width": 32, "height": 32, "uv_width": 32, "uv_height": 32, "particle": True, "use_as_default": True,
             "layers_enabled": False, "render_mode": "default", "render_sides": "auto", "frame_time": 1,
             "frame_order_type": "loop", "frame_order": "", "frame_interpolate": False, "visible": True,
@@ -293,17 +293,17 @@ def main():
         modeles = ASSETS / "models/item"
         ecrire_json(modeles / "grappin.json", {
             "loader": "neoforge:separate_transforms",
-            "base": {"parent": "grappin:item/grappin_main"},
-            "perspectives": {"gui": {"parent": "grappin:item/grappin_icone"}},
+            "base": {"parent": "donjon:item/grappin_main"},
+            "perspectives": {"gui": {"parent": "donjon:item/grappin_icone"}},
             # crochet lance (propriete grappin:tire, GrappinClient) : le lanceur sans sa tete
-            "overrides": [{"predicate": {"grappin:tire": 1}, "model": "grappin:item/grappin_tire"}],
+            "overrides": [{"predicate": {"donjon:tire": 1}, "model": "donjon:item/grappin_tire"}],
         })
         ecrire_json(modeles / "grappin_tire.json", {
             "loader": "neoforge:separate_transforms",
-            "base": {"parent": "grappin:item/grappin_main_vide"},
-            "perspectives": {"gui": {"parent": "grappin:item/grappin_icone"}},
+            "base": {"parent": "donjon:item/grappin_main_vide"},
+            "perspectives": {"gui": {"parent": "donjon:item/grappin_icone"}},
         })
-        ecrire_json(modeles / "grappin_icone.json", {"parent": "minecraft:item/handheld", "textures": {"layer0": "grappin:item/grappin"}})
+        ecrire_json(modeles / "grappin_icone.json", {"parent": "minecraft:item/handheld", "textures": {"layer0": "donjon:item/grappin"}})
         ecrire_json(modeles / "grappin_main.json", modele_json(cubes_main(), PENCHE, AFFICHAGE_MAIN))
         ecrire_json(modeles / "grappin_main_vide.json", modele_json(cubes_main_vide(), PENCHE, AFFICHAGE_MAIN))
         ecrire_json(modeles / "crochet_tige.json", modele_json(cubes_crochet_tige(), None, None))

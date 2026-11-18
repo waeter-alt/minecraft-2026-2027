@@ -4,7 +4,7 @@
 #   chaudiere     : chaudiere de cuivre rivete (porte de foyer, manometre, soupape, cheminee), 2 blocs de haut de modele ;
 #   cadran        : manometre mural, cuivre et verre.
 # Ecrit atelier/modeles/station/<bloc>.bbmodel (textures incluses) et les textures (16 x 16, a carreler) dans
-# assets/grappin/textures/block/station/. Ensuite : atelier/scripts/bbmodel_vers_bloc.py (commandes dans station_decor_modeles.sh).
+# assets/donjon/textures/block/station/. Ensuite : atelier/scripts/bbmodel_vers_bloc.py (commandes dans station_decor_modeles.sh).
 # Reperes (comme un fourneau de Minecraft) : l'avant regarde le NORD (z petit), le dos est en z = 16 (le mur, pour le cadran).
 # Les modeles debordent du bloc (Minecraft accepte -16..32) : les cubes sont coupes aux multiples de 16, pour que chaque morceau
 # ait un UV dans 0..16 (projection des coordonnees, comme l'auto-UV de Blockbench, sur des textures qui se carrelent) ;
@@ -21,7 +21,7 @@ from PIL import Image
 
 RACINE = Path(__file__).resolve().parents[2]
 SORTIE = RACINE / "atelier/modeles/station"
-TEXTURES = RACINE / "atelier/donjon/arene/src/main/resources/assets/grappin/textures/block/station"
+TEXTURES = RACINE / "atelier/donjon/arene/src/main/resources/assets/donjon/textures/block/station"
 GRAINE = uuid.UUID("5a7e0000-0b0b-4c1e-9a11-00000000c0de")
 FACES = ("north", "east", "south", "west", "up", "down")
 COUPE = {0: ("east", "west"), 1: ("up", "down"), 2: ("south", "north")}   # faces interieures d'une coupe (morceau bas, morceau haut)
@@ -205,7 +205,7 @@ def bbmodel(m, tex):
         img = tex[n]
         tampon = io.BytesIO()
         img.save(tampon, "PNG")
-        textures_bb.append({"path": "", "name": n + ".png", "folder": "block/station", "namespace": "grappin", "id": str(index[n]),
+        textures_bb.append({"path": "", "name": n + ".png", "folder": "block/station", "namespace": "donjon", "id": str(index[n]),
                             "width": img.width, "height": img.height, "uv_width": 16, "uv_height": 16, "particle": False,
                             "render_mode": "default", "visible": True, "internal": True, "saved": True, "uuid": ident(m.nom, "tex", n),
                             "source": "data:image/png;base64," + base64.b64encode(tampon.getvalue()).decode()})

@@ -11,7 +11,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-SORTIE = Path(__file__).resolve().parent.parent / "donjon/arene/src/main/resources/assets/grappin/textures/entity/leviathan.png"
+SORTIE = Path(__file__).resolve().parent.parent / "donjon/arene/src/main/resources/assets/donjon/textures/entity/leviathan.png"
 random.seed(21)
 im = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
 d = ImageDraw.Draw(im)

@@ -9,7 +9,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-ASSETS = Path(__file__).resolve().parents[2] / "atelier/donjon/arene/src/main/resources/assets/grappin"
+ASSETS = Path(__file__).resolve().parents[2] / "atelier/donjon/arene/src/main/resources/assets/donjon"
 CASE, SUR, FOND = 380, 3, (214, 220, 224)
 
 

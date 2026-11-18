@@ -23,8 +23,8 @@ import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 
 class ModelesDonjonTest {
-    private static final Path ASSETS = Path.of("src/main/resources/assets/grappin");
-    private static final Path DATA = Path.of("src/main/resources/data/grappin");
+    private static final Path ASSETS = Path.of("src/main/resources/assets/donjon");
+    private static final Path DATA = Path.of("src/main/resources/data/donjon");
     private static final List<String> BLOCS = List.of(   // les portes et sceaux en blocs ont ete abandonnes : la porte est une entite
             "levier_racine", "casier");
     private static final List<String> CLES = List.of("cle_bleue", "cle_jaune", "cle_rouge");
@@ -44,10 +44,10 @@ class ModelesDonjonTest {
 
     /** Toutes les textures d'un modele (en suivant les parents du mod) existent et font 16 x 16. */
     private static void modeleValide(String id) throws IOException {
-        if (!id.startsWith("grappin:")) {
+        if (!id.startsWith("donjon:")) {
             return;
         }
-        JsonObject m = json(ASSETS.resolve("models/" + id.substring(8) + ".json"));
+        JsonObject m = json(ASSETS.resolve("models/" + id.substring(id.indexOf(':') + 1) + ".json"));
         if (m.has("textures")) {
             for (Map.Entry<String, JsonElement> t : m.getAsJsonObject("textures").entrySet()) {
                 String v = t.getValue().getAsString();
@@ -68,7 +68,7 @@ class ModelesDonjonTest {
             for (Map.Entry<String, JsonElement> v : etats.getAsJsonObject("variants").entrySet()) {
                 modeleValide(v.getValue().getAsJsonObject().get("model").getAsString());
             }
-            modeleValide("grappin:item/" + b);
+            modeleValide("donjon:item/" + b);
         }
     }
 
@@ -88,7 +88,7 @@ class ModelesDonjonTest {
     @Test
     void chaqueCleAUnModele() throws IOException {
         for (String c : CLES) {
-            modeleValide("grappin:item/" + c);
+            modeleValide("donjon:item/" + c);
         }
     }
 
@@ -97,7 +97,7 @@ class ModelesDonjonTest {
         for (String b : BLOCS) {
             JsonObject t = json(DATA.resolve("loot_table/blocks/" + b + ".json"));
             String nom = t.getAsJsonArray("pools").get(0).getAsJsonObject().getAsJsonArray("entries").get(0).getAsJsonObject().get("name").getAsString();
-            assertEquals("grappin:" + b, nom);
+            assertEquals("donjon:" + b, nom);
         }
     }
 }
