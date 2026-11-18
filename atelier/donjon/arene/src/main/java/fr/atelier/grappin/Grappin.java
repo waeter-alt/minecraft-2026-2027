@@ -140,6 +140,10 @@ public class Grappin {
             .displayItems((parametres, sortie) -> {
                 sortie.accept(GRAPPIN.get());
                 sortie.accept(ANCRAGE_ITEM.get());
+                DonjonBlocs.BLOCS_OBJETS.forEach(o -> sortie.accept(o.get()));
+                sortie.accept(DonjonBlocs.CLE_BLEUE.get());
+                sortie.accept(DonjonBlocs.CLE_JAUNE.get());
+                sortie.accept(DonjonBlocs.CLE_ROUGE.get());
                 sortie.accept(VOILE.get());
                 sortie.accept(PARAVOILE.get());
                 sortie.accept(SERAPHIN_OEUF.get());
@@ -150,6 +154,7 @@ public class Grappin {
             .build());
 
     public Grappin(IEventBus modBus, ModContainer container) {
+        DonjonBlocs.charger();
         BLOCS.register(modBus);
         ITEMS.register(modBus);
         ENTITES.register(modBus);

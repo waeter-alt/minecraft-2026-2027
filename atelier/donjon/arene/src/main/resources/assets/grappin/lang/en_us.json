@@ -47,5 +47,15 @@
   "entity.grappin.plume": "Seraph Feather",
   "item.grappin.seraphin_spawn_egg": "Seraph Spawn Egg",
   "entity.grappin.rodeur": "Root Prowler",
-  "item.grappin.rodeur_spawn_egg": "Root Prowler Spawn Egg"
+  "item.grappin.rodeur_spawn_egg": "Root Prowler Spawn Egg",
+  "block.grappin.porte_bleue": "Blue Carved Stone",
+  "block.grappin.porte_jaune": "Yellow Carved Stone",
+  "block.grappin.porte_rouge": "Red Carved Stone",
+  "block.grappin.sceau_bleu": "Sapphire Seal",
+  "block.grappin.sceau_jaune": "Amber Seal",
+  "block.grappin.sceau_rouge": "Ruby Seal",
+  "block.grappin.levier_racine": "Root Lever",
+  "item.grappin.cle_bleue": "Blue Key",
+  "item.grappin.cle_jaune": "Yellow Key",
+  "item.grappin.cle_rouge": "Red Key"
 }
