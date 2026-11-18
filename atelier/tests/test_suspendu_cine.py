@@ -235,8 +235,8 @@ class TestFonctions(unittest.TestCase):
         tick, debut, fin, reset = (self.f[n] for n in ("suspendu_tick", "suspendu_ss1_boss_debut", "suspendu_ss1_boss_fin", "suspendu_reset"))
         self.assertIn("suspendu_ss1_boss_debut", tick)
         self.assertIn("matches 1 unless entity @e[tag=suspendu_ss1m] run function atelier:suspendu_ss1_boss_fin", tick)     # la mort du mini-boss declenche le coffre
-        self.assertIn("summon minecraft:vindicator", debut)
-        self.assertIn("generic.max_health base set 60", debut)
+        self.assertIn("summon donjon:rodeur", debut)                                                                          # le Rodeur des Racines (mod grappin), plus le vindicateur provisoire
+        self.assertIn("suspendu_ss1m", debut)
         coffre = self.f["suspendu_ss1_boss_coffre"]
         self.assertIn("donjon:grappin", coffre)                                                                               # le coffre du grappin est pose a sa mort (par la fonction que la cinematique appelle)...
         self.assertIn("minecraft:chest", coffre)
