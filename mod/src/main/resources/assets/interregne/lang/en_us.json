@@ -203,5 +203,16 @@
   "key.categories.interregne": "Interregne",
   "key.interregne.carte": "Kingdom map",
   "entity.interregne.conducteur": "Caravan driver",
-  "entity.interregne.escorte": "Escort soldier"
+  "entity.interregne.escorte": "Escort soldier",
+  "item.interregne.legionnaire_spawn_egg": "Legionnaire Spawn Egg",
+  "item.interregne.archer_spawn_egg": "Archer Spawn Egg",
+  "item.interregne.baguette_de_niveau": "Level Wand",
+  "entity.interregne.legionnaire": "Legionnaire",
+  "entity.interregne.archer": "Archer",
+  "subtitles.interregne.legionnaire.hurt": "Legionnaire hurt",
+  "subtitles.interregne.legionnaire.attack": "Legionnaire shouts",
+  "subtitles.interregne.legionnaire.death": "Legionnaire dies",
+  "subtitles.interregne.archer.hurt": "Archer hurt",
+  "subtitles.interregne.archer.shoot": "Archer strains",
+  "subtitles.interregne.archer.death": "Archer dies"
 }
