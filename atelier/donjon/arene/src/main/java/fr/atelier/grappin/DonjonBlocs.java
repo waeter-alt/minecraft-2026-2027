@@ -67,6 +67,7 @@ public final class DonjonBlocs {
 
     /** Charge la classe (donc les inscriptions ci-dessus) avant que les registres du mod soient branches, et branche le sien. */
     static void charger(IEventBus modBus) {
+        StationBlocs.charger();
         BLOCS_ENTITES.register(modBus);
     }
 }

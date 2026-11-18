@@ -123,6 +123,7 @@ public class Grappin {
                 sortie.accept(GRAPPIN.get());
                 sortie.accept(ANCRAGE_ITEM.get());
                 DonjonBlocs.BLOCS_OBJETS.forEach(o -> sortie.accept(o.get()));
+                StationBlocs.BLOCS_OBJETS.forEach(o -> sortie.accept(o.get()));
                 sortie.accept(DonjonBlocs.CLE_BLEUE.get());
                 sortie.accept(DonjonBlocs.CLE_JAUNE.get());
                 sortie.accept(DonjonBlocs.CLE_ROUGE.get());

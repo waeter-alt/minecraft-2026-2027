@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "grappin:pompe_station",
+    "grappin:chaudiere",
+    "grappin:cadran"
+  ]
+}

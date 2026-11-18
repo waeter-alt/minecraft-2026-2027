@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "grappin:block/station/cadran"
+    },
+    "facing=east": {
+      "model": "grappin:block/station/cadran",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "grappin:block/station/cadran",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "grappin:block/station/cadran",
+      "y": 270
+    }
+  }
+}

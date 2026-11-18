@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=north,en_marche=false": {
+      "model": "grappin:block/station/pompe_station_arret"
+    },
+    "facing=north,en_marche=true": {
+      "model": "grappin:block/station/pompe_station_marche"
+    },
+    "facing=east,en_marche=false": {
+      "model": "grappin:block/station/pompe_station_arret",
+      "y": 90
+    },
+    "facing=east,en_marche=true": {
+      "model": "grappin:block/station/pompe_station_marche",
+      "y": 90
+    },
+    "facing=south,en_marche=false": {
+      "model": "grappin:block/station/pompe_station_arret",
+      "y": 180
+    },
+    "facing=south,en_marche=true": {
+      "model": "grappin:block/station/pompe_station_marche",
+      "y": 180
+    },
+    "facing=west,en_marche=false": {
+      "model": "grappin:block/station/pompe_station_arret",
+      "y": 270
+    },
+    "facing=west,en_marche=true": {
+      "model": "grappin:block/station/pompe_station_marche",
+      "y": 270
+    }
+  }
+}

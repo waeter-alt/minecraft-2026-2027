@@ -59,6 +59,7 @@ public final class GrappinClient {
         static void modeles(ModelEvent.RegisterAdditional event) {
             event.register(MODELE_TIGE);          // le crochet en vol n'est pas un objet : ses modeles doivent etre charges a part
             event.register(MODELE_GRIFFE);
+            event.register(PompeRendu.VOLANT);    // le volant de la pompe tourne : modele a part, dessine par PompeRendu
         }
 
         @SubscribeEvent
@@ -83,6 +84,7 @@ public final class GrappinClient {
             event.registerEntityRenderer(DonjonBlocs.PORTE.get(), PorteRendu::new);
             event.registerBlockEntityRenderer(DonjonBlocs.LEVIER_ENTITE.get(), LevierRendu::new);
             event.registerBlockEntityRenderer(DonjonBlocs.CASIER_ENTITE.get(), CasierRendu::new);
+            event.registerBlockEntityRenderer(StationBlocs.POMPE_ENTITE.get(), PompeRendu::new);
             event.registerEntityRenderer(Grappin.LEVIATHAN.get(), LeviathanRendu::new);
         }
     }

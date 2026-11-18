@@ -1,67 +1,99 @@
 # [claude-build] Exporte un modele Blockbench « Java Block » (.bbmodel) en modeles de bloc JSON de Minecraft 1.21.1 (NeoForge), dans
 # assets/grappin/models/block/station/ :
-#   <nom>.json                    un bloc ;
-#   <nom>_bas.json, <nom>_haut.json, <nom>_objet.json   avec --deux-blocs : les cubes de y >= 16 vont au bloc du haut (descendus de 16),
-#                                 les autres au bas ; _objet garde tout, pour l'objet en main ou dans l'inventaire (rendu reduit) ;
-#   --variantes <tex>:<a>,<b>,... un modele <nom>_<x>.json par texture <x> mise a la place de <tex> (panneau de profondeur).
-# Cubes nommes lueur_* : pleine lumiere (neoforge_data block_light/sky_light 15, sans ombrage). Texture avec transparence : rendu cutout.
-# Textures : grappin:block/station/<nom de la texture>.
-#   python atelier/scripts/bbmodel_vers_bloc.py atelier/modeles/station/pompe.bbmodel --deux-blocs
+#   <nom>.json                                  le modele ;
+#   --a-part <prefixe>                          les cubes <prefixe>* vont dans <nom>_<prefixe sans _>.json (piece animee par le jeu) ;
+#   --variantes <tex>:<suffixe>=<texture>,...   un modele <nom>_<suffixe>.json par variante, <texture> mise a la place de <tex> ;
+#   --objet                                     <nom>_objet.json : tout le modele, reduit pour tenir dans une case (objet en main,
+#                                               inventaire) quand il deborde du bloc.
+# Lumineux (block_light/sky_light 15, sans ombrage) : les cubes nommes lueur_* et ceux dont une face porte une texture *_allume.
+# Texture avec transparence : rendu cutout. Particules : la texture la plus employee. Textures : grappin:block/station/<nom>.
+# Les commandes pour les blocs de la Station sont dans atelier/scripts/station_decor_modeles.sh.
 import base64
 import io
 import json
+import math
 import sys
+from collections import Counter
 from pathlib import Path
 
 from PIL import Image
 
 RACINE = Path(__file__).resolve().parents[2]
-MODELES = RACINE / "atelier/donjon/arene/src/main/resources/assets/grappin/models/block/station"
-OBJET_DEUX_BLOCS = {"gui": {"rotation": [30, 225, 0], "translation": [0, -3.5, 0], "scale": [0.36, 0.36, 0.36]},
-                    "ground": {"rotation": [0, 0, 0], "translation": [0, 2, 0], "scale": [0.2, 0.2, 0.2]},
-                    "fixed": {"rotation": [0, 0, 0], "translation": [0, -2, 0], "scale": [0.36, 0.36, 0.36]},
-                    "thirdperson_righthand": {"rotation": [75, 45, 0], "translation": [0, 1.5, 1], "scale": [0.25, 0.25, 0.25]},
-                    "firstperson_righthand": {"rotation": [0, 45, 0], "translation": [0, 0, 0], "scale": [0.25, 0.25, 0.25]},
-                    "firstperson_lefthand": {"rotation": [0, 225, 0], "translation": [0, 0, 0], "scale": [0.25, 0.25, 0.25]}}
+ASSETS = RACINE / "atelier/donjon/arene/src/main/resources/assets/grappin"
+MODELES = ASSETS / "models/block/station"
+VUES = {"gui": ([30, 225, 0], 0.625), "ground": ([0, 0, 0], 0.25), "fixed": ([0, 0, 0], 0.5),
+        "thirdperson_righthand": ([75, 45, 0], 0.375), "firstperson_righthand": ([0, 45, 0], 0.4), "firstperson_lefthand": ([0, 225, 0], 0.4)}
 
 
-def transparente(t):
-    img = Image.open(io.BytesIO(base64.b64decode(t["source"].split(",", 1)[1]))).convert("RGBA")
-    return any(p[3] < 255 for p in img.getdata())
+def transparente(nom):
+    img = Image.open(ASSETS / "textures/block/station" / f"{nom}.png").convert("RGBA")
+    return img.getchannel("A").getextrema()[0] < 255
 
 
-def element(e, noms, dy):
-    de, a = list(e["from"]), list(e["to"])
-    de[1] -= dy
-    a[1] -= dy
-    sortie = {"name": e["name"], "from": de, "to": a}
+def element(e, noms):
+    sortie = {"name": e["name"], "from": e["from"], "to": e["to"]}
     r = e.get("rotation", [0, 0, 0])
     axes = [i for i in range(3) if abs(r[i]) > 1e-9]
     if axes:
         i = axes[0]
-        o = list(e.get("origin", [0, 0, 0]))
-        o[1] -= dy
-        sortie["rotation"] = {"angle": r[i], "axis": "xyz"[i], "origin": o}
+        sortie["rotation"] = {"angle": r[i], "axis": "xyz"[i], "origin": e.get("origin", [8, 8, 8])}
     faces = {}
     for nom, f in e["faces"].items():
         if f.get("texture") is None:
             continue
         faces[nom] = {"uv": f["uv"], "texture": "#" + noms[f["texture"]]}
     sortie["faces"] = faces
-    if e["name"].startswith("lueur_"):
-        sortie["shade"] = False
-        sortie["neoforge_data"] = {"block_light": 15, "sky_light": 15}
     return sortie
 
 
-def modele(source, elements, textures, cutout, display=None):
+def modele(source, elements, textures, display=None):
+    """textures : {variable: nom de texture}. Les cubes lumineux sont reperes ici, une fois les variantes appliquees."""
+    els = []
+    for e in elements:
+        e = json.loads(json.dumps(e))
+        if e["name"].startswith("lueur_") or any(textures[f["texture"][1:]].endswith("_allume") for f in e["faces"].values()):
+            e["shade"] = False
+            e["neoforge_data"] = {"block_light": 15, "sky_light": 15}
+        els.append(e)
+    compte = Counter(f["texture"][1:] for e in els for f in e["faces"].values())
+    tex = {k: f"grappin:block/station/{v}" for k, v in textures.items()}
+    tex["particle"] = "#" + compte.most_common(1)[0][0]
     m = {"credit": f"Genere par atelier/scripts/bbmodel_vers_bloc.py depuis {source}", "parent": "minecraft:block/block",
-         "ambientocclusion": False, "textures": textures, "elements": elements}
-    if cutout:
+         "ambientocclusion": False, "textures": tex, "elements": els}
+    if any(transparente(v) for v in set(textures.values())):
         m["render_type"] = "minecraft:cutout"
     if display:
         m["display"] = display
     return m
+
+
+def rot_xyz(rx, ry, rz):
+    """Matrice de Quaternionf.rotationXYZ (ItemTransform) : Rx * Ry * Rz."""
+    cx, sx = math.cos(math.radians(rx)), math.sin(math.radians(rx))
+    cy, sy = math.cos(math.radians(ry)), math.sin(math.radians(ry))
+    cz, sz = math.cos(math.radians(rz)), math.sin(math.radians(rz))
+    mx = [[1, 0, 0], [0, cx, -sx], [0, sx, cx]]
+    my = [[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]]
+    mz = [[cz, -sz, 0], [sz, cz, 0], [0, 0, 1]]
+
+    def mul(a, b):
+        return [[sum(a[i][k] * b[k][j] for k in range(3)) for j in range(3)] for i in range(3)]
+    return mul(mx, mul(my, mz))
+
+
+def affichage(elements):
+    """Reduit le modele pour qu'il tienne la place d'un bloc, et le recentre (translation = -R * S * decalage du centre)."""
+    bas = [min(e["from"][i] for e in elements) for i in range(3)]
+    haut = [max(e["to"][i] for e in elements) for i in range(3)]
+    taille = max(haut[i] - bas[i] for i in range(3))
+    centre = [(bas[i] + haut[i]) / 2 - 8 for i in range(3)]
+    d = {}
+    for vue, (rot, echelle) in VUES.items():
+        s = echelle * 16 / taille
+        r = rot_xyz(*rot)
+        t = [-sum(r[i][k] * s * centre[k] for k in range(3)) for i in range(3)]
+        d[vue] = {"rotation": rot, "translation": [round(max(-80, min(80, v)), 3) for v in t], "scale": [round(s, 4)] * 3}
+    return d
 
 
 def ecrire(nom, m):
@@ -72,32 +104,27 @@ def ecrire(nom, m):
 
 def main():
     args = sys.argv[1:]
-    chemin = Path(args[0])
+    chemin = Path(args[0]).resolve()
     bb = json.loads(chemin.read_text(encoding="utf-8"))
-    source = chemin.resolve().relative_to(RACINE).as_posix()
+    source = chemin.relative_to(RACINE).as_posix()
     nom = chemin.stem
-    noms = {}
-    textures = {}
-    for i, t in enumerate(bb["textures"]):
-        n = t["name"].rsplit(".", 1)[0]
-        noms[i] = n
-        textures[n] = f"grappin:block/station/{n}"
-    textures["particle"] = "#" + noms[0]
-    cutout = any(transparente(t) for t in bb["textures"])
-    elements = bb["elements"]
-    if "--deux-blocs" in args:
-        bas = [element(e, noms, 0) for e in elements if e["from"][1] < 16]
-        haut = [element(e, noms, 16) for e in elements if e["from"][1] >= 16]
-        ecrire(nom + "_bas", modele(source, bas, textures, cutout))
-        ecrire(nom + "_haut", modele(source, haut, textures, cutout))
-        ecrire(nom + "_objet", modele(source, [element(e, noms, 0) for e in elements], textures, cutout, OBJET_DEUX_BLOCS))
-    elif "--variantes" in args:
+    noms = {i: t["name"].rsplit(".", 1)[0] for i, t in enumerate(bb["textures"])}
+    textures = {n: n for n in noms.values()}
+    tous = [element(e, noms) for e in bb["elements"]]
+    corps = tous
+    if "--a-part" in args:
+        prefixe = args[args.index("--a-part") + 1]
+        corps = [e for e in tous if not e["name"].startswith(prefixe)]
+        ecrire(f"{nom}_{prefixe.strip('_')}", modele(source, [e for e in tous if e["name"].startswith(prefixe)], textures))
+    if "--variantes" in args:
         tex, liste = args[args.index("--variantes") + 1].split(":")
         for v in liste.split(","):
-            t = dict(textures, **{tex: f"grappin:block/station/{v}"})
-            ecrire(f"{nom}_{v.removeprefix(tex.rsplit('_', 2)[0] + '_')}", modele(source, [element(e, noms, 0) for e in elements], t, cutout))
+            suffixe, remplacante = v.split("=")
+            ecrire(f"{nom}_{suffixe}", modele(source, corps, dict(textures, **{tex: remplacante})))
     else:
-        ecrire(nom, modele(source, [element(e, noms, 0) for e in elements], textures, cutout))
+        ecrire(nom, modele(source, corps, textures))
+    if "--objet" in args:
+        ecrire(f"{nom}_objet", modele(source, tous, textures, affichage(tous)))
 
 
 if __name__ == "__main__":
