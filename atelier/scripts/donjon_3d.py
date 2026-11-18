@@ -31,15 +31,16 @@ AMBRE = GEMMES["jaune"]
 
 # ------------------------------------------------------------------------------------------------ matieres (peinture par face)
 def peintre(matiere, gemme=None):
-    """Renvoie f(x, y, l, h, alea) -> couleur d'un texel (x, y) d'une face de l x h texels."""
-    def pierre(x, y, l, h, a):
+    """Renvoie f(x, y, l, h, alea, g) -> couleur d'un texel (x, y) d'une face de l x h texels ; g = (gx, gy) position du texel dans
+    le modele pour les faces avant et arriere (pour peindre un motif d'un seul tenant a travers plusieurs cubes), None sinon."""
+    def pierre(x, y, l, h, a, g=None):
         if y % 16 == 15 or (x + (8 if (y // 16) % 2 else 0)) % 24 == 23:
             return PIERRE[0]                                                   # joints des blocs taillés
         if y > h - 4 and a.random() < 0.45:
             return MOUSSE[a.randint(0, 2)]                                     # mousse au pied
         return PIERRE[a.choice((1, 2, 2, 3))]
 
-    def pierre_gravee(x, y, l, h, a):
+    def pierre_gravee(x, y, l, h, a, g=None):
         c = pierre(x, y, l, h, a)
         for k, (cx, f, ph) in enumerate(((l * 0.25, 9.0, 0.0), (l * 0.55, 13.0, 1.7), (l * 0.8, 7.0, 3.1))):
             gx = cx + 5 * math.sin(y / f + ph) + (y / h) * 6 * (1 if k % 2 else -1)   # racine sculptee qui serpente
@@ -49,22 +50,22 @@ def peintre(matiere, gemme=None):
                 return PIERRE[4]                                               # arete eclairee de la gravure
         return c
 
-    def fer(x, y, l, h, a):
+    def fer(x, y, l, h, a, g=None):
         if (x % 8 == 3 and y % 8 == 3):
             return FER[3]                                                      # rivets
         return FER[a.choice((1, 2, 2))]
 
-    def fer_sombre(x, y, l, h, a):
+    def fer_sombre(x, y, l, h, a, g=None):
         return FER[a.choice((0, 0, 1))]
 
-    def racine(x, y, l, h, a):
+    def racine(x, y, l, h, a, g=None):
         return BOIS[0] if x % 3 == 0 else BOIS[a.choice((1, 1, 2, 3))]
 
-    def mousse(x, y, l, h, a):
+    def mousse(x, y, l, h, a, g=None):
         return MOUSSE[a.randint(0, 2)]
 
     def facettes(pal):
-        def f(x, y, l, h, a):
+        def f(x, y, l, h, a, g=None):
             u, v = (x + 0.5) / l - 0.5, (y + 0.5) / h - 0.5
             if abs(u) + abs(v) < 0.18:
                 return pal[3]
@@ -75,8 +76,69 @@ def peintre(matiere, gemme=None):
             return pal[1]
         return f
 
+    pal = gemme or AMBRE
+
+    def pierre_porte(x, y, l, h, a, g=None):
+        """Pierre de la porte : grands blocs tailles, sombres et calmes ; sur les faces avant et arriere, un seul grand motif sculpte :
+        un anneau autour du sceau et des racines qui en rayonnent, avec une veine de la couleur du sceau dans les plus proches."""
+        base = [(38, 38, 44), (46, 46, 52), (54, 54, 60), (64, 64, 70)]
+        if g is None:
+            return base[a.choice((0, 1, 1, 2))]
+        gx, gy = g
+        if gy < 9 and a.random() < 0.35:
+            return MOUSSE[a.randint(0, 2)]
+        r = math.hypot(gx, gy - 96)
+        if abs(r - 34) < 1.3:
+            return pal[1] if r > 34 else (20, 20, 26)                                  # anneau grave autour du sceau, veine de couleur au fond
+        if 34 - 2.6 < r <= 34 - 1.3:
+            return (86, 86, 94)
+        d, s, n = distance_racines(gx, gy)
+        if d < 0.9 and n < 4 and s < 42:
+            return pal[2] if s < 18 else pal[1]                                        # veine de couleur qui descend du sceau, sur un tiers de la racine
+        if d < 1.4:
+            return (20, 20, 26)                                                        # creux de la gravure
+        if d < 2.3:
+            return (86, 86, 94)                                                        # arete eclairee
+        rang = int(gy // 16)
+        if gy % 16 < 1 or (gx + 64 + (16 if rang % 2 else 0)) % 32 < 1:
+            return (30, 30, 36)                                                         # joints des grands blocs
+        return base[a.choice((0, 1, 1, 1, 2))]
+
+    def fer_porte(x, y, l, h, a, g=None):
+        if x % 10 in (4, 5) and y % 10 in (4, 5):
+            return FER[3] if (x % 10, y % 10) == (4, 4) else FER[2]                     # gros rivets
+        return FER[a.choice((0, 0, 1))]
+
     return {"pierre": pierre, "pierre_gravee": pierre_gravee, "fer": fer, "fer_sombre": fer_sombre, "racine": racine,
-            "mousse": mousse, "gemme": facettes(gemme or AMBRE), "ambre": facettes(AMBRE)}[matiere]
+            "mousse": mousse, "gemme": facettes(pal), "ambre": facettes(AMBRE), "pierre_porte": pierre_porte, "fer_porte": fer_porte}[matiere]
+
+
+# Racines sculptees qui partent de l'anneau du sceau (centre en (0, 96) dans la porte), en coordonnees du modele (x, y)
+RACINES_SCULPTEES = [
+    [(-3, 62), (-3, 44), (-9, 24), (-16, 4)],
+    [(3, 62), (6, 46), (15, 28), (26, 4)],
+    [(-32, 86), (-42, 76), (-49, 56), (-54, 26), (-56, 6)],
+    [(32, 86), (42, 76), (49, 56), (54, 26), (56, 6)],
+    [(-46, 64), (-36, 48), (-30, 24)],
+    [(46, 64), (36, 48), (30, 24)],
+    [(-22, 118), (-32, 112), (-40, 100)],
+    [(22, 118), (32, 112), (40, 100)],
+]
+
+
+def distance_racines(x, y):
+    """(distance a la racine sculptee la plus proche, longueur parcourue depuis son depart, numero de la racine)."""
+    meilleur = (1e9, 1e9, -1)
+    for numero, ligne in enumerate(RACINES_SCULPTEES):
+        parcouru = 0.0
+        for (ax, ay), (bx, by) in zip(ligne, ligne[1:]):
+            lg = math.hypot(bx - ax, by - ay)
+            t = max(0.0, min(1.0, ((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / (lg * lg)))
+            d = math.hypot(x - (ax + t * (bx - ax)), y - (ay + t * (by - ay)))
+            if d < meilleur[0]:
+                meilleur = (d, parcouru + t * lg, numero)
+            parcouru += lg
+    return meilleur
 
 
 # ------------------------------------------------------------------------------------------------ modele : os, cubes, box UV
@@ -93,16 +155,19 @@ class Modele:
         self.cubes.append((os, nom, matiere, [float(v) for v in de], [float(v) for v in a], rotation))
 
     def ranger(self):
-        """Place le patron (box UV) de chaque cube sur la texture, en rangees."""
-        x = y = hauteur_rangee = 0
-        places = []
+        """Place le patron (box UV) de chaque cube sur la texture, en rangees, les plus hauts d'abord (moins de place perdue)."""
+        tailles = []
         for _, _, _, de, a, _ in self.cubes:
             w, h, d = (math.ceil(a[i] - de[i]) for i in range(3))
-            lw, lh = 2 * d + 2 * w, d + h
+            tailles.append((2 * d + 2 * w, d + h))
+        places = [None] * len(self.cubes)
+        x = y = hauteur_rangee = 0
+        for k in sorted(range(len(tailles)), key=lambda k: -tailles[k][1]):
+            lw, lh = tailles[k]
             if x + lw > self.taille:
                 x, y, hauteur_rangee = 0, y + hauteur_rangee, 0
             assert y + lh <= self.taille, f"texture trop petite pour {self.nom}"
-            places.append((x, y))
+            places[k] = (x, y)
             x += lw
             hauteur_rangee = max(hauteur_rangee, lh)
         return places
@@ -114,11 +179,16 @@ class Modele:
             w, h, d = (math.ceil(a[i] - de[i]) for i in range(3))
             f = peintre(mat, gemme)
             alea = random.Random(k * 7919)
-            for (fu, fv, fl, fh) in ((u + d, v + d, w, h), (u + 2 * d + w, v + d, w, h), (u, v + d, d, h), (u + d + w, v + d, d, h),
-                                     (u + d, v, w, d), (u + d + w, v, w, d)):
+            faces = ((u + d, v + d, w, h, "avant"), (u + 2 * d + w, v + d, w, h, "arriere"), (u, v + d, d, h, None), (u + d + w, v + d, d, h, None),
+                     (u + d, v, w, d, None), (u + d + w, v, w, d, None))
+            for (fu, fv, fl, fh, cote) in faces:
                 for yy in range(fh):
                     for xx in range(fl):
-                        p[fu + xx, fv + yy] = f(xx, yy, fl, fh, alea) + (255,)
+                        g = None
+                        if cote:
+                            gx = de[0] + xx + 0.5 if cote == "arriere" else a[0] - xx - 0.5
+                            g = (gx, a[1] - yy - 0.5)
+                        p[fu + xx, fv + yy] = f(xx, yy, fl, fh, alea, g) + (255,)
         return img
 
 
@@ -187,27 +257,37 @@ def porte():
         x0 = -64 + 8 * i
         h = haut_arche(x0 + 4)
         if i in (0, 15):
-            m.cube("dalle", f"montant{i}", "fer", (x0, 4, -6), (x0 + 8, h, 6))                  # montants de fer aux deux bords
+            m.cube("dalle", f"montant{i}", "fer_porte", (x0, 4, -6), (x0 + 8, h, 6))            # montants de fer aux deux bords
         else:
-            m.cube("dalle", f"panneau{i}", "pierre_gravee", (x0, 4, -4), (x0 + 8, h - 6, 4))
-            m.cube("dalle", f"arc{i}", "fer", (x0, h - 6, -6), (x0 + 8, h, 6))                  # le cintre de fer suit l'arche
+            m.cube("dalle", f"panneau{i}", "pierre_porte", (x0, 4, -4), (x0 + 8, h - 6, 4))
+            m.cube("dalle", f"arc{i}", "fer_porte", (x0, h - 6, -6), (x0 + 8, h, 6))            # le cintre de fer suit l'arche
     m.cube("dalle", "joint", "fer_sombre", (-1, 4, -5), (1, haut_arche(0) - 6, 5))
-    m.cube("dalle", "cadre_bas", "fer", (-64, 0, -6), (64, 4, 6))
+    m.cube("dalle", "cadre_bas", "fer_porte", (-64, 0, -6), (64, 4, 6))
     for nom, y in (("traverse_basse", 22), ("traverse_haute", 60)):
-        m.cube("dalle", nom, "fer_sombre", (-56, y, -5), (56, y + 6, 5))
+        m.cube("dalle", nom, "fer_porte", (-56, y, -5), (56, y + 6, 5))
         for xr in (-48, -32, -16, 16, 32, 48):                                      # rivets des deux cotes
             for z0 in (-6, 5):
                 m.cube("dalle", f"rivet_{nom}", "fer", (xr - 1.5, y + 1.5, z0), (xr + 1.5, y + 4.5, z0 + 1))
-    for k, (x0, angle) in enumerate(((-50, 22.5), (40, -22.5), (-30, -22.5), (24, 22.5))):   # racines qui grimpent sur la dalle
-        for z0 in (-6, 4):
-            m.cube("dalle", f"racine{k}", "racine", (x0, 8, z0), (x0 + 4, 52 + (k % 2) * 10, z0 + 2), ("z", angle))
+    # vraies racines en relief : elles sortent des coins bas de l'arche et montent en s'enroulant vers le sceau, des deux cotes
+    for s in (-1, 1):
+        points = [(s * 56, 6), (s * 52, 30), (s * 44, 52), (s * 32, 70), (s * 22, 80)]
+        n = 0
+        for (ax, ay), (bx, by) in zip(points, points[1:]):
+            pas = max(1, round(math.hypot(bx - ax, by - ay) / 4))
+            for k in range(pas):
+                x = ax + (bx - ax) * k / pas
+                y = ay + (by - ay) * k / pas
+                r = 2.5 - 1.0 * n / 22                                                  # la racine s'affine en montant
+                for z0, z1 in ((-6.5, -4), (4, 6.5)):
+                    m.cube("dalle", f"racine{s}_{n}", "racine", (round(x - r), round(y - r), z0), (round(x + r), round(y + r), z1))
+                n += 1
     m.cube("dalle", "mousse_g", "mousse", (-56, 4, -5), (-30, 7, 5))
     m.cube("dalle", "mousse_d", "mousse", (20, 4, -5), (50, 6, 5))
-    m.cube("sceau", "serti_haut", "fer", (-16, 110, -7), (16, 114, 7))
-    m.cube("sceau", "serti_bas", "fer", (-16, 78, -7), (16, 82, 7))
-    m.cube("sceau", "serti_g", "fer", (-16, 82, -7), (-12, 110, 7))
-    m.cube("sceau", "serti_d", "fer", (12, 82, -7), (16, 110, 7))
-    m.cube("sceau", "lueur_gemme", "gemme", (-9, 87, -8), (9, 105, 8), ("z", 45))
+    m.cube("sceau", "serti_haut", "fer_porte", (-24, 116, -7), (24, 120, 7))           # sceau 1,5 fois plus gros
+    m.cube("sceau", "serti_bas", "fer_porte", (-24, 72, -7), (24, 76, 7))
+    m.cube("sceau", "serti_g", "fer_porte", (-24, 76, -7), (-20, 116, 7))
+    m.cube("sceau", "serti_d", "fer_porte", (20, 76, -7), (24, 116, 7))
+    m.cube("sceau", "lueur_gemme", "gemme", (-13.5, 82.5, -8), (13.5, 109.5, 8), ("z", 45))
     Z = (0, 0, 0)
     anim = {"ouverture": (3.0, "once", {
         "sceau": {"position": [(0, Z), (0.2, (0.6, 0, 0)), (0.4, (-0.6, 0, 0)), (0.6, (0.5, 0, 0)), (0.8, Z), (3.0, Z)]},
