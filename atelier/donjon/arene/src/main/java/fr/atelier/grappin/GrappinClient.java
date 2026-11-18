@@ -43,11 +43,22 @@ public final class GrappinClient {
     /** Enregistrement du dessin du crochet (bus du mod). */
     @EventBusSubscriber(modid = Grappin.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static final class Rendus {
-        static final ModelResourceLocation MODELE_CROCHET = ModelResourceLocation.standalone(ResourceLocation.fromNamespaceAndPath(Grappin.MODID, "item/crochet"));
+        static final ModelResourceLocation MODELE_TIGE = ModelResourceLocation.standalone(ResourceLocation.fromNamespaceAndPath(Grappin.MODID, "item/crochet_tige"));
+        static final ModelResourceLocation MODELE_GRIFFE = ModelResourceLocation.standalone(ResourceLocation.fromNamespaceAndPath(Grappin.MODID, "item/crochet_griffe"));
+
+        /** Le grappin en main perd sa tete tant que son porteur a un crochet lance (modele grappin_tire, voir grappin.json). */
+        @SubscribeEvent
+        static void proprietes(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent event) {
+            event.enqueueWork(() -> net.minecraft.client.renderer.item.ItemProperties.register(Grappin.GRAPPIN.get(),
+                    ResourceLocation.fromNamespaceAndPath(Grappin.MODID, "tire"),
+                    (objet, niveau, porteur, graine) -> porteur instanceof net.minecraft.world.entity.player.Player joueur
+                            && !Crochet.crochetsDe(joueur).isEmpty() ? 1.0F : 0.0F));
+        }
 
         @SubscribeEvent
         static void modeles(ModelEvent.RegisterAdditional event) {
-            event.register(MODELE_CROCHET);       // le crochet en vol n'est pas un objet : son modele doit etre charge a part
+            event.register(MODELE_TIGE);          // le crochet en vol n'est pas un objet : ses modeles doivent etre charges a part
+            event.register(MODELE_GRIFFE);
         }
 
         @SubscribeEvent
@@ -150,6 +161,7 @@ public final class GrappinClient {
     /** Le crochet en vol : le modele 3D grappin:item/crochet (griffes vers +X), tourne comme une fleche dans le sens du vol. */
     static class RenduCrochet extends EntityRenderer<Crochet> {
         private static final float ECHELLE_CROCHET = 0.75F;
+        private static final float CHARNIERE_X = 2 / 16F, CHARNIERE_Y = 1 / 16F;
 
         RenduCrochet(EntityRendererProvider.Context contexte) {
             super(contexte);
@@ -166,9 +178,25 @@ public final class GrappinClient {
             pose.mulPose(Axis.YP.rotationDegrees(Mth.lerp(partiel, crochet.yRotO, crochet.getYRot()) - 90.0F));
             pose.mulPose(Axis.ZP.rotationDegrees(Mth.lerp(partiel, crochet.xRotO, crochet.getXRot())));
             pose.scale(ECHELLE_CROCHET, ECHELLE_CROCHET, ECHELLE_CROCHET);
-            BakedModel modele = Minecraft.getInstance().getModelManager().getModel(Rendus.MODELE_CROCHET);
-            Minecraft.getInstance().getItemRenderer().render(crochet.getItem(), ItemDisplayContext.NONE, false, pose, tampons, lumiere,
-                    OverlayTexture.NO_OVERLAY, modele);
+            var modeles = Minecraft.getInstance().getModelManager();
+            var objets = Minecraft.getInstance().getItemRenderer();
+            objets.render(crochet.getItem(), ItemDisplayContext.NONE, false, pose, tampons, lumiere, OverlayTexture.NO_OVERLAY,
+                    modeles.getModel(Rendus.MODELE_TIGE));
+            // Les 4 griffes : la meme griffe, un quart de tour autour de la tige chaque fois, repliee autour de sa charniere selon
+            // le moment du vol (Griffes.ouverture : elles s'ouvrent apres le tir et serrent l'ancrage a l'accroche).
+            float vol = crochet.tickCount + partiel;
+            float accroche = crochet.accrocheA() < 0 ? 0 : crochet.tickCount - crochet.accrocheA() + partiel;
+            float replie = (1 - Griffes.ouverture(vol, crochet.estAccroche(), accroche)) * Griffes.ANGLE_REPLIE;
+            BakedModel griffe = modeles.getModel(Rendus.MODELE_GRIFFE);
+            for (int k = 0; k < 4; k++) {
+                pose.pushPose();
+                pose.mulPose(Axis.XP.rotationDegrees(90 * k));
+                pose.translate(CHARNIERE_X, CHARNIERE_Y, 0);                  // charniere au collier : (10, 9, 8) dans le modele, centre en (8, 8, 8)
+                pose.mulPose(Axis.ZP.rotationDegrees(replie));               // repliee vers l'arriere, le long de la tige
+                pose.translate(-CHARNIERE_X, -CHARNIERE_Y, 0);
+                objets.render(crochet.getItem(), ItemDisplayContext.NONE, false, pose, tampons, lumiere, OverlayTexture.NO_OVERLAY, griffe);
+                pose.popPose();
+            }
             pose.popPose();
             super.render(crochet, lacet, partiel, pose, tampons, lumiere);
             Entity lanceur = crochet.getOwner();
