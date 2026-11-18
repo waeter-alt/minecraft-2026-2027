@@ -63,7 +63,7 @@ public final class CapeClient {
     private static final double FOV_PIC_PROJECTION = 0.35;
 
     // V par defaut : a verifier contre les touches de sorts des mods RPG Series du modpack (reaffectable dans Options > Commandes).
-    static final KeyMapping TOUCHE_LEST = new KeyMapping("key.grappin.lest", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V, "key.categories.grappin");
+    static final KeyMapping TOUCHE_LEST = new KeyMapping("key.donjon.lest", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V, "key.categories.donjon");
 
     /** Debut (temps de jeu, en ticks) du dernier tourbillon de chaque entite, d'apres le serveur. */
     private static final Map<Integer, Long> TOURBILLONS = new HashMap<>();
@@ -160,7 +160,7 @@ public final class CapeClient {
                     continue;
                 }
                 if (!leste && !j.isInWater()) {
-                    j.displayClientMessage(Component.translatable("message.grappin.cape_lestee.hors_eau").withStyle(ChatFormatting.GRAY), true);
+                    j.displayClientMessage(Component.translatable("message.donjon.cape_lestee.hors_eau").withStyle(ChatFormatting.GRAY), true);
                     continue;
                 }
                 PacketDistributor.sendToServer(new LestePayload(j.getId(), !leste));

@@ -43,7 +43,7 @@ public class Leviathan extends Monster {
 
     private final LeviathanPiece[] pieces = new LeviathanPiece[ANNEAUX + 2];
     private final List<Vec3> historique = new ArrayList<>();       // positions de la tete, la plus recente en tete
-    private final ServerBossEvent barre = new ServerBossEvent(Component.translatable("entity.grappin.leviathan"),
+    private final ServerBossEvent barre = new ServerBossEvent(Component.translatable("entity.donjon.leviathan"),
             BossEvent.BossBarColor.BLUE, BossEvent.BossBarOverlay.NOTCHED_10);
     private boolean degatsDePiece = false;
     /** Reglages d'une attaque en cours : point que la tete doit viser (null = le joueur) et facteur de vitesse (0 = immobile). Pas sauvegardes. */
@@ -331,7 +331,7 @@ public class Leviathan extends Monster {
             if (this.tickCount > 20 && this.level() instanceof net.minecraft.server.level.ServerLevel niveau) {     // annonce, sauf au chargement d'un boss deja blesse
                 this.playSound(net.minecraft.sounds.SoundEvents.ENDER_DRAGON_GROWL, 6.0F, 0.5F);
                 for (ServerPlayer j : niveau.getPlayers(p -> p.distanceToSqr(this) < 90 * 90)) {
-                    j.displayClientMessage(Component.translatable("entity.grappin.leviathan.phase2"), true);
+                    j.displayClientMessage(Component.translatable("entity.donjon.leviathan.phase2"), true);
                 }
                 appelerTag(TAG_PHASE2);
             }

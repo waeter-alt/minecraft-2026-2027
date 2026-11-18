@@ -1,0 +1,19 @@
+{
+  "loader": "neoforge:separate_transforms",
+  "base": {
+    "parent": "donjon:item/grappin_main"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "donjon:item/grappin_icone"
+    }
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "donjon:tire": 1
+      },
+      "model": "donjon:item/grappin_tire"
+    }
+  ]
+}

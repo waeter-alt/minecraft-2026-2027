@@ -48,7 +48,7 @@ public class Golem extends Monster {
     private static final EntityDataAccessor<Boolean> DEUXIEME_PHASE = SynchedEntityData.defineId(Golem.class, EntityDataSerializers.BOOLEAN);
 
     private final GolemPiece[] pieces = new GolemPiece[NOMS_PIECES.length];
-    private final ServerBossEvent barre = new ServerBossEvent(Component.translatable("entity.grappin.golem"),
+    private final ServerBossEvent barre = new ServerBossEvent(Component.translatable("entity.donjon.golem"),
             BossEvent.BossBarColor.GREEN, BossEvent.BossBarOverlay.NOTCHED_10);
     private double surfaceY = Double.NaN;       // hauteur de la surface de la lave, fixee a la premiere seconde ; sauvegardee
     private int emergence = 0;                  // ticks restants avant d'etre sorti de la lave (pas sauvegarde : apres un chargement il est considere sorti)
@@ -343,7 +343,7 @@ public class Golem extends Monster {
             if (this.tickCount > 20 && this.level() instanceof net.minecraft.server.level.ServerLevel niveau) {     // annonce, sauf au chargement d'un boss deja blesse
                 this.playSound(net.minecraft.sounds.SoundEvents.ENDER_DRAGON_GROWL, 6.0F, 0.6F);
                 for (ServerPlayer j : niveau.getPlayers(p -> p.distanceToSqr(this) < 80 * 80)) {
-                    j.displayClientMessage(Component.translatable("entity.grappin.golem.phase2"), true);
+                    j.displayClientMessage(Component.translatable("entity.donjon.golem.phase2"), true);
                 }
             }
         }
@@ -361,7 +361,7 @@ public class Golem extends Monster {
         this.barre.removePlayer(joueur);
     }
 
-    /** Fonctions executees a la mort du boss : un monde (datapack) les declare dans le tag grappin:golem_mort, comme le temple pour ouvrir sa sortie. */
+    /** Fonctions executees a la mort du boss : un monde (datapack) les declare dans le tag donjon:golem_mort, comme le temple pour ouvrir sa sortie. */
     private static final net.minecraft.resources.ResourceLocation TAG_MORT = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(Grappin.MODID, "golem_mort");
 
     // ------------------------------------------------------------------ animations

@@ -61,9 +61,9 @@ public class ParavoileItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack pile, TooltipContext contexte, List<Component> lignes, TooltipFlag drapeau) {
-        lignes.add(Component.translatable("item.grappin.paravoile.aide1"));
-        lignes.add(Component.translatable("item.grappin.paravoile.aide2"));
-        lignes.add(Component.translatable("item.grappin.paravoile.aide3", Reglages.PARAVOILE_ENDURANCE.get(), Reglages.PARAVOILE_RECHARGE.get()));
-        lignes.add(Component.translatable("item.grappin.paravoile.reserve", Math.round(secondesRestantes(pile)), Reglages.PARAVOILE_ENDURANCE.get()));
+        lignes.add(Component.translatable("item.donjon.paravoile.aide1"));
+        lignes.add(Component.translatable("item.donjon.paravoile.aide2"));
+        lignes.add(Component.translatable("item.donjon.paravoile.aide3", Reglages.PARAVOILE_ENDURANCE.get(), Reglages.PARAVOILE_RECHARGE.get()));
+        lignes.add(Component.translatable("item.donjon.paravoile.reserve", Math.round(secondesRestantes(pile)), Reglages.PARAVOILE_ENDURANCE.get()));
     }
 }

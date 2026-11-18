@@ -43,9 +43,9 @@ public class CapeLesteeItem extends AccessoryItem {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext contexte, List<Component> lignes, TooltipFlag drapeau) {
-        lignes.add(Component.translatable("item.grappin.cape_lestee.aide1").withStyle(ChatFormatting.AQUA));
-        lignes.add(Component.translatable("item.grappin.cape_lestee.aide2").withStyle(ChatFormatting.GRAY));
-        lignes.add(Component.translatable("item.grappin.cape_lestee.aide3").withStyle(ChatFormatting.GRAY));
-        lignes.add(Component.translatable("item.grappin.cape_lestee.aide4").withStyle(ChatFormatting.GRAY));
+        lignes.add(Component.translatable("item.donjon.cape_lestee.aide1").withStyle(ChatFormatting.AQUA));
+        lignes.add(Component.translatable("item.donjon.cape_lestee.aide2").withStyle(ChatFormatting.GRAY));
+        lignes.add(Component.translatable("item.donjon.cape_lestee.aide3").withStyle(ChatFormatting.GRAY));
+        lignes.add(Component.translatable("item.donjon.cape_lestee.aide4").withStyle(ChatFormatting.GRAY));
     }
 }

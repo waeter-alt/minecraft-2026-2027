@@ -39,7 +39,9 @@ repositories {
 }
 
 base {
-    archivesName = mod_id
+    // Le jar s'appelle donjon-<version>.jar : il porte tout le contenu des donjons. Seul le nom du fichier change, le mod_id reste
+    // grappin (les blocs grappin:... des mondes et des datapacks en dependent).
+    archivesName = 'donjon'
 }
 
 // Mojang ships Java 21 to end users in 1.21.1, so mods should target Java 21.

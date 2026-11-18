@@ -12,7 +12,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-SORTIE = Path(__file__).resolve().parent.parent / "grappin/src/main/resources/assets/grappin/textures/entity/seraphin.png"
+SORTIE = Path(__file__).resolve().parent.parent / "grappin/src/main/resources/assets/donjon/textures/entity/seraphin.png"
 random.seed(11)
 im = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
 d = ImageDraw.Draw(im)

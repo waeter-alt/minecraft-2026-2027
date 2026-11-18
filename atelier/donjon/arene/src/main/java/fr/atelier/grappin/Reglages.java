@@ -1,4 +1,4 @@
-// [claude-build] Tous les reglages du grappin, au meme endroit : fichier config/grappin-common.toml (modifiable sans recompiler).
+// [claude-build] Tous les reglages du grappin, au meme endroit : fichier config/donjon-common.toml (modifiable sans recompiler).
 package fr.atelier.grappin;
 
 import net.neoforged.neoforge.common.ModConfigSpec;

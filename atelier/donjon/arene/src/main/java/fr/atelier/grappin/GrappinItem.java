@@ -41,8 +41,8 @@ public class GrappinItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack pile, TooltipContext contexte, List<Component> lignes, TooltipFlag drapeau) {
-        lignes.add(Component.translatable("item.grappin.grappin.aide1"));
-        lignes.add(Component.translatable("item.grappin.grappin.aide2"));
-        lignes.add(Component.translatable("item.grappin.grappin.aide3"));
+        lignes.add(Component.translatable("item.donjon.grappin.aide1"));
+        lignes.add(Component.translatable("item.donjon.grappin.aide2"));
+        lignes.add(Component.translatable("item.donjon.grappin.aide3"));
     }
 }

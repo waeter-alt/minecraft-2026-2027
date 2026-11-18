@@ -14,7 +14,7 @@ from pathlib import Path
 RACINE = Path(__file__).resolve().parents[2]
 SORTIE = RACINE / "atelier/modeles/golem/golem.bbmodel"
 JAVA = RACINE / "atelier/donjon/arene/src/main/java/fr/atelier/grappin"
-TEXTURE = RACINE / "atelier/donjon/arene/src/main/resources/assets/grappin/textures/entity/golem.png"
+TEXTURE = RACINE / "atelier/donjon/arene/src/main/resources/assets/donjon/textures/entity/golem.png"
 U = 4.0                                   # unites de modele par bloc (comme GolemModele)
 
 # Zones de texture (texOffs), comme GolemModele

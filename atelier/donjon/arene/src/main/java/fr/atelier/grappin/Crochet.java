@@ -1,5 +1,5 @@
 // [claude-build] Le crochet (grappin 2 puis 3) : vole tout droit (sans gravite) jusqu'a la portee, et ne s'accroche qu'a un point d'ancrage
-// (tag grappin:ancrages) ; sur tout autre bloc il rebondit et disparait. Accroche, il ne tire plus le joueur : le balancier est
+// (tag donjon:ancrages) ; sur tout autre bloc il rebondit et disparait. Accroche, il ne tire plus le joueur : le balancier est
 // calcule chez le joueur (GrappinClient), comme tout mouvement de joueur dans Minecraft. Ici, cote serveur : decrocher quand le
 // joueur s'accroupit ou s'eloigne, et pas de degats de chute tant qu'il est tenu par la corde (ils reviennent apres le lacher).
 package fr.atelier.grappin;
@@ -52,6 +52,20 @@ public class Crochet extends ThrowableItemProjectile {
 
     public boolean estAccroche() {
         return this.entityData.get(ACCROCHE);
+    }
+
+    private int accrocheA = -1;                 // cote client : tick ou le crochet s'est accroche (les griffes serrent alors l'ancrage)
+
+    int accrocheA() {
+        return accrocheA;
+    }
+
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> donnee) {
+        super.onSyncedDataUpdated(donnee);
+        if (ACCROCHE.equals(donnee) && estAccroche() && accrocheA < 0) {
+            accrocheA = this.tickCount;
+        }
     }
 
     @Override

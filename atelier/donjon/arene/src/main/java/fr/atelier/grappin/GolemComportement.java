@@ -125,7 +125,7 @@ public final class GolemComportement {
             ouvert = GolemLogique.dureeOuverture(golem.phase(), Reglages.GOLEM_OUVERTURE.get());
             golem.playSound(SoundEvents.BEACON_ACTIVATE, 4.0F, 0.6F);
             for (net.minecraft.server.level.ServerPlayer j : ((ServerLevel) golem.level()).getPlayers(p -> p.distanceToSqr(golem) < 90 * 90)) {
-                j.displayClientMessage(net.minecraft.network.chat.Component.translatable("entity.grappin.golem.point_faible", net.minecraft.network.chat.Component.translatable("entity.grappin.golem.piece." + Golem.NOMS_PIECES[i])), true);
+                j.displayClientMessage(net.minecraft.network.chat.Component.translatable("entity.donjon.golem.point_faible", net.minecraft.network.chat.Component.translatable("entity.donjon.golem.piece." + Golem.NOMS_PIECES[i])), true);
             }
             signaler(i);
         }

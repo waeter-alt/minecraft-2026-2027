@@ -4,7 +4,8 @@
 #   - models/item/grappin.json         : choisit l'icone dans l'inventaire et le modele 3D ailleurs (neoforge:separate_transforms)
 #   - models/item/grappin_main.json    : le grappin en 3D, tenu en main
 #   - models/item/grappin_icone.json   : l'icone plate
-#   - models/item/crochet.json         : le crochet seul, dessine pendant le vol (griffes vers +X)
+#   - models/item/grappin_tire.json, grappin_main_vide.json : le lanceur sans sa tete, quand le crochet est lance
+#   - models/item/crochet_tige.json, crochet_griffe.json : le crochet lance (tige, et une griffe dessinee 4 fois et animee)
 #   - atelier/modeles/grappin/*.bbmodel : les memes modeles, a ouvrir dans Blockbench
 # Les cubes sont decrits une seule fois ici. Si Luca retouche un modele dans Blockbench, son export devient la source :
 # ne plus relancer ce script pour ce modele (option --sans-modeles pour ne refaire que les textures).
@@ -19,7 +20,7 @@ from pathlib import Path
 from PIL import Image
 
 RACINE = Path(__file__).resolve().parents[2]
-ASSETS = RACINE / "atelier/donjon/arene/src/main/resources/assets/grappin"
+ASSETS = RACINE / "atelier/donjon/arene/src/main/resources/assets/donjon"
 BBMODELES = RACINE / "atelier/modeles/grappin"
 
 # Couleurs (celles de l'ancienne icone, plus des tons intermediaires)
@@ -111,13 +112,18 @@ def icone():
 
 # --- Cubes -----------------------------------------------------------------------------------------------------
 # Un cube = (nom, matiere, de, a), en coordonnees de modele (0-16).
-def griffes(vers_xyz, decalage):
-    """Quatre griffes autour de l'axe : un bras qui sort, puis un crochet qui revient vers le manche.
+GRIFFE_OUVERTE = (("bras", "fer", (13, 14), (1, 3)), ("coude", "fer", (11, 14), (3, 4)), ("pointe", "pointe", (10, 11), (3, 4)))
+GRIFFE_REPLIEE = (("bras", "fer", (10, 14), (1, 2)), ("pointe", "pointe", (9, 10), (1, 2)))       # couchee le long de la tige
+
+
+def griffes(vers_xyz, decalage, directions=("est", "ouest", "sud", "nord"), parties=GRIFFE_OUVERTE):
+    """Griffes autour de l'axe : ouvertes (un bras qui sort, puis un crochet qui revient vers le manche) ou repliees le long de la tige.
     En coordonnees (s le long de l'axe, a et b ecarts a l'axe) ; vers_xyz convertit en x, y, z."""
     cubes = []
     for nom, (da, db) in {"est": (1, 0), "ouest": (-1, 0), "sud": (0, 1), "nord": (0, -1)}.items():
-        for partie, matiere, s, r in (("bras", "fer", (13, 14), (1, 3)), ("coude", "fer", (11, 14), (3, 4)),
-                                      ("pointe", "pointe", (10, 11), (3, 4))):
+        if nom not in directions:
+            continue
+        for partie, matiere, s, r in parties:
             s0, s1 = s[0] + decalage, s[1] + decalage
             if da:
                 a = (r[0], r[1]) if da > 0 else (-r[1], -r[0])
@@ -130,10 +136,24 @@ def griffes(vers_xyz, decalage):
     return cubes
 
 
+def cubes_lanceur():
+    """Le lanceur sans sa tete (poignee, corps, bobine) : ce qui reste en main quand le crochet est parti."""
+    return [c for c in cubes_main_complet() if c[0] not in ("tige", "collier", "pointe")]
+
+
+def cubes_main_vide():
+    return cubes_lanceur() + [("embout", "sombre", [7, 11, 7], [9, 12, 9])]           # embout vide d'ou sort la corde
+
+
 def cubes_main():
+    """Le grappin tenu en main, crochet en place, griffes repliees le long de la tige."""
+    return cubes_main_complet() + griffes(lambda s, a, b: (8 + a, s, 8 + b), 0, parties=GRIFFE_REPLIEE)
+
+
+def cubes_main_complet():
     """Le grappin tenu en main, dresse le long de Y (le manche en bas) ; tout le modele est ensuite penche a 45 degres
     comme une icone d'outil, pour garder les reglages d'affichage en main de Minecraft."""
-    cubes = [
+    return [
         ("pommeau", "sombre", [7, 0, 7], [9, 1, 9]),
         ("poignee", "bois", [7, 1, 7], [9, 7, 9]),
         ("bague_basse", "fer", [6.5, 2, 6.5], [9.5, 3, 9.5]),
@@ -147,18 +167,27 @@ def cubes_main():
         ("collier", "sombre", [7, 13, 7], [9, 14, 9]),
         ("pointe", "pointe", [7.5, 14, 7.5], [8.5, 16, 8.5]),
     ]
-    return cubes + griffes(lambda s, a, b: (8 + a, s, 8 + b), 0)
+
+
+def cubes_crochet_griffe():
+    """Une seule griffe ouverte du crochet lance, vers +Y ; GrappinClient la dessine 4 fois (quart de tour autour de la tige)
+    et la replie autour de sa charniere, au collier, en (10, 9, 8)."""
+    return griffes(lambda s, a, b: (s, 8 + a, 8 + b), -3, directions=("est",))
 
 
 def cubes_crochet():
-    """Le crochet seul, couche le long de X : l'oeillet de la corde en x = 0, les griffes vers +X."""
-    cubes = [
+    """Le crochet complet (tige + 4 griffes ouvertes), pour le fichier Blockbench."""
+    return cubes_crochet_tige() + griffes(lambda s, a, b: (s, 8 + a, 8 + b), -3)
+
+
+def cubes_crochet_tige():
+    """Le crochet lance sans ses griffes, couche le long de X : l'oeillet de la corde en x = 0, la pointe vers +X."""
+    return [
         ("oeillet", "sombre", [0, 7, 7], [2, 9, 9]),
         ("tige", "fer", [2, 7.5, 7.5], [10, 8.5, 8.5]),
         ("collier", "sombre", [10, 7, 7], [11, 9, 9]),
         ("pointe", "pointe", [11, 7.5, 7.5], [13, 8.5, 8.5]),
     ]
-    return cubes + griffes(lambda s, a, b: (s, 8 + a, 8 + b), -3)
 
 
 # --- Faces et UV -----------------------------------------------------------------------------------------------
@@ -266,10 +295,20 @@ def main():
             "loader": "neoforge:separate_transforms",
             "base": {"parent": "donjon:item/grappin_main"},
             "perspectives": {"gui": {"parent": "donjon:item/grappin_icone"}},
+            # crochet lance (propriete grappin:tire, GrappinClient) : le lanceur sans sa tete
+            "overrides": [{"predicate": {"donjon:tire": 1}, "model": "donjon:item/grappin_tire"}],
+        })
+        ecrire_json(modeles / "grappin_tire.json", {
+            "loader": "neoforge:separate_transforms",
+            "base": {"parent": "donjon:item/grappin_main_vide"},
+            "perspectives": {"gui": {"parent": "donjon:item/grappin_icone"}},
         })
         ecrire_json(modeles / "grappin_icone.json", {"parent": "minecraft:item/handheld", "textures": {"layer0": "donjon:item/grappin"}})
         ecrire_json(modeles / "grappin_main.json", modele_json(cubes_main(), PENCHE, AFFICHAGE_MAIN))
-        ecrire_json(modeles / "crochet.json", modele_json(cubes_crochet(), None, None))
+        ecrire_json(modeles / "grappin_main_vide.json", modele_json(cubes_main_vide(), PENCHE, AFFICHAGE_MAIN))
+        ecrire_json(modeles / "crochet_tige.json", modele_json(cubes_crochet_tige(), None, None))
+        ecrire_json(modeles / "crochet_griffe.json", modele_json(cubes_crochet_griffe(), None, None))
+        (modeles / "crochet.json").unlink(missing_ok=True)                                  # remplace par crochet_tige + crochet_griffe
         ecrire_json(BBMODELES / "grappin.bbmodel", bbmodel("grappin", cubes_main(), PENCHE, AFFICHAGE_MAIN, tex))
         ecrire_json(BBMODELES / "crochet.bbmodel", bbmodel("crochet", cubes_crochet(), None, None, tex))
     print("grappin : textures" + ("" if sans_modeles else ", modeles et fichiers Blockbench") + " ecrits")
