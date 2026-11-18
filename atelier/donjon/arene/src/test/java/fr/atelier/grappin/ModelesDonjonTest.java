@@ -26,7 +26,7 @@ class ModelesDonjonTest {
     private static final Path ASSETS = Path.of("src/main/resources/assets/grappin");
     private static final Path DATA = Path.of("src/main/resources/data/grappin");
     private static final List<String> BLOCS = List.of(   // les portes et sceaux en blocs ont ete abandonnes : la porte est une entite
-            "levier_racine");
+            "levier_racine", "casier");
     private static final List<String> CLES = List.of("cle_bleue", "cle_jaune", "cle_rouge");
 
     private static JsonObject json(Path p) throws IOException {

@@ -44,6 +44,8 @@
   "entity.grappin.rodeur": "Rôdeur des Racines",
   "item.grappin.rodeur_spawn_egg": "Œuf d'apparition de Rôdeur des Racines",
   "block.grappin.levier_racine": "Levier de racine",
+  "block.grappin.casier": "Casier de vestiaire",
+  "container.grappin.casier": "Casier",
   "item.grappin.cle_bleue": "Clé bleu",
   "item.grappin.cle_jaune": "Clé jaune",
   "item.grappin.cle_rouge": "Clé rouge",

@@ -68,6 +68,7 @@ public final class GrappinClient {
             event.registerLayerDefinition(RodeurModele.COUCHE, RodeurModele::creerCouche);
             event.registerLayerDefinition(PorteRendu.COUCHE, PorteGeometrie::creerCouche);
             event.registerLayerDefinition(LevierRendu.COUCHE, LevierGeometrie::creerCouche);
+            event.registerLayerDefinition(CasierRendu.COUCHE, CasierGeometrie::creerCouche);
             event.registerLayerDefinition(LeviathanModele.COUCHE, LeviathanModele::creerCouche);
         }
 
@@ -81,6 +82,7 @@ public final class GrappinClient {
             event.registerEntityRenderer(Grappin.RODEUR.get(), RodeurRendu::new);
             event.registerEntityRenderer(DonjonBlocs.PORTE.get(), PorteRendu::new);
             event.registerBlockEntityRenderer(DonjonBlocs.LEVIER_ENTITE.get(), LevierRendu::new);
+            event.registerBlockEntityRenderer(DonjonBlocs.CASIER_ENTITE.get(), CasierRendu::new);
             event.registerEntityRenderer(Grappin.LEVIATHAN.get(), LeviathanRendu::new);
         }
     }

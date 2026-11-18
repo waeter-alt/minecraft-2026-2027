@@ -1,6 +1,7 @@
 // [claude-build] Ce que le Donjon Suspendu ajoute au mod, au code couleur de ses portes (bleu = porte 1, jaune = porte 2, rouge = porte 3) :
 // la porte (entite PorteDonjon, une dalle de pierre en arche qui monte), le levier de racine (bloc dessine par le code, LevierRendu)
 // et les cles. Modeles et animations : atelier/modeles/donjon/*.bbmodel (atelier/scripts/donjon_3d.py, donjon_blocs.py).
+// Le Donjon de la Station y ajoute le casier de vestiaire (CasierBloc, atelier/modeles/station/casier.bbmodel, atelier/scripts/casier_3d.py).
 package fr.atelier.grappin;
 
 import java.util.List;
@@ -15,6 +16,7 @@ import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredBlock;
@@ -37,6 +39,15 @@ public final class DonjonBlocs {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<LevierEntite>> LEVIER_ENTITE = BLOCS_ENTITES.register("levier_racine",
             () -> BlockEntityType.Builder.of(LevierEntite::new, LEVIER_RACINE.get()).build(null));
 
+    /** Casier de vestiaire (Donjon de la Station) : metal peint, deux blocs de haut, 27 cases ; la porte s'ouvre avec l'inventaire. */
+    public static final DeferredBlock<CasierBloc> CASIER = Grappin.BLOCS.register("casier",
+            () -> new CasierBloc(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE).noOcclusion().strength(2.5F)
+                    .sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)));
+
+    @SuppressWarnings("DataFlowIssue")
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CasierEntite>> CASIER_ENTITE = BLOCS_ENTITES.register("casier",
+            () -> BlockEntityType.Builder.of(CasierEntite::new, CASIER.get()).build(null));
+
     /** La porte du donjon : immobile, posee dans l'arche par les fonctions du donjon, qui l'ouvrent en changeant sa donnee Ouverte. */
     public static final DeferredHolder<EntityType<?>, EntityType<PorteDonjon>> PORTE = Grappin.ENTITES.register("porte_donjon",
             () -> EntityType.Builder.<PorteDonjon>of(PorteDonjon::new, MobCategory.MISC)
@@ -47,7 +58,8 @@ public final class DonjonBlocs {
                     .build("porte_donjon"));
 
     public static final List<DeferredItem<BlockItem>> BLOCS_OBJETS = List.of(
-            Grappin.ITEMS.registerSimpleBlockItem("levier_racine", LEVIER_RACINE));
+            Grappin.ITEMS.registerSimpleBlockItem("levier_racine", LEVIER_RACINE),
+            Grappin.ITEMS.registerSimpleBlockItem("casier", CASIER));
 
     public static final DeferredItem<Item> CLE_BLEUE = Grappin.ITEMS.registerSimpleItem("cle_bleue", new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
     public static final DeferredItem<Item> CLE_JAUNE = Grappin.ITEMS.registerSimpleItem("cle_jaune", new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
