@@ -75,28 +75,19 @@ def scene_eau(infos):
 
 
 def panneau(p, face, lignes):
-    textes = ",".join("'" + '{"text":"' + l + '"}' + "'" for l in (list(lignes) + ["", "", "", ""])[:4])
+    textes = ",".join("'" + '{"text":"' + l.replace("\\", "\\\\").replace("'", "\\'") + '"}' + "'" for l in (list(lignes) + ["", "", "", ""])[:4])
     return f"setblock {txt(p)} minecraft:oak_wall_sign[facing={face}]{{front_text:{{color:\"white\",has_glowing_text:1b,messages:[{textes}]}},is_waxed:1b}}"
 
 
 def panneau_debout(p, rotation, lignes, eau):
-    textes = ",".join("'" + '{"text":"' + l + '"}' + "'" for l in (list(lignes) + ["", "", "", ""])[:4])
+    textes = ",".join("'" + '{"text":"' + l.replace("\\", "\\\\").replace("'", "\\'") + '"}' + "'" for l in (list(lignes) + ["", "", "", ""])[:4])
     return f"setblock {txt(p)} minecraft:oak_sign[rotation={rotation},waterlogged={'true' if eau else 'false'}]{{front_text:{{color:\"white\",has_glowing_text:1b,messages:[{textes}]}},is_waxed:1b}}"
 
 
 def panneaux(infos):
-    """(case du panneau, sens ou il regarde, lignes). Les panneaux du Hall sont contre les murs ; ceux de la Cuve, au-dessus des bouches, sur la Coursive."""
+    """(case du panneau, sens ou il regarde, lignes). Seulement les reperes de niveau de la Cuve : Luca ne veut aucun panneau qui dise quoi faire (18/11)."""
     x0, x1, z0, z1 = a1.HALL
-    return [((125, a1.SOL + 3, z1), "north", ("STATION", "Hall des Bassins", "3 volants", "a tourner")),
-            ((x0, a1.SOL + 3, 189), "east", ("<- Vestiaire", "", "", "")),
-            ((125, a1.SOL + 3, z0), "south", ("^ SAS", "Grande Cuve", "", "")),
-            ((80, a1.SOL + 3, z0), "south", ("VOLANT 1", "plongeoir", "au grappin", "")),
-            ((141, a1.SOL + 3, z1), "north", ("VOLANT 2", "bassin de 50 m", "", "")),
-            ((x1, a1.SOL + 3, 172), "west", ("VOLANT 3", "toboggan", "au grappin", "")),
-            ((86, a1.SOL + 2, 101), "east", ("A  Filtration", "nager vite", "bouche en bas", "")),
-            ((154, a1.SOL + 2, 89), "west", ("B  Chaufferie", "se lester", "bouche au fond", "")),
-            ((114, a1.SOL + 2, 60), "south", ("C  Turbines", "tourbillon", "bouche en bas", "")),
-            ((120, a1.NIVEAUX["haut"] + 1, 124), "north", ("HAUT", "76", "", "")),
+    return [((120, a1.NIVEAUX["haut"] + 1, 124), "north", ("HAUT", "76", "", "")),
             ((120, a1.NIVEAUX["median"] + 1, 124), "north", ("MEDIAN", "58", "", "")),
             ((120, a1.NIVEAUX["bas"] + 1, 124), "north", ("BAS", "42", "", ""))]
 
@@ -227,18 +218,10 @@ def fonctions(infos, decalages):
            f'execute if score #lg station matches 1 if score #boss station matches 0 run title @a[{zone}] actionbar {{"text":"Saute du plongeoir dans le tourbillon","color":"gold"}}',
            f'execute if score #boss station matches 1 run title @a[{zone}] actionbar {{"text":"Abats le Léviathan","color":"red"}}',
            f'execute if score #boss station matches 2 run title @a[{zone}] actionbar {{"text":"L\'Exutoire est ouvert, au sud du Réservoir","color":"gold"}}']
-    i2 = station_secteurs.construire()[1]
-    for drapeau, b, texte in (("#pA", (2, 88, 60, 74, 3, 99), "Filtration : la pompe A est au bout, à l'ouest, après la salle des lits."),
-                              ("#pB", (151, 228, 30, 72, 70, 121), "Chaufferie : marche au fond contre le courant, 3 plaques, puis la pompe B au grappin, à l'est de la halle haute."),
-                              ("#pC", (100, 140, 47, 95, 2, 64), "Turbines : nage contre chaque turbine pour la lancer ; la pompe C est tout en haut.")):
-        x0, x1, y0, y1, z0, z1 = b
-        sel = f"x={ORIGINE[0] + x0},y={ORIGINE[1] + y0},z={ORIGINE[2] + z0},dx={x1 - x0},dy={y1 - y0},dz={z1 - z0}"
-        obj.append(f'execute if score {drapeau} station matches 0 run title @a[{sel}] actionbar {{"text":"{texte}","color":"yellow"}}')
     f["station_objectif"] = "\n".join(obj) + "\n"
     # les panneaux : ou l'on est, ou l'on va (poses a la pose et a chaque remise a zero)
     f["station_panneaux"] = "\n".join(["# [claude-build] Les panneaux de la station (une seule rangee de texte par ligne).",
-                                       *[panneau(p, face, lignes) for (p, face, lignes) in panneaux(infos)],
-                                       *[panneau_debout(p, rot, lignes, eau) for (p, rot, lignes, eau) in station_secteurs.construire()[1]["panneaux_secteurs"]]]) + "\n"
+                                       *[panneau(p, face, lignes) for (p, face, lignes) in panneaux(infos)]]) + "\n"
     # la remise a zero
     f["station_reset"] = "\n".join([
         "# [claude-build] Remise a zero : cinematique arretee, monstres retires, volants baisses, temoins eteints, Sas referme, casier referme, Cuve videe, scores a zero.",

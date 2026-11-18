@@ -10,7 +10,8 @@ import station_create
 import suspendu_cine as sc
 
 DUREE_BAISSE = 170
-DUREE_VANNE_D = 180                     # la troisieme pompe : la camera plonge du haut de la Cuve jusqu'a la vanne D (9 s)
+DUREE_VANNE_D = 180
+DUREE_BONDE = 170                       # le levier general : la bonde s'ouvre au fond de la Cuve, le tourbillon se forme                     # la troisieme pompe : la camera plonge du haut de la Cuve jusqu'a la vanne D (9 s)
 NAGE = "predicate=atelier:nage"
 NIVEAUX = (a1.NIVEAUX["haut"], a1.NIVEAUX["median"], a1.NIVEAUX["bas"])
 
@@ -18,6 +19,22 @@ NIVEAUX = (a1.NIVEAUX["haut"], a1.NIVEAUX["median"], a1.NIVEAUX["bas"])
 def etat(b):
     nom, props = b
     return nom + ("[" + ",".join(f"{k}={v}" for k, v in props) + "]" if props else "")
+
+
+def _decalage(txt):
+    return [int(v) for v in txt((0, 0, 0)).split()]
+
+
+def monde_dx(txt):
+    return _decalage(txt)[0]
+
+
+def monde_dy(txt):
+    return _decalage(txt)[1]
+
+
+def monde_dz(txt):
+    return _decalage(txt)[2]
 
 
 def fonctions(infos, infos1, blocs, txt):
@@ -215,6 +232,14 @@ def fonctions(infos, infos1, blocs, txt):
                                                  f"scoreboard players set #niv station {bas}", f'tellraw @a {{"text":"La Grande Cuve baisse : niveau {nom.upper()}.","color":"aqua"}}']) + "\n"
     reset += [f"setblock {txt(p)} minecraft:waxed_copper_bulb[lit=false,powered=false]" for p in temoins] + ["scoreboard players set #pompes station 0", "scoreboard players set #niv station 0"]
     D = infos["d"]
+    rangs_d = sorted({p[1] for p in D["vanne_d"]})
+    for y in rangs_d:
+        cases = [p for p in D["vanne_d"] if p[1] == y]
+        f[f"station_vanne_d_rang_{y}"] = "\n".join([f"# [claude-build] La vanne D se leve : sa rangee {y} disparait (de bas en haut).", *poser_cases(cases, "minecraft:water"),
+                                                    f"execute positioned {txt(cases[len(cases) // 2])} run particle minecraft:bubble_column_up ~0.5 ~ ~0.5 1.2 0.3 1.2 0.2 40 force",
+                                                    f"execute positioned {txt(cases[len(cases) // 2])} run playsound minecraft:block.piston.contract master @a[distance=..120] ~ ~ ~ 2 {0.5 + 0.08 * (y - rangs_d[0]):.2f}"]) + "\n"
+    f["station_vanne_d_ouverte"] = "\n".join(["# [claude-build] La vanne D est levee : la Cheminee est ouverte (fin de la cinematique).", "scoreboard players set #d station 1",
+                                               'tellraw @a {"text":"Au fond de la Cuve, au nord-est, la vanne D est ouverte.","color":"gold"}']) + "\n"
     f["station_vanne_d"] = "\n".join(["# [claude-build] La vanne D se leve : la Cheminee est ouverte.", "scoreboard players set #d station 1", *poser_cases(D["vanne_d"], "minecraft:water"),
                                       f"execute positioned {txt(D['vanne_d'][0])} run playsound minecraft:block.piston.contract master @a[distance=..80] ~ ~ ~ 3 0.5",
                                       'tellraw @a {"text":"Au fond de la Cuve, au nord-est, la vanne D se leve.","color":"gold"}',
@@ -245,15 +270,39 @@ def fonctions(infos, infos1, blocs, txt):
     a_dep = math.radians(220)
     depart = (cxu + 18 * math.sin(a_dep), 82.0, czu - 18 * math.cos(a_dep))
     point = lambda k: tuple(depart[i] + (cible[i] - depart[i]) * k for i in range(3))                     # noqa: E731
-    cam_d = [(1, depart), (70, point(0.55)), (130, point(0.8)), (DUREE_VANNE_D, point(0.88))]
+    cam_d = [(1, depart), (55, point(0.6)), (85, point(0.86)), (DUREE_VANNE_D, point(0.9))]          # elle ralentit et s'arrete devant la vanne pour la regarder s'ouvrir
     vise_d = [(1, cible), (DUREE_VANNE_D, cible)]
     ev_d = {2: ['title @a[tag=cine] actionbar {"text":"Troisième pompe : la station est prête…","color":"gray"}',
                 "execute as @a[tag=cine] at @s run playsound minecraft:block.beacon.power_select master @s ~ ~ ~ 1 0.6"],
             30: ['title @a[tag=cine] title {"text":"Va au fond de la Cuve","color":"gold"}', 'title @a[tag=cine] subtitle {"text":"au nord-est, la vanne D","color":"aqua"}'],
-            100: ["function atelier:station_vanne_d", f"execute positioned {txt(d0)} run particle minecraft:bubble_column_up ~0.5 ~ ~0.5 1.5 2 1.5 0.2 120 force"],
-            112: [station_cine.son("chime", 0.75)], 118: [station_cine.son("chime", 1.0)], 124: [station_cine.son("chime", 1.5)],
+            80: ["execute as @a[tag=cine] at @s run playsound minecraft:block.iron_door.open master @s ~ ~ ~ 1 0.5"],
+            130: ["function atelier:station_vanne_d_ouverte", f"execute positioned {txt(d0)} run particle minecraft:bubble_column_up ~0.5 ~ ~0.5 1.5 2 1.5 0.2 120 force"],
+            134: [station_cine.son("chime", 0.75)], 140: [station_cine.son("chime", 1.0)], 146: [station_cine.son("chime", 1.5)],
             150: ['title @a[tag=cine] actionbar {"text":"Plonge jusqu\'au fond de la Cuve : la Cheminée t\'attend","color":"gold"}']}
+    for k, y in enumerate(rangs_d):                                                             # la grille monte, une rangee toutes les 8 ticks
+        ev_d.setdefault(88 + 8 * k, []).append(f"function atelier:station_vanne_d_rang_{y}")
     scenes["vanne_d"] = {"cles": (cam_d, vise_d), "duree": DUREE_VANNE_D, "centre": txt((int(cxu), a1.SOL, int(czu))), "rayon": 400, "evenements": ev_d}
+    # la bonde : la camera, au-dessus de l'eau cote plongeoir, plonge vers le centre du fond ; la grille s'ouvre et le tourbillon se forme, sans texte
+    centre_fond = (cxu, a1.FOND_CUVE + 0.5, czu)
+    a_b = math.radians(40)
+    dep_b = (cxu + 20 * math.sin(a_b), 74.0, czu - 20 * math.cos(a_b))
+    pt_b = lambda k: tuple(dep_b[i] + (centre_fond[i] - dep_b[i]) * k for i in range(3))                    # noqa: E731
+    surface = (cxu, a1.NIVEAUX["bas"], czu)
+    ev_b = {2: ["execute as @a[tag=cine] at @s run playsound minecraft:block.lever.click master @s ~ ~ ~ 1 0.6",
+                "execute as @a[tag=cine] at @s run playsound minecraft:block.beacon.power_select master @s ~ ~ ~ 1 0.5"],
+            40: ["function atelier:station_bonde_ouvrir", f"execute positioned {txt(centre_fond)} run particle minecraft:bubble_column_up ~ ~1 ~ 2 3 2 0.3 200 force"]}
+    for t in range(48, DUREE_BONDE - 5, 8):                                                     # le tourbillon : un anneau de remous qui tourne et se resserre
+        k = (t - 48) / 8
+        r = max(1.5, 6.0 - 0.35 * k)
+        a = math.radians(k * 47)
+        x, z = surface[0] + r * math.sin(a), surface[2] - r * math.cos(a)
+        ev_b.setdefault(t, []).extend([f"particle minecraft:splash {x + monde_dx(txt):.2f} {surface[1] + 1 + monde_dy(txt):.2f} {z + monde_dz(txt):.2f} 1 0.2 1 0.3 40 force",
+                                       f"particle minecraft:bubble_pop {surface[0] + monde_dx(txt):.2f} {surface[1] + monde_dy(txt):.2f} {surface[2] + monde_dz(txt):.2f} {r:.1f} 0.3 {r:.1f} 0.05 30 force"])
+        if int(k) % 3 == 0:
+            ev_b[t].append("execute as @a[tag=cine] at @s run playsound minecraft:block.bubble_column.whirlpool_ambient master @s ~ ~ ~ 1 0.7")
+    ev_b.setdefault(DUREE_BONDE - 20, []).append(station_cine.son("chime", 0.6))
+    scenes["bonde"] = {"cles": ([(1, dep_b), (70, pt_b(0.45)), (DUREE_BONDE, pt_b(0.58))], [(1, centre_fond), (DUREE_BONDE, centre_fond)]), "duree": DUREE_BONDE,
+                       "centre": txt((int(cxu), a1.SOL, int(czu))), "rayon": 400, "evenements": ev_b}
     # une balise sur la vanne D tant que personne n'y est alle
     tick += [f"execute if score #d station matches 1 if score #dvu station matches 0 positioned {txt(d0)} run particle minecraft:end_rod ~0.5 ~1 ~0.5 0.3 5 0.3 0.02 6 force @a[distance=..120]",
              f"execute if score #d station matches 1 if score #dvu station matches 0 positioned {txt(d0)} if entity @a[distance=..5,gamemode=!spectator] run scoreboard players set #dvu station 1"]
@@ -279,10 +328,15 @@ def fonctions(infos, infos1, blocs, txt):
     lev = txt(D["levier"])
     tick.append(f"execute if score #lg station matches 0 if block {lev} minecraft:lever[powered=true] run function atelier:station_levier_general")
     f["station_levier_general"] = "\n".join([
-        "# [claude-build] Le levier general : la porte du Poste s'ouvre sur la Coursive, la bonde de la Cuve s'ouvre, un tourbillon tire vers le Reservoir.",
-        "scoreboard players set #lg station 1", *poser_cases(D["porte_poste"], "minecraft:air"), *poser_cases(D["bonde"] + D["puits_bonde"], "minecraft:water"),
-        *poser_cases(D["magma"], "minecraft:magma_block"), f"playsound minecraft:block.beacon.deactivate master @a {txt((int(cxu), a1.SOL, int(czu)))} 4 0.5",
-        'title @a title {"text":"La bonde est ouverte","color":"aqua"}', 'title @a subtitle {"text":"Saute du plongeoir dans le tourbillon","color":"gray"}']) + "\n"
+        "# [claude-build] Le levier general : la porte du Poste s'ouvre sur la Coursive ; la bonde de la Cuve s'ouvre en cinematique (ou tout de suite si une autre est en cours).",
+        "scoreboard players set #lg station 1", *poser_cases(D["porte_poste"], "minecraft:air"), "scoreboard players operation #libre cine = #t cine",
+        "execute if score #libre cine matches 0 run function atelier:station_cine_debut_bonde",
+        "execute unless score #libre cine matches 0 run function atelier:station_bonde_ouvrir"]) + "\n"
+    f["station_bonde_ouvrir"] = "\n".join([
+        "# [claude-build] La bonde s'ouvre : la grille du fond de la Cuve disparait, le puits se remplit, un tourbillon (colonne de bulles descendante) tire vers le Reservoir.",
+        *poser_cases(D["bonde"] + D["puits_bonde"], "minecraft:water"), *poser_cases(D["magma"], "minecraft:magma_block"),
+        f"playsound minecraft:block.beacon.deactivate master @a {txt((int(cxu), a1.SOL, int(czu)))} 4 0.5",
+        f"playsound minecraft:block.bubble_column.whirlpool_inside master @a {txt((int(cxu), a1.NIVEAUX['bas'], int(czu)))} 4 0.6"]) + "\n"
     tick.append(f"execute if score #lg station matches 1 positioned {txt((int(cxu), a1.NIVEAUX['bas'], int(czu)))} run particle minecraft:bubble_column_up ~ ~-4 ~ 4 4 4 0.3 20")
     reset += [f"setblock {lev} minecraft:lever[face=floor,facing=east,powered=false]", *poser_cases(D["porte_poste"], "minecraft:iron_bars[waterlogged=false]"),
               *remettre(D["bonde"] + D["puits_bonde"] + D["magma"]), "scoreboard players set #lg station 0"]
