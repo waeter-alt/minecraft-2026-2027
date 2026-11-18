@@ -1,10 +1,13 @@
 # [claude-build] Tests du modele Blockbench du Rodeur des Racines (atelier/modeles/rodeur/rodeur.bbmodel).
 import base64
+import sys
 import json
 import unittest
 from pathlib import Path
 
 RACINE = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(RACINE / "atelier/scripts"))
+from bbmodel_vers_java import normaliser  # noqa: E402
 BBMODEL = RACINE / "atelier/modeles/rodeur/rodeur.bbmodel"
 TEXTURE = RACINE / "atelier/donjon/arene/src/main/resources/assets/grappin/textures/entity/golem.png"
 
@@ -17,7 +20,7 @@ ANIMS = {"repos": (3.0, "loop"), "marche": (1.0, "loop"), "morsure": (0.5, "once
 class TestRodeurBbmodel(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.m = json.loads(BBMODEL.read_text(encoding="utf-8"))
+        cls.m = normaliser(json.loads(BBMODEL.read_text(encoding="utf-8")))          # accepte aussi un fichier reenregistre par Blockbench 5
         cls.os = {}
 
         def visiter(g, parent):
@@ -57,7 +60,7 @@ class TestRodeurBbmodel(unittest.TestCase):
                 continue
             for anim in a["animators"].values():
                 for canal in ("rotation", "position"):
-                    ks = sorted((k for k in anim["keyframes"] if k["channel"] == canal), key=lambda k: k["time"])
+                    ks = sorted((k for k in anim.get("keyframes", []) if k["channel"] == canal), key=lambda k: k["time"])
                     if ks:
                         self.assertAlmostEqual(0.0, ks[0]["time"])
                         self.assertAlmostEqual(a["length"], ks[-1]["time"])
