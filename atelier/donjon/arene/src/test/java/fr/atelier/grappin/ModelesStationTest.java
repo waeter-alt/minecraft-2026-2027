@@ -28,7 +28,8 @@ class ModelesStationTest {
     private static final Path ASSETS = Path.of("src/main/resources/assets/donjon");
     private static final Path DATA = Path.of("src/main/resources/data/donjon");
     /** bloc -> sa propriete booleenne en plus de facing (ou null). */
-    private static final Map<String, String> BLOCS = Map.of("pompe_station", "en_marche", "chaudiere", "allumee", "cadran", "");
+    private static final Map<String, String> BLOCS = Map.of("pompe_station", "en_marche", "chaudiere", "allumee", "cadran", "",
+            "douche", "coule", "lavabo", "");
 
     private static JsonObject json(Path p) throws IOException {
         assertTrue(Files.exists(p), "absent : " + p);
@@ -118,5 +119,30 @@ class ModelesStationTest {
         assertArrayEquals(new double[] {0, 0, 3, 3.5, 13.5, 13}, StationLogique.tourner(nord, 1), 1e-9);    // mur a l'ouest
         assertArrayEquals(new double[] {3, 0, 0, 13, 13.5, 3.5}, StationLogique.tourner(nord, 2), 1e-9);   // mur au nord
         assertArrayEquals(new double[] {12.5, 0, 3, 16, 13.5, 13}, StationLogique.tourner(nord, 3), 1e-9);  // mur a l'est
+    }
+
+    /** Le banc (multipart) : son assise dans chaque orientation, et chaque pied seulement quand il n'est pas raccorde de ce cote. */
+    @Test
+    void bancMultipart() throws IOException {
+        Set<String> vus = new HashSet<>();
+        for (JsonElement e : json(ASSETS.resolve("blockstates/banc.json")).getAsJsonArray("multipart")) {
+            JsonObject quand = e.getAsJsonObject().getAsJsonObject("when");
+            String modele = e.getAsJsonObject().getAsJsonObject("apply").get("model").getAsString();
+            texturesValides(modele(modele));
+            String cle = quand.get("facing").getAsString() + ":" + modele.substring(modele.lastIndexOf('/') + 1);
+            if (modele.endsWith("pied_g")) {
+                assertEquals("false", quand.get("joint_g").getAsString(), cle);
+            } else if (modele.endsWith("pied_d")) {
+                assertEquals("false", quand.get("joint_d").getAsString(), cle);
+            } else {
+                assertEquals(1, quand.size(), cle);
+            }
+            vus.add(cle);
+        }
+        assertEquals(12, vus.size());
+        texturesValides(modele(json(ASSETS.resolve("models/item/banc.json")).get("parent").getAsString()));
+        assertTrue(Files.exists(DATA.resolve("loot_table/blocks/banc.json")));
+        assertTrue(json(ASSETS.resolve("lang/fr_fr.json")).has("block.donjon.banc"));
+        assertTrue(json(ASSETS.resolve("lang/en_us.json")).has("block.donjon.banc"));
     }
 }
