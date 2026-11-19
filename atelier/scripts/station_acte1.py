@@ -60,6 +60,81 @@ def carrelage(x, z):
     return S("smooth_quartz") if (x // 2 + z // 2) % 2 else S("white_concrete")
 
 
+DOUCHE = S("donjon:douche", facing="east", coule=False)                         # le pommeau de douche Blockbench (donjon 4.2.0), contre le mur ouest
+LAVABO = S("donjon:lavabo", facing="south")                                       # le lavabo Blockbench (donjon 4.2.0), contre le mur nord
+
+
+def banc(face="east"):
+    """Le banc de vestiaire Blockbench (donjon 4.2.0) ; ses raccords (joint_g, joint_d) se calculent en jeu."""
+    return S("donjon:banc", facing=face, joint_g=False, joint_d=False)
+
+
+def amenager_vestiaire(blocs, sources):
+    """Le Vestiaire d'une piscine (demande de Luca, 18/11) : douches a l'ouest, lavabos et miroirs au nord, cabines de change au sud, pediluve a l'entree,
+    lampes suspendues, serviettes, paniers a linge. Les casiers et les bancs sont deja la (rangees z 175 et 194)."""
+    x0, x1, z0, z1 = VESTIAIRE
+    y0, y1 = SOL + 1, SOL + HAUT_VESTIAIRE
+    vide = lambda q: blocs.get(q) == AIR                                                      # noqa: E731
+
+    def poser(q, b, seulement_vide=True):
+        if not seulement_vide or vide(q):
+            blocs[q] = b
+
+    # --- les douches : dix cabines le long du mur ouest (x 14 a 18), cloisons de verre bleu, sol en grille, un pommeau chacune
+    for z in range(z0 + 1, z1, 4):
+        for x in range(x0 + 1, x0 + 5):
+            for y in range(y0, y0 + 3):
+                blocs[(x, y, z)] = S("light_blue_stained_glass_pane", north=False, south=False, east=True, west=True, waterlogged=False)
+    for x in range(x0, x0 + 5):
+        for z in range(z0, z1 + 1):
+            if blocs.get((x, SOL, z), ("",))[0] != "minecraft:sea_lantern":
+                blocs[(x, SOL, z)] = S("waxed_copper_grate", waterlogged=False)
+            if blocs.get((x, y0, z), ("",))[0] == "minecraft:potted_fern":
+                blocs[(x, y0, z)] = AIR
+    for z in range(z0 + 3, z1, 4):
+        blocs[(x0, y0 + 3, z)] = DOUCHE
+        blocs[(x0 - 1, y0 + 4, z)] = S("waxed_cut_copper")                                     # l'arrivee d'eau dans le mur
+    # --- les lavabos et leurs miroirs, le long du mur nord
+    for x in range(x0 + 8, x1 - 6, 3):
+        blocs[(x, y0, z0)] = LAVABO
+        for y in (y0 + 1, y0 + 2):
+            blocs[(x, y, z0 - 1)] = S("light_blue_stained_glass")                              # le miroir, dans le mur
+        blocs[(x, y0 + 3, z0 - 1)] = S("sea_lantern")
+        sources.append((x, y0 + 3, z0 - 1))
+    # --- les cabines de change le long du mur sud : cloisons blanches, une porte de bouleau chacune
+    for x in range(x0 + 8, x1 - 5, 4):
+        for z in range(z1 - 2, z1 + 1):
+            for y in range(y0, y0 + 3):
+                blocs[(x, y, z)] = S("white_concrete")
+        for xx in range(x, x + 4):
+            for y in range(y0, y0 + 3):
+                if xx == x + 2 and y < y0 + 2:
+                    continue
+                blocs[(xx, y, z1 - 3)] = S("white_concrete") if (xx + y) % 3 else S("light_blue_concrete")
+        blocs[(x + 2, y0, z1 - 3)] = S("birch_door", facing="north", half="lower", hinge="left", open=False, powered=False)
+        blocs[(x + 2, y0 + 1, z1 - 3)] = S("birch_door", facing="north", half="upper", hinge="left", open=False, powered=False)
+        poser((x + 1, y0, z1 - 1), banc("east"))                                               # un petit banc dans la cabine
+        blocs[(x + 2, y0 + 3, z1 - 1)] = S("light", level=12, waterlogged=False)                   # une lumiere (invisible) dans la cabine, porte fermee
+        sources.append((x + 2, y0 + 3, z1 - 1, 12))
+    # --- le pediluve a l'entree (on y passe les pieds en venant du Hall)
+    cx0, cx1, cz0, cz1 = COULOIR_V
+    for x in range(x1 - 5, x1 + 1):
+        for z in range(cz0, cz1 + 1):
+            if blocs.get((x, SOL, z), ("",))[0] != "minecraft:sea_lantern":
+                blocs[(x, SOL, z)] = S("water", level=0)
+                blocs[(x, SOL - 1, z)] = S("light_blue_concrete")
+    # --- des lampes suspendues dans l'allee du milieu, des serviettes sur les bancs, des paniers a linge
+    for x in (25, 35, 45):
+        blocs[(x, y1, 185)] = S("chain", axis="y", waterlogged=False)
+        blocs[(x, y1 - 1, 185)] = S("lantern", hanging=True, waterlogged=False)
+    for (x, z, c) in ((23, 175, "white_carpet"), (31, 175, "light_blue_carpet"), (40, 175, "white_carpet"), (27, 194, "light_blue_carpet"), (45, 194, "white_carpet")):
+        if blocs.get((x, y0 + 2, z), ("",))[0] == "minecraft:white_concrete" and vide((x, y0 + 3, z)):
+            blocs[(x, y0 + 3, z)] = S(c)
+    for (x, z) in ((x1 - 1, z0 + 2), (x1 - 2, z0 + 2), (x1 - 1, z1 - 4)):
+        poser((x, y0, z), S("barrel", facing="up", open=False))
+        poser((x, y0 + 1, z), S("white_carpet"))
+
+
 def mur_hall(x, y, z):
     if y < SOL:
         return carreau_bassin(x, y, z)                              # les parois des bassins : carreaux bleus
@@ -439,11 +514,12 @@ def construire():
             blocs[(x, SOL + 3, z)] = S("white_concrete")
         for x in range(21, 49):
             if x % 6 != 2:
-                blocs[(x, SOL + 1, z + (3 if z == 175 else -3))] = S("birch_slab", type="bottom", waterlogged=False)
+                blocs[(x, SOL + 1, z + (3 if z == 175 else -3))] = banc("east")
     blocs[CASIER] = S("donjon:casier", facing="south", couleur="orange", half="lower", open=False)        # le casier de la cape (vide au depart)
     blocs[(CASIER[0], CASIER[1] + 1, CASIER[2])] = S("donjon:casier", facing="south", couleur="orange", half="upper", open=False)
     for (x, z) in ((16, 165), (53, 165), (16, 204), (53, 204), (35, 184), (35, 185)):
         blocs[(x, SOL + 1, z)] = S("potted_fern")
+    amenager_vestiaire(blocs, sources)
 
     # ---------------------------------------------------------- la Cuve : garde-corps et plongeoirs, colonnes de tuyaux, bouches scellees, ancrages au dessus de A et C
     for x in range(int(CUVE[0] - R_COURSIVE) - 1, int(CUVE[0] + R_COURSIVE) + 2):
