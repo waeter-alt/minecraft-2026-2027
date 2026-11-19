@@ -337,7 +337,7 @@ def fonctions(infos, infos1, blocs, txt):
                                         f"execute positioned {tc} run playsound minecraft:block.beacon.activate master @a[distance=..60] ~ ~ ~ 2 0.6"]) + "\n"
     reset += poser_cases(D["sable"], "minecraft:dripstone_block") + [f"setblock {txt(D['moteur'])} create:shaft[axis=y]", "scoreboard players set #td station 0"]
     lev = txt(D["levier"])
-    tick.append(f"execute if score #lg station matches 0 if block {lev} minecraft:lever[powered=true] run function atelier:station_levier_general")
+    tick.append(f"execute if score #lg station matches 0 if block {lev} donjon:levier_station[powered=true] run function atelier:station_levier_general")
     f["station_levier_general"] = "\n".join([
         "# [claude-build] Le levier general : la porte du Poste s'ouvre sur la Coursive ; la bonde de la Cuve s'ouvre en cinematique (ou tout de suite si une autre est en cours).",
         "scoreboard players set #lg station 1", *poser_cases(D["porte_poste"], "minecraft:air"), "scoreboard players operation #libre cine = #t cine",
@@ -349,7 +349,7 @@ def fonctions(infos, infos1, blocs, txt):
         f"playsound minecraft:block.beacon.deactivate master @a {txt((int(cxu), a1.SOL, int(czu)))} 4 0.5",
         f"playsound minecraft:block.bubble_column.whirlpool_inside master @a {txt((int(cxu), a1.NIVEAUX['bas'], int(czu)))} 4 0.6"]) + "\n"
     tick.append(f"execute if score #lg station matches 1 positioned {txt((int(cxu), a1.NIVEAUX['bas'], int(czu)))} run particle minecraft:bubble_column_up ~ ~-4 ~ 4 4 4 0.3 20")
-    reset += [f"setblock {lev} minecraft:lever[face=floor,facing=east,powered=false]", *poser_cases(D["porte_poste"], "minecraft:iron_bars[waterlogged=false]"),
+    reset += [f"setblock {lev} donjon:levier_station[face=floor,facing=east,powered=false]", *poser_cases(D["porte_poste"], "minecraft:iron_bars[waterlogged=false]"),
               *remettre(D["bonde"] + D["puits_bonde"] + D["magma"]), "scoreboard players set #lg station 0"]
 
     # ================================================================= le Reservoir, le boss, l'Exutoire

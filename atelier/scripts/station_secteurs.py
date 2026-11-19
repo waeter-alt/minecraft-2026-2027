@@ -492,7 +492,7 @@ def construire():
         poser("station_cheminee", (POSTE[0] - 1, 87, z), S("target"))
         poser("station_cheminee", (POSTE[0] - 1, 88, z), S("waxed_copper_bulb", lit=True, powered=False))
     levier_g = (POSTE[0] + 2, 85, 46)
-    poser("station_cheminee", levier_g, S("lever", face="floor", facing="east", powered=False))
+    poser("station_cheminee", levier_g, S("donjon:levier_station", face="floor", facing="east", powered=False))
     porte_poste = barreaux("station_cheminee", [(PORTE_POSTE, y, z) for y in range(85, 89) for z in range(64, 67)])
     for p in porte_poste:
         poser("station_cheminee", p, S("iron_bars", waterlogged=False))
