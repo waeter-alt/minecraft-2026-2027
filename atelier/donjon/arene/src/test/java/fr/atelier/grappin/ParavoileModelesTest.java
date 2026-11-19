@@ -51,4 +51,12 @@ class ParavoileModelesTest {
         assertEquals(256, voile.getWidth());
         assertEquals(256, voile.getHeight());
     }
+
+    /** La paravoile se porte dans la case « dos » d'Accessories (le tag accessories:back), comme la cape dans la sienne. */
+    @Test
+    void caseDuDos() throws IOException {
+        Path p = Path.of("src/main/resources/data/accessories/tags/item/back.json");
+        assertTrue(Files.exists(p), "absent : " + p);
+        assertTrue(JsonParser.parseString(Files.readString(p)).getAsJsonObject().getAsJsonArray("values").toString().contains("donjon:paravoile"));
+    }
 }
