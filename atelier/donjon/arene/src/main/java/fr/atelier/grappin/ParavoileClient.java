@@ -1,4 +1,4 @@
-// [claude-build] La paravoile cote client : le deploiement (ESPACE en l'air), le vol calcule chaque tick chez le joueur (cap = regard, nez bas = pique, nez haut = frein),
+// [claude-build] La paravoile cote client : le deploiement (ESPACE en l'air, la vue passe de dos le temps du vol), le vol calcule chaque tick chez le joueur (cap = regard, nez bas = pique, nez haut = frein),
 // la fin du vol, et le dessin de la voile (une aile de parapente qui se balance) au dessus de la tete des planeurs. Le serveur tient la jauge et annule la chute (ParavoileEvenements).
 package fr.atelier.grappin;
 
@@ -10,6 +10,7 @@ import java.util.Set;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
+import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HierarchicalModel;
 import net.minecraft.client.model.PlayerModel;
@@ -64,7 +65,7 @@ public final class ParavoileClient {
             FERMEES.put(message.idEntite(), maintenant);
             LocalPlayer moi = Minecraft.getInstance().player;
             if (moi != null && moi.getId() == message.idEntite()) {
-                Vol.actif = false;                              // le serveur a range notre voile (jauge vide, eau...) : on cesse de planer
+                Vol.fermer();                                   // le serveur a range notre voile (jauge vide, eau...) : on cesse de planer
             }
         }
     }
@@ -77,6 +78,27 @@ public final class ParavoileClient {
         private static int depuis = 0;                          // ticks depuis l'ouverture
         private static int auSol = 0;                           // ticks consecutifs ou le jeu dit « au sol » : une simple effleure d'un bloc ne doit pas ranger la voile
         private static double vx, vy, vz;                       // vitesse de vol : la gravite et les frottements du jeu ne comptent pas en vol
+        /** La vue d'avant le vol, quand on l'a passee de dos a l'ouverture (null : on n'y a pas touche, ou le joueur a choisi sa vue lui-meme). */
+        private static CameraType vueAvant = null;
+
+        /** A l'ouverture : en premiere personne, on passe en vue de dos (deja en troisieme personne : on ne touche a rien). */
+        private static void ouvrirVue(Minecraft mc) {
+            CameraType vue = mc.options.getCameraType();
+            vueAvant = vue.isFirstPerson() ? vue : null;
+            if (vueAvant != null) {
+                mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+            }
+        }
+
+        /** Fin du vol, quelle qu'en soit la cause : on rend la vue d'avant, sauf si le joueur en a change pendant le vol. */
+        static void fermer() {
+            actif = false;
+            Minecraft mc = Minecraft.getInstance();
+            if (vueAvant != null && mc.options.getCameraType() == CameraType.THIRD_PERSON_BACK) {
+                mc.options.setCameraType(vueAvant);
+            }
+            vueAvant = null;
+        }
 
         private static boolean empeche(LocalPlayer j) {
             return j.isInWater() || j.isInLava() || j.isFallFlying() || j.isPassenger() || j.getAbilities().flying || j.onClimbable() || j.isSpectator()
@@ -94,11 +116,14 @@ public final class ParavoileClient {
             boolean appui = espace && !espaceAvant;
             espaceAvant = espace;
             if (actif) {
+                if (vueAvant != null && mc.options.getCameraType() != CameraType.THIRD_PERSON_BACK) {
+                    vueAvant = null;                            // le joueur a change de vue lui-meme (F5) : on respecte son choix jusqu'a la fin
+                }
                 auSol = joueur.onGround() ? auSol + 1 : 0;
                 boolean fin = empeche(joueur) || appui || joueur.input.shiftKeyDown || (auSol >= 3 && depuis > 3)
                         || ParavoileItem.trouver(joueur).isEmpty() || ParavoileItem.trouver(joueur).getDamageValue() >= ParavoileItem.CAPACITE;
                 if (fin) {
-                    actif = false;
+                    fermer();
                     PacketDistributor.sendToServer(new PlaneurPayload(joueur.getId(), false));
                     return;
                 }
@@ -115,6 +140,7 @@ public final class ParavoileClient {
                     vy = v.y;
                     vz = v.z;
                     PacketDistributor.sendToServer(new PlaneurPayload(joueur.getId(), true));
+                    ouvrirVue(mc);
                     piloter(joueur);
                 }
             }
