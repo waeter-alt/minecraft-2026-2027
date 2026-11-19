@@ -1,6 +1,18 @@
 hash-format = "sha256"
 
 [[files]]
+file = "config/fancymenu/customizablemenus.txt"
+hash = "9f0ada5a7f0193d2d717d1c1736f545f5235c2597213731493b97488617ebbf2"
+
+[[files]]
+file = "config/fancymenu/customization/kodistan_title.txt"
+hash = "f9d513ea82b7da8871fe581bfabec5ca29cec0ff9199d244709ba823ef6da26c"
+
+[[files]]
+file = "config/fancymenu/options.txt"
+hash = "04293aaea2a76348ae9a82ef51070aae2481713242bfcc34a333809b6740e62a"
+
+[[files]]
 file = "mods/accessories.pw.toml"
 hash = "2bca646a0bf5b465b350a9b9573571b561f597e09fdb267c47063547f4ef3aef"
 metafile = true
@@ -106,6 +118,11 @@ hash = "7d9ae4b0063d22316f99805f5f97510aa10e884207c7ce805fe4d14908e60baf"
 metafile = true
 
 [[files]]
+file = "mods/fancymenu.pw.toml"
+hash = "dfa7e9e49c168c6f4ce1a5026206020e365c12dc737847c8ccea8958d24fbae9"
+metafile = true
+
+[[files]]
 file = "mods/forgified-fabric-api.pw.toml"
 hash = "dba0b900fb147f4cfbbb9878d65d23abb5e2ac294b6e441b15c3eed72445b9ba"
 metafile = true
@@ -146,8 +163,18 @@ hash = "f54c60bae5a1dc97d6d471f75199b8e379c0d9e604d8680584a48d8b5470cfcc"
 metafile = true
 
 [[files]]
+file = "mods/konkrete.pw.toml"
+hash = "6bd86b5e57c9595f3d02c939598da789f6ee95c9636d3e5381fd56f82d63b769"
+metafile = true
+
+[[files]]
 file = "mods/lithium.pw.toml"
 hash = "27bbfb75a167f25342f6c9ecdcc601aa944e31a92e36ae564ea45a1eba2a8800"
+metafile = true
+
+[[files]]
+file = "mods/melody.pw.toml"
+hash = "63f16815a39b3020f33cdb1679b8282ef777c665bf2377160dd90fab3ca883b3"
 metafile = true
 
 [[files]]

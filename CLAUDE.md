@@ -76,6 +76,14 @@ Aucune étape ne demande à l'utilisateur de créer un monde, copier un fichier 
 - Pas de commentaires qui répètent ce que le code dit déjà ; un commentaire seulement si le POURQUOI n'est pas évident (contrainte cachée, contournement d'un bug précis, invariant subtil).
 - Si tu introduis une incohérence ou un truc à moitié fini, dis-le explicitement plutôt que de livrer en silence.
 
+## Menus du jeu (FancyMenu)
+
+L'écran titre et les menus s'habillent avec FancyMenu, pas avec un écran Java. Mode d'emploi complet : `mod/docs/fancymenu.md`. L'essentiel :
+- un écran doit être listé dans `config/fancymenu/customizablemenus.txt`, sinon son layout est ignoré ;
+- les layouts ne sont relus qu'au démarrage du client : relancer après chaque modif ;
+- vérifier avec UiShot `screen=menu` ;
+- toute modif se recopie dans `mod/env/config/fancymenu/` **et** `launcher/pack/config/fancymenu/`, puis `launcher/scripts/refresh-index.ps1`.
+
 ## Nouvelle hutte (bâtiment MineColonies à nous)
 
 Toute nouvelle hutte suit la checklist `mod/docs/procedure-nouvelle-hutte.md` : blueprints des 5 niveaux **à la même taille** (`mod/tools/pad_blueprints.py`), fiche hutte commune (`HutBody`, jamais un écran à part), pose depuis le catalogue, fantôme niveau max des voisins (`/voisins`), tests en jeu. Chaque point vient d'un défaut déjà rencontré en playtest.
