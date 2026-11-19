@@ -50,6 +50,7 @@
   "block.donjon.douche": "Douche",
   "block.donjon.lavabo": "Lavabo",
   "block.donjon.banc": "Banc de vestiaire",
+  "block.donjon.levier_station": "Levier de commande",
   "block.donjon.casier": "Casier de vestiaire",
   "container.donjon.casier": "Casier",
   "item.donjon.cle_bleue": "Clé bleu",
