@@ -1,22 +1,21 @@
 // [claude-build] La paravoile cote client : le deploiement (ESPACE en l'air), le vol calcule chaque tick chez le joueur (cap = regard, nez bas = pique, nez haut = frein),
-// la fin du vol, et le dessin de la voile au dessus de la tete des planeurs. Le serveur tient la jauge et annule la chute (ParavoileEvenements).
+// la fin du vol, et le dessin de la voile (une aile de parapente qui se balance) au dessus de la tete des planeurs. Le serveur tient la jauge et annule la chute (ParavoileEvenements).
 package fr.atelier.grappin;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.HierarchicalModel;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.model.geom.PartPose;
-import net.minecraft.client.model.geom.builders.CubeListBuilder;
-import net.minecraft.client.model.geom.builders.LayerDefinition;
-import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -28,6 +27,8 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.AnimationState;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -42,16 +43,25 @@ public final class ParavoileClient {
 
     /** Les entites (ce joueur compris) dont la voile est deployee, d'apres le serveur. */
     private static final Set<Integer> PLANEURS = new HashSet<>();
+    /** Quand chaque voile s'est ouverte, et quand elle s'est refermee (temps du monde, en ticks) : on y cale les animations. */
+    private static final Map<Integer, Long> OUVERTES = new HashMap<>();
+    private static final Map<Integer, Long> FERMEES = new HashMap<>();
+    /** Ticks pendant lesquels une voile refermee reste dessinee, le temps de se replier (FERMETURE dure 0,5 s). */
+    private static final int REPLI = 11;
 
     private ParavoileClient() {
     }
 
     /** Appele a la reception d'un message du serveur (voir PlaneurPayload). */
     static void recevoir(PlaneurPayload message) {
+        long maintenant = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.getGameTime() : 0;
         if (message.actif()) {
             PLANEURS.add(message.idEntite());
+            OUVERTES.put(message.idEntite(), maintenant);
+            FERMEES.remove(message.idEntite());
         } else {
             PLANEURS.remove(message.idEntite());
+            FERMEES.put(message.idEntite(), maintenant);
             LocalPlayer moi = Minecraft.getInstance().player;
             if (moi != null && moi.getId() == message.idEntite()) {
                 Vol.actif = false;                              // le serveur a range notre voile (jauge vide, eau...) : on cesse de planer
@@ -141,7 +151,7 @@ public final class ParavoileClient {
     public static final class Rendus {
         @SubscribeEvent
         static void definition(EntityRenderersEvent.RegisterLayerDefinitions evenement) {
-            evenement.registerLayerDefinition(CALQUE, Rendus::modele);
+            evenement.registerLayerDefinition(CALQUE, ParavoileGeometrie::creerCouche);   // atelier/modeles/paravoile/paravoile_voile.bbmodel
         }
 
         @SubscribeEvent
@@ -153,32 +163,74 @@ public final class ParavoileClient {
             }
         }
 
-        /** Une toile tendue 14 pixels au dessus de la tete, et deux montants jusqu'aux epaules. */
-        private static LayerDefinition modele() {
-            MeshDefinition maille = new MeshDefinition();
-            maille.getRoot().addOrReplaceChild("toile", CubeListBuilder.create().texOffs(0, 0).addBox(-12.0F, -23.0F, -8.0F, 24.0F, 1.0F, 16.0F), PartPose.ZERO);
-            maille.getRoot().addOrReplaceChild("montant_gauche", CubeListBuilder.create().texOffs(0, 20).addBox(5.0F, -22.0F, -0.5F, 1.0F, 21.0F, 1.0F), PartPose.ZERO);
-            maille.getRoot().addOrReplaceChild("montant_droit", CubeListBuilder.create().texOffs(0, 20).addBox(-6.0F, -22.0F, -0.5F, 1.0F, 21.0F, 1.0F), PartPose.ZERO);
-            return LayerDefinition.create(maille, 128, 64);
+    }
+
+    /** La voile (modele ParavoileGeometrie) et son balancement en vol (ParavoileAnimations.VOL, en boucle sur l'age du joueur). */
+    static class ModeleVoile extends HierarchicalModel<Entity> {
+        private final ModelPart racine;
+        private final ModelPart voile;
+        private final AnimationState ouverture = new AnimationState();
+        private final AnimationState vol = new AnimationState();
+        private final AnimationState fermeture = new AnimationState();
+
+        ModeleVoile(ModelPart maillage) {
+            this.racine = maillage.getChild("racine");
+            this.voile = racine.getChild("voile");
+        }
+
+        @Override
+        public ModelPart root() {
+            return racine;
+        }
+
+        @Override
+        public void setupAnim(Entity entite, float a, float b, float c, float d, float e) {
+        }
+
+        /** maintenant, ouverte, fermee : temps du monde en ticks (fermee < 0 : toujours en vol) ; inclinaison en degres (virage). */
+        void poser(float maintenant, long ouverte, long fermee, float inclinaison) {
+            racine.getAllParts().forEach(ModelPart::resetPose);
+            ouverture.start((int) ouverte);                             // recalees a chaque image : chaque planeur a ses propres instants
+            this.animate(ouverture, ParavoileAnimations.OUVERTURE, maintenant);
+            vol.start((int) ouverte);
+            this.animate(vol, ParavoileAnimations.VOL, maintenant);
+            if (fermee >= 0) {
+                fermeture.start((int) fermee);
+                this.animate(fermeture, ParavoileAnimations.FERMETURE, maintenant);
+            }
+            voile.zRot += inclinaison * Mth.DEG_TO_RAD;
         }
     }
 
     static class Voilure extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
-        private final ModelPart racine;
+        private final ModeleVoile modele;
 
         Voilure(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> parent, EntityModelSet modeles) {
             super(parent);
-            this.racine = modeles.bakeLayer(CALQUE);
+            this.modele = new ModeleVoile(modeles.bakeLayer(CALQUE));
         }
 
         @Override
         public void render(PoseStack pose, MultiBufferSource tampons, int lumiere, AbstractClientPlayer joueur, float pas, float amplitude, float partiel,
                 float age, float lacetTete, float tangage) {
-            if (!PLANEURS.contains(joueur.getId())) {
+            int id = joueur.getId();
+            float maintenant = joueur.level().getGameTime() + partiel;
+            boolean enVol = PLANEURS.contains(id);
+            Long fermee = FERMEES.get(id);
+            if (!enVol && (fermee == null || maintenant - fermee > REPLI)) {
+                if (fermee != null) {
+                    FERMEES.remove(id);
+                    OUVERTES.remove(id);
+                }
                 return;
             }
+            long ouverte = OUVERTES.getOrDefault(id, (long) maintenant - 100);   // deja en vol quand on l'a vu arriver : pas d'ouverture rejouee
+            // En virage, la voile se couche du cote ou l'on tourne (droite du joueur = -x du modele, donc angle negatif vers la droite).
+            float virage = Mth.wrapDegrees(joueur.getYRot() - joueur.yRotO);
+            float inclinaison = enVol ? -Mth.clamp(virage * 2.5F, -18.0F, 18.0F) : 0.0F;
             VertexConsumer sommets = tampons.getBuffer(RenderType.entityCutoutNoCull(TEXTURE));
-            racine.render(pose, sommets, lumiere, OverlayTexture.NO_OVERLAY);
+            modele.poser(maintenant, ouverte, enVol ? -1 : fermee, inclinaison);
+            modele.root().render(pose, sommets, lumiere, OverlayTexture.NO_OVERLAY);
         }
     }
 }

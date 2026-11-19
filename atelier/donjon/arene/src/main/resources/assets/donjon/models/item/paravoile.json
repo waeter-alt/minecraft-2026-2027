@@ -1,4 +1,11 @@
 {
-  "parent": "minecraft:item/generated",
-  "textures": { "layer0": "donjon:item/paravoile" }
+  "loader": "neoforge:separate_transforms",
+  "base": {
+    "parent": "donjon:item/paravoile_main"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "donjon:item/paravoile_icone"
+    }
+  }
 }
