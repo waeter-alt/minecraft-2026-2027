@@ -159,8 +159,8 @@ Les joueurs reçoivent la mise à jour **à leur prochain lancement**.
 | Retirer un mod | `packwiz remove <slug>` |
 | Mettre à jour un mod précis | `packwiz unpin <slug>`, `packwiz update <slug>`, puis `packwiz pin <slug>` |
 | Recalculer l'index après une modif manuelle | `packwiz refresh` (ou `..\scripts\refresh-index.ps1`) |
-| Pousser une config | Copier le fichier sous `pack/config/...`, puis `packwiz refresh`. Attention : il écrase la version du joueur à chaque changement de hash. |
-| Ajouter FancyMenu / Drippy Loading Screen (habillage) | `packwiz modrinth add fancymenu` et `packwiz modrinth add drippy-loading-screen` (avec leur dépendance Konkrete si demandée), plus leurs fichiers dans `pack/config/fancymenu/` |
+| Pousser une config | Copier le fichier sous `pack/config/...`, puis `scripts/refresh-index.ps1` (ou `packwiz refresh`). Attention : il écrase la version du joueur à chaque changement de hash. |
+| Habiller un menu (FancyMenu, déjà dans le pack) | Voir `mod/docs/fancymenu.md`. Pour l'écran de chargement : `packwiz modrinth add drippy-loading-screen`, plus ses fichiers dans `pack/config/`. |
 
 Bonnes pratiques :
 
