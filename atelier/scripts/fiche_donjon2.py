@@ -39,7 +39,7 @@ L = ["<!-- [claude-build] fiche du donjon n°1 refait, ecrite par sources/fiche_
      "- **S'accroupir** : lâcher, en gardant sa vitesse, avec un petit saut vers le haut (réglage `sautAuLacher`, 0,42 = un saut normal). Clic droit accroché : lâcher et relancer aussitôt (enchaîner en l'air).",
      "- Pas de dégâts de chute tant qu'on est accroché ; ils reviennent dès qu'on lâche. Le crochet ne traverse pas les blocs et ne blesse personne.",
      "- Technique : lâcher en haut de l'arc, du côté où l'on va, puis tirer vers l'ancrage suivant avant de redescendre.",
-     "- Réglages : `config/grappin-common.toml` (portée, aimant, gravité du balancier, élan des touches, vitesse et saut au lâcher, treuil, molette).",
+     "- Réglages : `config/donjon-common.toml` (portée, aimant, gravité du balancier, élan des touches, vitesse et saut au lâcher, treuil, molette).",
      "", "## Le parcours (≈ 31 min pour qui découvre)", "", "| # | Section | Ce qu'on y fait | Temps |", "|---|---|---|---|"]
 tot = 0
 for k, (s, nom, t, txt) in enumerate(SECTIONS, 1):

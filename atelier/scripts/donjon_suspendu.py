@@ -180,20 +180,18 @@ def fonctions(infos, decalages, infos2, infos3=None, infos4=None):
         "# [claude-build] Un joueur entre dans la salle de l'enigme musicale : un zombie et un squelette apparaissent (une seule fois).",
         "scoreboard players set #s3 suspendu 1", *invoquer("suspendu_ss1b", infos2["monstres_musicale"])]) + "\n"
     coffre_grappin, coffre_cle = txt(infos2["coffre_grappin"]), txt(infos2["coffre_cle"])
-    contenu_grappin = "{Items:[{Slot:13b,id:\"grappin:grappin\",count:1}]}"
+    contenu_grappin = "{Items:[{Slot:13b,id:\"donjon:grappin\",count:1}]}"
     contenu_cle = ("{Items:[{Slot:13b,id:\"minecraft:tripwire_hook\",count:1,components:{\"minecraft:custom_name\":'\"" + NOMS_CLES["2"] + "\"',"
                    "\"minecraft:lore\":['\"Ouvre la porte " + salle1.COULEURS_PORTES["2"][2] + "\"']}}]}")
-    # le mini-boss de la grande salle (PROVISOIRE : un vindicateur costaud, Luca definira le vrai) : il se reveille quand un joueur s'approche ; le coffre du grappin, sur l'estrade, n'apparait qu'une fois le mini-boss vaincu
+    # le mini-boss de la grande salle : le Rodeur des Racines (donjon:rodeur, mod grappin 3.4.0+), qui se reveille quand un joueur s'approche ; le coffre du grappin, sur l'estrade, n'apparait qu'une fois le mini-boss vaincu
     f["suspendu_ss1_boss_debut"] = "\n".join([
-        "# [claude-build] Un joueur s'approche du mini-boss de la grande salle : il apparait (une seule fois). Provisoire : un vindicateur a 60 points de vie, a remplacer par le vrai mini-boss.",
+        "# [claude-build] Un joueur s'approche du mini-boss de la grande salle : le Rodeur des Racines sort de la mousse (une seule fois). Sa vie et ses degats se reglent dans la config du mod grappin (rodeur*).",
         "scoreboard players set #s4 suspendu 1",
-        f"summon minecraft:vindicator {centre_boss} {{Tags:[\"suspendu_ss1m\"],PersistenceRequired:1b,CustomName:'{{\"text\":\"Gardien de la salle\",\"color\":\"red\"}}',CustomNameVisible:1b}}",
-        "attribute @e[type=minecraft:vindicator,tag=suspendu_ss1m,limit=1] minecraft:generic.max_health base set 60",
-        "data modify entity @e[type=minecraft:vindicator,tag=suspendu_ss1m,limit=1] Health set value 60f",
+        f"summon donjon:rodeur {centre_boss} {{Tags:[\"suspendu_ss1m\"],PersistenceRequired:1b,CustomName:'{{\"text\":\"Rôdeur des Racines\",\"color\":\"red\"}}',CustomNameVisible:1b}}",
         f"execute positioned {centre_boss} run title @a[distance=..60] times 10 50 20",
         f"execute positioned {centre_boss} run title @a[distance=..60] subtitle {{\"text\":\"Le coffre du grappin apparaîtra sur l'estrade\",\"color\":\"gray\"}}",
-        f"execute positioned {centre_boss} run title @a[distance=..60] title {{\"text\":\"Vainquez le gardien de la salle\",\"color\":\"red\"}}",
-        f"execute positioned {centre_boss} run playsound minecraft:entity.vindicator.celebrate master @a[distance=..60] ~ ~ ~ 2 0.8"]) + "\n"
+        f"execute positioned {centre_boss} run title @a[distance=..60] title {{\"text\":\"Vainquez le Rôdeur des Racines\",\"color\":\"red\"}}",
+        f"execute positioned {centre_boss} run playsound minecraft:entity.ravager.roar master @a[distance=..60] ~ ~ ~ 2 1.4"]) + "\n"
     f["suspendu_ss1_boss_fin"] = "\n".join([
         "# [claude-build] Le mini-boss est vaincu : une cinematique montre le coffre du grappin qui apparait sur l'estrade (ou le coffre apparait tout de suite si une autre cinematique est en cours).",
         "scoreboard players set #s4 suspendu 2",
@@ -392,8 +390,8 @@ def main():
     (exports / "suspendu_ss2_cibles.json").write_text(json.dumps(cibles3, ensure_ascii=False), encoding="utf-8")
     (dp / "data/atelier/loot_table").mkdir(parents=True, exist_ok=True)
     (dp / "data/atelier/loot_table" / (ss3.TABLE_BUTIN.split(":")[1] + ".json")).write_text(json.dumps(TABLE_BUTIN_TUNNEL, indent=2), encoding="utf-8")
-    (dp / "data/grappin/tags/function").mkdir(parents=True, exist_ok=True)
-    (dp / "data/grappin/tags/function" / f"{suspendu_ss3_fonctions.TAG_MORT}.json").write_text(json.dumps({"values": ["atelier:suspendu_ss3_mort"]}, indent=2), encoding="utf-8")      # le mod appelle ce tag a la mort du golem
+    (dp / "data/donjon/tags/function").mkdir(parents=True, exist_ok=True)
+    (dp / "data/donjon/tags/function" / f"{suspendu_ss3_fonctions.TAG_MORT}.json").write_text(json.dumps({"values": ["atelier:suspendu_ss3_mort"]}, indent=2), encoding="utf-8")      # le mod appelle ce tag a la mort du golem
     cibles4 = {"_marque": "[claude-build]", "arrivee": list(infos4["arrivee"]), "marches": [list(m) for m in infos4["marches"]], "sources": [list(s) for s in infos4["sources"]], "depart_boss": list(infos4["depart_boss"]),
                "golem": {k: (list(v) if isinstance(v, tuple) else v) for k, v in infos4["golem"].items()}, "plateformes": {n: {"bbox": list(q["bbox"]), "dessus": q["dessus"], "boss": list(q["boss"]) if q["boss"] else None} for n, q in infos4["plateformes"].items()},
                "retour_rampe": list(infos4["retour_rampe"]), "tunnel": {"trous": infos4["tunnel"]["trous"], "ile": infos4["tunnel"]["ile"], "coffres": [{"nom": c["nom"], "pos": list(c["pos"]), "acces": list(c["acces"])} for c in infos4["tunnel"]["coffres"]], "passages": [{k: list(v) for k, v in q.items()} for q in infos4["tunnel"]["passages"]]}, "rampe_trous": infos4["rampe_trous"], "rampe_theta": infos4["rampe_theta"], "pont": [list(c) for c in infos4["pont"]], "trous": infos4["trous"], "troncons": infos4["troncons"], "corniches": {n: list(c) for n, c in infos4["corniches"].items()},

@@ -235,18 +235,18 @@ class TestFonctions(unittest.TestCase):
         tick, debut, fin, reset = (self.f[n] for n in ("suspendu_tick", "suspendu_ss1_boss_debut", "suspendu_ss1_boss_fin", "suspendu_reset"))
         self.assertIn("suspendu_ss1_boss_debut", tick)
         self.assertIn("matches 1 unless entity @e[tag=suspendu_ss1m] run function atelier:suspendu_ss1_boss_fin", tick)     # la mort du mini-boss declenche le coffre
-        self.assertIn("summon minecraft:vindicator", debut)
-        self.assertIn("generic.max_health base set 60", debut)
+        self.assertIn("summon donjon:rodeur", debut)                                                                          # le Rodeur des Racines (mod grappin), plus le vindicateur provisoire
+        self.assertIn("suspendu_ss1m", debut)
         coffre = self.f["suspendu_ss1_boss_coffre"]
-        self.assertIn("grappin:grappin", coffre)                                                                               # le coffre du grappin est pose a sa mort (par la fonction que la cinematique appelle)...
+        self.assertIn("donjon:grappin", coffre)                                                                               # le coffre du grappin est pose a sa mort (par la fonction que la cinematique appelle)...
         self.assertIn("minecraft:chest", coffre)
-        self.assertNotIn("grappin:grappin", fin)
-        self.assertNotIn("grappin:grappin", reset)                                                                              # ... et jamais a la remise a zero
+        self.assertNotIn("donjon:grappin", fin)
+        self.assertNotIn("donjon:grappin", reset)                                                                              # ... et jamais a la remise a zero
         self.assertIn("kill @e[tag=suspendu_ss1m]", reset)
         self.assertIn("#s4 suspendu 0", reset)
         for nom, texte in self.f.items():
             if nom not in ("suspendu_ss1_boss_coffre",):
-                self.assertNotIn("grappin:grappin", texte, nom)
+                self.assertNotIn("donjon:grappin", texte, nom)
 
     def test_le_coffre_n_est_pose_qu_une_fois_et_garde_sa_cle(self):
         """Bug vu en jeu : tester `#t cine` APRES avoir lance la scene (qui met #t a 1) posait le coffre deux fois ; le second setblock vide le coffre (setblock le vide, puis refuse de remplacer un bloc par le meme)."""

@@ -151,7 +151,7 @@ def verifier(exports):
             for (x, y, z) in (tuple(a) for a in ci3["ancrages_cyan"][str(etape)]):                              # le levier `etape` est tire : ses ancrages apparaissent (ancrage et chaine)
                 for yy in range(y + 1, ci3["plafond"] + 1):
                     blocs[(x, yy, z)] = S("chain", axis="y", waterlogged=False)
-                blocs[(x, y, z)] = S("grappin:ancrage")
+                blocs[(x, y, z)] = S("donjon:ancrage")
                 actifs.append((x, y, z))
             for p in ci3["piliers_cyan"].get(str(etape), []):                                                   # un ancrage au dessus du vide arrive avec son pilier (le corps, le dessus et la lumiere)
                 for (cx, cz) in p["cases"]:

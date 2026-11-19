@@ -224,7 +224,7 @@ def construire():
     for (x, y, z) in ancrages:
         for yy in range(y + 1, cases[(x, z)][1] + 1):
             blocs[(x, yy, z)] = S("chain", axis="y", waterlogged=False)
-        blocs[(x, y, z)] = S("grappin:ancrage")
+        blocs[(x, y, z)] = S("donjon:ancrage")
     # l'enigme du bloc musical : 5 blocs musicaux alignes au milieu de l'estrade de dalles, du nord au sud, avec le bouton de depart au bout nord. Il faut de l'air juste au dessus d'un bloc musical (sinon il se tait) :
     # la lampe est 2 au dessus, pendue a une chaine
     plate = sorted(c for c, v in cases.items() if v[2] == "bloc")

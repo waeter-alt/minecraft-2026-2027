@@ -80,6 +80,7 @@ Le client ouvre le monde, affiche chaque écran demandé avec des données facti
    - `building:<type|all>` : vue d'ensemble + chaque page de la colonne de gauche, nommées `<type>-<page>` (ex. `farmer-fields`)
    - `citizen:<n>`, `hud`, `catalogue`
    - `block:<bank|regionalbank|comptoir|market|throne|crops|all>`
+   - `menu` : écran titre (`title`) et, si on est dans un monde, menu pause (`pause`) ; c'est ainsi qu'on vérifie un layout FancyMenu (voir `fancymenu.md`)
    - `list` : liste juste les types de bâtiments ; `none` : ouvre seulement le monde
 
    Tailles par défaut : `1553x1011@4,1553x1011@2,854x480@2`. **Vérifie toujours `1553x1011@4`** : c'est la configuration de jeu de Duncan, la plus serrée.
