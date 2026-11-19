@@ -47,10 +47,17 @@
   "block.donjon.pompe_station": "Pompe de la station",
   "block.donjon.chaudiere": "Chaudière",
   "block.donjon.cadran": "Manomètre",
+  "block.donjon.douche": "Douche",
+  "block.donjon.lavabo": "Lavabo",
+  "block.donjon.banc": "Banc de vestiaire",
+  "block.donjon.levier_station": "Levier de commande",
   "block.donjon.casier": "Casier de vestiaire",
   "container.donjon.casier": "Casier",
   "item.donjon.cle_bleue": "Clé bleu",
   "item.donjon.cle_jaune": "Clé jaune",
   "item.donjon.cle_rouge": "Clé rouge",
-  "entity.donjon.porte_donjon": "Porte du donjon"
+  "entity.donjon.porte_donjon": "Porte du donjon",
+  "entity.donjon.scaphandrier": "Scaphandrier rouillé",
+  "item.donjon.scaphandrier_spawn_egg": "Œuf d'apparition de Scaphandrier rouillé",
+  "entity.donjon.harpon_scaphandrier": "Harpon du Scaphandrier"
 }

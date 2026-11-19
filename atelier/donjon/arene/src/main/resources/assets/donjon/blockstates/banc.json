@@ -1,0 +1,117 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "facing": "north"
+      },
+      "apply": {
+        "model": "donjon:block/station/banc"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "joint_g": "false"
+      },
+      "apply": {
+        "model": "donjon:block/station/banc_pied_g"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "joint_d": "false"
+      },
+      "apply": {
+        "model": "donjon:block/station/banc_pied_d"
+      }
+    },
+    {
+      "when": {
+        "facing": "east"
+      },
+      "apply": {
+        "model": "donjon:block/station/banc",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "joint_g": "false"
+      },
+      "apply": {
+        "model": "donjon:block/station/banc_pied_g",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "joint_d": "false"
+      },
+      "apply": {
+        "model": "donjon:block/station/banc_pied_d",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "south"
+      },
+      "apply": {
+        "model": "donjon:block/station/banc",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "joint_g": "false"
+      },
+      "apply": {
+        "model": "donjon:block/station/banc_pied_g",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "joint_d": "false"
+      },
+      "apply": {
+        "model": "donjon:block/station/banc_pied_d",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "west"
+      },
+      "apply": {
+        "model": "donjon:block/station/banc",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "joint_g": "false"
+      },
+      "apply": {
+        "model": "donjon:block/station/banc_pied_g",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "joint_d": "false"
+      },
+      "apply": {
+        "model": "donjon:block/station/banc_pied_d",
+        "y": 270
+      }
+    }
+  ]
+}

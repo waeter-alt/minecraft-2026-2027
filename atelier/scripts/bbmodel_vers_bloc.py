@@ -1,12 +1,13 @@
 # [claude-build] Exporte un modele Blockbench « Java Block » (.bbmodel) en modeles de bloc JSON de Minecraft 1.21.1 (NeoForge), dans
 # assets/donjon/models/block/station/ :
 #   <nom>.json                                  le modele ;
-#   --a-part <prefixe>                          les cubes <prefixe>* vont dans <nom>_<prefixe sans _>.json (piece animee par le jeu) ;
+#   --a-part <prefixe>                          les cubes <prefixe>* vont dans <nom>_<prefixe sans _>.json (piece animee par le jeu, ou
+#                                               montree selon l'etat du bloc) ; peut se repeter ;
 #   --variantes <tex>:<suffixe>=<texture>,...   un modele <nom>_<suffixe>.json par variante, <texture> mise a la place de <tex> ;
 #   --objet                                     <nom>_objet.json : tout le modele, reduit pour tenir dans une case (objet en main,
 #                                               inventaire) quand il deborde du bloc.
 # Lumineux (block_light/sky_light 15, sans ombrage) : les cubes nommes lueur_* et ceux dont une face porte une texture *_allume.
-# Texture avec transparence : rendu cutout. Particules : la texture la plus employee. Textures : grappin:block/station/<nom>.
+# Texture avec transparence : rendu cutout. Particules : la texture la plus employee. Textures : donjon:block/station/<nom>.
 # Les commandes pour les blocs de la Station sont dans atelier/scripts/station_decor_modeles.sh.
 import base64
 import io
@@ -112,10 +113,11 @@ def main():
     textures = {n: n for n in noms.values()}
     tous = [element(e, noms) for e in bb["elements"]]
     corps = tous
-    if "--a-part" in args:
-        prefixe = args[args.index("--a-part") + 1]
-        corps = [e for e in tous if not e["name"].startswith(prefixe)]
-        ecrire(f"{nom}_{prefixe.strip('_')}", modele(source, [e for e in tous if e["name"].startswith(prefixe)], textures))
+    for k, a in enumerate(args):                                               # --a-part peut se repeter (les deux pieds du banc)
+        if a == "--a-part":
+            prefixe = args[k + 1]
+            corps = [e for e in corps if not e["name"].startswith(prefixe)]
+            ecrire(f"{nom}_{prefixe.strip('_')}", modele(source, [e for e in tous if e["name"].startswith(prefixe)], textures))
     if "--variantes" in args:
         tex, liste = args[args.index("--variantes") + 1].split(":")
         for v in liste.split(","):
