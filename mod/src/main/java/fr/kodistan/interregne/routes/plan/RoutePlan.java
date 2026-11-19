@@ -18,9 +18,13 @@ public final class RoutePlan
     public final boolean[] bend;
     public final Footprint footprint;
     public final float cost;
+    /** The route ends on a road already built (its last cell is on that road's centre line), not at its B end. */
+    public final boolean joined;
 
-    RoutePlan(final int[] x, final int[] z, final int[] y, final byte[] mode, final boolean[] bend, final Footprint footprint, final float cost)
+    RoutePlan(final int[] x, final int[] z, final int[] y, final byte[] mode, final boolean[] bend, final Footprint footprint, final float cost,
+      final boolean joined)
     {
+        this.joined = joined;
         this.x = x;
         this.z = z;
         this.y = y;
