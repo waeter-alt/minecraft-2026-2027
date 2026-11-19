@@ -1,7 +1,8 @@
 # [claude-build] Apercu de modeles de bloc JSON (ceux que le jeu charge), sans lancer le jeu : chaque texel de chaque face, rotations des
 # cubes, faces cachees retirees, tri par profondeur, eclairage simple, cubes lumineux (neoforge_data) non ombres. Vue 3/4 avant-gauche.
 #   python apercu_bloc.py <sortie.png> <modele>[+<modele>...] [...]       (modele : chemin sous models/, ex. block/station/cadran)
-# « a+b » dessine plusieurs modeles ensemble (corps de la pompe + son volant) ; chaque argument est une case de la planche.
+# « a+b » dessine plusieurs modeles ensemble (corps de la pompe + son volant), « a@x,y,z » decale un modele de x, y, z pixels ;
+# chaque argument est une case de la planche.
 import json
 import math
 import sys
@@ -70,12 +71,14 @@ def vue(p, lacet, tangage):
 def rendu(noms, lacet=-35, tangage=-22):
     cache, quads, pts_tous = {}, [], []
     for nom in noms:
+        nom, _, decalage = nom.partition("@")                                   # modele@x,y,z : decale de x, y, z pixels (rangee de bancs)
+        d = [float(v) for v in decalage.split(",")] if decalage else [0.0, 0.0, 0.0]
         elements, tex = charger_modele(nom)
         for e in elements:
             lumineux = "neoforge_data" in e
             for face, f in e["faces"].items():
                 img = image(f["texture"], tex, cache)
-                c = [vue(tourner(p, e.get("rotation")), lacet, tangage) for p in coins(face, e["from"], e["to"])]
+                c = [vue(tuple(q + d[i] for i, q in enumerate(tourner(p, e.get("rotation")))), lacet, tangage) for p in coins(face, e["from"], e["to"])]
                 u = [c[1][i] - c[0][i] for i in range(3)]
                 v = [c[3][i] - c[0][i] for i in range(3)]
                 n = [v[1] * u[2] - v[2] * u[1], v[2] * u[0] - v[0] * u[2], v[0] * u[1] - v[1] * u[0]]

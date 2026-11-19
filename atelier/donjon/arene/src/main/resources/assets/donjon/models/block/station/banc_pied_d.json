@@ -1,0 +1,288 @@
+{
+  "credit": "Genere par atelier/scripts/bbmodel_vers_bloc.py depuis atelier/modeles/station/banc.bbmodel",
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "acier": "donjon:block/station/acier",
+    "bois_clair": "donjon:block/station/bois_clair",
+    "particle": "#acier"
+  },
+  "elements": [
+    {
+      "name": "pied_d_avant",
+      "from": [
+        13.5,
+        0.0,
+        3.5
+      ],
+      "to": [
+        15.0,
+        6.0,
+        5.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1.0,
+            10.0,
+            2.5,
+            16.0
+          ],
+          "texture": "#acier"
+        },
+        "east": {
+          "uv": [
+            11.0,
+            10.0,
+            12.5,
+            16.0
+          ],
+          "texture": "#acier"
+        },
+        "south": {
+          "uv": [
+            13.5,
+            10.0,
+            15.0,
+            16.0
+          ],
+          "texture": "#acier"
+        },
+        "west": {
+          "uv": [
+            3.5,
+            10.0,
+            5.0,
+            16.0
+          ],
+          "texture": "#acier"
+        },
+        "up": {
+          "uv": [
+            13.5,
+            3.5,
+            15.0,
+            5.0
+          ],
+          "texture": "#acier"
+        },
+        "down": {
+          "uv": [
+            13.5,
+            11.0,
+            15.0,
+            12.5
+          ],
+          "texture": "#acier"
+        }
+      }
+    },
+    {
+      "name": "pied_d_arriere",
+      "from": [
+        13.5,
+        0.0,
+        11.0
+      ],
+      "to": [
+        15.0,
+        6.0,
+        12.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1.0,
+            10.0,
+            2.5,
+            16.0
+          ],
+          "texture": "#acier"
+        },
+        "east": {
+          "uv": [
+            3.5,
+            10.0,
+            5.0,
+            16.0
+          ],
+          "texture": "#acier"
+        },
+        "south": {
+          "uv": [
+            13.5,
+            10.0,
+            15.0,
+            16.0
+          ],
+          "texture": "#acier"
+        },
+        "west": {
+          "uv": [
+            11.0,
+            10.0,
+            12.5,
+            16.0
+          ],
+          "texture": "#acier"
+        },
+        "up": {
+          "uv": [
+            13.5,
+            11.0,
+            15.0,
+            12.5
+          ],
+          "texture": "#acier"
+        },
+        "down": {
+          "uv": [
+            13.5,
+            3.5,
+            15.0,
+            5.0
+          ],
+          "texture": "#acier"
+        }
+      }
+    },
+    {
+      "name": "pied_d_semelle",
+      "from": [
+        13.5,
+        0.0,
+        3.0
+      ],
+      "to": [
+        15.0,
+        1.0,
+        13.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1.0,
+            15.0,
+            2.5,
+            16.0
+          ],
+          "texture": "#acier"
+        },
+        "east": {
+          "uv": [
+            3.0,
+            15.0,
+            13.0,
+            16.0
+          ],
+          "texture": "#acier"
+        },
+        "south": {
+          "uv": [
+            13.5,
+            15.0,
+            15.0,
+            16.0
+          ],
+          "texture": "#acier"
+        },
+        "west": {
+          "uv": [
+            3.0,
+            15.0,
+            13.0,
+            16.0
+          ],
+          "texture": "#acier"
+        },
+        "up": {
+          "uv": [
+            13.5,
+            3.0,
+            15.0,
+            13.0
+          ],
+          "texture": "#acier"
+        },
+        "down": {
+          "uv": [
+            13.5,
+            3.0,
+            15.0,
+            13.0
+          ],
+          "texture": "#acier"
+        }
+      }
+    },
+    {
+      "name": "pied_d_entretoise",
+      "from": [
+        13.5,
+        3.0,
+        5.0
+      ],
+      "to": [
+        15.0,
+        4.0,
+        11.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1.0,
+            12.0,
+            2.5,
+            13.0
+          ],
+          "texture": "#acier"
+        },
+        "east": {
+          "uv": [
+            5.0,
+            12.0,
+            11.0,
+            13.0
+          ],
+          "texture": "#acier"
+        },
+        "south": {
+          "uv": [
+            13.5,
+            12.0,
+            15.0,
+            13.0
+          ],
+          "texture": "#acier"
+        },
+        "west": {
+          "uv": [
+            5.0,
+            12.0,
+            11.0,
+            13.0
+          ],
+          "texture": "#acier"
+        },
+        "up": {
+          "uv": [
+            13.5,
+            5.0,
+            15.0,
+            11.0
+          ],
+          "texture": "#acier"
+        },
+        "down": {
+          "uv": [
+            13.5,
+            5.0,
+            15.0,
+            11.0
+          ],
+          "texture": "#acier"
+        }
+      }
+    }
+  ]
+}
