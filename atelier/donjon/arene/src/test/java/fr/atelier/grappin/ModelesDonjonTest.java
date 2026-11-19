@@ -26,7 +26,7 @@ class ModelesDonjonTest {
     private static final Path ASSETS = Path.of("src/main/resources/assets/donjon");
     private static final Path DATA = Path.of("src/main/resources/data/donjon");
     private static final List<String> BLOCS = List.of(   // les portes et sceaux en blocs ont ete abandonnes : la porte est une entite
-            "levier_racine", "casier");
+            "levier_racine", "casier", "levier_station");
     private static final List<String> CLES = List.of("cle_bleue", "cle_jaune", "cle_rouge");
 
     private static JsonObject json(Path p) throws IOException {
@@ -82,7 +82,9 @@ class ModelesDonjonTest {
                 }
             }
         }
-        assertEquals(attendus, json(ASSETS.resolve("blockstates/levier_racine.json")).getAsJsonObject("variants").keySet());
+        for (String levier : List.of("levier_racine", "levier_station")) {    // le levier de la Station a les memes etats que celui de Minecraft
+            assertEquals(attendus, json(ASSETS.resolve("blockstates/" + levier + ".json")).getAsJsonObject("variants").keySet(), levier);
+        }
     }
 
     @Test

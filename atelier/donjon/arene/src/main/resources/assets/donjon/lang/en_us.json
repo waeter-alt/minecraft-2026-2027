@@ -50,6 +50,7 @@
   "block.donjon.douche": "Shower",
   "block.donjon.lavabo": "Washbasin",
   "block.donjon.banc": "Locker Room Bench",
+  "block.donjon.levier_station": "Control Lever",
   "block.donjon.casier": "Changing Room Locker",
   "container.donjon.casier": "Locker",
   "item.donjon.cle_bleue": "Blue Key",

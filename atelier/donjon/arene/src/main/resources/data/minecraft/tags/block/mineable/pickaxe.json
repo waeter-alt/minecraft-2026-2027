@@ -5,6 +5,7 @@
     "donjon:chaudiere",
     "donjon:cadran",
     "donjon:douche",
-    "donjon:lavabo"
+    "donjon:lavabo",
+    "donjon:levier_station"
   ]
 }
