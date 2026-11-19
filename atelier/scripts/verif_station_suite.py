@@ -17,7 +17,7 @@ from suspendu_outils import AIR  # noqa: E402
 PASSE = {"minecraft:air", "minecraft:water", "minecraft:ladder", "minecraft:chain", "minecraft:lever", "minecraft:light"}
 EAU = ("minecraft:water", (("level", "0"),))
 LIMITE = 900000
-TRANSPARENT = PASSE | {"minecraft:iron_bars", "minecraft:waxed_copper_grate"}      # la lumiere passe les barreaux et les grilles ; pas le nageur
+TRANSPARENT = PASSE | {"minecraft:iron_bars", "minecraft:waxed_copper_grate", "minecraft:iron_trapdoor"}      # la lumiere passe les barreaux et les grilles ; pas le nageur
 
 
 def nager(blocs, depart, borne=None):
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     parts, _ = s2.construire()
     _, i1 = a1.construire()
     sources = [p for p, b in blocs.items() if b[0] in ("minecraft:sea_lantern", "minecraft:verdant_froglight", "minecraft:ochre_froglight", "minecraft:shroomlight", "minecraft:light")]
-    cases = [p for nom in s2.ORDRE for p, b in parts[nom].items() if b[0] in ("minecraft:water", "minecraft:air") and p[1] < a1.PLAINE]
+    cases = [p for nom in s2.ORDRE for p in parts[nom] if blocs.get(p, ("",))[0] in ("minecraft:water", "minecraft:air") and p[1] < a1.PLAINE]          # avec les retouches
     noirs = lumiere(blocs, sources, cases)
     par = {}
     for p in noirs:

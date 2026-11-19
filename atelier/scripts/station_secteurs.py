@@ -45,7 +45,7 @@ B2 = (189, 228, 70, 121, 40, 50)                # la salle des chaudieres (sol a
 CHAUDIERES = ((198, 80), (198, 111), (217, 96), (225, 76))
 PLAQUES = ((200, 95), (212, 80), (222, 110))
 CAGES = {2: (210, 214, 78, 82, "s"), 3: (220, 224, 108, 112, "n")}       # la cage de la plaque, et le cote du jet
-COLONNE_B = (208, 210, 94, 96)
+COLONNE_B = (206, 212, 92, 98)                 # 7 x 7 : Luca a elargi le puits a la main (18/11), la grille et la colonne de bulles suivent
 B3 = (189, 228, 70, 121, 58, 72)                # la halle haute (sol a 57), seche
 TREMPE = (199, 222, 82, 109, 53, 57)            # le bassin de trempe
 PASSERELLES = ((190, 198), (205, 208), (215, 217), (223, 227))          # sur z 95..97, sol a 63
@@ -335,7 +335,8 @@ def construire():
                     poser("station_b", (x, y, z), S("iron_bars", waterlogged=True))
         jets[k] = porte
     vanne_colonne = barreaux("station_b", boite(COLONNE_B[0], COLONNE_B[1], B2[5] + 1, B2[5] + 1, COLONNE_B[2], COLONNE_B[3]))
-    sable_b = boite(COLONNE_B[0], COLONNE_B[1], 39, 39, COLONNE_B[2], COLONNE_B[3])
+    cxb, czb = (COLONNE_B[0] + COLONNE_B[1]) // 2, (COLONNE_B[2] + COLONNE_B[3]) // 2
+    sable_b = boite(cxb - 1, cxb + 1, 39, 39, czb - 1, czb + 1)                     # le courant qui monte, au centre seulement : on redescend par l anneau calme autour (Luca, 18/11)
     for (x, y, z) in boite(B3[0], B3[1], 57, 57, B3[2], B3[3]):                     # le sol de la halle haute : briques et cuivre
         if (x, y, z) in parts["station_b"] and (x, y, z) not in creux and parts["station_b"][(x, y, z)][0] != "minecraft:ochre_froglight":
             parts["station_b"][(x, y, z)] = S("waxed_cut_copper") if (x + z) % 4 == 0 else S("bricks")

@@ -203,9 +203,8 @@ def ligne_au_sol(parts, nom, points, y_haut, y_bas, bloc):
 def salles_des_pompes(parts, infos):
     A, B, C = infos["a"], infos["b"], infos["c"]
     pompes = {}
-    # --- secteur A : la ligne verte de l'ecluse a la pompe, des lits de filtration vitres, une grande machine dans la salle de la pompe
-    chemin_a = ligne_au_sol(parts, "station_a", [(88, 95), (76, 95), (76, 42), (76, 36), (50, 36), (50, 10), (38, 10), (38, 36), (24, 36), (24, 23), (16, 23)],
-                            70, 58, S("minecraft:lime_concrete"))
+    # --- secteur A : des lits de filtration vitres, une grande machine dans la salle de la pompe
+    chemin_a = []                                                                           # plus de ligne de couleur au sol (demande de Luca)
     for (x0, x1, z0, z1) in ((30, 33, 3, 30), (44, 47, 15, 42), (58, 61, 3, 30)):           # les lits : une cuve de verre cerclee de cuivre, on voit le sable et le gravier
         for x in range(x0, x1 + 1):
             for z in range(z0, z1 + 1):
@@ -219,9 +218,8 @@ def salles_des_pompes(parts, infos):
     for z in (az0 + 1, az1 - 1):                                                                # des tuyaux le long des deux longs murs
         tuyau(parts["station_a"], [(x, ay1 - 3, z) for x in range(ax0 + 1, ax1) if parts["station_a"].get((x, ay1 - 3, z), ("",))[0] == "minecraft:water"], "x")
     pompes["A"] = salle_pompe_a(parts["station_a"], A)
-    # --- secteur B : la ligne orange de l'ecluse a la premiere plaque, puis de la sortie du bassin de trempe a l'escalier ; des machines dans les chaudieres
-    chemin_b = ligne_au_sol(parts, "station_b", [(151, 95), (197, 95)], 45, 30, S("minecraft:orange_concrete"))
-    chemin_b += ligne_au_sol(parts, "station_b", [(198, 95), (198, 88), (190, 88), (190, 90)], 58, 56, S("minecraft:orange_concrete"))
+    # --- secteur B : des machines dans les chaudieres
+    chemin_b = []
     bx0, bx1, bz0, bz1, _, by1 = B["b2"]                                                 # (x0, x1, z0, z1, y0, y1)
     ligne_machine(parts["station_b"], (bx0 + 1, by1, bz0 + 2), "x", bx1 - bx0 - 1)
     ligne_machine(parts["station_b"], (bx0 + 1, by1, bz1 - 2), "x", bx1 - bx0 - 1)
@@ -245,7 +243,7 @@ def salles_des_pompes(parts, infos):
     infos["salle_lits"] = station_salle_lits.refaire(parts, infos)
     # des panneaux debout (le datapack les pose) : (case, rotation 0 sud / 4 ouest / 8 nord / 12 est, lignes, sous l'eau)
     infos["panneaux_secteurs"] = [
-        ((82, 64, 93), 12, ("A  FILTRATION", "Pompe A :", "suis la ligne", "verte"), True),
+        ((82, 64, 93), 12, ("A  FILTRATION", "Pompe A :", "au bout,", "a l'ouest"), True),
         ((75, 64, 89), 0, ("Galerie", "au bout : la", "salle des lits", ""), True),
         ((74, 61, 40), 0, ("Salle des lits", "gardiens !", "Pompe A :", "a l'ouest"), True),
         ((19, 61, 26), 12, ("POMPE A", "tourne le", "volant vert", ""), True),

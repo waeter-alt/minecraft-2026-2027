@@ -213,6 +213,24 @@ class TestSuite(unittest.TestCase):
             self.assertNotIn(TOUT.get((p[0], p[1] - 1, p[2]), ("minecraft:water",))[0], ("minecraft:water", "minecraft:air"), (cle, p))
             self.assertIn(f"data get block {ds.txt(p)} InUse", F["station_tick"])
 
+    def test_les_panneaux_n_ont_pas_d_apostrophe_qui_casse_la_fonction(self):
+        import re
+        for ligne in lignes("station_panneaux"):
+            m = re.search(r"messages:\[(.*)\]\}", ligne)
+            self.assertIsNotNone(m, ligne)
+            libres = len(re.findall(r"(?<!\\)'", m.group(1)))
+            self.assertEqual(libres, 8, ligne)                   # 4 chaines entre apostrophes ; une apostrophe non echappee fait refuser toute la fonction (bug du 18/11)
+
+    def test_la_vanne_d_se_leve_rangee_par_rangee_en_cinematique(self):
+        cine = F["station_cine_vanne_d"]
+        rangs = sorted({p[1] for p in INFOS2["d"]["vanne_d"]})
+        for y in rangs:
+            self.assertIn(f"run function atelier:station_vanne_d_rang_{y}\n", cine)
+        cases = [p for y in rangs for p in INFOS2["d"]["vanne_d"] if p[1] == y]
+        self.assertEqual(len(cases), len(INFOS2["d"]["vanne_d"]))
+        self.assertIn("function atelier:station_vanne_d_ouverte", cine)
+        self.assertNotIn("yellow", F["station_objectif"])
+
     def test_le_boss_est_dans_une_fonction_a_part(self):
         for nom, texte in F.items():
             if "summon donjon:leviathan" in texte:
@@ -224,7 +242,10 @@ class TestSuite(unittest.TestCase):
             self.assertEqual(TOUT[p][0], "minecraft:waxed_copper_grate")
         for p in INFOS2["d"]["puits_bonde"]:
             self.assertNotIn(TOUT.get(p, ("minecraft:stone", ()))[0], ("minecraft:air", "minecraft:water"))
-        self.assertIn("minecraft:magma_block", F["station_levier_general"])
+        self.assertIn("minecraft:magma_block", F["station_bonde_ouvrir"])
+        self.assertIn("function atelier:station_cine_debut_bonde", F["station_levier_general"])
+        self.assertIn("function atelier:station_bonde_ouvrir", F["station_cine_bonde"])
+        self.assertNotIn("bonde est ouverte", F["station_levier_general"] + F["station_bonde_ouvrir"])
 
 
 if __name__ == "__main__":
