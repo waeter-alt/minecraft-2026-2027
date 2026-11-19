@@ -52,18 +52,20 @@ public final class RouteRegistry extends SavedData
 
     /**
      * A road already built: the cells of its centre line that one walks on in the open (ground and bridge decks;
-     * a tunnel is left out, the ground above it is still ground).
+     * a tunnel is left out, the ground above it is still ground). A road that ends on another one instead of at its
+     * B colony's gate (a T junction) has colony B 0, and joinRoad/joinAt say which road and which of its cells.
      */
-    private record Road(int[] x, int[] y, int[] z, int colonyA, int gateA, int colonyB, int gateB, int pairA, int pairB, @Nullable Decay decay, int level)
+    private record Road(int[] x, int[] y, int[] z, int colonyA, int gateA, int colonyB, int gateB, int pairA, int pairB, @Nullable Decay decay, int level,
+                        int joinRoad, int joinAt)
     {
         Road withEnds(final int a, final int gA, final int b, final int gB)
         {
-            return new Road(x, y, z, a, gA, b, gB, pairA, pairB, decay, level);
+            return new Road(x, y, z, a, gA, b, gB, pairA, pairB, decay, level, joinRoad, joinAt);
         }
 
         Road withLevel(final int next)
         {
-            return new Road(x, y, z, colonyA, gateA, colonyB, gateB, pairA, pairB, decay, next);
+            return new Road(x, y, z, colonyA, gateA, colonyB, gateB, pairA, pairB, decay, next, joinRoad, joinAt);
         }
     }
 
@@ -96,6 +98,8 @@ public final class RouteRegistry extends SavedData
     private final List<Road> roads = new ArrayList<>();
     /** The cells of every road's centre line, rebuilt when a road is added or changed. */
     private Set<Long> centres;
+    /** Every column a standing road's slabs cover, rebuilt like {@link #centres}. */
+    private Set<Long> band;
     /** The level of the road under every column of every road (the highest where two roads meet), rebuilt like {@link #centres}. */
     private java.util.Map<Long, Integer> levels;
 
@@ -184,8 +188,32 @@ public final class RouteRegistry extends SavedData
         }
         final int colA = endA == null ? 0 : endA.colony();
         final int colB = endB == null ? 0 : endB.colony();
+        int joinRoad = -1;
+        int joinAt = -1;
+        if (plan.joined)
+        {
+            final int last = plan.length() - 1;
+            for (int r = 0; r < roads.size() && joinRoad < 0; r++)
+            {
+                final Road other = roads.get(r);
+                if (other.decay() != null || !joinable(other, colA, colB))
+                {
+                    continue;
+                }
+                for (int k = 0; k < other.x().length; k++)
+                {
+                    if (other.x()[k] == plan.x[last] && other.z()[k] == plan.z[last])
+                    {
+                        joinRoad = r;
+                        joinAt = k;
+                        break;
+                    }
+                }
+            }
+        }
+        final boolean hooked = joinRoad < 0;
         final Road road = new Road(new int[count], new int[count], new int[count], colA, endA == null ? -1 : endA.gate(),
-          colB, endB == null ? -1 : endB.gate(), colA, colB, null, 1);
+          hooked ? colB : 0, hooked && endB != null ? endB.gate() : -1, colA, colB, null, 1, joinRoad, joinAt);
         int at = 0;
         for (int i = 0; i < plan.length(); i++)
         {
@@ -198,8 +226,39 @@ public final class RouteRegistry extends SavedData
         }
         roads.add(road);
         centres = null;
+        band = null;
         levels = null;
         setDirty();
+    }
+
+    /**
+     * Whether a new road from colony {@code from} (0 for a post) to colony {@code to} may end on this one: it is
+     * standing and already leads to {@code to}, and not from {@code from} (that pair would then have two roads).
+     */
+    private static boolean joinable(final Road road, final int from, final int to)
+    {
+        if (road.decay() != null || road.x().length == 0 || to <= 0 || (road.pairA() != to && road.pairB() != to))
+        {
+            return false;
+        }
+        return from <= 0 || (road.pairA() != from && road.pairB() != from);
+    }
+
+    /**
+     * The centre lines, as {xs, zs}, of the roads a new route from {@code from} to {@code to} may end on ({@link
+     * RoutePlanner#joinMask}).
+     */
+    public List<int[][]> joinRoads(final int from, final int to)
+    {
+        final List<int[][]> out = new ArrayList<>();
+        for (final Road road : roads)
+        {
+            if (joinable(road, from, to))
+            {
+                out.add(new int[][] {road.x(), road.z()});
+            }
+        }
+        return out;
     }
 
     /**
@@ -268,12 +327,13 @@ public final class RouteRegistry extends SavedData
             }
             java.util.Collections.shuffle(shuffled, random);
             roads.set(i, new Road(road.x(), road.y(), road.z(), road.colonyA(), road.gateA(), road.colonyB(), road.gateB(), road.pairA(), road.pairB(),
-              new Decay(shuffled.stream().mapToInt(Integer::intValue).toArray(), new boolean[n]), road.level()));
+              new Decay(shuffled.stream().mapToInt(Integer::intValue).toArray(), new boolean[n]), road.level(), road.joinRoad(), road.joinAt()));
             started++;
         }
         if (unlinked || started > 0)
         {
             centres = null;
+            band = null;
             levels = null;
             setDirty();
             broadcast();
@@ -312,14 +372,17 @@ public final class RouteRegistry extends SavedData
                 {
                     continue;
                 }
-                RoadDecay.erase(level, at, ROAD_D2, ROAD_REACH);
+                if (!nearJunction(road, cell))
+                {
+                    RoadDecay.erase(level, at, ROAD_D2, ROAD_REACH);
+                }
                 decay.gone[cell] = true;
                 decay.remaining--;
                 done++;
             }
             if (decay.remaining <= 0)
             {
-                roads.set(i, new Road(new int[0], new int[0], new int[0], 0, -1, 0, -1, road.pairA(), road.pairB(), null, 1));
+                roads.set(i, new Road(new int[0], new int[0], new int[0], 0, -1, 0, -1, road.pairA(), road.pairB(), null, 1, -1, -1));
                 finished = true;
             }
         }
@@ -330,6 +393,7 @@ public final class RouteRegistry extends SavedData
         if (finished)
         {
             centres = null;
+            band = null;
             levels = null;
             broadcast();
         }
@@ -353,22 +417,98 @@ public final class RouteRegistry extends SavedData
             {
                 continue;
             }
-            return path(road, forward);
+            if (road.joinRoad() < 0)
+            {
+                return path(road, forward);
+            }
+            // A branch: its own cells up to the junction, then the road it ends on as far as their B colony
+            final List<BlockPos> cells = new ArrayList<>();
+            append(cells, road, 0, road.x().length - 1);
+            if (!extend(cells, road, 0))
+            {
+                continue;
+            }
+            if (!forward)
+            {
+                java.util.Collections.reverse(cells);
+            }
+            return cells.toArray(new BlockPos[0]);
         }
         return null;
+    }
+
+    /**
+     * Follows a branch's junction onto the road it ends on, toward the branch's B colony.
+     *
+     * @return false when that road is gone, vanishing or does not lead there
+     */
+    private boolean extend(final List<BlockPos> cells, final Road branch, final int depth)
+    {
+        if (branch.joinRoad() >= roads.size() || depth > 8)
+        {
+            return false;
+        }
+        final Road joined = roads.get(branch.joinRoad());
+        final int n = joined.x().length;
+        if (joined.decay() != null || branch.joinAt() >= n)
+        {
+            return false;
+        }
+        if (joined.pairB() == branch.pairB())
+        {
+            append(cells, joined, branch.joinAt(), n - 1);
+            return joined.joinRoad() < 0 || extend(cells, joined, depth + 1);
+        }
+        if (joined.pairA() == branch.pairB())
+        {
+            append(cells, joined, branch.joinAt(), 0);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Whether this cell of a branch lies so close to its junction that erasing its slabs would bite into the road it
+     * ends on.
+     */
+    private static boolean nearJunction(final Road road, final int cell)
+    {
+        if (road.joinRoad() < 0)
+        {
+            return false;
+        }
+        final int last = road.x().length - 1;
+        return Math.max(Math.abs(road.x()[cell] - road.x()[last]), Math.abs(road.z()[cell] - road.z()[last])) <= 2 * ROAD_REACH;
     }
 
     private static BlockPos[] path(final Road road, final boolean forward)
     {
         final List<BlockPos> cells = new ArrayList<>();
         final int n = road.x().length;
-        for (int k = 0; k < n; k++)
+        if (n > 0)
         {
-            final int i = forward ? k : n - 1 - k;
+            append(cells, road, forward ? 0 : n - 1, forward ? n - 1 : 0);
+        }
+        return cells.toArray(new BlockPos[0]);
+    }
+
+    /**
+     * Adds a road's cells from index {@code from} to {@code to} (either way), tunnels bridged by straight lines, the
+     * first one left out when it is the cell already last.
+     */
+    private static void append(final List<BlockPos> cells, final Road road, final int from, final int to)
+    {
+        final int step = to >= from ? 1 : -1;
+        for (int i = from; i != to + step; i += step)
+        {
             final BlockPos cell = new BlockPos(road.x()[i], road.y()[i], road.z()[i]);
             if (!cells.isEmpty())
             {
                 final BlockPos last = cells.getLast();
+                if (last.getX() == cell.getX() && last.getZ() == cell.getZ())
+                {
+                    continue;
+                }
                 final int gap = Math.max(Math.abs(cell.getX() - last.getX()), Math.abs(cell.getZ() - last.getZ()));
                 for (int g = 1; g < gap; g++)
                 {
@@ -379,7 +519,6 @@ public final class RouteRegistry extends SavedData
             }
             cells.add(cell);
         }
-        return cells.toArray(new BlockPos[0]);
     }
 
     /**
@@ -548,6 +687,39 @@ public final class RouteRegistry extends SavedData
         return centres.contains(cell);
     }
 
+    /**
+     * Whether a standing road's slabs already cover this column: a new road joining it lays nothing there.
+     */
+    public boolean inBand(final int x, final int z)
+    {
+        if (band == null)
+        {
+            final Set<Long> next = new HashSet<>();
+            for (final Road road : roads)
+            {
+                if (road.decay() != null)
+                {
+                    continue;
+                }
+                for (int i = 0; i < road.x().length; i++)
+                {
+                    for (int dz = -ROAD_REACH; dz <= ROAD_REACH; dz++)
+                    {
+                        for (int dx = -ROAD_REACH; dx <= ROAD_REACH; dx++)
+                        {
+                            if (dx * dx + dz * dz <= ROAD_D2)
+                            {
+                                next.add(WallRegistry.cell(road.x()[i] + dx, road.z()[i] + dz));
+                            }
+                        }
+                    }
+                }
+            }
+            band = next;
+        }
+        return band.contains(WallRegistry.cell(x, z));
+    }
+
     private RoadLinesPayload payload()
     {
         final List<Integer> data = new ArrayList<>();
@@ -668,7 +840,8 @@ public final class RouteRegistry extends SavedData
             registry.roads.add(new Road(road.getIntArray("x"), road.getIntArray("y"), road.getIntArray("z"), road.getInt("colonyA"),
               road.contains("gateA") ? road.getInt("gateA") : -1, road.getInt("colonyB"), road.contains("gateB") ? road.getInt("gateB") : -1,
               road.contains("pairA") ? road.getInt("pairA") : road.getInt("colonyA"), road.contains("pairB") ? road.getInt("pairB") : road.getInt("colonyB"), decay,
-              road.contains("level") ? Math.max(1, road.getInt("level")) : 1));
+              road.contains("level") ? Math.max(1, road.getInt("level")) : 1, road.contains("joinRoad") ? road.getInt("joinRoad") : -1,
+              road.contains("joinAt") ? road.getInt("joinAt") : -1));
         }
         final long[] low = tag.getLongArray("linksLow");
         final long[] high = tag.getLongArray("linksHigh");
@@ -707,6 +880,8 @@ public final class RouteRegistry extends SavedData
             entry.putInt("pairA", road.pairA());
             entry.putInt("pairB", road.pairB());
             entry.putInt("level", road.level());
+            entry.putInt("joinRoad", road.joinRoad());
+            entry.putInt("joinAt", road.joinAt());
             if (road.decay() != null)
             {
                 entry.putIntArray("decayOrder", road.decay().order);
