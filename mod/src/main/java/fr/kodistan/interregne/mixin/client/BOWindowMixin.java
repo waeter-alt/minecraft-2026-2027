@@ -26,6 +26,7 @@ import com.minecolonies.core.client.gui.WindowRequestDetail;
 import fr.kodistan.interregne.client.hut.ClipboardScreen;
 import fr.kodistan.interregne.client.hut.RequestScreen;
 import net.minecraft.client.Minecraft;
+import com.minecolonies.core.client.gui.huts.WindowBarracksBuilding;
 import com.minecolonies.core.client.gui.huts.WindowHutLiving;
 import com.minecolonies.core.client.gui.huts.WindowHutWorkerModulePlaceholder;
 import com.minecolonies.core.client.gui.townhall.WindowMainPage;
@@ -54,7 +55,8 @@ public abstract class BOWindowMixin
         {
             ci.cancel();
         }
-        else if ((type == WindowHutWorkerModulePlaceholder.class || type == WindowHutMinPlaceholder.class || type == WindowHutLiving.class) && HutScreen.enabled())
+        else if ((type == WindowHutWorkerModulePlaceholder.class || type == WindowHutMinPlaceholder.class || type == WindowHutLiving.class
+            || type == WindowBarracksBuilding.class) && HutScreen.enabled())
         {
             ci.cancel();
             final var building = ((AbstractWindowModuleBuildingAccessor) this).interregne$building();

@@ -13,5 +13,6 @@ public final class GarrisonNetwork
     {
         r.playToServer(GarrisonActionPayload.TYPE, GarrisonActionPayload.STREAM_CODEC, GarrisonDesk::onAction);
         Net.toClient(r, GarrisonStatePayload.TYPE, GarrisonStatePayload.STREAM_CODEC, p -> fr.kodistan.interregne.client.hut.HutBodies.receive(p));
+        Net.toClient(r, GuardLookPayload.TYPE, GuardLookPayload.STREAM_CODEC, p -> fr.kodistan.interregne.client.GuardRenderers.receive(p));
     }
 }

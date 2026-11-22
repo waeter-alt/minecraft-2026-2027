@@ -25,8 +25,8 @@ import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
 
 /**
- * Test shortcut: {@code /garnison poser <colonie> <academie|tir> <niveau>} sets a finished combat academy or archery
- * near the colony's centre, so the recruiting page can be tried without building one.
+ * Test shortcut: {@code /garnison poser <colonie> <academie|tir|caserne|tour> <niveau>} sets a finished combat academy,
+ * archery, barracks or guard tower near the colony's centre, so their pages can be tried without building one.
  */
 @EventBusSubscriber(modid = InterregneMod.MODID)
 public final class GarrisonCommands
@@ -49,21 +49,24 @@ public final class GarrisonCommands
         final IColony colony = IColonyManager.getInstance().getColonyByWorld(IntegerArgumentType.getInteger(ctx, "colonie"), level);
         final String hut = StringArgumentType.getString(ctx, "hutte");
         final boolean archery = hut.equals("tir");
-        if (colony == null || !(archery || hut.equals("academie")))
+        final boolean barracks = hut.equals("caserne");
+        final boolean tower = hut.equals("tour");
+        if (colony == null || !(archery || barracks || tower || hut.equals("academie")))
         {
-            ctx.getSource().sendFailure(Component.literal("Colonie inconnue, ou hutte autre que academie / tir."));
+            ctx.getSource().sendFailure(Component.literal("Colonie inconnue, ou hutte autre que academie / tir / caserne / tour."));
             return 0;
         }
         final int wanted = IntegerArgumentType.getInteger(ctx, "niveau");
-        final String type = archery ? "archery" : "combatacademy";
+        final String type = archery ? "archery" : barracks ? "barracks" : tower ? "guardtower" : "combatacademy";
         IBuilding building = colony.getBuildingManager().getBuildings().values().stream()
           .filter(b -> type.equals(b.getBuildingType().getRegistryName().getPath())).findFirst().orElse(null);
         if (building == null)
         {
-            final AbstractBlockHut<?> block = archery ? ModBlocks.blockHutArchery : ModBlocks.blockHutCombatAcademy;
+            final AbstractBlockHut<?> block = archery ? ModBlocks.blockHutArchery : barracks ? ModBlocks.blockHutBarracks
+              : tower ? ModBlocks.blockHutGuardTower : ModBlocks.blockHutCombatAcademy;
             final BlockPos centre = colony.getCenter();
-            final int x = centre.getX() + (archery ? -10 : 10);
-            final int z = centre.getZ() - 10;
+            final int x = centre.getX() + (archery || tower ? -10 : 10);
+            final int z = centre.getZ() + (barracks || tower ? 10 : -10);
             level.getChunk(x >> 4, z >> 4);
             final BlockPos pos = new BlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z);
             final BlockState state = block.defaultBlockState();

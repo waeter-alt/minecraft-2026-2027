@@ -76,7 +76,7 @@ Le client ouvre le monde, affiche chaque écran demandé avec des données facti
    commands=garnison poser {colony} academie 3;garnison poser {colony} tir 2
    ```
 
-   `commands=` sert à préparer l'état voulu sans toucher à la save (ex. `/garnison poser` pose une académie ou un champ de tir fini au niveau demandé, pour les cibles `block:garnison*`).
+   `commands=` sert à préparer l'état voulu sans toucher à la save (ex. `/garnison poser` pose une académie, un champ de tir, une caserne ou une tour de garde finie au niveau demandé, pour les cibles `block:garnison*`).
 
    Valeurs possibles pour `screen=` (liste séparée par des virgules) :
    - `hub:<page|all>`
