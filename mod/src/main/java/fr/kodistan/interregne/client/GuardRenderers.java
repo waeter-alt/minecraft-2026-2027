@@ -6,12 +6,15 @@ import fr.kodistan.interregne.InterregneMod;
 import fr.kodistan.interregne.garrison.Garrison;
 import fr.kodistan.interregne.garrison.GuardLookPayload;
 import fr.kodistan.interregne.war.AssaultTroop;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import com.minecolonies.api.entity.ModEntities;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoAnimatable;
+import software.bernie.geckolib.animatable.GeoReplacedEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.animation.AnimationController;
@@ -59,25 +62,46 @@ public final class GuardRenderers
     }
 
     /**
-     * Stands in for every guard of one kind; GeckoLib keeps the animation state per entity id.
+     * Stands in for every guard of one kind; GeckoLib keeps the animation state per entity id. It must be a
+     * {@link GeoReplacedEntity}: GeckoLib only feeds the entity's tick to the animation clock for those, any other
+     * stand-in sees a frozen clock and no animation ever plays.
      */
-    public static final class GuardAnimatable implements GeoAnimatable
+    public static final class GuardAnimatable implements GeoReplacedEntity
     {
+        /** Length of the attack and shoot animations (0.5 s). */
+        private static final int STRIKE_TICKS = 10;
+        /** After a blow the légionnaire keeps its guard up, the archère keeps aiming, as our war troops do. */
+        private static final int READY_TICKS = 40;
+
         private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
         private final RawAnimation idle;
         private final RawAnimation walk;
         private final RawAnimation run;
+        private final RawAnimation ready;
+        private final RawAnimation strike;
         private final RawAnimation hit;
         private final RawAnimation death;
+        /** Tick of each guard's last blow or shot, by entity id. The client only sees the arm swing, never the AI. */
+        private final Int2IntOpenHashMap lastStrike = new Int2IntOpenHashMap();
 
         GuardAnimatable(final String name)
         {
+            final boolean archere = name.equals("archere");
             final String anim = "animation." + name + ".";
             idle = RawAnimation.begin().thenLoop(anim + "idle");
             walk = RawAnimation.begin().thenLoop(anim + "walk");
             run = RawAnimation.begin().thenLoop(anim + "run");
+            ready = RawAnimation.begin().thenLoop(anim + (archere ? "aim" : "ready"));
+            strike = RawAnimation.begin().thenPlay(anim + (archere ? "shoot" : "attack"));
             hit = RawAnimation.begin().thenPlay(anim + "hit");
             death = RawAnimation.begin().thenPlayAndHold(anim + "death");
+            lastStrike.defaultReturnValue(Integer.MIN_VALUE / 2);
+        }
+
+        @Override
+        public EntityType<?> getReplacingEntityType()
+        {
+            return ModEntities.CITIZEN;
         }
 
         @Override
@@ -97,7 +121,9 @@ public final class GuardRenderers
             {
                 return state.setAndContinue(entity.isSprinting() ? run : walk);
             }
-            return state.setAndContinue(idle);
+            // A drawn bow (MineColonies rangers use the item while aiming) or a recent blow: on guard.
+            final boolean onGuard = entity.isUsingItem() || entity.tickCount - lastStrike.get(entity.getId()) < READY_TICKS;
+            return state.setAndContinue(onGuard ? ready : idle);
         }
 
         private PlayState action(final AnimationState<GuardAnimatable> state)
@@ -108,7 +134,19 @@ public final class GuardRenderers
             }
             if (entity.isDeadOrDying())
             {
+                lastStrike.remove(entity.getId());
                 return state.setAndContinue(death);
+            }
+            // MineColonies swings the arm on every melee blow and every arrow shot, and vanilla syncs the swing.
+            final int id = entity.getId();
+            if (entity.swinging && entity.swingTime <= 1 && entity.tickCount - lastStrike.get(id) > 3)
+            {
+                lastStrike.put(id, entity.tickCount);
+                state.getController().forceAnimationReset();
+            }
+            if (entity.tickCount - lastStrike.get(id) < STRIKE_TICKS)
+            {
+                return state.setAndContinue(strike);
             }
             if (entity.hurtTime > 0)
             {

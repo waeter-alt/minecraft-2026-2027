@@ -279,7 +279,8 @@ public final class UiScenarios
             {
                 continue;
             }
-            targets.add(new Target(type.getKey() + "-overview", () -> HutScreen.open(building)));
+            // Through the hut's own window, as a right-click opens it: catches a type our window redirect misses
+            targets.add(new Target(type.getKey() + "-overview", () -> building.getWindow().open()));
             for (final IBuildingModuleView page : HutNav.pages(building))
             {
                 // « com.minecolonies.coremod.gui.workerhuts.settings » → « settings »
