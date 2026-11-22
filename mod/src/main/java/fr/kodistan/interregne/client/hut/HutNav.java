@@ -1,6 +1,8 @@
 package fr.kodistan.interregne.client.hut;
 
 import com.minecolonies.core.colony.buildings.moduleviews.WorkerBuildingModuleView;
+import com.minecolonies.core.colony.buildings.AbstractBuildingGuards;
+import com.minecolonies.core.colony.buildings.moduleviews.ToolModuleView;
 import com.minecolonies.api.colony.buildings.modules.IBuildingModuleView;
 import com.minecolonies.api.colony.buildings.modules.IMinimumStockModuleView;
 import com.minecolonies.api.colony.buildings.views.IBuildingView;
@@ -109,10 +111,15 @@ public final class HutNav
         final boolean barracks = "barracks".equals(building.getBuildingType().getRegistryName().getPath());
         // Towers only house the guards bought elsewhere: their hiring pages (knight, archer, druid) are gone
         final boolean tower = isGuardTower(building);
+        // Troops fight gearless, so a guard building has no weapons to hand out; the academy and archery sell troops, no trainees
+        final boolean guards = building instanceof AbstractBuildingGuards.View;
+        final String path = building.getBuildingType().getRegistryName().getPath();
+        final boolean school = "combatacademy".equals(path) || "archery".equals(path);
         for (final IBuildingModuleView view : building.getAllModuleViews())
         {
             if (view.isPageVisible() && !(view instanceof CourierAssignmentModuleView) && !(view instanceof WarehouseRequestTaskModuleView)
-              && !((barracks || tower) && view instanceof IMinimumStockModuleView) && !(tower && view instanceof WorkerBuildingModuleView))
+              && !((barracks || tower) && view instanceof IMinimumStockModuleView) && !((tower || school) && view instanceof WorkerBuildingModuleView)
+              && !(guards && view instanceof ToolModuleView))
             {
                 pages.add(view);
             }

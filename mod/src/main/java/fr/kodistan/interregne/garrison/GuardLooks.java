@@ -35,7 +35,7 @@ public final class GuardLooks
         final GarrisonRoster.Guard guard = GarrisonRoster.get(player.server).of(citizen.getColony(), citizen);
         if (guard != null)
         {
-            PacketDistributor.sendToPlayer(player, new GuardLookPayload(entity.getId(), guard.kind(), guard.level()));
+            PacketDistributor.sendToPlayer(player, new GuardLookPayload(entity.getId(), guard.kind(), Garrison.levelOf(citizen.getColony(), guard.kind())));
         }
     }
 }

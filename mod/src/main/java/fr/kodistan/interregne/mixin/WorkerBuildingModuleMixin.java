@@ -20,13 +20,19 @@ public abstract class WorkerBuildingModuleMixin
     @Inject(method = "getModuleMax", at = @At("RETURN"), cancellable = true)
     private void interregne$garrisonPlaces(final CallbackInfoReturnable<Integer> cir)
     {
-        if (!((Object) this instanceof GuardBuildingModule))
-        {
-            return;
-        }
         final IBuilding building = ((IBuildingModule) this).getBuilding();
         if (building == null)
         {
+            return;
+        }
+        if (!((Object) this instanceof GuardBuildingModule))
+        {
+            // The academy and the archery sell troops: they train no one
+            final String path = building.getBuildingType().getRegistryName().getPath();
+            if ("combatacademy".equals(path) || "archery".equals(path))
+            {
+                cir.setReturnValue(0);
+            }
             return;
         }
         final int level = building.getBuildingLevel();

@@ -3,10 +3,13 @@ package fr.kodistan.interregne.garrison;
 import com.minecolonies.api.colony.ICitizenData;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.buildings.IBuilding;
+import com.minecolonies.api.colony.jobs.IJob;
 import com.minecolonies.api.colony.jobs.ModJobs;
 import com.minecolonies.api.colony.jobs.registry.JobEntry;
 import com.minecolonies.api.entity.citizen.Skill;
 import com.minecolonies.core.colony.buildings.modules.GuardBuildingModule;
+import com.minecolonies.core.colony.jobs.JobKnight;
+import com.minecolonies.core.colony.jobs.JobRanger;
 import fr.kodistan.interregne.economy.TreasuryPayment;
 import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.Nullable;
@@ -31,8 +34,69 @@ public final class Garrison
      */
     private static final int[] SKILL = {10, 20, 30, 40, 50};
 
+    /*
+     * Troops carry no equipment: their stats are fixed by kind and troop level, the same for every colony. Placeholder
+     * values, to be tuned in playtest. The arrow damage is the base before vanilla multiplies it by the arrow's speed.
+     */
+    private static final double[] MELEE_DAMAGE = {5, 6, 7, 8, 10};
+    private static final double[] ARROW_DAMAGE = {2, 2.5, 3, 3.5, 4};
+    private static final double[][] HEALTH = {{24, 28, 32, 36, 40}, {20, 22, 26, 30, 34}};
+    private static final double[][] ARMOR = {{4, 8, 12, 16, 20}, {2, 4, 6, 8, 12}};
+
     private Garrison()
     {
+    }
+
+    /**
+     * {@link #LEGIONNAIRE} or {@link #ARCHERE} for a citizen working as knight or ranger, -1 otherwise.
+     */
+    public static int kindOf(@Nullable final ICitizenData citizen)
+    {
+        if (citizen == null)
+        {
+            return -1;
+        }
+        final IJob<?> job = citizen.getJob();
+        return job instanceof JobKnight ? LEGIONNAIRE : job instanceof JobRanger ? ARCHERE : -1;
+    }
+
+    /**
+     * The level a troop fights at: the current level of the hut that trains its kind, never below 1. A troop follows
+     * every upgrade of that hut.
+     */
+    public static int levelOf(final IColony colony, final int kind)
+    {
+        return Math.max(1, troopLevel(colony, kind));
+    }
+
+    public static double meleeDamage(final int level)
+    {
+        return MELEE_DAMAGE[clamp(level)];
+    }
+
+    public static double arrowDamage(final int level)
+    {
+        return ARROW_DAMAGE[clamp(level)];
+    }
+
+    public static double health(final int kind, final int level)
+    {
+        return HEALTH[kind][clamp(level)];
+    }
+
+    public static double armor(final int kind, final int level)
+    {
+        return ARMOR[kind][clamp(level)];
+    }
+
+    public static int skill(final int level)
+    {
+        return SKILL[clamp(level)];
+    }
+
+    private static int clamp(final int level)
+    {
+        return Math.max(1, Math.min(level, PRICE.length)) - 1;
     }
 
     public static String hut(final int kind)

@@ -48,6 +48,16 @@ public final class GarrisonRoster extends SavedData
         setDirty();
     }
 
+    public void setLevel(final IColony colony, final ICitizenData citizen, final int level)
+    {
+        final Guard guard = of(colony, citizen);
+        if (guard != null && guard.level() != level)
+        {
+            colonies.get(colony.getID()).put(citizen.getId(), new Guard(guard.uuid(), guard.kind(), level));
+            setDirty();
+        }
+    }
+
     @Nullable
     public Guard of(final IColony colony, final ICitizenData citizen)
     {
