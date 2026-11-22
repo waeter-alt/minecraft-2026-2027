@@ -109,6 +109,23 @@ public final class Garrison
         return kind == ARCHERE ? ModJobs.archer.get() : ModJobs.knight.get();
     }
 
+    /**
+     * The school a troop is recruited at: it appears next to that hut block, then walks to its tower on its own.
+     */
+    @org.jetbrains.annotations.Nullable
+    private static IBuilding school(final IColony colony, final int kind)
+    {
+        IBuilding best = null;
+        for (final IBuilding building : colony.getBuildingManager().getBuildings().values())
+        {
+            if (building.getBuildingType().getRegistryName().getPath().equals(hut(kind)) && (best == null || building.getBuildingLevel() > best.getBuildingLevel()))
+            {
+                best = building;
+            }
+        }
+        return best;
+    }
+
     public static int troopLevel(final IColony colony, final int kind)
     {
         int best = 0;
@@ -229,7 +246,8 @@ public final class Garrison
         }
         GarrisonRoster.get(player.server).add(colony, citizen, kind, level);
         module.assignCitizen(citizen);
-        colony.getCitizenManager().spawnOrCreateCivilian(citizen, colony.getWorld(), module.getBuilding().getPosition(), true);
+        final IBuilding school = school(colony, kind);
+        colony.getCitizenManager().spawnOrCreateCivilian(citizen, colony.getWorld(), (school != null ? school : module.getBuilding()).getPosition(), true);
         return null;
     }
 }
