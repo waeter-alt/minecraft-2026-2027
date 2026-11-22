@@ -69,6 +69,8 @@ public final class UiShot
     private static String world;
     private static String screen;
     private static List<String> only;
+    /** Commands run on the integrated server once the colony is there ({colony} = its id), to set up a test world. */
+    private static List<String> commands = List.of();
     private static final List<Size> sizes = new ArrayList<>();
     private static boolean worldAsked;
     private static final List<Job> jobs = new ArrayList<>();
@@ -179,6 +181,7 @@ public final class UiShot
         screen = props.getProperty("screen", "hub:intendance").trim();
         only = props.containsKey("only") ? List.of(props.getProperty("only").replace(" ", "").split(",")) : null;
         worldAsked = false;
+        commands = props.containsKey("commands") ? List.of(props.getProperty("commands").split(";")) : List.of();
         final String[] hover = props.getProperty("hover", "-1000,-1000").split(",");
         DevOverrides.hover = new int[] {Integer.parseInt(hover[0].trim()), Integer.parseInt(hover[1].trim())};
         for (final String spec : props.getProperty("sizes", DEFAULT_SIZES).split(","))
@@ -228,6 +231,17 @@ public final class UiShot
                 // Let the rest of the colony data and the HUD arrive
                 ticks = LOAD_TIMEOUT_TICKS - 60;
             }
+            return;
+        }
+        if (!commands.isEmpty() && mc.getSingleplayerServer() != null)
+        {
+            final var server = mc.getSingleplayerServer();
+            final List<String> run = commands.stream().map(c -> c.trim().replace("{colony}", String.valueOf(colony.getID()))).toList();
+            commands = List.of();
+            server.execute(() -> run.forEach(c -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), c)));
+            report.add("Commands: " + run);
+            // Let the new buildings reach the colony view
+            ticks = LOAD_TIMEOUT_TICKS - 100;
             return;
         }
         if (ticks < LOAD_TIMEOUT_TICKS - 1)

@@ -25,6 +25,18 @@
             "size": 8231571
         },
         {
+            "name": "Test_garnison",
+            "url": "https://github.com/waeter-alt/minecraft-2026-2027/releases/download/env-saves/Test_garnison-f439527a.zip",
+            "sha256": "f439527aff12a532d7964d71658cd392240501aee3a208940d1480547b9f878c",
+            "size": 8322074
+        },
+        {
+            "name": "Test_garnison_zero",
+            "url": "https://github.com/waeter-alt/minecraft-2026-2027/releases/download/env-saves/Test_garnison_zero-3433bc14.zip",
+            "sha256": "3433bc1481d8cb60d11719feba31bf28f632454786d0a6239072855b4dadf5d7",
+            "size": 333401
+        },
+        {
             "name": "rpgtest",
             "url": "https://github.com/waeter-alt/minecraft-2026-2027/releases/download/env-saves/rpgtest-a6bb5786.zip",
             "sha256": "a6bb5786d0e9be54b8448ec9fbb58f799d83237c2ea890c88836b46f413ca576",

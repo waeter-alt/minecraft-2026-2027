@@ -17,6 +17,7 @@ public final class HutBodies
     private static final HutBody BANK = new BankBody();
     private static final HutBody DEPOT = new DepotBody();
     private static final HutBody RELAIS = new RelaisBody();
+    private static final HutBody GARRISON = new GarrisonBody();
 
     private HutBodies()
     {
@@ -30,6 +31,7 @@ public final class HutBodies
             case "banque_regionale" -> BANK;
             case "depot_regional" -> DEPOT;
             case "relais_commercial" -> RELAIS;
+            case "combatacademy", "archery" -> GARRISON;
             default -> null;
         };
     }
@@ -47,6 +49,27 @@ public final class HutBodies
     public static void receive(final RelaisStatePayload payload)
     {
         RelaisBody.receive(payload);
+    }
+
+    public static void receive(final fr.kodistan.interregne.garrison.GarrisonStatePayload payload)
+    {
+        GarrisonBody.receive(payload);
+    }
+
+    /**
+     * Fake recruiting data that is never refreshed (UiShot).
+     */
+    public static void preview(final fr.kodistan.interregne.garrison.GarrisonStatePayload payload)
+    {
+        GarrisonBody.preview(payload);
+    }
+
+    /**
+     * Asks the server for the recruiting page of this hut (combat academy or archery).
+     */
+    public static void openGarrison(final IBuildingView building)
+    {
+        GarrisonBody.open(building);
     }
 
     /**

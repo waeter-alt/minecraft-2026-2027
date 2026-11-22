@@ -71,6 +71,8 @@ public final class PlaytestBot
         root.then(literal("hutte").then(argument("colonie", IntegerArgumentType.integer(1)).then(argument("type", com.mojang.brigadier.arguments.StringArgumentType.word())
           .then(argument("niveau", IntegerArgumentType.integer(1, 5)).executes(ctx -> hut(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "colonie"),
             com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "type"), IntegerArgumentType.getInteger(ctx, "niveau")))))));
+        root.then(literal("fonder").then(argument("nom", com.mojang.brigadier.arguments.StringArgumentType.word()).executes(ctx ->
+          found(ctx.getSource(), com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "nom")))));
         root.then(literal("inspecter").then(argument("colonie", IntegerArgumentType.integer(1)).executes(ctx -> inspect(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "colonie")))));
         root.then(literal("etat").executes(ctx ->
         {
@@ -78,6 +80,64 @@ public final class PlaytestBot
             return 1;
         }));
         event.getDispatcher().register(root);
+    }
+
+    private static final String TOWNHALL_PACK = "Minecolonies Original";
+    private static final String TOWNHALL_PATH = "fundamentals/townhall1.blueprint";
+    /** The dev player of the test client: the colony is theirs, so the client opens it as its owner. */
+    private static final com.mojang.authlib.GameProfile DEV = new com.mojang.authlib.GameProfile(java.util.UUID.fromString("380df991-f603-344c-a090-369bad2a924a"), "Dev");
+
+    private static net.minecraft.core.BlockPos foundAt;
+    private static String foundName;
+    private static int foundWait;
+
+    /**
+     * Sets a town hall hut block at the world spawn and founds a colony on it at level 1, owned by the dev player, for a test world from zero.
+     */
+    private static int found(final net.minecraft.commands.CommandSourceStack source, final String name)
+    {
+        final var world = source.getServer().overworld();
+        final var spawn = world.getSharedSpawnPos();
+        world.getChunk(spawn.getX() >> 4, spawn.getZ() >> 4);
+        final var pos = new net.minecraft.core.BlockPos(spawn.getX(), world.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, spawn.getX(), spawn.getZ()), spawn.getZ());
+        // Bare hut block only: Structurize's placement queue does nothing for a fake player on a dedicated server.
+        final var block = com.minecolonies.api.blocks.ModBlocks.blockHutTownHall;
+        final var state = block.defaultBlockState();
+        world.setBlock(pos, state, 3);
+        block.setPlacedBy(world, pos, state, null, net.minecraft.world.item.ItemStack.EMPTY);
+        foundAt = pos;
+        foundName = name;
+        foundWait = 0;
+        source.sendSuccess(() -> Component.literal("Hôtel de ville en construction en " + pos.toShortString() + ", fondation dès qu'il est posé."), false);
+        return 1;
+    }
+
+    private static void tickFounding(final MinecraftServer server)
+    {
+        final var world = server.overworld();
+        if (!(world.getBlockEntity(foundAt) instanceof com.minecolonies.api.tileentities.AbstractTileEntityColonyBuilding hut))
+        {
+            if (++foundWait > 1200)
+            {
+                InterregneMod.LOGGER.warn("[Playtest] Pas d'hôtel de ville en {} après 60 s, fondation abandonnée", foundAt);
+                foundAt = null;
+            }
+            return;
+        }
+        final var pos = foundAt;
+        foundAt = null;
+        hut.setStructurePack(com.ldtteam.structurize.storage.StructurePacks.getStructurePack(TOWNHALL_PACK));
+        hut.setBlueprintPath(TOWNHALL_PATH);
+        final var player = net.neoforged.neoforge.common.util.FakePlayerFactory.get(world, DEV);
+        final IColony colony = IColonyManager.getInstance().createColony(world, pos, player, foundName, TOWNHALL_PACK);
+        final var building = colony.getBuildingManager().addNewBuilding(hut, world);
+        if (building != null && building.getBuildingLevel() < 1)
+        {
+            building.setBuildingLevel(1);
+        }
+        com.minecolonies.api.IMinecoloniesAPI.getInstance().getEventBus().post(new com.minecolonies.api.eventbus.events.colony.ColonyCreatedModEvent(colony));
+        InterregneMod.LOGGER.info("[Playtest] Colonie {} fondée en {} (id {}), hôtel de ville niveau {}", foundName, pos, colony.getID(),
+          building == null ? "?" : building.getBuildingLevel());
     }
 
     /**
@@ -198,6 +258,10 @@ public final class PlaytestBot
     @SubscribeEvent
     public static void onTick(final ServerTickEvent.Post event)
     {
+        if (foundAt != null)
+        {
+            tickFounding(event.getServer());
+        }
         if (bot < 0 || ++tick % PERIOD_TICKS != 0)
         {
             return;

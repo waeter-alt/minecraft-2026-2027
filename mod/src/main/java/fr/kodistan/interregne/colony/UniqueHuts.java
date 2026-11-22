@@ -24,7 +24,8 @@ public final class UniqueHuts
       "warehouse", "entrepôt",
       "relais_commercial", "relais commercial",
       "banque_regionale", "banque régionale",
-      "depot_regional", "dépôt régional");
+      "depot_regional", "dépôt régional",
+      "barracks", "caserne");
 
     private UniqueHuts()
     {
@@ -41,7 +42,7 @@ public final class UniqueHuts
     public static String message(final String buildingId, final String colonyName, final BlockPos existing)
     {
         final String label = LABELS.get(buildingId);
-        final boolean feminine = label.startsWith("banque");
+        final boolean feminine = label.startsWith("banque") || label.equals("caserne");
         return "Une colonie n'a qu'" + (feminine ? "une " : "un ") + label + " : " + (feminine ? "celle" : "celui") + " de " + colonyName + " est déjà en " + existing.toShortString() + ".";
     }
 
