@@ -379,6 +379,7 @@ public final class WallPlannerScreen extends Screen
     private void seeThrough()
     {
         WallPlanner.own(List.of());
+        WallPlanner.fresh(existing == null);
         if (existing != null)
         {
             final List<WallTrace.Point> old = WallTrace.unflat(existing.points());
@@ -394,6 +395,7 @@ public final class WallPlannerScreen extends Screen
     {
         WallPlanner.stop();
         WallPlanner.own(List.of());
+        WallPlanner.fresh(false);
         minecraft.options.hideGui = hiddenGui;
     }
 
@@ -1064,10 +1066,12 @@ public final class WallPlannerScreen extends Screen
         // Main action: the price inside; green when it can be built, grey with the reason otherwise
         final boolean creative = minecraft.player != null && minecraft.player.isCreative();
         final boolean editing = existing != null;
-        final int cost = layout == null || creative ? 0 : upgrade || !editing ? layout.cost(level)
+        final fr.kodistan.interregne.network.WallSyncPayload live = ClientWalls.of(colony);
+        // A site cut short by a server stop is already paid: validating its unchanged trace resumes it for free
+        final boolean resume = editing && !upgrade && live != null && live.unfinished() && shapeKey().equals(originalKey);
+        final int cost = layout == null || creative || resume ? 0 : upgrade || !editing ? layout.cost(level)
                                                                  : (int) WallLevels.editCost(layout.cost(level), originalCost, level);
         final long money = ClientTreasury.of(colony) + (minecraft.player == null ? 0 : Wallet.value(new PlayerMainInvWrapper(minecraft.player.getInventory())));
-        final fr.kodistan.interregne.network.WallSyncPayload live = ClientWalls.of(colony);
         final String refusal = live != null && live.building() || Util.getMillis() - sentAt < 2500 ? "Chantier en cours"
                                  : trace.points().size() < 2 ? null
                                      : !trace.done() ? "Finir le tracé"
@@ -1081,8 +1085,8 @@ public final class WallPlannerScreen extends Screen
         final boolean repair = editing && !upgrade && shapeKey().equals(originalKey);
         final boolean affordable = money >= cost;
         final boolean ready = trace.points().size() >= 2 && trace.done() && refusal == null && affordable;
-        final String build = refusal != null ? refusal : upgrade ? "Améliorer · niv. " + target() : repair ? "Réparer" : editing ? "Modifier" : "Bâtir";
-        final String price = creative ? "gratuit" : affordable ? Integer.toString(cost) : compact(money) + "/" + compact(cost);
+        final String build = refusal != null ? refusal : upgrade ? "Améliorer · niv. " + target() : resume ? "Reprendre le chantier" : repair ? "Réparer" : editing ? "Modifier" : "Bâtir";
+        final String price = creative || resume ? "gratuit" : affordable ? Integer.toString(cost) : compact(money) + "/" + compact(cost);
         final boolean showPrice = refusal == null;
         final int buildW = font.width(build) + 14 + (showPrice ? 10 + 12 + font.width(price) : 0);
         final int bx = right - buildW;
