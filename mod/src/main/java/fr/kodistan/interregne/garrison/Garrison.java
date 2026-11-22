@@ -248,6 +248,8 @@ public final class Garrison
         module.assignCitizen(citizen);
         final IBuilding school = school(colony, kind);
         colony.getCitizenManager().spawnOrCreateCivilian(citizen, colony.getWorld(), (school != null ? school : module.getBuilding()).getPosition(), true);
+        citizen.getEntity().ifPresent(entity -> net.neoforged.neoforge.network.PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity,
+          new GuardLookPayload(entity.getId(), kind, level)));
         return null;
     }
 }

@@ -1,6 +1,8 @@
 package fr.kodistan.interregne.garrison;
 
 import com.minecolonies.api.colony.ICitizenData;
+import com.minecolonies.api.colony.IColony;
+import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
 import fr.kodistan.interregne.InterregneMod;
 import net.minecraft.server.level.ServerPlayer;
@@ -27,7 +29,13 @@ public final class GuardLooks
         {
             return;
         }
-        final ICitizenData citizen = entity.getCitizenData();
+        ICitizenData citizen = entity.getCitizenData();
+        if (citizen == null)
+        {
+            // A freshly spawned citizen is tracked before its first tick binds it to its data: look it up by ids.
+            final IColony colony = IColonyManager.getInstance().getColonyByWorld(entity.getCitizenColonyHandler().getColonyId(), entity.level());
+            citizen = colony == null ? null : colony.getCitizenManager().getCivilian(entity.getCivilianID());
+        }
         if (citizen == null || citizen.getColony() == null)
         {
             return;
