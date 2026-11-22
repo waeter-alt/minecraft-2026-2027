@@ -218,6 +218,65 @@ public final class BodyKit
     }
 
     /**
+     * The page's paid action, its price inside like the hub's: green when payable; otherwise grey with « have / cost » in
+     * red. When narrow, « have / » goes first, then the verb. {@code why} (when not null) blocks it for another reason.
+     */
+    public int priceButton(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width, final String fullVerb,
+      final long cost, final long have, @Nullable final String why, final Runnable action)
+    {
+        final int height = 20;
+        final boolean payable = have >= cost;
+        final boolean enabled = payable && why == null;
+        final boolean over = Ui.inside(mouseX, mouseY, x, y, width, height);
+        if (enabled)
+        {
+            Ui.plate(graphics, x, y, x + width, y + height, over ? Palette.GREEN_HOVER : Palette.GREEN, Palette.EDGE, Palette.GREEN_LIGHT);
+            host.hit(x, y, width, height, action);
+        }
+        else
+        {
+            Ui.plate(graphics, x, y, x + width, y + height, Palette.PAPER_DARK, Palette.EDGE, Palette.PAPER_DARK);
+        }
+        boolean showHave = !payable;
+        String verb = fullVerb;
+        String figure = showHave ? Wallet.format(have) + " / " + Wallet.format(cost) : Wallet.format(cost);
+        while (font().width(Component.literal(verb).withStyle(ChatFormatting.BOLD)) + (verb.isEmpty() ? 0 : 12) + ColonyHubScreen.PRICE_ICON + 3 + font().width(figure)
+          > width - 12)
+        {
+            if (showHave)
+            {
+                showHave = false;
+                figure = Wallet.format(cost);
+            }
+            else if (!verb.isEmpty())
+            {
+                verb = "";
+            }
+            else
+            {
+                break;
+            }
+        }
+        final Component verbText = Component.literal(verb).withStyle(ChatFormatting.BOLD);
+        final int total = (verb.isEmpty() ? 0 : font().width(verbText) + 12) + ColonyHubScreen.PRICE_ICON + 3 + font().width(figure);
+        int cx = x + (width - total) / 2;
+        final int textY = y + (height - 8) / 2;
+        if (!verb.isEmpty())
+        {
+            graphics.drawString(font(), verbText, cx, textY, enabled ? Palette.GREEN_TEXT : Palette.MUTED, false);
+            cx += font().width(verbText) + 12;
+        }
+        Ui.coinTight(graphics, cx, y + (height - ColonyHubScreen.PRICE_ICON) / 2, ColonyHubScreen.PRICE_ICON);
+        cx += ColonyHubScreen.PRICE_ICON + 3;
+        graphics.drawString(font(), figure, cx, textY, payable ? (enabled ? Palette.GREEN_TEXT : Palette.INK) : Palette.RED, false);
+        if (over && why != null)
+        {
+            host.hint(why);
+        }
+        return y + height + 5;
+    }
+
+    /**
      * A small button that runs its action when enabled and explains itself on hover; returns its width.
      */
     public int button(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final String label, final Ui.ButtonStyle style,

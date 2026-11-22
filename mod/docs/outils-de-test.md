@@ -72,7 +72,11 @@ Le client ouvre le monde, affiche chaque écran demandé avec des données facti
    only=farmer-fields
    sizes=1553x1011@4,1553x1011@2
    hover=120,80
+   # commandes serveur jouées une fois la colonie chargée, avant les captures ({colony} = id de la colonie) :
+   commands=garnison poser {colony} academie 3;garnison poser {colony} tir 2
    ```
+
+   `commands=` sert à préparer l'état voulu sans toucher à la save (ex. `/garnison poser` pose une académie ou un champ de tir fini au niveau demandé, pour les cibles `block:garnison*`).
 
    Valeurs possibles pour `screen=` (liste séparée par des virgules) :
    - `hub:<page|all>`

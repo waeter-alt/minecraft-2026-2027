@@ -29,6 +29,7 @@
     "EventHandlerMixin",
     "FarmFieldUpdateSeedMessageMixin",
     "GetColonyInfoMessageMixin",
+    "GuardBuildingModuleMixin",
     "HarvestTransferMixin",
     "InventoryCitizenMixin",
     "ItemStackHandlerMixin",
@@ -40,10 +41,13 @@
     "RaidManagerMixin",
     "RaiderColonylessMixin",
     "RaiderWalkAiMixin",
+    "RecruitmentInteractionMixin",
+    "ReproductionManagerMixin",
     "ResearchManagerMixin",
     "SurvivalHandlerMixin",
     "WorkManagerMixin",
-    "WorkOrderBuildingMixin"
+    "WorkOrderBuildingMixin",
+    "WorkerBuildingModuleMixin"
   ],
   "injectors": {
     "defaultRequire": 1

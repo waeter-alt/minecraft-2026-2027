@@ -88,6 +88,13 @@ public abstract class BOWindowMixin
                       fr.kodistan.interregne.commerce.RelaisActionPayload.OPEN, building.getColony().getID(), 0, 0, 0, 0, 0, 0));
                 }
             }
+            else if (building != null && ("combatacademy".equals(building.getBuildingType().getRegistryName().getPath())
+              || "archery".equals(building.getBuildingType().getRegistryName().getPath())))
+            {
+                // Guards are bought here: open now, the server answers with the recruiting state
+                HutScreen.open(building);
+                fr.kodistan.interregne.client.hut.HutBodies.openGarrison(building);
+            }
             else
             {
                 HutScreen.open(building);
