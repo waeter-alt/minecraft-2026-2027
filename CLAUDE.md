@@ -55,6 +55,18 @@ Aucune étape ne demande à l'utilisateur de créer un monde, copier un fichier 
 - **Aucun chemin absolu ni réglage propre à une machine** dans un fichier versionné (`gradle.properties`, `settings.json`…).
 - **Avant de dire « prêt »**, d'ouvrir une PR ou de répondre à « c'est sur GitHub ? » : lancer `./gradlew checkEnv`. Un `PROBLÈME` bloque ; un `AVERTISSEMENT` se règle (commande ci-dessus) ou se justifie explicitement.
 
+## Nouveaux items, blocs, entités — modèles et textures
+
+- **Blockbench** est l'outil de référence pour tout nouveau modèle 3D, texture ou animation (item, bloc, entité). On ne devine pas un modèle JSON à la main : on le fait dans Blockbench, on l'exporte au format Java Block/Item (ou GeckoLib/entité si besoin) et on le range dans `mod/src/main/resources/assets/`.
+- Blockbench ne fait que l'**apparence**. La logique (enregistrement, comportement, recettes) reste du code Java écrit à la main dans `mod/`, sur la version de NeoForge figée.
+- **MCreator est exclu** : il génère son propre projet de mod avec sa propre version de NeoForge, ce qui casse la règle de la version figée et mélange du code généré avec le nôtre.
+- Un fichier source `.bbmodel` va dans `art/` (pas dans `assets/`), pour pouvoir retoucher le modèle plus tard ; seul l'export va dans le mod.
+- Un nouvel item/bloc avec modèle n'est "fini" qu'une fois vu en jeu (rendu en main, au sol, dans l'inventaire), pas seulement quand le build passe.
+
+## Barre de progression (savvy-progress)
+
+Au début de toute tâche de plusieurs étapes (même seuil que la liste de tâches), la session principale appelle `mcp__savvy-progress__progress` avec `title`, `total` et `done: 0`, `phase: "plan"` ; met `done` à jour à chaque étape finie ; appelle une dernière fois avec `finished: true`. Pas pour une question simple ni une commande unique. Un sous-agent n'appelle jamais `progress` : il utilise `mcp__savvy-progress__step`. Si l'outil n'est pas installé chez le contributeur, on continue sans (ce n'est pas bloquant).
+
 ## Pendant un build/test
 
 - Tant qu'un build, un serveur ou un client de test tourne en arrière-plan, signale-le clairement (par ex. un fichier `.claude/testing.flag` + un indicateur dans le statusline) et retire le signal une fois terminé. Objectif : ne jamais dire "c'est prêt" alors que ça tourne encore.
