@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="fr" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Interrègne · Launcher</title>
+  <meta name="description" content="Télécharge le launcher du serveur Kodistan : Minecraft, NeoForge et tous les mods de l'Interrègne, déjà réglés.">
+  <meta name="theme-color" content="#1a0f08">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <script>document.documentElement.className = "js";</script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="scene" aria-hidden="true"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <header class="hero" id="hero">
+    <p class="hero-kicker">Serveur Kodistan</p>
+    <h1 class="hero-title">Interrègne</h1>
+    <p class="hero-sub">Le launcher du serveur, tous les mods inclus</p>
+  </header>
+
+  <div class="prompt" id="prompt">
+    <button class="mc-btn mc-btn--gold" id="open-btn" type="button">
+      <span class="key-icon" aria-hidden="true"></span>
+      Ouvrir le coffre
+    </button>
+    <p class="prompt-hint" id="prompt-hint">ou clique directement sur le coffre</p>
+  </div>
+
+  <a class="skip-link" href="#parchemin" id="skip-link">Aller directement au téléchargement</a>
+
+  <section class="scroll-layer" id="parchemin" aria-labelledby="scroll-title">
+    <div class="scroll">
+      <div class="rod rod--top" aria-hidden="true"></div>
+      <div class="paper-wrap">
+        <div class="paper">
+          <div class="paper-inner">
+            <p class="paper-kicker">Serveur Kodistan</p>
+            <h2 class="paper-title" id="scroll-title" tabindex="-1">Interrègne</h2>
+            <p class="paper-lead">
+              Un seul zip : Minecraft 1.21.1, NeoForge et tous les mods du serveur, déjà réglés.
+              Tu double-cliques, tu te connectes, et tu arrives directement sur le serveur.
+            </p>
+
+            <a class="mc-btn mc-btn--download" id="download-btn" href="#">
+              <span class="dl-icon" aria-hidden="true"></span>
+              <span class="dl-text">
+                <span class="dl-main">Télécharger le launcher</span>
+                <span class="dl-meta">Zip pour Windows</span>
+              </span>
+            </a>
+            <p class="dl-pending" id="dl-pending" hidden>Le lien n'est pas encore en ligne : demande le zip aux organisateurs du serveur.</p>
+
+            <div class="divider" aria-hidden="true"><span></span></div>
+
+            <ol class="steps">
+              <li>
+                <span class="step-num" aria-hidden="true">I</span>
+                <div>
+                  <strong>Décompresse le zip</strong>
+                  dans un dossier simple, par exemple <code>C:\Jeux\Interregne</code>. Évite le Bureau s'il est synchronisé par OneDrive.
+                </div>
+              </li>
+              <li>
+                <span class="step-num" aria-hidden="true">II</span>
+                <div>
+                  <strong>Double-clique sur <code>Jouer.bat</code>.</strong>
+                  Si Windows affiche « Windows a protégé votre ordinateur », clique sur <em>Informations complémentaires</em> puis <em>Exécuter quand même</em>.
+                </div>
+              </li>
+              <li>
+                <span class="step-num" aria-hidden="true">III</span>
+                <div>
+                  <strong>La première fois, connecte-toi</strong>
+                  avec le compte Microsoft qui possède Minecraft Java (<em>Ajouter Microsoft</em>, puis le code affiché).
+                </div>
+              </li>
+              <li>
+                <span class="step-num" aria-hidden="true">IV</span>
+                <div>
+                  <strong>Relance <code>Jouer.bat</code>.</strong>
+                  Les mods se téléchargent (quelques minutes la première fois), puis le jeu s'ouvre directement sur le serveur. Ensuite, les mises à jour sont automatiques.
+                </div>
+              </li>
+            </ol>
+
+            <p class="paper-note">
+              Java est téléchargé tout seul. Sur Mac ou Linux, le zip ne marche pas tel quel :
+              installe Prism Launcher, puis importe l'instance <code>Interregne</code>.
+            </p>
+
+            <button class="mc-btn mc-btn--stone" id="close-btn" type="button">Refermer le coffre</button>
+          </div>
+        </div>
+      </div>
+      <div class="rod rod--bottom" aria-hidden="true"></div>
+    </div>
+  </section>
+
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
