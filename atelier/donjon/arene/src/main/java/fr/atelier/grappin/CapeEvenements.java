@@ -18,6 +18,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -27,6 +29,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.common.NeoForgeMod;
 import net.neoforged.neoforge.event.entity.living.LivingBreatheEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -49,6 +52,10 @@ public final class CapeEvenements {
     private static final Set<UUID> LESTES = new HashSet<>();
     private static final Map<UUID, Integer> HORS_EAU = new HashMap<>();
     private static final Map<UUID, Long> DERNIER_TOURBILLON = new HashMap<>();
+    private static final int VISION_DUREE = 260;
+    private static final int VISION_RENOUVELEE = 220;
+    /** Joueurs a qui la cape a donne la vision nocturne (pour ne retirer que la sienne, jamais celle d'une potion). */
+    private static final Set<UUID> VISION = new HashSet<>();
 
     private CapeEvenements() {
     }
@@ -66,6 +73,28 @@ public final class CapeEvenements {
     static void respiration(LivingBreatheEvent evenement) {
         if (evenement.getEntity() instanceof Player j && CapeLesteeItem.porte(j)) {
             evenement.setCanBreathe(true);
+        }
+    }
+
+    /**
+     * Vision claire sous l'eau : le brouillard et le voile bleus sont retires chez le joueur (CapeClient), mais en eau profonde la lumiere du ciel est eteinte,
+     * donc la vision nocturne (sans icone ni particules) est donnee tant que la cape est portee, les yeux sous l'eau, et retiree des qu'on sort.
+     * Renouvelee sous 220 ticks : en dessous de 200 elle clignote.
+     */
+    @SubscribeEvent
+    static void visionSousLEau(PlayerTickEvent.Post evenement) {
+        if (!(evenement.getEntity() instanceof ServerPlayer j) || j.tickCount % 5 != 0) {
+            return;
+        }
+        boolean dessous = CapeLesteeItem.porte(j) && j.isAlive() && !j.isSpectator() && j.isEyeInFluidType(NeoForgeMod.WATER_TYPE.value());
+        MobEffectInstance actuel = j.getEffect(MobEffects.NIGHT_VISION);
+        if (dessous) {
+            if (actuel == null || actuel.getDuration() < VISION_RENOUVELEE) {
+                j.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, VISION_DUREE, 0, true, false, false));
+                VISION.add(j.getUUID());
+            }
+        } else if (VISION.remove(j.getUUID()) && actuel != null && actuel.isAmbient() && actuel.getDuration() <= VISION_DUREE) {
+            j.removeEffect(MobEffects.NIGHT_VISION);
         }
     }
 
