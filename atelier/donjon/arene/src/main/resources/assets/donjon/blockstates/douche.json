@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=north,coule=false": {
+      "model": "donjon:block/station/douche"
+    },
+    "facing=north,coule=true": {
+      "model": "donjon:block/station/douche"
+    },
+    "facing=east,coule=false": {
+      "model": "donjon:block/station/douche",
+      "y": 90
+    },
+    "facing=east,coule=true": {
+      "model": "donjon:block/station/douche",
+      "y": 90
+    },
+    "facing=south,coule=false": {
+      "model": "donjon:block/station/douche",
+      "y": 180
+    },
+    "facing=south,coule=true": {
+      "model": "donjon:block/station/douche",
+      "y": 180
+    },
+    "facing=west,coule=false": {
+      "model": "donjon:block/station/douche",
+      "y": 270
+    },
+    "facing=west,coule=true": {
+      "model": "donjon:block/station/douche",
+      "y": 270
+    }
+  }
+}

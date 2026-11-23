@@ -55,6 +55,18 @@ public final class Reglages {
     public static final ModConfigSpec.IntValue RODEUR_SONNE = B.comment("Rodeur : duree pendant laquelle il reste sonne apres avoir percute un mur, en ticks.").defineInRange("rodeurSonne", 60, 10, 400);
     public static final ModConfigSpec.IntValue RODEUR_DELAI_CHARGE = B.comment("Rodeur : temps minimal entre deux charges, en ticks.").defineInRange("rodeurDelaiCharge", 120, 20, 1200);
     public static final ModConfigSpec.DoubleValue RODEUR_FACTEUR_SONNE = B.comment("Rodeur : multiplicateur des degats recus quand il est sonne.").defineInRange("rodeurFacteurSonne", 2.0, 1.0, 10.0);
+    public static final ModConfigSpec.DoubleValue SCAPH_VIE = B.comment("Scaphandrier rouille (mini-boss de la Station) : points de vie.").defineInRange("scaphandrierVie", 200.0, 10.0, 1024.0);
+    public static final ModConfigSpec.DoubleValue SCAPH_CLE = B.comment("Scaphandrier : degats d un coup de cle a molette.").defineInRange("scaphandrierCle", 9.0, 0.0, 100.0);
+    public static final ModConfigSpec.DoubleValue SCAPH_VITESSE = B.comment("Scaphandrier : vitesse de marche (au fond de l eau, il avance a un peu plus de la moitie).").defineInRange("scaphandrierVitesse", 0.18, 0.05, 1.0);
+    public static final ModConfigSpec.IntValue SCAPH_DELAI_HARPON = B.comment("Scaphandrier : temps minimal entre deux harpons, en ticks (20 = 1 s).").defineInRange("scaphandrierDelaiHarpon", 160, 20, 1200);
+    public static final ModConfigSpec.IntValue SCAPH_VISEE = B.comment("Scaphandrier : duree de la visee avant le tir, en ticks (le temps de se mettre a l abri).").defineInRange("scaphandrierVisee", 20, 5, 100);
+    public static final ModConfigSpec.DoubleValue SCAPH_PORTEE = B.comment("Scaphandrier : portee du harpon, en blocs.").defineInRange("scaphandrierPortee", 16.0, 4.0, 48.0);
+    public static final ModConfigSpec.DoubleValue SCAPH_VITESSE_HARPON = B.comment("Scaphandrier : vitesse du harpon, en blocs par tick.").defineInRange("scaphandrierVitesseHarpon", 1.2, 0.3, 4.0);
+    public static final ModConfigSpec.DoubleValue SCAPH_DEGATS_HARPON = B.comment("Scaphandrier : degats du harpon qui touche.").defineInRange("scaphandrierDegatsHarpon", 4.0, 0.0, 100.0);
+    public static final ModConfigSpec.IntValue SCAPH_TRACTION = B.comment("Scaphandrier : duree pendant laquelle il tire le joueur harponne, en ticks.").defineInRange("scaphandrierTraction", 30, 5, 200);
+    public static final ModConfigSpec.DoubleValue SCAPH_FORCE_TRACTION = B.comment("Scaphandrier : vitesse a laquelle il tire le joueur harponne, en blocs par tick.").defineInRange("scaphandrierForceTraction", 0.6, 0.1, 2.0);
+    public static final ModConfigSpec.IntValue SCAPH_COINCE = B.comment("Scaphandrier : duree pendant laquelle il reste coince quand son harpon se plante dans un bloc, en ticks.").defineInRange("scaphandrierCoince", 60, 10, 400);
+    public static final ModConfigSpec.DoubleValue SCAPH_FACTEUR_COINCE = B.comment("Scaphandrier : multiplicateur des degats recus quand il est coince.").defineInRange("scaphandrierFacteurCoince", 2.0, 1.0, 10.0);
     public static final ModConfigSpec.DoubleValue GRAINE_DEGATS = B.comment("Gardien : degats de l'explosion d'une graine.").defineInRange("graineDegats", 10.0, 0.0, 100.0);
     public static final ModConfigSpec.DoubleValue GRAINE_ZONE = B.comment("Gardien : rayon de l'explosion d'une graine, en blocs.").defineInRange("graineZone", 3.0, 0.5, 16.0);
     public static final ModConfigSpec.IntValue GRAINE_CADENCE = B.comment("Gardien : delai entre deux graines, en ticks.").defineInRange("graineCadence", 70, 10, 600);
