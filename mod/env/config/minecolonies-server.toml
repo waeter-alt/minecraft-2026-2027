@@ -113,7 +113,7 @@
 #Toutes les configurations liées aux éléments de combat de MineColonies
 [combat]
 	#minecolonies.config.dobarbariansspawn.comment [Default: true]
-	dobarbariansspawn = true
+	dobarbariansspawn = false
 	#minecolonies.config.barbarianhordedifficulty.comment [Default: 5, min: 0, max: 10]
 	# Default: 5
 	# Range: 0 ~ 10

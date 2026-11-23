@@ -108,7 +108,7 @@ class TestSalle3(unittest.TestCase):
         murs, largeurs, hauteurs = [], set(), set()
         for (x, y, z), v in self.blocs.items():
             if 90 <= x <= 270 and y >= ss3.Y_SOL_SALLE + 1 and z <= 18 and any(self.blocs.get((x + dx, y, z + dz)) == AIR for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1))) and v != AIR and not v[0].endswith("_stairs") and v[0] not in (
-                    "minecraft:chain", "minecraft:lantern", "minecraft:pointed_dripstone", "minecraft:cave_vines", "minecraft:cave_vines_plant", "minecraft:hanging_roots", "minecraft:light", "minecraft:chest", "grappin:ancrage"):
+                    "minecraft:chain", "minecraft:lantern", "minecraft:pointed_dripstone", "minecraft:cave_vines", "minecraft:cave_vines_plant", "minecraft:hanging_roots", "minecraft:light", "minecraft:chest", "donjon:ancrage"):
                 murs.append(v[0])
         self.assertGreater(len(murs), 1000)
         self.assertFalse([n for n in murs if "stone_bricks" in n or "polished" in n], "plus de briques taillees dans le tunnel")
@@ -242,7 +242,7 @@ class TestSalle3(unittest.TestCase):
         for i in range(1, 7):
             for cote in "ab":
                 x, y, z = ancrages[f"rampe_{i}{cote}"]
-                self.assertEqual(self.blocs[(x, y, z)][0], "grappin:ancrage")
+                self.assertEqual(self.blocs[(x, y, z)][0], "donjon:ancrage")
                 for yy in (y - 1, y - 2, y - 3):
                     self.assertTrue(self.blocs[(x, yy, z)][0].endswith("stone_bricks"), (i, cote, yy))        # une colonne brisee de 3 blocs porte l'ancrage
                 self.assertNotIn((x, y - 3, z), theta)                                                         # on ne s'y tient pas : c'est une colonne
@@ -256,7 +256,7 @@ class TestSalle3(unittest.TestCase):
         self.assertEqual(sorted(n for n in ancrages if n.startswith("pont_")), ["pont_a1", "pont_a2", "pont_b1", "pont_b2", "pont_c1", "pont_c2"])
         self.assertEqual(sorted(n for n in ancrages if n.startswith("corniche_")), ["corniche_ne", "corniche_no", "corniche_se", "corniche_so"])
         for nom, (x, y, z) in ancrages.items():
-            self.assertEqual(self.blocs[(x, y, z)][0], "grappin:ancrage", nom)
+            self.assertEqual(self.blocs[(x, y, z)][0], "donjon:ancrage", nom)
             if not nom.startswith(("corniche_", "rampe_")):
                 self.assertEqual(self.blocs[(x, y + 1, z)][0], "minecraft:chain", nom)                       # tenu par une chaine (jusqu'a la voute, ou au dessous de la rampe)
         for (a1, a2, (z0, z1)) in (("pont_a1", "pont_a2", self.infos["troncons"][1]), ("pont_b1", "pont_b2", self.infos["troncons"][2]), ("pont_c1", "pont_c2", self.infos["troncons"][3])):
@@ -306,14 +306,14 @@ class TestFonctionsSalle3(unittest.TestCase):
         self.assertIn("scoreboard players set #boss suspendu 1", annonce)
         self.assertIn(f"schedule function atelier:suspendu_ss3_invoque {sj.DELAI_BOSS}t", annonce)
         invoque = self.f["suspendu_ss3_invoque"]
-        self.assertEqual(invoque.count("summon grappin:golem"), 1)
-        self.assertIn("unless entity @e[type=grappin:golem,distance=..150]", invoque)                         # jamais deux a la fois
+        self.assertEqual(invoque.count("summon donjon:golem"), 1)
+        self.assertIn("unless entity @e[type=donjon:golem,distance=..150]", invoque)                         # jamais deux a la fois
         self.assertIn("Rotation:[180f,0f]", invoque)
         gx, gy, gz = (int(v) for v in dj.txt(self.infos4["golem"]["centre"]).split())
-        self.assertIn(f"summon grappin:golem {gx + 0.5} {gy} {gz + 0.5}", invoque)                            # au centre de la salle, sur la lave
+        self.assertIn(f"summon donjon:golem {gx + 0.5} {gy} {gz + 0.5}", invoque)                            # au centre de la salle, sur la lave
 
     def test_la_mort_du_golem_ouvre_la_sortie(self):
-        self.assertEqual(sj.TAG_MORT, "golem_mort")                                                          # le tag de fonctions que le mod appelle (data/grappin/tags/function/golem_mort.json)
+        self.assertEqual(sj.TAG_MORT, "golem_mort")                                                          # le tag de fonctions que le mod appelle (data/donjon/tags/function/golem_mort.json)
         self.assertIn("matches 2 run function atelier:suspendu_ss3_vaincu", self.f["suspendu_ss3_mort"])      # seulement si le boss avait ete invoque
         self.assertIn("function atelier:suspendu_ss3_ouvrir_sortie", self.f["suspendu_ss3_vaincu"])
         self.assertIn("minecraft:air", self.f["suspendu_ss3_ouvrir_sortie"])
@@ -326,7 +326,7 @@ class TestFonctionsSalle3(unittest.TestCase):
         chute = self.f["suspendu_ss3_chute"]
         self.assertIn("slow_falling", chute)
         self.assertIn("function atelier:suspendu_ss3_decrocher with storage atelier:suspendu chute", chute)
-        self.assertIn("$kill @e[type=grappin:crochet,nbt={Owner:$(uuid)}]", self.f["suspendu_ss3_decrocher"])
+        self.assertIn("$kill @e[type=donjon:crochet,nbt={Owner:$(uuid)}]", self.f["suspendu_ss3_decrocher"])
         sx, sy, sz = (float(v) for v in dj.txt(self.infos4["depart_boss"]).split())
         rx, ry, rz = (float(v) for v in dj.txt(self.infos4["retour_rampe"]).split())
         self.assertIn(f"if entity @s[tag=chute_pont] run tp @s {sx + 0.5} {sy} {sz + 0.5}", chute)             # tombe du pont : au depart du pont, a refranchir au grappin
@@ -345,7 +345,7 @@ class TestFonctionsSalle3(unittest.TestCase):
 
     def test_la_remise_a_zero_tue_le_boss_et_referme_la_sortie(self):
         reset = self.f["suspendu_reset"]
-        for ligne in ("scoreboard players set #boss suspendu 0", "kill @e[type=grappin:golem]", "schedule clear atelier:suspendu_ss3_invoque", "function atelier:suspendu_ss3_fermer_sortie"):
+        for ligne in ("scoreboard players set #boss suspendu 0", "kill @e[type=donjon:golem]", "schedule clear atelier:suspendu_ss3_invoque", "function atelier:suspendu_ss3_fermer_sortie"):
             self.assertIn(ligne, reset)
 
     def test_les_noms_de_fonctions_sont_valides_et_existent(self):

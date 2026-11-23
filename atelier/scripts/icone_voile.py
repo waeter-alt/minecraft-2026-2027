@@ -8,7 +8,7 @@ from pathlib import Path
 from PIL import Image
 
 RACINE = Path(__file__).resolve().parent.parent
-RES = RACINE / "grappin/src/main/resources/assets/grappin/textures"
+RES = RACINE / "grappin/src/main/resources/assets/donjon/textures"
 LEG = {".": None, "o": (10, 62, 78, 255), "a": (38, 168, 184, 255), "l": (120, 224, 226, 255), "h": (222, 252, 255, 255), "d": (22, 112, 140, 255), "p": (250, 244, 250, 255),
        "q": (236, 164, 196, 255)}
 ICONE = [

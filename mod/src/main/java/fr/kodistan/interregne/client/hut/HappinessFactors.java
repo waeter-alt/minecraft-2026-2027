@@ -34,8 +34,8 @@ public final class HappinessFactors
         return switch (id)
         {
             case "security" -> good
-              ? new Reading("Sécurité", "La colonie est bien gardée.", null)
-              : new Reading("Sécurité", "Trop peu de gardes : il en faut environ 2 pour 3 autres habitants.", "Recrutez des gardes.");
+              ? new Reading("Sécurité", "La colonie a sa garnison.", null)
+              : new Reading("Sécurité", "Aucun garde ne protège la colonie.", "Achetez des gardes à l'académie ou au champ de tir.");
             case "social" -> good
               ? new Reading("Ambiance", "Ses voisins vont bien.", null)
               : new Reading("Ambiance", "Des voisins sont sans emploi, sans maison, malades ou affamés, et ça le touche.",

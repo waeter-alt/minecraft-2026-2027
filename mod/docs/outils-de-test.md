@@ -72,7 +72,11 @@ Le client ouvre le monde, affiche chaque écran demandé avec des données facti
    only=farmer-fields
    sizes=1553x1011@4,1553x1011@2
    hover=120,80
+   # commandes serveur jouées une fois la colonie chargée, avant les captures ({colony} = id de la colonie) :
+   commands=garnison poser {colony} academie 3;garnison poser {colony} tir 2
    ```
+
+   `commands=` sert à préparer l'état voulu sans toucher à la save (ex. `/garnison poser` pose une académie, un champ de tir, une caserne ou une tour de garde finie au niveau demandé, pour les cibles `block:garnison*`).
 
    Valeurs possibles pour `screen=` (liste séparée par des virgules) :
    - `hub:<page|all>`
@@ -80,6 +84,7 @@ Le client ouvre le monde, affiche chaque écran demandé avec des données facti
    - `building:<type|all>` : vue d'ensemble + chaque page de la colonne de gauche, nommées `<type>-<page>` (ex. `farmer-fields`)
    - `citizen:<n>`, `hud`, `catalogue`
    - `block:<bank|regionalbank|comptoir|market|throne|crops|all>`
+   - `menu` : écran titre (`title`) et, si on est dans un monde, menu pause (`pause`) ; c'est ainsi qu'on vérifie un layout FancyMenu (voir `fancymenu.md`)
    - `list` : liste juste les types de bâtiments ; `none` : ouvre seulement le monde
 
    Tailles par défaut : `1553x1011@4,1553x1011@2,854x480@2`. **Vérifie toujours `1553x1011@4`** : c'est la configuration de jeu de Duncan, la plus serrée.

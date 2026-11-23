@@ -18,7 +18,7 @@ Contenu de ce dossier :
 
 | Chemin | Rôle |
 |---|---|
-| `pack/` | Le modpack au format packwiz (MC 1.21.1, NeoForge 21.1.216, 55 mods et 1 shaderpack). **C'est ce dossier qu'on publie.** |
+| `pack/` | Le modpack au format packwiz (MC 1.21.1, NeoForge 21.1.216, 56 mods et 1 shaderpack). **C'est ce dossier qu'on publie.** |
 | `prism-instance/` | Le modèle d'instance Prism : `instance.cfg`, `mmc-pack.json`, `minecraft/options.txt`. |
 | `scripts/` | `prepare-instance.ps1`, `make-zip.ps1`, `publish-jar.ps1` et `refresh-index.ps1`. |
 | `MISSING_MODS.md` | Ce qui n'est pas sur Modrinth (MineColonies & co.) et les actions à prévoir. |
@@ -111,7 +111,7 @@ Le script :
 
 Réglages de l'instance (`instance.cfg`) :
 
-- **Mémoire de 2 à 6 Go.** Avec Distant Horizons et environ 55 mods, 6 Go est confortable. Pour un ami qui n'a que 8 Go de RAM, descendre à 4 Go dans les paramètres de l'instance.
+- **Mémoire de 2 à 6 Go.** Avec Distant Horizons et environ 56 mods, 6 Go est confortable. Pour un ami qui n'a que 8 Go de RAM, descendre à 4 Go dans les paramètres de l'instance.
 - **JVM :** G1 réglé pour des pauses courtes (`MaxGCPauseMillis=100`, régions de 32 Mo) et `-Dfile.encoding=UTF-8` pour les accents.
 - **Auto-join :** `JoinServerOnLaunch=true`. Prism lance Minecraft avec `--quickPlayMultiplayer`.
 - **`options.txt` :** `lang:fr_fr`, distance de rendu 12 et de simulation 8 (Distant Horizons s'occupe du lointain), pas d'auto-jump, écran d'accessibilité et tutoriel sautés, voix de TownTalk activées.
@@ -120,7 +120,7 @@ Réglages de l'instance (`instance.cfg`) :
 ## Étape 5 : tester
 
 1. Dans Prism, ajoute **ton** compte Microsoft (en haut à droite → *Gérer les comptes* → *Ajouter Microsoft*).
-2. Lance l'instance. La fenêtre packwiz télécharge environ 55 mods au premier lancement, puis Minecraft démarre et se connecte au serveur.
+2. Lance l'instance. La fenêtre packwiz télécharge environ 56 mods au premier lancement, puis Minecraft démarre et se connecte au serveur.
 3. Vérifie :
    - les 6 mods CurseForge (MineColonies & co.) s'installent **sans** fenêtre « téléchargement manuel » (voir `MISSING_MODS.md` sinon) ;
    - le jeu est en français ;
@@ -159,8 +159,8 @@ Les joueurs reçoivent la mise à jour **à leur prochain lancement**.
 | Retirer un mod | `packwiz remove <slug>` |
 | Mettre à jour un mod précis | `packwiz unpin <slug>`, `packwiz update <slug>`, puis `packwiz pin <slug>` |
 | Recalculer l'index après une modif manuelle | `packwiz refresh` (ou `..\scripts\refresh-index.ps1`) |
-| Pousser une config | Copier le fichier sous `pack/config/...`, puis `packwiz refresh`. Attention : il écrase la version du joueur à chaque changement de hash. |
-| Ajouter FancyMenu / Drippy Loading Screen (habillage) | `packwiz modrinth add fancymenu` et `packwiz modrinth add drippy-loading-screen` (avec leur dépendance Konkrete si demandée), plus leurs fichiers dans `pack/config/fancymenu/` |
+| Pousser une config | Copier le fichier sous `pack/config/...`, puis `scripts/refresh-index.ps1` (ou `packwiz refresh`). Attention : il écrase la version du joueur à chaque changement de hash. |
+| Habiller un menu (FancyMenu, déjà dans le pack) | Voir `mod/docs/fancymenu.md`. Pour l'écran de chargement : `packwiz modrinth add drippy-loading-screen`, plus ses fichiers dans `pack/config/`. |
 
 Bonnes pratiques :
 

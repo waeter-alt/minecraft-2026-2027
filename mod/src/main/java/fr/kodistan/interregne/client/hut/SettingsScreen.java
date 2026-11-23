@@ -133,7 +133,9 @@ public final class SettingsScreen extends ModuleScreen
     @Override
     protected int renderBody(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width)
     {
-        final List<ISettingKey<? extends ISetting>> keys = module.getSettingsToShow();
+        final List<ISettingKey<? extends ISetting>> keys = new java.util.ArrayList<>(module.getSettingsToShow());
+        // Guards are bought, never trained from citizens: the trainee switch does nothing any more
+        keys.remove(AbstractBuildingGuards.HIRE_TRAINEE);
         if (keys.isEmpty())
         {
             graphics.drawString(font, fit("Ce bâtiment n'a rien à régler.", width - (2)), x + 2, y, Palette.MUTED, false);

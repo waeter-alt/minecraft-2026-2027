@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "donjon:block/station/lavabo"
+    },
+    "facing=east": {
+      "model": "donjon:block/station/lavabo",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "donjon:block/station/lavabo",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "donjon:block/station/lavabo",
+      "y": 270
+    }
+  }
+}

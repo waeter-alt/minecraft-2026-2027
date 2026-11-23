@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=north,allumee=false": {
+      "model": "donjon:block/station/chaudiere_eteinte"
+    },
+    "facing=north,allumee=true": {
+      "model": "donjon:block/station/chaudiere_allumee"
+    },
+    "facing=east,allumee=false": {
+      "model": "donjon:block/station/chaudiere_eteinte",
+      "y": 90
+    },
+    "facing=east,allumee=true": {
+      "model": "donjon:block/station/chaudiere_allumee",
+      "y": 90
+    },
+    "facing=south,allumee=false": {
+      "model": "donjon:block/station/chaudiere_eteinte",
+      "y": 180
+    },
+    "facing=south,allumee=true": {
+      "model": "donjon:block/station/chaudiere_allumee",
+      "y": 180
+    },
+    "facing=west,allumee=false": {
+      "model": "donjon:block/station/chaudiere_eteinte",
+      "y": 270
+    },
+    "facing=west,allumee=true": {
+      "model": "donjon:block/station/chaudiere_allumee",
+      "y": 270
+    }
+  }
+}

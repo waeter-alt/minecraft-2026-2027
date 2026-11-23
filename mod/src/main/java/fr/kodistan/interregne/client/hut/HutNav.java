@@ -1,6 +1,10 @@
 package fr.kodistan.interregne.client.hut;
 
+import com.minecolonies.core.colony.buildings.moduleviews.WorkerBuildingModuleView;
+import com.minecolonies.core.colony.buildings.AbstractBuildingGuards;
+import com.minecolonies.core.colony.buildings.moduleviews.ToolModuleView;
 import com.minecolonies.api.colony.buildings.modules.IBuildingModuleView;
+import com.minecolonies.api.colony.buildings.modules.IMinimumStockModuleView;
 import com.minecolonies.api.colony.buildings.views.IBuildingView;
 import com.minecolonies.api.colony.buildings.workerbuildings.ITownHallView;
 import com.minecolonies.core.colony.buildings.moduleviews.CourierAssignmentModuleView;
@@ -94,12 +98,28 @@ public final class HutNav
         hits.add(x - 2, y0 + 4, 12, 12, () -> new WindowHutNameEntry(building).open());
     }
 
+    public static boolean isGuardTower(final IBuildingView building)
+    {
+        final String type = building.getBuildingType().getRegistryName().getPath();
+        return "guardtower".equals(type) || "barrackstower".equals(type);
+    }
+
     public static List<IBuildingModuleView> pages(final IBuildingView building)
     {
         final List<IBuildingModuleView> pages = new ArrayList<>();
+        // Guards are bought and raids are off: the barracks and its towers consume nothing, a minimum stock there is dead weight
+        final boolean barracks = "barracks".equals(building.getBuildingType().getRegistryName().getPath());
+        // Towers only house the guards bought elsewhere: their hiring pages (knight, archer, druid) are gone
+        final boolean tower = isGuardTower(building);
+        // Troops fight gearless, so a guard building has no weapons to hand out; the academy and archery sell troops, no trainees
+        final boolean guards = building instanceof AbstractBuildingGuards.View;
+        final String path = building.getBuildingType().getRegistryName().getPath();
+        final boolean school = "combatacademy".equals(path) || "archery".equals(path);
         for (final IBuildingModuleView view : building.getAllModuleViews())
         {
-            if (view.isPageVisible() && !(view instanceof CourierAssignmentModuleView) && !(view instanceof WarehouseRequestTaskModuleView))
+            if (view.isPageVisible() && !(view instanceof CourierAssignmentModuleView) && !(view instanceof WarehouseRequestTaskModuleView)
+              && !((barracks || tower) && view instanceof IMinimumStockModuleView) && !((tower || school) && view instanceof WorkerBuildingModuleView)
+              && !(guards && view instanceof ToolModuleView))
             {
                 pages.add(view);
             }

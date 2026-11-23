@@ -415,13 +415,12 @@ public final class Ui
     }
 
     /**
-     * The coin cropped to its own pixels (the texture is mostly empty), so it reads as big as the Influence star
-     * drawn at the same width.
+     * The coin cropped to its own pixels (a 1-pixel empty border), so it reads as big as the Influence star drawn at
+     * the same width. The crop must follow hud_coin.png: a stale crop cuts the coin.
      */
     public static void coinTight(final GuiGraphics graphics, final int x, final int y, final int width)
     {
-        final int height = width * 7 / 9;
-        graphics.blit(COIN, x, y + (width - height) / 2, width, height, 3, 4, 9, 7, 16, 16);
+        graphics.blit(COIN, x, y, width, width, 1, 1, 14, 14, 16, 16);
     }
 
     public static final ResourceLocation INFLUENCE = ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "textures/gui/hud_influence.png");

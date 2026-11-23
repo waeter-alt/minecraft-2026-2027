@@ -18,6 +18,6 @@ for x in range(16):
             p[x, y] = (55, 58, 64, 255)                                                        # ombre de l'anneau
         elif d < 2.2:
             p[x, y] = (255, 196, 90, 255) if d < 1.3 else (225, 150, 60, 255)                  # coeur ambre
-img.save(R / "mods_src/grappin/src/main/resources/assets/grappin/textures/block/ancrage.png")
+img.save(R / "mods_src/grappin/src/main/resources/assets/donjon/textures/block/ancrage.png")
 img.resize((128, 128), Image.NEAREST).save(R / "exports/ancrage_icone.png")
 print("texture ecrite")

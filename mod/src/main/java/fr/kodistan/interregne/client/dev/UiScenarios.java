@@ -279,7 +279,8 @@ public final class UiScenarios
             {
                 continue;
             }
-            targets.add(new Target(type.getKey() + "-overview", () -> HutScreen.open(building)));
+            // Through the hut's own window, as a right-click opens it: catches a type our window redirect misses
+            targets.add(new Target(type.getKey() + "-overview", () -> building.getWindow().open()));
             for (final IBuildingModuleView page : HutNav.pages(building))
             {
                 // « com.minecolonies.coremod.gui.workerhuts.settings » → « settings »
@@ -377,6 +378,15 @@ public final class UiScenarios
         blocks.put("relais-escorte", () -> relais(colony, "offre", 3, 6, 5_000, "", partners, relaisRows, tiers, 2));
         blocks.put("relais-escorte-chere", () -> relais(colony, "offre", 5, 10, 300, "", partners, relaisRows, tiers, 5));
         blocks.put("relais-refus", () -> relais(colony, null, 1, 2, 20, "L'entrepôt n'a pas assez de caisses de bois.", List.of(), cid -> List.of(), tiers, 0));
+        blocks.put("garnison", () -> ownBody(colony, "combatacademy", null, b -> HutBodies.preview(
+          new fr.kodistan.interregne.garrison.GarrisonStatePayload(b.getColony().getID(), 0, 3, 220, 5_000, 4, 7, 12, ""))));
+        blocks.put("garnison-chere", () -> ownBody(colony, "combatacademy", null, b -> HutBodies.preview(
+          new fr.kodistan.interregne.garrison.GarrisonStatePayload(b.getColony().getID(), 0, 5, 550, 140, 9, 11, 16, ""))));
+        blocks.put("garnison-pleine", () -> ownBody(colony, "archery", null, b -> HutBodies.preview(
+          new fr.kodistan.interregne.garrison.GarrisonStatePayload(b.getColony().getID(), 1, 2, 120, 5_000, 6, 12, 12,
+            "Plus de place dans les tours : construisez une tour de garde ou agrandissez la caserne."))));
+        blocks.put("garnison-chantier", () -> ownBody(colony, "archery", null, b -> HutBodies.preview(
+          new fr.kodistan.interregne.garrison.GarrisonStatePayload(b.getColony().getID(), 1, 0, 0, 5_000, 0, 0, 4, ""))));
         blocks.put("relais-chantier", () -> relais(colony, null, 0, 0, 0, "", List.of(), cid -> List.of(), tiers, 0));
         blocks.put("carte", () -> Minecraft.getInstance().setScreen(KingdomMapScreen.preview(fakeMap(), fakeRoads())));
         blocks.put("carte-vide", () -> Minecraft.getInstance().setScreen(KingdomMapScreen.preview(new MapStatePayload(List.of(), List.of()), List.of())));

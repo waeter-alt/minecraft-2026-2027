@@ -7,6 +7,7 @@ import com.mojang.blaze3d.platform.Window;
 import fr.kodistan.interregne.InterregneMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
+import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -33,7 +34,8 @@ import java.util.stream.Stream;
  * <pre>
  * world=Test_citadelle            (optional: opened from the title screen when no world is loaded)
  * screen=hub:intendance,block:all (what to capture, see {@link UiScenarios}; "list" only reports the building types,
- *                                  "none" only opens the world)
+ *                                  "none" only opens the world, "menu" captures the FancyMenu-styled vanilla menus:
+ *                                  title screen without a world, title + pause screen with one)
  * only=intendance-short           (optional: comma-separated target names to keep)
  * sizes=1553x1011@4,854x480@2     (optional: window size and GUI scale per capture)
  * hover=x,y                       (optional: forced mouse position in GUI pixels, default off-screen)
@@ -67,6 +69,8 @@ public final class UiShot
     private static String world;
     private static String screen;
     private static List<String> only;
+    /** Commands run on the integrated server once the colony is there ({colony} = its id), to set up a test world. */
+    private static List<String> commands = List.of();
     private static final List<Size> sizes = new ArrayList<>();
     private static boolean worldAsked;
     private static final List<Job> jobs = new ArrayList<>();
@@ -177,6 +181,7 @@ public final class UiShot
         screen = props.getProperty("screen", "hub:intendance").trim();
         only = props.containsKey("only") ? List.of(props.getProperty("only").replace(" ", "").split(",")) : null;
         worldAsked = false;
+        commands = props.containsKey("commands") ? List.of(props.getProperty("commands").split(";")) : List.of();
         final String[] hover = props.getProperty("hover", "-1000,-1000").split(",");
         DevOverrides.hover = new int[] {Integer.parseInt(hover[0].trim()), Integer.parseInt(hover[1].trim())};
         for (final String spec : props.getProperty("sizes", DEFAULT_SIZES).split(","))
@@ -201,6 +206,14 @@ public final class UiShot
             phase = Phase.DONE;
             return;
         }
+        if (screen.equals("menu") && world.isEmpty())
+        {
+            if (mc.level == null && mc.getOverlay() == null && mc.screen instanceof TitleScreen)
+            {
+                queue(menuTargets(false));
+            }
+            return;
+        }
         if (mc.level == null || mc.player == null)
         {
             if (!world.isEmpty() && !worldAsked && mc.getOverlay() == null && mc.screen instanceof TitleScreen)
@@ -220,6 +233,17 @@ public final class UiShot
             }
             return;
         }
+        if (!commands.isEmpty() && mc.getSingleplayerServer() != null)
+        {
+            final var server = mc.getSingleplayerServer();
+            final List<String> run = commands.stream().map(c -> c.trim().replace("{colony}", String.valueOf(colony.getID()))).toList();
+            commands = List.of();
+            server.execute(() -> run.forEach(c -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), c)));
+            report.add("Commands: " + run);
+            // Let the new buildings reach the colony view
+            ticks = LOAD_TIMEOUT_TICKS - 100;
+            return;
+        }
         if (ticks < LOAD_TIMEOUT_TICKS - 1)
         {
             return;
@@ -237,7 +261,12 @@ public final class UiShot
             phase = Phase.DONE;
             return;
         }
-        for (final UiScenarios.Target target : UiScenarios.targets(screen, colony))
+        queue(screen.equals("menu") ? menuTargets(true) : UiScenarios.targets(screen, colony));
+    }
+
+    private static void queue(final List<UiScenarios.Target> targets)
+    {
+        for (final UiScenarios.Target target : targets)
         {
             if (only != null && !only.contains(target.name()))
             {
@@ -251,6 +280,19 @@ public final class UiShot
         InterregneMod.LOGGER.info("UiShot: {} captures of {}", jobs.size(), screen);
         ticks = 0;
         phase = Phase.APPLY;
+    }
+
+    // FancyMenu loads layout images and runs its animations a moment after the screen opens
+    private static List<UiScenarios.Target> menuTargets(final boolean inWorld)
+    {
+        final Minecraft mc = Minecraft.getInstance();
+        final List<UiScenarios.Target> targets = new ArrayList<>();
+        targets.add(new UiScenarios.Target("title", 40, () -> mc.setScreen(new TitleScreen())));
+        if (inWorld)
+        {
+            targets.add(new UiScenarios.Target("pause", 40, () -> mc.setScreen(new PauseScreen(true))));
+        }
+        return targets;
     }
 
     private static void apply(final Minecraft mc)

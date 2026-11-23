@@ -1,7 +1,7 @@
 # [claude-build]
 """
 donjon2.py - Donjon n°1 refait, « La Gorge suspendue » (2026-11-09) : 10 sections, ~31 min, grappin 2.2 a balancier.
-Le crochet ne tient que sur les points d'ancrage (grappin:ancrage), places seulement la ou le balancier fait partie du parcours.
+Le crochet ne tient que sur les points d'ancrage (donjon:ancrage), places seulement la ou le balancier fait partie du parcours.
 Sections fermees, separees par la roche, reliees par des portes a mecanisme (blocs de commande). 8 salles cachees vides.
 Monde « Donjon 1 » (dossier Nouveau monde (1)), superflat, sol Y-61. Structure 160 x 120 x 176 posee en -75 -61 -85.
   .venv\\Scripts\\python.exe sources\\donjon2.py
@@ -43,7 +43,7 @@ FEUILLE = S("jungle_leaves", persistent=True, distance=1, waterlogged=False)
 AZF = S("azalea_leaves", persistent=True, distance=1, waterlogged=False)
 MRAC, RACP = S("mangrove_roots", waterlogged=False), S("hanging_roots", waterlogged=False)
 CHAMP, LUM = S("shroomlight"), S("light", level=15, waterlogged=False)
-ANC = S("grappin:ancrage")
+ANC = S("donjon:ancrage")
 LANT, LANT_P = S("lantern", hanging=False, waterlogged=False), S("lantern", hanging=True, waterlogged=False)
 CHAINE = S("chain", axis="y", waterlogged=False)
 TOILE, OS = S("cobweb"), S("bone_block", axis="y")
@@ -724,7 +724,7 @@ CMD.append("scoreboard objectives add donjon dummy")
 for v_ in ("#seq", "#porte", "#t1", "#t2"):
     CMD.append(f"scoreboard players add {v_} donjon 0")
 ENTREE = (0, 1, 79)
-CMD.append(f"execute positioned {rel(*ENTREE)} as @a[dx=6,dy=8,dz=4] unless items entity @s container.* grappin:grappin run give @s grappin:grappin")
+CMD.append(f"execute positioned {rel(*ENTREE)} as @a[dx=6,dy=8,dz=4] unless items entity @s container.* donjon:grappin run give @s donjon:grappin")
 # G1 : les trois leviers
 l1, l2, l3 = LEVIERS["L1"][:3], LEVIERS["L2"][:3], LEVIERS["L3"][:3]
 CMD.append(f"execute if block {rel(*l1)} minecraft:lever[powered=true] if block {rel(*l2)} minecraft:lever[powered=true] if block {rel(*l3)} minecraft:lever[powered=true] run "

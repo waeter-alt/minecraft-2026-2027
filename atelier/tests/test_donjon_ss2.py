@@ -96,14 +96,14 @@ class TestSalleMoins2(unittest.TestCase):
         for liste in cyan.values():
             for (x, y, z) in liste:
                 self.assertEqual(y, ss2.YF2 + ss2.HAUT_ANCRAGE_CYAN)
-                self.assertNotEqual(self.blocs.get((x, y, z), ("",))[0], "minecraft:grappin:ancrage")
-                self.assertNotIn(self.blocs.get((x, y, z), ("",))[0], ("grappin:ancrage",))        # invisibles : ni ancrage ni chaine dans la structure
+                self.assertNotEqual(self.blocs.get((x, y, z), ("",))[0], "minecraft:donjon:ancrage")
+                self.assertNotIn(self.blocs.get((x, y, z), ("",))[0], ("donjon:ancrage",))        # invisibles : ni ancrage ni chaine dans la structure
                 self.assertEqual(self.blocs.get((x, y + 1, z), ("minecraft:air",))[0], "minecraft:air")
 
     def test_les_ancrages_toujours_actifs(self):
         self.assertEqual(len(self.infos["ancrages_bleus"]), 5)                                      # les 4 piliers et le point de l'ile du levier 1
         for (x, y, z) in self.infos["ancrages_bleus"]:
-            self.assertEqual(self.blocs[(x, y, z)][0], "grappin:ancrage")
+            self.assertEqual(self.blocs[(x, y, z)][0], "donjon:ancrage")
             self.assertTrue(all(self.blocs[(x, yy, z)][0] == "minecraft:chain" for yy in range(y + 1, ss2.YF2 + ss2.HAUT_SALLE2 + 1)))
         for (cx, cz) in self.infos["pilier_cases"]:
             self.assertEqual(self.cases[(cx, cz)][2], "pilier")
@@ -305,13 +305,13 @@ class TestFonctionsSalleMoins2(unittest.TestCase):
         for k in range(1, 6):
             self.assertRegex(tick, r"if score #l%d suspendu matches 0 if block -?\d+ -?\d+ -?\d+ minecraft:lever\[powered=true\] run function atelier:suspendu_ss2_levier%d" % (k, k))
             texte = self.texte_levier(k)
-            self.assertEqual(texte.count("grappin:ancrage"), len(self.infos3["ancrages_cyan"][k]))
-            self.assertEqual(len(re.findall(r"^setblock \S+ \S+ \S+ grappin:ancrage$", texte, re.M)), len(self.infos3["ancrages_cyan"][k]))
+            self.assertEqual(texte.count("donjon:ancrage"), len(self.infos3["ancrages_cyan"][k]))
+            self.assertEqual(len(re.findall(r"^setblock \S+ \S+ \S+ donjon:ancrage$", texte, re.M)), len(self.infos3["ancrages_cyan"][k]))
             self.assertEqual(texte.count("minecraft:chain[axis=y]"), len(self.infos3["ancrages_cyan"][k]))   # l'ancrage et sa chaine, du plafond
             self.assertIn(f"scoreboard players set #l{k} suspendu 1", self.f[f"suspendu_ss2_levier{k}"])
         for nom, texte in self.f.items():
             if not nom.startswith("suspendu_ss2_l"):
-                self.assertNotIn("grappin:ancrage", texte, nom)                                      # seuls les leviers posent les ancrages cyan
+                self.assertNotIn("donjon:ancrage", texte, nom)                                      # seuls les leviers posent les ancrages cyan
 
     @staticmethod
     def _appliquer(texte, ciel):
@@ -349,7 +349,7 @@ class TestFonctionsSalleMoins2(unittest.TestCase):
             self._appliquer(self.texte_levier(k), ciel)
             for p in liste:
                 self.assertEqual(len(p["cases"]), 21)                                                # 5 x 5 sans les coins, comme les piliers bleus
-                self.assertEqual(ciel[tuple(p["ancrage"])], "grappin:ancrage")
+                self.assertEqual(ciel[tuple(p["ancrage"])], "donjon:ancrage")
                 self.assertEqual(ciel[tuple(p["lumiere"])], "minecraft:light")
                 for (cx, cz) in p["cases"]:
                     self.assertEqual(self.infos3["cases"][(cx, cz)][2], "abime")                      # le pilier ne touche ni une ile ni un autre pilier

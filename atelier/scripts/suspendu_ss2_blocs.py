@@ -174,7 +174,7 @@ def construire():
     for (x, y, z) in ancrages_bleus:
         for yy in range(y + 1, cases[(x, z)][1] + 1):
             blocs[(x, yy, z)] = S("chain", axis="y", waterlogged=False)
-        blocs[(x, y, z)] = S("grappin:ancrage")
+        blocs[(x, y, z)] = S("donjon:ancrage")
     # les ancrages cyan : pas dans la structure (invisibles jusqu'au levier) ; on en garde les reperes
     ancrages_cyan = {k: [(vers_cellule(*sp)[0], YF2 + HAUT_ANCRAGE_CYAN, vers_cellule(*sp)[1]) for sp in liste] for k, liste in CYAN.items()}
     # un ancrage cyan au dessus du vide (sans sol dessous) apparait avec un pilier, de la meme forme que les piliers bleus (5 x 5 sans les coins) : du fond de l'abime au niveau des iles, avec sa lumiere.

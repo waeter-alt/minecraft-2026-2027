@@ -17,7 +17,7 @@ def S(n, **p):
     return ("minecraft:" + n if ":" not in n else n, tuple(sorted((k, str(v).lower()) for k, v in p.items())))
 
 
-PIERRE, MOUSSE, BOIS, ANC, LANT = S("mossy_stone_bricks"), S("moss_block"), S("dark_oak_log", axis="x"), S("grappin:ancrage"), S("lantern", hanging=False)
+PIERRE, MOUSSE, BOIS, ANC, LANT = S("mossy_stone_bricks"), S("moss_block"), S("dark_oak_log", axis="x"), S("donjon:ancrage"), S("lantern", hanging=False)
 for x0 in (0, 54):                                     # tours de depart et d'arrivee
     for x in range(x0, x0 + 6):
         for z in range(15, 25):

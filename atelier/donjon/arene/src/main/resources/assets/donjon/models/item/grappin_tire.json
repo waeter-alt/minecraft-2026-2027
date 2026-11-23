@@ -1,0 +1,11 @@
+{
+  "loader": "neoforge:separate_transforms",
+  "base": {
+    "parent": "donjon:item/grappin_main_vide"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "donjon:item/grappin_icone"
+    }
+  }
+}

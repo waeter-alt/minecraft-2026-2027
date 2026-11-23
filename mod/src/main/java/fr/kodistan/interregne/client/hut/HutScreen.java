@@ -609,26 +609,32 @@ public final class HutScreen extends ParchmentScreen implements BodyKit.Host
     private int renderWorkers(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, int y, final int width,
       final List<Worker> workers)
     {
-        Ui.label(graphics, font, "OUVRIERS", x, y);
+        // A tower's knight and archer pages share one pool of places, filled by guards bought at the academy or the archery
+        final boolean tower = HutNav.isGuardTower(building);
+        final String title = tower ? "GARNISON" : "OUVRIERS";
+        Ui.label(graphics, font, title, x, y);
         int max = 0;
         for (final WorkerBuildingModuleView module : building.getModuleViews(WorkerBuildingModuleView.class))
         {
-            max += module.getMaxInhabitants();
+            max = tower ? Math.max(max, module.getMaxInhabitants()) : max + module.getMaxInhabitants();
         }
         final String filled = workers.size() + " / " + max;
-        graphics.drawString(font, filled, x + font.width("OUVRIERS") + 6, y, Palette.INK, false);
+        graphics.drawString(font, filled, x + font.width(title) + 6, y, Palette.INK, false);
 
         final int recallW = font.width("Rappeler") + 10;
         final int manageW = font.width("Gérer") + 10;
         final int recallX = x + width - recallW;
         final int manageX = recallX - manageW - 3;
-        if (x + font.width("OUVRIERS") + 6 + font.width(filled) + 6 > manageX)
+        if (x + font.width(title) + 6 + font.width(filled) + 6 > (tower ? recallX : manageX))
         {
             y += 12;
         }
-        final boolean canHire = building.allowsAssignment();
-        Ui.button(graphics, font, manageX, y - 2, manageW, SMALL_H, "Gérer", Ui.ButtonStyle.SECONDARY, canHire,
-          Ui.inside(mouseX, mouseY, manageX, y - 2, manageW, SMALL_H));
+        final boolean canHire = !tower && building.allowsAssignment();
+        if (!tower)
+        {
+            Ui.button(graphics, font, manageX, y - 2, manageW, SMALL_H, "Gérer", Ui.ButtonStyle.SECONDARY, canHire,
+              Ui.inside(mouseX, mouseY, manageX, y - 2, manageW, SMALL_H));
+        }
         if (canHire)
         {
             addHit(manageX, y - 2, manageW, SMALL_H, this::hire);
@@ -644,7 +650,9 @@ public final class HutScreen extends ParchmentScreen implements BodyKit.Host
 
         if (workers.isEmpty())
         {
-            return Ui.wrapped(graphics, font, Component.literal(canHire ? "Personne ne travaille ici." : "Construisez le bâtiment pour y embaucher."), x + 2, y,
+            final String empty = tower ? "Aucun garde logé ici. Les légionnaires s'achètent à l'Académie de combat, les archères à l'Archerie."
+              : canHire ? "Personne ne travaille ici." : "Construisez le bâtiment pour y embaucher.";
+            return Ui.wrapped(graphics, font, Component.literal(empty), x + 2, y,
               width - 4, Palette.MUTED, 10) + 4;
         }
         for (final Worker worker : workers)

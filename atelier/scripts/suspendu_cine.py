@@ -92,14 +92,6 @@ def scene_porte_generique(porte_xz, interieur, y0, distance=11.0, lateral=3.5):
     return travelling(porte, depart, [(1, 1.0), (35, 0.8), (70, 0.5), (DUREE, 0.27)])
 
 
-def scene_porte(nom, infos, salle1):
-    """Une porte du rez-de-chaussee : vue depuis l'interieur de la salle octogonale."""
-    mx, mz = infos["reperes"][nom]["centre"]
-    nx, nz = salle1.CENTRE[0] - mx, salle1.CENTRE[1] - mz
-    n = math.hypot(nx, nz)
-    return scene_porte_generique((mx + salle1.DX, mz + salle1.DZ), (nx / n, nz / n), salle1.Y0)
-
-
 # ---------------------------------------------------------------- les fonctions de datapack
 def _f(x):
     return f"{x:.3f}"
@@ -130,14 +122,12 @@ def fonctions(infos, salle1, orig, centre, couleurs, extras=None, coffres=None, 
     extras = extras or {}
     coffres = coffres or {}
     perso = perso or {}
-    ids = {"coffre": 10, "porte1": 21, "porte2": 22, "porte3": 23, **{f"porte{n}": 24 + k for k, n in enumerate(sorted(extras))}, **{n: 40 + k for k, n in enumerate(sorted(coffres))},
+    ids = {"coffre": 10, **{f"porte{n}": 24 + k for k, n in enumerate(sorted(extras))}, **{n: 40 + k for k, n in enumerate(sorted(coffres))},     # les portes a cle 1, 2, 3 n'ont plus de cinematique (demande de Luca)
            **{n: 60 + k for k, n in enumerate(sorted(perso))}}
     durees = {n: spec["duree"] for n, spec in perso.items()}
     rayons = {nom: 45 for nom in ids}
     scenes = {"coffre": scene_coffre(infos, salle1.Y0)}
     centres = {nom: centre for nom in ids}
-    for n in ("1", "2", "3"):
-        scenes[f"porte{n}"] = scene_porte(n, infos, salle1)
     for n, (scene, centre_n) in extras.items():
         scenes[f"porte{n}"] = scene
         centres[f"porte{n}"] = centre_n
@@ -158,7 +148,7 @@ def fonctions(infos, salle1, orig, centre, couleurs, extras=None, coffres=None, 
                          62: [f'title @a[tag=cine] actionbar {{"text":"{texte}","color":"gold"}}']}
     for n, spec in perso.items():
         evenements[n] = spec["evenements"]
-    for n in ("1", "2", "3", *sorted(extras)):
+    for n in sorted(extras):
         evenements[f"porte{n}"] = {2: ['title @a[tag=cine] actionbar {"text":"…","color":"gray"}'], LEVER: [f"function atelier:suspendu_p{n}_lever"],
                                    56: [son("chime", 1.0)], 60: [son("chime", 1.26)], 64: [son("chime", 1.5), "execute as @a[tag=cine] at @s run playsound minecraft:block.amethyst_block.chime master @s ~ ~ ~ 1 1"],
                                    66: [f'title @a[tag=cine] actionbar {{"text":"La porte {couleurs[n]} est ouverte","color":"aqua"}}']}
