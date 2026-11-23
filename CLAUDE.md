@@ -55,6 +55,10 @@ Aucune étape ne demande à l'utilisateur de créer un monde, copier un fichier 
 - **Aucun chemin absolu ni réglage propre à une machine** dans un fichier versionné (`gradle.properties`, `settings.json`…).
 - **Avant de dire « prêt »**, d'ouvrir une PR ou de répondre à « c'est sur GitHub ? » : lancer `./gradlew checkEnv`. Un `PROBLÈME` bloque ; un `AVERTISSEMENT` se règle (commande ci-dessus) ou se justifie explicitement.
 
+## Barre de progression (savvy-progress)
+
+Au début de toute tâche de plusieurs étapes (même seuil que la liste de tâches), la session principale appelle `mcp__savvy-progress__progress` avec `title`, `total` et `done: 0`, `phase: "plan"` ; met `done` à jour à chaque étape finie ; appelle une dernière fois avec `finished: true`. Pas pour une question simple ni une commande unique. Un sous-agent n'appelle jamais `progress` : il utilise `mcp__savvy-progress__step`. Si l'outil n'est pas installé chez le contributeur, on continue sans (ce n'est pas bloquant).
+
 ## Pendant un build/test
 
 - Tant qu'un build, un serveur ou un client de test tourne en arrière-plan, signale-le clairement (par ex. un fichier `.claude/testing.flag` + un indicateur dans le statusline) et retire le signal une fois terminé. Objectif : ne jamais dire "c'est prêt" alors que ça tourne encore.

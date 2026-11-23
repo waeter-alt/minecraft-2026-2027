@@ -34,4 +34,8 @@ client spell-engine
 client spell-power
 client structure-pool-api
 client wizards
-both local:atelier/exports/grappin-2.6.1.jar
+both create
+both local:atelier/exports/grappin-2.7.0.jar
+client fancymenu
+client konkrete
+client melody

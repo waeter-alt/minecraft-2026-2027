@@ -46,6 +46,9 @@ public final class CapeEvenements {
     private static final AttributeModifier LEST_MINAGE = new AttributeModifier(id("cape_lestee_lest_minage"), 4.0, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
     private static final AttributeModifier LEST_GRAVITE = new AttributeModifier(id("cape_lestee_lest_gravite"), 9.0, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
 
+    // Etiquettes lues par les datapacks des donjons (plaques de cuivre lestees, turbines et tartre frappes au tourbillon) ; le datapack retire lui-meme grappin_tourbillon.
+    static final String TAG_LESTE = "grappin_leste";
+    static final String TAG_TOURBILLON = "grappin_tourbillon";
     private static final Set<UUID> LESTES = new HashSet<>();
     private static final Map<UUID, Integer> HORS_EAU = new HashMap<>();
     private static final Map<UUID, Long> DERNIER_TOURBILLON = new HashMap<>();
@@ -83,6 +86,7 @@ public final class CapeEvenements {
             return;
         }
         LESTES.add(j.getUUID());
+        j.addTag(TAG_LESTE);
         HORS_EAU.remove(j.getUUID());
         appliquerAttributs(j, true);
         PacketDistributor.sendToPlayer(j, new LestePayload(j.getId(), true));
@@ -93,6 +97,7 @@ public final class CapeEvenements {
     static void delester(ServerPlayer j, boolean prevenir) {
         HORS_EAU.remove(j.getUUID());
         appliquerAttributs(j, false);
+        j.removeTag(TAG_LESTE);
         if (!LESTES.remove(j.getUUID())) {
             return;
         }
@@ -190,6 +195,7 @@ public final class CapeEvenements {
         j.level().playSound(null, j.getX(), j.getY(), j.getZ(), SoundEvents.BUBBLE_COLUMN_WHIRLPOOL_INSIDE, SoundSource.PLAYERS, 1.0F, 1.3F);
         j.level().playSound(null, j.getX(), j.getY(), j.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.8F, 0.7F);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(j, new TourbillonPayload(j.getId()));
+        j.addTag(TAG_TOURBILLON);
     }
 
     /** Pente minimale du regard pour qu'un tourbillon pres de la surface devienne une projection (0,25 = environ 15 degres vers le haut). */

@@ -30,7 +30,9 @@ TRIM = M + 'dark_oak_planks'
 POST = M + 'dark_oak_log'
 STONE = M + 'stone_bricks'
 ROOF = 'deepslate_tile'  # stairs and slabs of the roofs
-ROOF_FULL = M + 'deepslate_tiles'
+ROOF_FULL = M + 'deepslate_tiles'  # also the tile material of the shingles (see shingle_tile_entities)
+ROOF_SUPPORT = M + 'dark_oak_planks'  # wood showing under the shingle tiles
+SHINGLE = 'domum_ornamentum:shingle'
 FLOOR = M + 'spruce_planks'
 
 
@@ -127,10 +129,16 @@ class Grid:
         for k in range(h):
             self.pane(x, y + k, z)
 
+    def shingle(self, x, y, z, facing, half='bottom'):
+        """MineColonies roof block (Domum Ornamentum shingle stair). Its tiles come from the tile entity,
+        which `shingle_tile_entities` writes for every one of these when the blueprint is saved."""
+        self.put(x, y, z, SHINGLE, facing=facing, half=half, shape='straight', waterlogged='false')
+
     def gable(self, slope, a0, a1, v0, v1, y, over=1, ridge_over=1):
-        """Shallow gable roof (rises one block every two), stairs and slabs.
+        """Gable roof in MineColonies shingles (rises one block per block, like the stock huts).
         `slope`: axis the roof falls along ('z' or 'x'); a0..a1: wall span on it; v0..v1: wall span along the ridge;
-        y: height of the first roof row, directly above the top wall row. The gable ends are filled with wall."""
+        y: height of the first roof row, directly above the top wall row. The gable ends are filled with wall.
+        An odd span ends in a single ridge column, closed with a full block of the roof material."""
         low, high = ('north', 'south') if slope == 'z' else ('west', 'east')
 
         def at(a, v, yy):
@@ -141,26 +149,20 @@ class Grid:
             lo, hi = a0 - over + i, a1 + over - i
             if lo > hi:
                 break
-            hb = y + i // 2
+            hb = y + i
             for v in range(v0 - ridge_over, v1 + ridge_over + 1):
                 if lo == hi:
-                    if i % 2 == 0:
-                        self.slab(*at(lo, v, hb), ROOF)
-                    else:
-                        self.put(*at(lo, v, hb), ROOF_FULL)
-                elif i % 2 == 0:
-                    self.slab(*at(lo, v, hb), ROOF)
-                    self.slab(*at(hi, v, hb), ROOF)
+                    self.put(*at(lo, v, hb), ROOF_FULL)
                 else:
-                    self.stair(*at(lo, v, hb), ROOF, low)
-                    self.stair(*at(hi, v, hb), ROOF, high)
+                    self.shingle(*at(lo, v, hb), low)
+                    self.shingle(*at(hi, v, hb), high)
             for end in (v0, v1):
                 for a in {lo, hi}:
                     if a0 <= a <= a1:
                         for yy in range(y, hb):
                             self.put(*at(a, end, yy), WALL)
             i += 1
-        return y + (i - 1) // 2  # ridge height
+        return y + i - 1  # ridge height
 
 
 def hash2(x, z):
@@ -781,6 +783,16 @@ class Palette:
         return self.index[key]
 
 
+def shingle_tile_entities(g, x0, y0, z0):
+    """One Domum Ornamentum tile entity per shingle: without it the block has no texture in game.
+    Keys are the component ids of ShingleBlock (cover = tile, then support), values the blocks they copy."""
+    return [Compound({
+        'id': String('domum_ornamentum:materially_retexturable'),
+        'x': Short(x - x0), 'y': Short(y - y0), 'z': Short(z - z0),
+        'textureData': Compound({'minecraft:block/clay': String(ROOF_FULL), 'minecraft:block/oak_planks': String(ROOF_SUPPORT)}),
+    }) for (x, y, z), (name, _) in sorted(g.d.items()) if name == SHINGLE]
+
+
 CONNECT = {
     M + 'dark_oak_fence': 'fence', M + 'spruce_fence': 'fence',
     M + 'glass_pane': 'pane', M + 'stone_brick_wall': 'wall',
@@ -924,7 +936,7 @@ def build(level):
         'required_mods': List[String]([String('minecolonies'), String('interregne')]),
         'entities': List[Compound]([]),
         'blocks': IntArray(packed),
-        'tile_entities': List[Compound]([te]),
+        'tile_entities': List[Compound]([te] + shingle_tile_entities(g, x0, y0, z0)),
         'name': String(name), 'palette': List[Compound](pal.entries),
         'version': Byte(1), 'mcversion': Int(2730),
         'optional_data': Compound({'structurize': Compound({'primary_offset': Compound({'x': Int(hx), 'y': Int(hy), 'z': Int(hz)})})}),
