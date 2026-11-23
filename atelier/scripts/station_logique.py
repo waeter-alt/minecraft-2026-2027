@@ -73,7 +73,8 @@ def fonctions(infos, infos1, blocs, txt):
         coin, sel = boite(condition_boite)
         lignes = [f"# [claude-build] Un joueur entre : les monstres de « {nom} » apparaissent (une seule fois).", f"scoreboard players set {drapeau} station 1"]
         for (typ, p, plus) in liste:
-            lignes.append(f"summon minecraft:{typ} {txt(p)} {{Tags:[\"station_emb\"],PersistenceRequired:1b{plus}}}")
+            ident = typ if ":" in typ else "minecraft:" + typ                  # les monstres du mod donjon gardent leur espace de noms
+            lignes.append(f"summon {ident} {txt(p)} {{Tags:[\"station_emb\"],PersistenceRequired:1b{plus}}}")
             lignes.append(f"execute positioned {txt(p)} run particle minecraft:bubble_pop ~ ~0.5 ~ 0.5 0.5 0.5 0.05 20")
         f[f"station_{nom}_monstres"] = "\n".join(lignes) + "\n"
         tick.append(f"execute if score {drapeau} station matches 0 positioned {coin} if entity @a[{sel},gamemode=!spectator] run function atelier:station_{nom}_monstres")
@@ -194,9 +195,19 @@ def fonctions(infos, infos1, blocs, txt):
     reset += remettre(C["sable"]) + poser_cases(C["grille_salle"], "minecraft:iron_bars[waterlogged=false]")
     cx, cz = C["puits"]
     r = int(C["rayon"])
-    monstres("rotor", [("elder_guardian", C["rotor"], ',Tags:["station_emb","station_rotor"],CustomName:\'"Gardien du rotor"\'')],
+    # Le mini-boss du rotor : le Scaphandrier rouille (mod donjon), a la place du gardien des profondeurs qui tenait la place.
+    nom_rotor = 'CustomName:\'"Scaphandrier rouillé"\''
+    monstres("rotor", [("donjon:scaphandrier", C["rotor"], ',Tags:["station_emb","station_rotor"],' + nom_rotor)],
              (int(cx) - r, int(cx) + r, C["grilles"][0] + 1, C["grilles"][1] - 1, int(cz) - r, int(cz) + r), "#rotor")
     f["station_rotor_monstres"] = f["station_rotor_monstres"].replace('{Tags:["station_emb"],PersistenceRequired:1b,Tags:["station_emb","station_rotor"]', '{PersistenceRequired:1b,Tags:["station_emb","station_rotor"]')
+    # Un monde ou le gardien des profondeurs est deja apparu : il laisse sa place au Scaphandrier, la ou il nage.
+    tick.append("execute as @e[type=minecraft:elder_guardian,tag=station_rotor] at @s run function atelier:station_rotor_remplacer")
+    f["station_rotor_remplacer"] = "\n".join([
+        "# [claude-build] L'ancien gardien du rotor (gardien des profondeurs) est remplace par le Scaphandrier rouille, a sa place.",
+        "summon donjon:scaphandrier ~ ~ ~ {PersistenceRequired:1b,Tags:[\"station_emb\",\"station_rotor\"]," + nom_rotor + "}",
+        "tag @s remove station_rotor",
+        "tp @s ~ -400 ~",
+        "kill @s"]) + "\n"
     lev = txt(C["levier"])
     tick += station_create.lignes_volant("pC", txt(C["volant_pos"]), "station_pompe_c", "#pC")
     f["station_pompe_c"] = "\n".join([
@@ -326,7 +337,7 @@ def fonctions(infos, infos1, blocs, txt):
                                         f"execute positioned {tc} run playsound minecraft:block.beacon.activate master @a[distance=..60] ~ ~ ~ 2 0.6"]) + "\n"
     reset += poser_cases(D["sable"], "minecraft:dripstone_block") + [f"setblock {txt(D['moteur'])} create:shaft[axis=y]", "scoreboard players set #td station 0"]
     lev = txt(D["levier"])
-    tick.append(f"execute if score #lg station matches 0 if block {lev} minecraft:lever[powered=true] run function atelier:station_levier_general")
+    tick.append(f"execute if score #lg station matches 0 if block {lev} donjon:levier_station[powered=true] run function atelier:station_levier_general")
     f["station_levier_general"] = "\n".join([
         "# [claude-build] Le levier general : la porte du Poste s'ouvre sur la Coursive ; la bonde de la Cuve s'ouvre en cinematique (ou tout de suite si une autre est en cours).",
         "scoreboard players set #lg station 1", *poser_cases(D["porte_poste"], "minecraft:air"), "scoreboard players operation #libre cine = #t cine",
@@ -338,7 +349,7 @@ def fonctions(infos, infos1, blocs, txt):
         f"playsound minecraft:block.beacon.deactivate master @a {txt((int(cxu), a1.SOL, int(czu)))} 4 0.5",
         f"playsound minecraft:block.bubble_column.whirlpool_inside master @a {txt((int(cxu), a1.NIVEAUX['bas'], int(czu)))} 4 0.6"]) + "\n"
     tick.append(f"execute if score #lg station matches 1 positioned {txt((int(cxu), a1.NIVEAUX['bas'], int(czu)))} run particle minecraft:bubble_column_up ~ ~-4 ~ 4 4 4 0.3 20")
-    reset += [f"setblock {lev} minecraft:lever[face=floor,facing=east,powered=false]", *poser_cases(D["porte_poste"], "minecraft:iron_bars[waterlogged=false]"),
+    reset += [f"setblock {lev} donjon:levier_station[face=floor,facing=east,powered=false]", *poser_cases(D["porte_poste"], "minecraft:iron_bars[waterlogged=false]"),
               *remettre(D["bonde"] + D["puits_bonde"] + D["magma"]), "scoreboard players set #lg station 0"]
 
     # ================================================================= le Reservoir, le boss, l'Exutoire
