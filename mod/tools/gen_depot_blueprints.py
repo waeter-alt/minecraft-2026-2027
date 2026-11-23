@@ -463,7 +463,7 @@ def build(level):
         'required_mods': List[String]([String('minecolonies'), String('interregne'), String('create')]),
         'entities': List[Compound]([]),
         'blocks': IntArray(packed),
-        'tile_entities': List[Compound]([te]),
+        'tile_entities': List[Compound]([te] + R.shingle_tile_entities(g, x0, y0, z0)),
         'name': String(name), 'palette': List[Compound](pal.entries),
         'version': Byte(1), 'mcversion': Int(2730),
         'optional_data': Compound({'structurize': Compound({'primary_offset': Compound({'x': Int(hx), 'y': Int(hy), 'z': Int(hz)})})}),

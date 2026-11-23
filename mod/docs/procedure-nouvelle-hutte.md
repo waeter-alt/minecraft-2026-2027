@@ -8,6 +8,7 @@
 - **Tous les niveaux ont la même taille, comme les blueprints de MineColonies** (l'entrepôt fait 21×22×29 du niveau 1 au niveau 5, les niveaux bas sont complétés par de l'air). La hutte est au **même endroit** dans tous les fichiers.
 - Pourquoi : la prévisualisation du niveau 1 montre alors déjà la place que le bâtiment prendra au niveau 5. Sans ça, un petit bâtiment posé près d'une route l'avale en grandissant (constaté avec le Relais).
 - Comment : après avoir généré les blueprints, lancer `python -I -X utf8 mod/tools/pad_blueprints.py <dossier> <nom>` (`pip install nbtlib`). Il cale chaque niveau sur la hutte, calcule la boîte qui contient tous les niveaux et complète avec de l'air. Il peut être relancé sans danger ; `--check` n'écrit rien.
+- **Toits : blocs de toit MineColonies (shingles de Domum Ornamentum), jamais des escaliers/dalles vanilla** (constaté en jeu : le toit en briques vanilla faisait des bandes avec des trous, très loin des huts d'origine). `Grid.gable()` de `gen_relais_blueprints.py` les pose, et `shingle_tile_entities()` écrit la tile entity qui porte leur texture : sans elle le bloc est invisible/sans texture. Un nouveau générateur doit mettre `+ R.shingle_tile_entities(g, x0, y0, z0)` dans `tile_entities` (voir les trois existants).
 - Le test JUnit du bâtiment doit vérifier : une seule hutte à l'ancre, **même taille à tous les niveaux**, même décalage de l'ancre, de plus en plus de blocs (voir `RelaisBlueprintTest`).
 
 ## 2. Pose depuis le catalogue
