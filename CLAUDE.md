@@ -63,6 +63,10 @@ Aucune étape ne demande à l'utilisateur de créer un monde, copier un fichier 
 - Un fichier source `.bbmodel` va dans `art/` (pas dans `assets/`), pour pouvoir retoucher le modèle plus tard ; seul l'export va dans le mod.
 - Un nouvel item/bloc avec modèle n'est "fini" qu'une fois vu en jeu (rendu en main, au sol, dans l'inventaire), pas seulement quand le build passe.
 
+## Barre de progression (savvy-progress)
+
+Au début de toute tâche de plusieurs étapes (même seuil que la liste de tâches), la session principale appelle `mcp__savvy-progress__progress` avec `title`, `total` et `done: 0`, `phase: "plan"` ; met `done` à jour à chaque étape finie ; appelle une dernière fois avec `finished: true`. Pas pour une question simple ni une commande unique. Un sous-agent n'appelle jamais `progress` : il utilise `mcp__savvy-progress__step`. Si l'outil n'est pas installé chez le contributeur, on continue sans (ce n'est pas bloquant).
+
 ## Pendant un build/test
 
 - Tant qu'un build, un serveur ou un client de test tourne en arrière-plan, signale-le clairement (par ex. un fichier `.claude/testing.flag` + un indicateur dans le statusline) et retire le signal une fois terminé. Objectif : ne jamais dire "c'est prêt" alors que ça tourne encore.
