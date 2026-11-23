@@ -8,7 +8,6 @@ import com.mojang.brigadier.context.CommandContext;
 import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.InterregneMod;
 import fr.kodistan.interregne.network.DiplomacyActionPayload;
-import fr.kodistan.interregne.routes.RoadDecay;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
@@ -108,13 +107,8 @@ public final class Diplomacy
                 alliances.doAccept(me, you);
             }
             case DiplomacyActionPayload.WITHDRAW -> alliances.doWithdraw(me, you);
-            case DiplomacyActionPayload.BREAK ->
-            {
-                if (alliances.doBreak(me, you))
-                {
-                    RoadDecay.begin(server, me, you);
-                }
-            }
+            // Les routes restent après une rupture (décision 19/11) : le lien est gardé pour une réalliance.
+            case DiplomacyActionPayload.BREAK -> alliances.doBreak(me, you);
             case DiplomacyActionPayload.DECLARE_WAR ->
             {
                 final String refusal = declareWar(player, wars, alliances, me, you);
@@ -284,13 +278,7 @@ public final class Diplomacy
                 alliances.doPropose(me, you);
                 alliances.doAccept(you, me);
             }
-            case "rompre" ->
-            {
-                if (alliances.doBreak(me, you))
-                {
-                    RoadDecay.begin(server, me, you);
-                }
-            }
+            case "rompre" -> alliances.doBreak(me, you);
             case "guerre" ->
             {
                 alliances.clearBetween(me, you);

@@ -19,7 +19,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * A road whose alliance was broken vanishes: its cells go in random order over {@code roadDecaySeconds}, only where
+ * Roads now stay forever, even after an alliance is broken (decision of 19/11): nothing starts a decay any more. This
+ * only finishes the roads a save had already started to erase before that decision.
+ * <p>
+ * A decaying road vanishes: its cells go in random order over {@code roadDecaySeconds}, only where
  * the chunk is already loaded and never inside a colony's land. Only the blocks of the route builder's own palette are
  * touched, so what a player built beside the road is left alone unless it is made of the same stuff.
  */
@@ -45,14 +48,6 @@ public final class RoadDecay
             out.add(BuiltInRegistries.BLOCK.get(ResourceLocation.withDefaultNamespace(id)));
         }
         return out;
-    }
-
-    /**
-     * The alliance between the two colonies is over: forgets the route link and starts the roads built for it vanishing.
-     */
-    public static void begin(final MinecraftServer server, final int colonyA, final int colonyB)
-    {
-        RouteRegistry.get(server).beginDecay(colonyA, colonyB);
     }
 
     @SubscribeEvent
