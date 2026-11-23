@@ -75,7 +75,7 @@ Au début de toute tâche de plusieurs étapes (même seuil que la liste de tâc
 
 - Avant tout `git reset`/`checkout`/`clean` destructif sur un dossier qui a du travail non commité : vérifie `git status` d'abord, stash (`-u` pour les fichiers non suivis) ou commit ce qui s'y trouve.
 - Commits : message court, explique le **pourquoi** plutôt que de reformuler le diff. En français, comme l'historique existant.
-- Ne commit jamais de secrets, clés, ou fichiers de config locale (`.claude/` est ignoré par git, sauf `settings.json` et `statusline.sh` qui sont partagés et ne contiennent aucun secret).
+- Ne commit jamais de secrets, clés, ou fichiers de config locale (`.claude/` est ignoré par git, sauf `settings.json`, `statusline.sh` et `launch.json` qui sont partagés et ne contiennent aucun secret).
 
 ## Qui décide quoi
 
