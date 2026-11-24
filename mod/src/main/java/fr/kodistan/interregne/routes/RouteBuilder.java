@@ -82,6 +82,12 @@ public final class RouteBuilder implements RouteWork
     private static final BlockState CRACKED_MASONRY = Blocks.CRACKED_STONE_BRICKS.defaultBlockState();
     private static final BlockState KEYSTONE = Blocks.CHISELED_STONE_BRICKS.defaultBlockState();
 
+    private static final int WAR_POST_EVERY = 16;
+    private static final int WAR_POST_SIDE = 4;
+    private static final BlockState WAR_POST = Blocks.POLISHED_BLACKSTONE.defaultBlockState();
+    private static final BlockState WAR_POLE = Blocks.POLISHED_BLACKSTONE_WALL.defaultBlockState();
+    private static final BlockState SOUL_LANTERN = Blocks.SOUL_LANTERN.defaultBlockState();
+
     private final ServerLevel level;
     private final RoutePlan plan;
     private final int n;
@@ -92,9 +98,19 @@ public final class RouteBuilder implements RouteWork
     private final Set<Long> felled = new HashSet<>();
     private final Set<Long> falling = new HashSet<>();
     private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+    private final boolean war;
 
     public RouteBuilder(final ServerLevel level, final RoutePlan plan)
     {
+        this(level, plan, false);
+    }
+
+    /**
+     * @param war a war road: the same road dressed in deepslate and blackstone, with soul lanterns on posts
+     */
+    public RouteBuilder(final ServerLevel level, final RoutePlan plan, final boolean war)
+    {
+        this.war = war;
         this.level = level;
         this.plan = plan;
         this.n = plan.length();
@@ -269,7 +285,98 @@ public final class RouteBuilder implements RouteWork
             }
         }
         fellMarked(out);
+        if (war)
+        {
+            dressForWar(out, i, registry);
+        }
         return out;
+    }
+
+    /**
+     * Swaps every block of the slice for its war counterpart, then sets a soul lantern on a post every few cells,
+     * one side then the other. Swapping after the fact keeps the road's shape identical to a common one.
+     */
+    private void dressForWar(final List<RouteStep> out, final int i, final RouteRegistry registry)
+    {
+        for (int k = 0; k < out.size(); k++)
+        {
+            final RouteStep step = out.get(k);
+            final BlockState dressed = warBlock(step.pos(), step.state());
+            if (dressed != step.state())
+            {
+                out.set(k, new RouteStep(step.pos(), dressed));
+            }
+        }
+        final Direction dir = travel[i];
+        if (dir == null || plan.mode[i] != RoutePlan.SURFACE || i % WAR_POST_EVERY != WAR_POST_EVERY / 2)
+        {
+            return;
+        }
+        final Direction side = (i / WAR_POST_EVERY) % 2 == 0 ? dir.getClockWise() : dir.getCounterClockWise();
+        final int x = plan.x[i] + side.getStepX() * WAR_POST_SIDE;
+        final int z = plan.z[i] + side.getStepZ() * WAR_POST_SIDE;
+        final int y = plan.y[i];
+        if (registry.inBand(x, z) || plan.footprint.road(x, z))
+        {
+            return;
+        }
+        final RouteProbe.Column column = RouteProbe.of(level, x, z);
+        if (column.blocked() || column.wet() || column.lava() || Math.abs(column.ground() - y) > 1)
+        {
+            return;
+        }
+        out.add(new RouteStep(new BlockPos(x, y, z), WAR_POST));
+        out.add(new RouteStep(new BlockPos(x, y + 1, z), WAR_POLE));
+        out.add(new RouteStep(new BlockPos(x, y + 2, z), SOUL_LANTERN));
+    }
+
+    private static BlockState warBlock(final BlockPos pos, final BlockState state)
+    {
+        if (state.is(Blocks.DIRT_PATH))
+        {
+            return noise(pos.getX(), pos.getZ(), 5) < 0.75F ? Blocks.COBBLED_DEEPSLATE.defaultBlockState() : Blocks.DEEPSLATE_TILES.defaultBlockState();
+        }
+        if (state.is(Blocks.COARSE_DIRT))
+        {
+            return Blocks.BLACKSTONE.defaultBlockState();
+        }
+        if (state.is(Blocks.COBBLESTONE))
+        {
+            return Blocks.POLISHED_DEEPSLATE.defaultBlockState();
+        }
+        if (state.is(Blocks.MOSSY_COBBLESTONE))
+        {
+            return Blocks.POLISHED_BLACKSTONE_BRICKS.defaultBlockState();
+        }
+        if (state.is(Blocks.COBBLESTONE_STAIRS))
+        {
+            return Blocks.COBBLED_DEEPSLATE_STAIRS.withPropertiesOf(state);
+        }
+        if (state.is(Blocks.MOSSY_COBBLESTONE_STAIRS))
+        {
+            return Blocks.BLACKSTONE_STAIRS.withPropertiesOf(state);
+        }
+        if (state.is(Blocks.STONE_BRICKS))
+        {
+            return Blocks.DEEPSLATE_BRICKS.defaultBlockState();
+        }
+        if (state.is(Blocks.MOSSY_STONE_BRICKS))
+        {
+            return Blocks.POLISHED_BLACKSTONE_BRICKS.defaultBlockState();
+        }
+        if (state.is(Blocks.CRACKED_STONE_BRICKS))
+        {
+            return Blocks.CRACKED_DEEPSLATE_BRICKS.defaultBlockState();
+        }
+        if (state.is(Blocks.CHISELED_STONE_BRICKS))
+        {
+            return Blocks.CHISELED_DEEPSLATE.defaultBlockState();
+        }
+        if (state.is(Blocks.LANTERN))
+        {
+            return Blocks.SOUL_LANTERN.withPropertiesOf(state);
+        }
+        return state;
     }
 
     private void roadColumn(final List<RouteStep> out, final int i, final int x, final int z, final int d2)

@@ -171,14 +171,26 @@ public final class UiScenarios
             {
                 targets.add(new Target("hub-diplomacy", () -> {
                     final var fake = new java.util.ArrayList<fr.kodistan.interregne.network.DiplomacySyncPayload.Entry>();
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(11, "Port-Sombrebois", "Alix", 14, 410, -120, 3, 0));
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(12, "Haute-Garde", "Brenn", 31, -300, 260, 1, 0));
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(13, "Les Trois Moulins", "Cassandre", 8, 150, 520, 2, 0));
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(14, "Val-de-Cendre", "Dorian", 22, -640, -90, 0, 0));
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(15, "Fort-Écarlate avec un nom très long", "Eloïse", 40, 900, 900, 0, 0));
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(16, "Rive-Noire", "Fenn", 12, 200, 700, 4, 150));
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(17, "Mont-Cuivre", "Gaël", 19, -500, 400, 7, 0));
-                    fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), fake));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(11, "Port-Sombrebois", "Alix", 14, 410, -120, 3, 0, 0, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(12, "Haute-Garde", "Brenn", 31, -300, 260, 1, 0, 2, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(13, "Les Trois Moulins", "Cassandre", 8, 150, 520, 2, 0, 0, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(14, "Val-de-Cendre", "Dorian", 22, -640, -90, 0, 0, 0, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(15, "Fort-Écarlate avec un nom très long", "Eloïse", 40, 900, 900, 0, 0, 0, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(16, "Rive-Noire", "Fenn", 12, 200, 700, 4, 150, 1, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(17, "Mont-Cuivre", "Gaël", 19, -500, 400, 5, 0, 2, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(18, "Bourg-Ferrant", "Hugo", 9, 700, -300, 5, 0, 2, 1));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(19, "Crête-Grise", "Inès", 15, -200, -800, 7, 0, 1, 2));
+                    fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), 6, 3, 20, fake));
+                    ColonyHubScreen.openDev(colony.getTownHall(), "diplomacy", 0);
+                }));
+                // Wars sit below the fold on the full list: this target shows only them.
+                targets.add(new Target("hub-diplomacy-war", () -> {
+                    final var fake = new java.util.ArrayList<fr.kodistan.interregne.network.DiplomacySyncPayload.Entry>();
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(16, "Rive-Noire", "Fenn", 12, 200, 700, 4, 150, 1, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(17, "Mont-Cuivre", "Gaël", 19, -500, 400, 5, 0, 2, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(18, "Bourg-Ferrant", "Hugo", 9, 700, -300, 5, 0, 2, 1));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(19, "Crête-Grise", "Inès", 15, -200, -800, 7, 0, 1, 2));
+                    fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), 6, 3, 20, fake));
                     ColonyHubScreen.openDev(colony.getTownHall(), "diplomacy", 0);
                 }));
                 continue;
