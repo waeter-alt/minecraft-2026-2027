@@ -47,6 +47,7 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.politics.Alliances;
 import fr.kodistan.interregne.politics.Diplomacy;
+import fr.kodistan.interregne.politics.Wars;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -152,6 +153,8 @@ public final class WarAssaults
         int sent;
         int destroyed;
         long loot;
+        /** Defending citizens killed while the assault ran. */
+        int fallen;
         boolean engaged;
         boolean over;
         /** Set when the defender's town hall falls; the war is settled on the next server tick. */
@@ -1311,8 +1314,9 @@ public final class WarAssaults
         {
             if (assault.townHallTaken && !assault.over)
             {
-                Diplomacy.victory(event.getServer(), assault.attacker, assault.defender);
+                // end first: it adds this assault to the war's tally, which the victory then reads for the recap
                 end(assault, "§cL'hôtel de ville est tombé§r : la guerre est perdue.");
+                Diplomacy.victory(event.getServer(), assault.attacker, assault.defender);
             }
         }
         if (PENDING_SWEEPS.isEmpty())
@@ -1338,6 +1342,15 @@ public final class WarAssaults
     @SubscribeEvent
     public static void onDeath(final LivingDeathEvent event)
     {
+        if (event.getEntity() instanceof EntityCitizen citizen && !BY_DEFENDER.isEmpty())
+        {
+            final Assault defended = BY_DEFENDER.get(citizen.getCitizenColonyHandler().getColonyId());
+            if (defended != null && !defended.over)
+            {
+                defended.fallen++;
+            }
+            return;
+        }
         if (!(event.getEntity() instanceof AssaultTroop troop))
         {
             return;
@@ -1679,6 +1692,8 @@ public final class WarAssaults
         }
         if (assault.defender.getWorld() instanceof ServerLevel level)
         {
+            Wars.get(level.getServer()).record(assault.attacker.getID(), assault.defender.getID(), assault.sent, lost + homeless,
+              assault.destroyed, assault.loot, assault.fallen);
             Alliances.broadcast(level.getServer(), assault.attacker, assault.defender);
         }
     }

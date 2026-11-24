@@ -61,6 +61,7 @@ import java.util.Map;
  * <li>{@code block:<bank|regionalbank|comptoir|market|throne|crops>|all}: our blocks' screens with fake data. They
  * send nothing to the server unless a button is clicked, and captures never click.</li>
  * <li>{@code catalogue}: the build catalogue.</li>
+ * <li>{@code war}: the end-of-war recap, as the winner, the loser, and after a capitulation.</li>
  * </ul>
  * Names of the real colony's data are captured as they are; fake states exist where the real colony can't show them.
  */
@@ -145,6 +146,12 @@ public final class UiScenarios
                     // Over a built wall: the planner retracing it unchanged, then with its first tower moved
                     targets.add(new Target("walledit-same", 80, () -> net.minecraft.client.Minecraft.getInstance().setScreen(new fr.kodistan.interregne.client.walls.WallPlannerScreen(colony.getTownHall()))));
                     targets.add(new Target("walledit-moved", 80, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.openEditDemo(colony.getTownHall())));
+                }
+                case "war" -> {
+                    // Settled long enough for the title pop and every figure's count-up to finish
+                    targets.add(new Target("war-recap-victory", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, false))));
+                    targets.add(new Target("war-recap-defeat", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(false, false))));
+                    targets.add(new Target("war-recap-capitulation", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, true))));
                 }
                 default -> throw new IllegalArgumentException("Unknown screen " + spec);
             }
@@ -431,6 +438,20 @@ public final class UiScenarios
                 targets.add(new Target("block-" + block.getKey(), block.getValue()));
             }
         }
+    }
+
+    private static fr.kodistan.interregne.network.WarRecapPayload fakeRecap(final boolean victory, final boolean capitulation)
+    {
+        final var patterns = Minecraft.getInstance().level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BANNER_PATTERN);
+        final var red = new net.minecraft.world.level.block.entity.BannerPatternLayers.Builder()
+          .add(patterns.getHolderOrThrow(net.minecraft.world.level.block.entity.BannerPatterns.CROSS), net.minecraft.world.item.DyeColor.RED)
+          .add(patterns.getHolderOrThrow(net.minecraft.world.level.block.entity.BannerPatterns.BORDER), net.minecraft.world.item.DyeColor.BLACK).build();
+        final var blue = new net.minecraft.world.level.block.entity.BannerPatternLayers.Builder()
+          .add(patterns.getHolderOrThrow(net.minecraft.world.level.block.entity.BannerPatterns.STRIPE_CENTER), net.minecraft.world.item.DyeColor.BLUE)
+          .add(patterns.getHolderOrThrow(net.minecraft.world.level.block.entity.BannerPatterns.TRIANGLE_TOP), net.minecraft.world.item.DyeColor.YELLOW).build();
+        // The winner is always the attacker: sent / lost are its troops, destroyed / loot / fallen the loser's losses
+        return new fr.kodistan.interregne.network.WarRecapPayload(victory, capitulation, "Hautebrume-sur-Loire", "Valdorée", red, blue,
+          20L * 60 * 72, capitulation ? 2 : 4, 38, 11, capitulation ? 3 : 7, 18_450, 9, capitulation ? 25_000 : 0, 120, 20L * 60 * 60 * 2);
     }
 
     private static MapStatePayload fakeMap()
