@@ -22,6 +22,8 @@ public final class Wars extends SavedData
     private final Map<Long, Long> declared = new HashMap<>();
     /** The wars whose opening was already announced. */
     private final Set<Long> opened = new HashSet<>();
+    /** Colonies that just lost a war, to the game time their shield ends: nobody may declare war on them before. */
+    private final Map<Integer, Long> shields = new HashMap<>();
 
     public static Wars get(final MinecraftServer server)
     {
@@ -100,6 +102,21 @@ public final class Wars extends SavedData
         return out;
     }
 
+    public void shield(final int colony, final long until)
+    {
+        shields.put(colony, until);
+        setDirty();
+    }
+
+    /**
+     * Ticks left on the colony's shield, 0 when it has none.
+     */
+    public long shieldLeft(final int colony, final long now)
+    {
+        final Long until = shields.get(colony);
+        return until == null ? 0 : Math.max(0, until - now);
+    }
+
     public boolean hasPending(final long now, final long noticeTicks)
     {
         for (final Map.Entry<Long, Long> entry : declared.entrySet())
@@ -118,6 +135,8 @@ public final class Wars extends SavedData
         tag.putLongArray("keys", declared.keySet().stream().mapToLong(Long::longValue).toArray());
         tag.putLongArray("times", declared.values().stream().mapToLong(Long::longValue).toArray());
         tag.putLongArray("opened", opened.stream().mapToLong(Long::longValue).toArray());
+        tag.putIntArray("shieldIds", shields.keySet().stream().mapToInt(Integer::intValue).toArray());
+        tag.putLongArray("shieldUntil", shields.values().stream().mapToLong(Long::longValue).toArray());
         return tag;
     }
 
@@ -133,6 +152,12 @@ public final class Wars extends SavedData
         for (final long value : tag.getLongArray("opened"))
         {
             wars.opened.add(value);
+        }
+        final int[] shieldIds = tag.getIntArray("shieldIds");
+        final long[] shieldUntil = tag.getLongArray("shieldUntil");
+        for (int i = 0; i < Math.min(shieldIds.length, shieldUntil.length); i++)
+        {
+            wars.shields.put(shieldIds[i], shieldUntil[i]);
         }
         return wars;
     }

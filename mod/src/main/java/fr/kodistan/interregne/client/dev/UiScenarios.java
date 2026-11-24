@@ -180,7 +180,7 @@ public final class UiScenarios
                     fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(17, "Mont-Cuivre", "Gaël", 19, -500, 400, 5, 0, 2, 0));
                     fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(18, "Bourg-Ferrant", "Hugo", 9, 700, -300, 5, 0, 2, 1));
                     fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(19, "Crête-Grise", "Inès", 15, -200, -800, 7, 0, 1, 2));
-                    fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), 6, 3, 20, fake));
+                    fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), 6, 3, 20, 500L, 1240L, fake));
                     ColonyHubScreen.openDev(colony.getTownHall(), "diplomacy", 0);
                 }));
                 // Wars sit below the fold on the full list: this target shows only them.
@@ -190,9 +190,22 @@ public final class UiScenarios
                     fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(17, "Mont-Cuivre", "Gaël", 19, -500, 400, 5, 0, 2, 0));
                     fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(18, "Bourg-Ferrant", "Hugo", 9, 700, -300, 5, 0, 2, 1));
                     fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(19, "Crête-Grise", "Inès", 15, -200, -800, 7, 0, 1, 2));
-                    fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), 6, 3, 20, fake));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(20, "Roc-aux-Corbeaux", "Jade", 27, 380, 610, 6, 240, 1, 0));
+                    // Treasury short of the tribute: shows the grey « Capituler » with have/cost in red.
+                    fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), 6, 3, 20, 500L, 320L, fake));
                     ColonyHubScreen.openDev(colony.getTownHall(), "diplomacy", 0);
                 }));
+                // Only the wars waged on us, so the « Capituler » buttons are above the fold: payable, then short.
+                for (final long treasury : new long[] {1240L, 320L})
+                {
+                    targets.add(new Target(treasury >= 500L ? "hub-diplomacy-surrender" : "hub-diplomacy-surrender-short", () -> {
+                        final var fake = new java.util.ArrayList<fr.kodistan.interregne.network.DiplomacySyncPayload.Entry>();
+                        fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(19, "Crête-Grise", "Inès", 15, -200, -800, 7, 0, 1, 2));
+                        fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(20, "Roc-aux-Corbeaux", "Jade", 27, 380, 610, 6, 240, 1, 0));
+                        fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), 6, 3, 20, 500L, treasury, fake));
+                        ColonyHubScreen.openDev(colony.getTownHall(), "diplomacy", 0);
+                    }));
+                }
                 continue;
             }
             if (!page.equals("intendance"))

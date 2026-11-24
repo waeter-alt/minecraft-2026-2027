@@ -22,6 +22,8 @@ final class HubDiplomacyPage
     private int confirmBreak = -1;
     /** The colony whose « Guerre » was clicked once (a second click declares it). */
     private int confirmWar = -1;
+    /** The attacker whose « Capituler » was clicked once (a second click pays the tribute). */
+    private int confirmCapitulate = -1;
 
     private static final int A_NONE = 0;
     private static final int A_ALLIED = 1;
@@ -123,7 +125,9 @@ final class HubDiplomacyPage
         final boolean launcher = status == A_WAR_OUT && !campaign;
         // Troops of ours out: the recall button gets that second line, so the march news stays readable.
         final boolean recall = (status == A_WAR_OUT || status == A_WAR_OUT_NOTICE) && campaign;
-        final int rowH = launcher || recall ? 26 + Ui.BUTTON_H + 4 : 26;
+        // At war against us (notice or open): the tribute that ends it gets that second line.
+        final boolean surrender = status == A_WAR_IN_NOTICE || status == A_WAR_IN;
+        final int rowH = launcher || recall || surrender ? 26 + Ui.BUTTON_H + 4 : 26;
         Ui.card(graphics, x, y, width, rowH, false, false, false);
         graphics.fill(x + 1, y + 1, x + 4, y + rowH - 1, war ? Palette.RED : switch (status)
         {
@@ -261,7 +265,64 @@ final class HubDiplomacyPage
             hub.seatButton(graphics, mouseX, mouseY, x + width - 4 - rw, y + 26, rw, label, Ui.ButtonStyle.SECONDARY, mayAct,
               () -> ClientDiplomacy.act(mine, DiplomacyActionPayload.RECALL_TROOPS, id));
         }
+        else if (surrender)
+        {
+            surrenderButton(graphics, mouseX, mouseY, x + width - 4, y + 26, width - 13, sync, id, mayAct);
+        }
         return y + rowH + 2;
+    }
+
+    /**
+     * « Capituler » with the tribute inside, right-aligned and ending at {@code right}: green when the regional treasury
+     * pays it, grey with have/cost in red when not. One click arms it, a second one pays.
+     */
+    private void surrenderButton(final GuiGraphics graphics, final int mouseX, final int mouseY, final int right, final int y, final int room,
+      final fr.kodistan.interregne.network.DiplomacySyncPayload sync, final int id, final boolean mayAct)
+    {
+        final long tribute = sync.tribute();
+        final long money = sync.treasury();
+        final boolean payable = mayAct && money >= tribute;
+        final boolean armed = confirmCapitulate == id;
+        final Component price = Component.literal(money >= tribute ? fr.kodistan.interregne.economy.Wallet.format(tribute)
+                                                                   : fr.kodistan.interregne.economy.Wallet.format(money) + "/" + fr.kodistan.interregne.economy.Wallet.format(tribute))
+                                  .withStyle(ChatFormatting.BOLD);
+        final int priceW = ColonyHubScreen.PRICE_ICON + 3 + hub.font().width(price);
+        String verb = armed ? "Confirmer le tribut" : "Capituler";
+        if (hub.font().width(Component.literal(verb).withStyle(ChatFormatting.BOLD)) + 10 + priceW + 16 > room)
+        {
+            verb = armed ? "Confirmer" : "Capituler";
+        }
+        final Component verbText = Component.literal(verb).withStyle(ChatFormatting.BOLD);
+        final int w = Math.min(room, hub.font().width(verbText) + 10 + priceW + 16);
+        final int x = right - w;
+        final int h = Ui.BUTTON_H;
+        final boolean over = Ui.inside(mouseX, mouseY, x, y, w, h);
+        Ui.plate(graphics, x, y, x + w, y + h, payable ? (over ? Palette.GREEN_HOVER : Palette.GREEN) : Palette.PAPER_DARK, Palette.EDGE,
+          payable ? Palette.GREEN_LIGHT : Palette.PAPER_DARK);
+        final int textY = y + (h - 8) / 2;
+        int cx = x + (w - (hub.font().width(verbText) + 10 + priceW)) / 2;
+        graphics.drawString(hub.font(), verbText, cx, textY, payable ? Palette.GREEN_TEXT : Palette.MUTED, false);
+        cx += hub.font().width(verbText) + 10;
+        Ui.coinTight(graphics, cx, y + (h - ColonyHubScreen.PRICE_ICON) / 2, ColonyHubScreen.PRICE_ICON);
+        graphics.drawString(hub.font(), price, cx + ColonyHubScreen.PRICE_ICON + 3, textY, money >= tribute ? (payable ? Palette.GREEN_TEXT : Palette.INK) : Palette.RED, false);
+        if (payable)
+        {
+            final int mine = hub.colony.getID();
+            hub.addHit(x, y, w, h, () -> {
+                if (confirmCapitulate != id)
+                {
+                    confirmCapitulate = id;
+                    return;
+                }
+                confirmCapitulate = -1;
+                ClientDiplomacy.act(mine, DiplomacyActionPayload.CAPITULATE, id);
+            });
+        }
+        if (over)
+        {
+            hub.hint = money < tribute ? "Il manque " + fr.kodistan.interregne.economy.Wallet.format(tribute - money) + " Couronnes au trésor régional pour le tribut."
+                                       : "Verse le tribut au trésor de l'assaillant : la guerre s'arrête, ses troupes rentrent et vous gagnez un bouclier.";
+        }
     }
 
     /**

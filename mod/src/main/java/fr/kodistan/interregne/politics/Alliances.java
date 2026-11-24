@@ -4,6 +4,7 @@ import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.permissions.Action;
 import fr.kodistan.interregne.Config;
+import fr.kodistan.interregne.economy.RegionalTreasury;
 import fr.kodistan.interregne.garrison.Garrison;
 import fr.kodistan.interregne.network.DiplomacyActionPayload;
 import fr.kodistan.interregne.routes.RouteRegistry;
@@ -200,7 +201,7 @@ public final class Alliances extends SavedData
               other.getCitizenManager().getCurrentCitizenCount(), other.getCenter().getX(), other.getCenter().getZ(), relation[0], relation[1], road, campaign));
         }
         return new DiplomacySyncPayload(colony.getID(), Garrison.available(server, colony, Garrison.LEGIONNAIRE), Garrison.available(server, colony, Garrison.ARCHERE),
-          Config.WAR_DECLARATION_COST.get().intValue(), entries);
+          Config.WAR_DECLARATION_COST.get().intValue(), Config.WAR_TRIBUTE.get(), RegionalTreasury.get(server).balance(colony), entries);
     }
 
     // Package-private moves for Diplomacy, which holds the rules.

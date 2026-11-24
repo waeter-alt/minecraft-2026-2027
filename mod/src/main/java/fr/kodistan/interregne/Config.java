@@ -313,6 +313,30 @@ public final class Config
       .comment("Seconds the war road takes to build; troops wait for it before marching")
       .defineInRange("warRoadSeconds", 60, 5, 3600);
 
+    public static final ModConfigSpec.LongValue WAR_TRIBUTE = BUILDER
+      .comment("Couronnes the defender pays from its treasury to the attacker's to capitulate and end the war")
+      .defineInRange("warTribute", 500L, 0L, Long.MAX_VALUE);
+
+    public static final ModConfigSpec.IntValue WAR_SHIELD_SECONDS = BUILDER
+      .comment("Seconds a colony that lost a war (town hall taken or capitulation) cannot be declared war on")
+      .defineInRange("warShieldSeconds", 7200, 0, 604800);
+
+    public static final ModConfigSpec.LongValue WAR_LOOT_PER_BUILDING = BUILDER
+      .comment("Most couronnes one fallen building moves from the defender's treasury to the attacker's")
+      .defineInRange("warLootPerBuilding", 100L, 0L, Long.MAX_VALUE);
+
+    public static final ModConfigSpec.LongValue WAR_LOOT_PER_ASSAULT = BUILDER
+      .comment("Most couronnes one assault can loot in total")
+      .defineInRange("warLootPerAssault", 1000L, 0L, Long.MAX_VALUE);
+
+    public static final ModConfigSpec.LongValue WAR_TREASURY_RESERVE = BUILDER
+      .comment("Couronnes of a defender's treasury that loot never touches")
+      .defineInRange("warTreasuryReserve", 200L, 0L, Long.MAX_VALUE);
+
+    public static final ModConfigSpec.LongValue WAR_VICTORY_INFLUENCE = BUILDER
+      .comment("Influence given to the winning colony's owner when the enemy town hall falls or the enemy capitulates")
+      .defineInRange("warVictoryInfluence", 50L, 0L, Long.MAX_VALUE);
+
     static
     {
         BUILDER.pop();

@@ -26,6 +26,8 @@ public record DiplomacyActionPayload(int colony, int action, int target, int amo
     public static final int LAUNCH_ASSAULT = 7;
     /** Calls back the troops marching on or assaulting the enemy. */
     public static final int RECALL_TROOPS = 8;
+    /** The defender gives up: pays the tribute and loses the war. */
+    public static final int CAPITULATE = 9;
 
     /** Packs an assault's troops into {@code amount}. */
     public static int troops(final int legionnaires, final int archers)
