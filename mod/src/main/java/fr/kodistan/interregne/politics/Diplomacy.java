@@ -9,6 +9,7 @@ import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.InterregneMod;
 import fr.kodistan.interregne.economy.RegionalTreasury;
 import fr.kodistan.interregne.network.DiplomacyActionPayload;
+import fr.kodistan.interregne.network.WarRecapPayload;
 import fr.kodistan.interregne.routes.RouteRegistry;
 import fr.kodistan.interregne.routes.WarRoad;
 import fr.kodistan.interregne.war.WarAssaults;
@@ -18,10 +19,12 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.block.entity.BannerPatternLayers;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
 import static net.minecraft.commands.Commands.argument;
@@ -214,7 +217,7 @@ public final class Diplomacy
         {
             WarAssaults.recall(attacker, colony.getID());
         }
-        settle(server, attacker, colony, "§e" + colony.getName() + " capitule§r devant " + attacker.getName() + " et lui verse " + tribute + " couronnes de tribut.");
+        settle(server, attacker, colony, "§e" + colony.getName() + " capitule§r devant " + attacker.getName() + " et lui verse " + tribute + " couronnes de tribut.", true, tribute);
         return null;
     }
 
@@ -223,15 +226,19 @@ public final class Diplomacy
      */
     public static void victory(final MinecraftServer server, final IColony winner, final IColony loser)
     {
-        settle(server, winner, loser, "§c" + loser.getName() + " est tombée§r : " + winner.getName() + " a pris son hôtel de ville.");
+        settle(server, winner, loser, "§c" + loser.getName() + " est tombée§r : " + winner.getName() + " a pris son hôtel de ville.", false, 0);
     }
 
     /**
      * Ends a war that the attacker won: shield for the loser, Influence for the winner's owner, news for everyone.
      */
-    private static void settle(final MinecraftServer server, final IColony winner, final IColony loser, final String news)
+    private static void settle(final MinecraftServer server, final IColony winner, final IColony loser, final String news, final boolean capitulation,
+                               final long tribute)
     {
         final Wars wars = Wars.get(server);
+        // Read before end(), which forgets the war's tally.
+        final long[] tally = wars.stats(winner.getID(), loser.getID());
+        final long declaredAt = wars.declaredAt(winner.getID(), loser.getID());
         if (!wars.end(winner.getID(), loser.getID()))
         {
             return;
@@ -249,6 +256,29 @@ public final class Diplomacy
         notifyMembers(server, winner, "Guerre gagnée contre " + loser.getName() + (influence > 0 ? " : +" + influence + " d'Influence." : "."));
         notifyMembers(server, loser, "Guerre perdue contre " + winner.getName() + " : personne ne peut vous déclarer la guerre pendant " + minutes + " min.");
         Alliances.broadcast(server, winner, loser);
+        final long now = server.overworld().getGameTime();
+        sendRecap(server, winner, loser, capitulation, tally, declaredAt < 0 ? 0 : now - declaredAt, tribute, owner != null ? influence : 0, shieldTicks);
+    }
+
+    /**
+     * Opens the victory screen for the winner's online members and the defeat screen for the loser's.
+     */
+    private static void sendRecap(final MinecraftServer server, final IColony winner, final IColony loser, final boolean capitulation, final long[] tally,
+                                  final long duration, final long tribute, final long influence, final long shieldTicks)
+    {
+        final BannerPatternLayers winnerFlag = winner.getColonyFlag() == null ? BannerPatternLayers.EMPTY : winner.getColonyFlag();
+        final BannerPatternLayers loserFlag = loser.getColonyFlag() == null ? BannerPatternLayers.EMPTY : loser.getColonyFlag();
+        for (final ServerPlayer player : server.getPlayerList().getPlayers())
+        {
+            final boolean won = winner.getPermissions().isColonyMember(player);
+            if (!won && !loser.getPermissions().isColonyMember(player))
+            {
+                continue;
+            }
+            PacketDistributor.sendToPlayer(player, new WarRecapPayload(won, capitulation, winner.getName(), loser.getName(), winnerFlag, loserFlag, duration,
+              (int) tally[Wars.ASSAULTS], (int) tally[Wars.SENT], (int) tally[Wars.LOST], (int) tally[Wars.DESTROYED], tally[Wars.LOOT],
+              (int) tally[Wars.FALLEN], tribute, influence, shieldTicks));
+        }
     }
 
     /**
