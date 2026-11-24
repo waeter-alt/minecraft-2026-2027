@@ -44,6 +44,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.politics.Alliances;
 import fr.kodistan.interregne.politics.Diplomacy;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
@@ -79,9 +80,6 @@ public final class WarAssaults
     /** Structure points of a building: hits needed to bring it down, by level. */
     private static final int SP_BASE  = 15;
     private static final int SP_LEVEL = 10;
-
-    /** Couronnes paid to the attacker's treasury when a building falls. */
-    private static final long LOOT_PER_LEVEL = 25;
 
     /** Chance a non-foundation block survives the final sweep: a ruin, not a swept plot. */
     private static final float RUIN_SURVIVAL_CHANCE = 0.3F;
@@ -156,6 +154,8 @@ public final class WarAssaults
         long loot;
         boolean engaged;
         boolean over;
+        /** Set when the defender's town hall falls; the war is settled on the next server tick. */
+        boolean townHallTaken;
 
         Assault(final IColony defender, final IColony attacker, final UUID commander)
         {
@@ -841,6 +841,27 @@ public final class WarAssaults
         }
     }
 
+    /**
+     * Moves the loot of one fallen building from the defender's treasury to the attacker's: capped per building and
+     * per assault, and never below the defender's reserve. In the dev slice (a colony against itself) nothing is
+     * spent, the loot is only credited.
+     */
+    private static long takeLoot(final Assault assault, final net.minecraft.server.MinecraftServer server)
+    {
+        final RegionalTreasury treasury = RegionalTreasury.get(server);
+        long loot = Math.min(Config.WAR_LOOT_PER_BUILDING.get(), Config.WAR_LOOT_PER_ASSAULT.get() - assault.loot);
+        if (assault.attacker != assault.defender)
+        {
+            loot = Math.min(loot, treasury.balance(assault.defender) - Config.WAR_TREASURY_RESERVE.get());
+        }
+        if (loot <= 0 || assault.attacker != assault.defender && !treasury.spend(assault.defender, loot))
+        {
+            return 0;
+        }
+        treasury.credit(assault.attacker, loot);
+        return loot;
+    }
+
     /** Sweeps the structure, pays the loot, moves the troops on to their next target. */
     private static void destroyBuilding(final Assault assault, final BlockPos hut)
     {
@@ -870,15 +891,18 @@ public final class WarAssaults
                 PENDING_SWEEPS.add(new SweepJob(level, toSweep));
             }
             final int swept = toSweep.size();
-            final long loot = LOOT_PER_LEVEL * Math.max(1, building.getBuildingLevel());
-            RegionalTreasury.get(level.getServer()).credit(assault.attacker, loot);
+            final long loot = takeLoot(assault, level.getServer());
             assault.destroyed++;
+            if (hut.equals(assault.defender.getCenter()) && assault.attacker != assault.defender)
+            {
+                assault.townHallTaken = true;
+            }
             assault.loot += loot;
             // One deep crash reads "building coming down" from anywhere in the colony.
             level.playSound(null, hut, net.minecraft.world.level.block.SoundType.STONE.getBreakSound(),
               net.minecraft.sounds.SoundSource.HOSTILE, 3.0F, 0.6F);
             announce(assault, Component.literal("§c").append(Component.translatableEscape(building.getBuildingDisplayName()))
-              .append(Component.literal("§r en ruines (" + swept + " blocs) — butin " + loot + " couronnes.")));
+              .append(Component.literal("§r en ruines (" + swept + " blocs)" + (loot > 0 ? " — butin " + loot + " couronnes." : " — rien à piller."))));
         }
         removeBar(assault, hut);
         WarRuinsData.get(level).markRuined(hut);
@@ -1283,6 +1307,14 @@ public final class WarAssaults
     @SubscribeEvent
     public static void onServerTick(final ServerTickEvent.Post event)
     {
+        for (final Assault assault : new ArrayList<>(BY_DEFENDER.values()))
+        {
+            if (assault.townHallTaken && !assault.over)
+            {
+                Diplomacy.victory(event.getServer(), assault.attacker, assault.defender);
+                end(assault, "§cL'hôtel de ville est tombé§r : la guerre est perdue.");
+            }
+        }
         if (PENDING_SWEEPS.isEmpty())
         {
             return;

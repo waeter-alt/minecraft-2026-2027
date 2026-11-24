@@ -13,9 +13,9 @@ import java.util.List;
 /**
  * Server to client: every other colony of the dimension with the tie it has to {@code colony} (see
  * {@code Alliances.NONE/ALLIED/SENT/RECEIVED}), for the town hall's Diplomatie page. Also the guards {@code colony} can
- * send to war and the Influence a declaration costs.
+ * send to war, the Influence a declaration costs, and the couronnes tribute a capitulation costs against what its treasury holds.
  */
-public record DiplomacySyncPayload(int colony, int legionAvailable, int archersAvailable, int warCost, List<Entry> entries) implements CustomPacketPayload
+public record DiplomacySyncPayload(int colony, int legionAvailable, int archersAvailable, int warCost, long tribute, long treasury, List<Entry> entries) implements CustomPacketPayload
 {
     public static final int ROAD_NONE = 0;
     public static final int ROAD_BUILDING = 1;
@@ -37,6 +37,8 @@ public record DiplomacySyncPayload(int colony, int legionAvailable, int archersA
         ByteBufCodecs.VAR_INT.encode(buf, payload.legionAvailable());
         ByteBufCodecs.VAR_INT.encode(buf, payload.archersAvailable());
         ByteBufCodecs.VAR_INT.encode(buf, payload.warCost());
+        ByteBufCodecs.VAR_LONG.encode(buf, payload.tribute());
+        ByteBufCodecs.VAR_LONG.encode(buf, payload.treasury());
         ByteBufCodecs.VAR_INT.encode(buf, payload.entries().size());
         for (final Entry entry : payload.entries())
         {
@@ -56,6 +58,8 @@ public record DiplomacySyncPayload(int colony, int legionAvailable, int archersA
         final int legion = ByteBufCodecs.VAR_INT.decode(buf);
         final int archers = ByteBufCodecs.VAR_INT.decode(buf);
         final int warCost = ByteBufCodecs.VAR_INT.decode(buf);
+        final long tribute = ByteBufCodecs.VAR_LONG.decode(buf);
+        final long treasury = ByteBufCodecs.VAR_LONG.decode(buf);
         final int count = ByteBufCodecs.VAR_INT.decode(buf);
         final List<Entry> entries = new ArrayList<>(count);
         for (int i = 0; i < count; i++)
@@ -64,7 +68,7 @@ public record DiplomacySyncPayload(int colony, int legionAvailable, int archersA
               ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.INT.decode(buf), ByteBufCodecs.INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf),
               ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf)));
         }
-        return new DiplomacySyncPayload(colony, legion, archers, warCost, entries);
+        return new DiplomacySyncPayload(colony, legion, archers, warCost, tribute, treasury, entries);
     });
 
     @Override
