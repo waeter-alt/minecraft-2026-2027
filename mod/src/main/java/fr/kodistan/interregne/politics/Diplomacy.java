@@ -7,7 +7,10 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.InterregneMod;
+import fr.kodistan.interregne.economy.RegionalTreasury;
 import fr.kodistan.interregne.network.DiplomacyActionPayload;
+import fr.kodistan.interregne.routes.RouteRegistry;
+import fr.kodistan.interregne.routes.WarRoad;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
@@ -111,7 +114,7 @@ public final class Diplomacy
             case DiplomacyActionPayload.BREAK -> alliances.doBreak(me, you);
             case DiplomacyActionPayload.DECLARE_WAR ->
             {
-                final String refusal = declareWar(player, wars, alliances, me, you);
+                final String refusal = declareWar(player, wars, alliances, colony, other);
                 if (refusal != null)
                 {
                     return refusal;
@@ -138,8 +141,10 @@ public final class Diplomacy
     }
 
     @Nullable
-    private static String declareWar(final ServerPlayer player, final Wars wars, final Alliances alliances, final int me, final int you)
+    private static String declareWar(final ServerPlayer player, final Wars wars, final Alliances alliances, final IColony colony, final IColony other)
     {
+        final int me = colony.getID();
+        final int you = other.getID();
         if (alliances.areAllied(me, you))
         {
             return "Vous êtes alliés : rompez l'alliance avant de déclarer la guerre.";
@@ -153,9 +158,21 @@ public final class Diplomacy
         {
             return "Déclarer la guerre coûte " + cost + " d'Influence : il vous en manque.";
         }
+        // Sans route entre les deux colonies, la déclaration en trace une (payée par le trésor du déclarant).
+        final boolean needsRoad = RouteRegistry.get(player.server).roadBetween(me, you) < 0 && !WarRoad.building(me, you);
+        final long roadCost = needsRoad ? Config.WAR_ROAD_COST.get() : 0L;
+        final RegionalTreasury treasury = RegionalTreasury.get(player.server);
+        if (roadCost > 0 && !treasury.spend(colony, roadCost))
+        {
+            return "Il faut " + roadCost + " couronnes au trésor de la colonie pour la route de guerre.";
+        }
         Influence.remove(player.server, player.getUUID(), cost, "déclaration de guerre");
         alliances.clearBetween(me, you);
         wars.declare(me, you, player.server.overworld().getGameTime());
+        if (needsRoad)
+        {
+            WarRoad.start(player.serverLevel(), colony, other, roadCost);
+        }
         return null;
     }
 

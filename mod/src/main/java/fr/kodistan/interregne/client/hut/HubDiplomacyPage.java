@@ -31,8 +31,8 @@ final class HubDiplomacyPage
     private static final int A_WAR_OUT = 5;
     private static final int A_WAR_IN_NOTICE = 6;
     private static final int A_WAR_IN = 7;
-    /** Influence a declaration costs, as the server's config says (mirrored here for the button; the server enforces it). */
-    private static final long WAR_COST_SHOWN = 20;
+    /** Soldiers chosen for the next assault, by target colony: {legionnaires, archers}. */
+    private final java.util.Map<Integer, int[]> chosen = new java.util.HashMap<>();
 
     HubDiplomacyPage(final ColonyHubScreen hub)
     {
@@ -103,7 +103,7 @@ final class HubDiplomacyPage
                     Ui.label(graphics, hub.font(), titles[section], x, y);
                     y += 11;
                 }
-                y = diplomacyRow(graphics, mouseX, mouseY, x, y, width, entry, mayAct);
+                y = diplomacyRow(graphics, mouseX, mouseY, x, y, width, sync, entry, mayAct);
             }
             if (titled)
             {
@@ -114,11 +114,16 @@ final class HubDiplomacyPage
     }
 
     private int diplomacyRow(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width,
-      final fr.kodistan.interregne.network.DiplomacySyncPayload.Entry entry, final boolean mayAct)
+      final fr.kodistan.interregne.network.DiplomacySyncPayload sync, final fr.kodistan.interregne.network.DiplomacySyncPayload.Entry entry, final boolean mayAct)
     {
-        final int rowH = 26;
         final int status = entry.status();
         final boolean war = status >= A_WAR_OUT_NOTICE;
+        final boolean campaign = entry.campaign() != fr.kodistan.interregne.network.DiplomacySyncPayload.CAMPAIGN_NONE;
+        // An open war of ours with no troops out: a second line to pick the soldiers and launch the assault.
+        final boolean launcher = status == A_WAR_OUT && !campaign;
+        // Troops of ours out: the recall button gets that second line, so the march news stays readable.
+        final boolean recall = (status == A_WAR_OUT || status == A_WAR_OUT_NOTICE) && campaign;
+        final int rowH = launcher || recall ? 26 + Ui.BUTTON_H + 4 : 26;
         Ui.card(graphics, x, y, width, rowH, false, false, false);
         graphics.fill(x + 1, y + 1, x + 4, y + rowH - 1, war ? Palette.RED : switch (status)
         {
@@ -167,16 +172,16 @@ final class HubDiplomacyPage
             {
                 primary = "Proposer";
                 primaryAction = DiplomacyActionPayload.PROPOSE;
-                secondary = confirmWar == id ? "Confirmer · " + WAR_COST_SHOWN + " ★" : "Guerre · " + WAR_COST_SHOWN + " ★";
+                secondary = confirmWar == id ? "Confirmer · " + sync.warCost() + " ★" : "Guerre · " + sync.warCost() + " ★";
                 secondaryAction = DiplomacyActionPayload.DECLARE_WAR;
                 secondaryStyle = Ui.ButtonStyle.DANGER;
-                secondaryEnabled = mayAct && fr.kodistan.interregne.client.hud.InterregneHud.influence() >= WAR_COST_SHOWN;
+                secondaryEnabled = mayAct && fr.kodistan.interregne.client.hud.InterregneHud.influence() >= sync.warCost();
             }
             default ->
             {
             }
         }
-        final int by = y + (rowH - Ui.BUTTON_H) / 2;
+        final int by = y + (26 - Ui.BUTTON_H) / 2;
         int bx = x + width - 4;
         int reserved = 0;
         if (primary != null)
@@ -227,9 +232,76 @@ final class HubDiplomacyPage
             final boolean notice = (status == A_WAR_OUT_NOTICE || status == A_WAR_IN_NOTICE) && left > 0;
             detail = notice ? (attacker ? "Guerre déclarée · ouverte dans " : "Vous déclare la guerre · ouverte dans ") + left / 60 + ":" + String.format("%02d", left % 60)
                             : attacker ? "Guerre ouverte : vous pouvez l'assaillir" : "Guerre ouverte : elle peut vous assaillir";
+            if (entry.campaign() == fr.kodistan.interregne.network.DiplomacySyncPayload.CAMPAIGN_MARCHING)
+            {
+                detail = attacker ? "Vos troupes marchent sur elle" : "Ses troupes marchent sur vous";
+            }
+            else if (entry.campaign() == fr.kodistan.interregne.network.DiplomacySyncPayload.CAMPAIGN_ASSAULTING)
+            {
+                detail = attacker ? "Vos troupes l'assaillent" : "Ses troupes vous assaillent";
+            }
+            else if (attacker && entry.roadState() != fr.kodistan.interregne.network.DiplomacySyncPayload.ROAD_READY)
+            {
+                // Road news replaces the longer sentence: both together get cut at GUI scale 4.
+                final String road = entry.roadState() == fr.kodistan.interregne.network.DiplomacySyncPayload.ROAD_BUILDING ? "route en chantier" : "sans route";
+                detail = notice ? "Ouverte dans " + left / 60 + ":" + String.format("%02d", left % 60) + " · " + road
+                                : "Ouverte · " + road;
+            }
             detailColor = Palette.RED;
         }
         graphics.drawString(hub.font(), Ui.fit(hub.font(), detail, textRoom), x + 9, y + 15, detailColor, false);
+        if (launcher)
+        {
+            assaultLine(graphics, mouseX, mouseY, x + 9, y + 26, width - 13, sync, id, mayAct);
+        }
+        else if (recall)
+        {
+            final String label = "Rappeler les troupes";
+            final int rw = hub.font().width(label) + 16;
+            hub.seatButton(graphics, mouseX, mouseY, x + width - 4 - rw, y + 26, rw, label, Ui.ButtonStyle.SECONDARY, mayAct,
+              () -> ClientDiplomacy.act(mine, DiplomacyActionPayload.RECALL_TROOPS, id));
+        }
         return y + rowH + 2;
+    }
+
+    /**
+     * Soldiers to send ({@code -}/{@code +} per kind, at most what the garrison has at home) and the button that sends
+     * them. Names shrink to abbreviations when the row is narrow, so the button always fits.
+     */
+    private void assaultLine(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width,
+      final fr.kodistan.interregne.network.DiplomacySyncPayload sync, final int id, final boolean mayAct)
+    {
+        final int[] max = { sync.legionAvailable(), sync.archersAvailable() };
+        final int[] pick = chosen.computeIfAbsent(id, k -> max.clone());
+        pick[0] = Math.min(pick[0], max[0]);
+        pick[1] = Math.min(pick[1], max[1]);
+        final String launch = "⚔ Lancer l'assaut";
+        final int lw = hub.font().width(launch) + 16;
+        final int step = 14;
+        final int countW = hub.font().width("00/00") + 4;
+        final String[][] names = { { "Légionnaires", "Lég." }, { "Archères", "Arc." } };
+        final int full = 2 * (2 * step + countW + 11) + hub.font().width(names[0][0]) + hub.font().width(names[1][0]);
+        final boolean shortNames = full > width - lw - 8;
+        final int ty = y + (Ui.BUTTON_H - 8) / 2;
+        int cx = x;
+        for (int kind = 0; kind < 2; kind++)
+        {
+            final int k = kind;
+            final String name = names[k][shortNames ? 1 : 0];
+            graphics.drawString(hub.font(), name, cx, ty, Palette.INK, false);
+            cx += hub.font().width(name) + 3;
+            hub.seatButton(graphics, mouseX, mouseY, cx, y, step, "-", Ui.ButtonStyle.SECONDARY, mayAct && pick[k] > 0, () -> pick[k]--);
+            cx += step;
+            final String count = pick[k] + "/" + max[k];
+            graphics.drawString(hub.font(), count, cx + (countW - hub.font().width(count)) / 2, ty, max[k] == 0 ? Palette.MUTED : Palette.INK, false);
+            cx += countW;
+            hub.seatButton(graphics, mouseX, mouseY, cx, y, step, "+", Ui.ButtonStyle.SECONDARY, mayAct && pick[k] < max[k], () -> pick[k]++);
+            cx += step + 8;
+        }
+        final int mine = hub.colony.getID();
+        hub.seatButton(graphics, mouseX, mouseY, x + width - lw - 4, y, lw, launch, Ui.ButtonStyle.DANGER, mayAct && pick[0] + pick[1] > 0, () -> {
+            ClientDiplomacy.act(mine, DiplomacyActionPayload.LAUNCH_ASSAULT, id, DiplomacyActionPayload.troops(pick[0], pick[1]));
+            chosen.remove(id);
+        });
     }
 }

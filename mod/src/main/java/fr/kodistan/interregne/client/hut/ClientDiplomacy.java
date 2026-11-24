@@ -38,11 +38,16 @@ public final class ClientDiplomacy
 
     public static void refresh(final int colony)
     {
-        PacketDistributor.sendToServer(new DiplomacyActionPayload(colony, DiplomacyActionPayload.REFRESH, 0));
+        PacketDistributor.sendToServer(new DiplomacyActionPayload(colony, DiplomacyActionPayload.REFRESH, 0, 0));
     }
 
     public static void act(final int colony, final int action, final int target)
     {
-        PacketDistributor.sendToServer(new DiplomacyActionPayload(colony, action, target));
+        act(colony, action, target, 0);
+    }
+
+    public static void act(final int colony, final int action, final int target, final int amount)
+    {
+        PacketDistributor.sendToServer(new DiplomacyActionPayload(colony, action, target, amount));
     }
 }

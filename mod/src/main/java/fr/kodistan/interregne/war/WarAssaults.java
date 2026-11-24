@@ -43,6 +43,9 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import fr.kodistan.interregne.politics.Alliances;
+import fr.kodistan.interregne.politics.Diplomacy;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -59,6 +62,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Collections;
+import fr.kodistan.interregne.garrison.Garrison;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * One assault at a time per defender colony. The manager owns the troops' assignments and the buildings' structure
@@ -142,6 +148,10 @@ public final class WarAssaults
         // hands this out first (see WallBreach), so no légionnaire or archer ever reaches a building target while
         // it's still standing.
         WallBreach wallBreach;
+        // Troops that came out of the attacker's garrison, by entity id: the living ones go back to it when the
+        // assault ends, the dead ones are lost.
+        final Map<Integer, Marched> marched = new HashMap<>();
+        int sent;
         int destroyed;
         long loot;
         boolean engaged;
@@ -164,6 +174,9 @@ public final class WarAssaults
      */
     private record WallBreach(BlockPos center, int alongX, int alongZ, int outX, int outZ) {}
 
+    /** A garrison guard on the assault: its {@link Garrison} kind and troop level. */
+    private record Marched(int kind, int level) {}
+
     /**
      * Launches an assault of {@code legionnaires} légionnaires against {@code defender}, with no archers.
      *
@@ -182,6 +195,22 @@ public final class WarAssaults
     public static String launch(final ServerLevel level, final IColony attacker, final IColony defender, final Player commander,
       final int legionnaires, final int archers)
     {
+        return launch(level, attacker, defender, commander, Collections.nCopies(Math.max(0, legionnaires), 0),
+          Collections.nCopies(Math.max(0, archers), 0), null, false);
+    }
+
+    /**
+     * Launches an assault with one entry per troop, its level (0 = the default level). {@code rally} is where the
+     * troops appear (the end of the war road), or null for a spot on the ring around the colony. {@code fromGarrison}
+     * troops go back to the attacker's garrison when the assault ends, if they survived.
+     *
+     * @return a human-readable refusal, or null when the assault is on.
+     */
+    public static String launch(final ServerLevel level, final IColony attacker, final IColony defender, @Nullable final Player commander,
+      final List<Integer> legionLevels, final List<Integer> archerLevels, @Nullable final BlockPos rally, final boolean fromGarrison)
+    {
+        final int legionnaires = legionLevels.size();
+        final int archers = archerLevels.size();
         if (BY_DEFENDER.containsKey(defender.getID()))
         {
             return "Cette colonie subit déjà un assaut.";
@@ -201,7 +230,7 @@ public final class WarAssaults
             return "Impossible : cette colonie n'a aucun bâtiment.";
         }
 
-        final BlockPos spawnPos = pickSpawn(level, defender);
+        final BlockPos spawnPos = rally != null ? rally : pickSpawn(level, defender);
         if (spawnPos == null)
         {
             return "Impossible de trouver un point de ralliement autour de la colonie.";
@@ -219,11 +248,12 @@ public final class WarAssaults
         BY_DEFENDER.put(defender.getID(), assault);
         STRIKES.remove(defender.getID());
 
-        spawnTroops(level, WarEntities.LEGIONNAIRE.get(), legionnaires, 0, spawnPos, defender, event, assault);
-        spawnTroops(level, WarEntities.ARCHER.get(), archers, legionnaires, spawnPos, defender, event, assault);
+        spawnTroops(level, WarEntities.LEGIONNAIRE.get(), legionLevels, Garrison.LEGIONNAIRE, 0, spawnPos, defender, event, assault, fromGarrison);
+        spawnTroops(level, WarEntities.ARCHER.get(), archerLevels, Garrison.ARCHERE, legionnaires, spawnPos, defender, event, assault, fromGarrison);
         if (assault.troopIds.isEmpty())
         {
             BY_DEFENDER.remove(defender.getID());
+            event.setStatus(com.minecolonies.api.colony.colonyEvents.EventStatus.CANCELED);
             return "Le spawn des troupes a échoué.";
         }
 
@@ -238,15 +268,24 @@ public final class WarAssaults
 
     /** Spawns {@code count} troops of one type, rallied around {@code spawnPos} — {@code offset} just keeps two
       * calls for two troop types (see {@link #launch}) from spawning on top of each other. */
-    private static <T extends AssaultTroop> void spawnTroops(final ServerLevel level, final EntityType<T> type, final int count,
-      final int offset, final BlockPos spawnPos, final IColony defender, final AssautEvent event, final Assault assault)
+    private static <T extends AssaultTroop> void spawnTroops(final ServerLevel level, final EntityType<T> type, final List<Integer> levels,
+      final int kind, final int offset, final BlockPos spawnPos, final IColony defender, final AssautEvent event, final Assault assault,
+      final boolean fromGarrison)
     {
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < levels.size(); i++)
         {
             final T troop = type.create(level);
             if (troop == null)
             {
+                if (fromGarrison)
+                {
+                    Garrison.welcomeBack(level.getServer(), assault.attacker, kind, levels.get(i));
+                }
                 continue;
+            }
+            if (levels.get(i) > 0)
+            {
+                troop.setTroopLevel(levels.get(i));
             }
             final int slot = offset + i;
             final BlockPos at = BlockPosUtil.findAround(level, spawnPos.offset(slot % 3, 0, slot / 3), 4, 3, BlockPosUtil.SOLID_AIR_POS_SELECTOR);
@@ -262,6 +301,11 @@ public final class WarAssaults
             troop.addEffect(new MobEffectInstance(MobEffects.GLOWING, Integer.MAX_VALUE, 0, true, false));
             RaiderMobUtils.setMobAttributes(troop, defender);
             assault.troopIds.add(troop.getId());
+            if (fromGarrison)
+            {
+                assault.marched.put(troop.getId(), new Marched(kind, troop.getTroopLevel()));
+                assault.sent++;
+            }
         }
     }
 
@@ -1273,25 +1317,10 @@ public final class WarAssaults
         }
         assault.troopIds.remove(Integer.valueOf(troop.getId()));
         assault.standByTroop.remove(troop.getId());
+        assault.marched.remove(troop.getId());
         if (assault.troopIds.isEmpty() && !assault.over)
         {
-            assault.over = true;
-            BY_DEFENDER.remove(assault.defender.getID());
-            // The fight's done but these buildings aren't: don't leave their crack overlay or health bar stuck
-            // showing to players forever.
-            if (assault.defender.getWorld() instanceof ServerLevel level)
-            {
-                for (final BlockPos pos : assault.targets)
-                {
-                    final IBuilding building = assault.defender.getBuildingManager().getBuilding(pos);
-                    if (building != null)
-                    {
-                        clearCracks(assault, level, building, pos);
-                    }
-                    removeBar(assault, pos);
-                }
-            }
-            announce(assault, "§aAssaut repoussé§r : la colonie tient toujours.");
+            end(assault, "§aAssaut repoussé§r : la colonie tient toujours.");
         }
     }
 
@@ -1314,6 +1343,17 @@ public final class WarAssaults
     }
 
     /** Troops stop at world close so they don't linger across a session without their assault. */
+    @SubscribeEvent
+    public static void onServerStopping(final ServerStoppingEvent event)
+    {
+        // Survivors of a running assault go back to their towers before the world is saved: troops on the field
+        // don't survive a restart.
+        for (final Assault assault : new ArrayList<>(BY_DEFENDER.values()))
+        {
+            end(assault, "Assaut interrompu (arrêt du serveur).");
+        }
+    }
+
     @SubscribeEvent
     public static void onServerStopped(final ServerStoppedEvent event)
     {
@@ -1512,41 +1552,102 @@ public final class WarAssaults
     static void stopAll(final MinecraftServer server, final Player reporter)
     {
         int troops = 0;
-        for (final Assault assault : BY_DEFENDER.values())
+        for (final Assault assault : new ArrayList<>(BY_DEFENDER.values()))
         {
-            if (assault.defender.getWorld() instanceof ServerLevel level)
-            {
-                for (final BlockPos pos : assault.targets)
-                {
-                    final IBuilding building = assault.defender.getBuildingManager().getBuilding(pos);
-                    if (building != null)
-                    {
-                        clearCracks(assault, level, building, pos);
-                    }
-                    removeBar(assault, pos);
-                }
-            }
-            for (final int id : assault.troopIds)
-            {
-                if (assault.defender.getWorld() instanceof ServerLevel level
-                      && level.getEntity(id) instanceof AssaultTroop troop)
-                {
-                    troop.discard();
-                    troops++;
-                }
-            }
-            for (final var entry : assault.defender.getEventManager().getEvents().values())
-            {
-                if (entry instanceof AssautEvent)
-                {
-                    entry.setStatus(com.minecolonies.api.colony.colonyEvents.EventStatus.CANCELED);
-                }
-            }
+            troops += assault.troopIds.size();
+            end(assault, "Assaut stoppé par un intendant.");
         }
         BY_DEFENDER.clear();
         if (reporter != null)
         {
             reporter.sendSystemMessage(Component.literal("Assauts stoppés, " + troops + " troupes retirées."));
+        }
+    }
+
+    /**
+     * The attacker calls its troops back from the assault on this defender: the survivors go back to the towers.
+     * Returns null when done, or why not.
+     */
+    @Nullable
+    public static String recall(final IColony attacker, final int defenderId)
+    {
+        final Assault assault = BY_DEFENDER.get(defenderId);
+        if (assault == null || assault.over || assault.attacker.getID() != attacker.getID())
+        {
+            return "Aucun assaut de votre colonie en cours contre elle.";
+        }
+        end(assault, "Les troupes sont rappelées.");
+        return null;
+    }
+
+    /** True while this attacker has an assault running on this defender. */
+    public static boolean assaulting(final int attackerId, final int defenderId)
+    {
+        final Assault assault = BY_DEFENDER.get(defenderId);
+        return assault != null && !assault.over && assault.attacker.getID() == attackerId;
+    }
+
+    /**
+     * Closes an assault however it ends: clears the cracks and health bars it left, cancels its colony event, sends
+     * the troops that marched out of the attacker's garrison and are still alive back to their towers (the dead stay
+     * lost) and removes what is left of the troops on the field.
+     */
+    private static void end(final Assault assault, final String line)
+    {
+        assault.over = true;
+        BY_DEFENDER.remove(assault.defender.getID());
+        int back = 0;
+        int homeless = 0;
+        if (assault.defender.getWorld() instanceof ServerLevel level)
+        {
+            for (final BlockPos pos : assault.targets)
+            {
+                final IBuilding building = assault.defender.getBuildingManager().getBuilding(pos);
+                if (building != null)
+                {
+                    clearCracks(assault, level, building, pos);
+                }
+                removeBar(assault, pos);
+            }
+            for (final Marched troop : assault.marched.values())
+            {
+                if (Garrison.welcomeBack(level.getServer(), assault.attacker, troop.kind(), troop.level()))
+                {
+                    back++;
+                }
+                else
+                {
+                    homeless++;
+                }
+            }
+            for (final int id : assault.troopIds)
+            {
+                if (level.getEntity(id) instanceof AssaultTroop troop)
+                {
+                    troop.discard();
+                }
+            }
+        }
+        final int lost = assault.sent - back - homeless;
+        assault.marched.clear();
+        assault.troopIds.clear();
+        for (final var entry : assault.defender.getEventManager().getEvents().values())
+        {
+            if (entry instanceof AssautEvent)
+            {
+                entry.setStatus(com.minecolonies.api.colony.colonyEvents.EventStatus.CANCELED);
+            }
+        }
+        announce(assault, line);
+        if (assault.sent > 0 && assault.defender.getWorld() instanceof ServerLevel level)
+        {
+            Diplomacy.notifyMembers(level.getServer(), assault.attacker, "⚔ Retour de " + assault.defender.getName() + " : "
+              + back + " soldat(s) rentrent aux tours, " + lost + " tombé(s)"
+              + (homeless > 0 ? ", " + homeless + " sans place libre dans les tours (perdus)" : "") + ".");
+        }
+        if (assault.defender.getWorld() instanceof ServerLevel level)
+        {
+            Alliances.broadcast(level.getServer(), assault.attacker, assault.defender);
         }
     }
 
