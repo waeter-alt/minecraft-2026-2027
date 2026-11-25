@@ -83,6 +83,7 @@ Le client ouvre le monde, affiche chaque écran demandé avec des données facti
    - `hubtool:<clipboard|permissions|alliances|appearance|mercenary|stats|all>`
    - `building:<type|all>` : vue d'ensemble + chaque page de la colonne de gauche, nommées `<type>-<page>` (ex. `farmer-fields`)
    - `citizen:<n>`, `hud`, `catalogue`
+   - `banner:<bois|pierre|ble|brique|minerai|all>` : le panneau de la colonie (celui qui descend en haut de l'écran à l'entrée d'une colonie), posé en position de repos avec le nom « Brumeval »
    - `block:<bank|regionalbank|comptoir|market|throne|crops|all>`
    - `menu` : écran titre (`title`) et, si on est dans un monde, menu pause (`pause`) ; c'est ainsi qu'on vérifie un layout FancyMenu (voir `fancymenu.md`)
    - `list` : liste juste les types de bâtiments ; `none` : ouvre seulement le monde

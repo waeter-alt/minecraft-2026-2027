@@ -22,6 +22,12 @@ public final class DevOverrides
     @Nullable
     public static Long influence;
     /**
+     * Key of the crate whose colony sign is shown at rest, with the name written on it.
+     */
+    @Nullable
+    public static String bannerCrate;
+    public static String bannerName = "Brumeval";
+    /**
      * Forced mouse position in GUI pixels for our screens, so captures never show a stray hover.
      */
     @Nullable
@@ -38,6 +44,7 @@ public final class DevOverrides
         treasury = null;
         purse = null;
         influence = null;
+        bannerCrate = null;
         hover = null;
     }
 }

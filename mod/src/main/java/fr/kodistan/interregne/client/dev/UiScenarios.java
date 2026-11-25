@@ -103,6 +103,19 @@ public final class UiScenarios
                 case "building" -> buildings(targets, arg, colony);
                 case "citizen" -> citizen(targets, arg, colony);
                 case "hud" -> targets.add(new Target("hud", () -> Minecraft.getInstance().setScreen(null)));
+                case "banner" -> {
+                    // The colony's sign, one capture per kind of crate
+                    for (final fr.kodistan.interregne.region.Crate crate : fr.kodistan.interregne.region.Crate.values())
+                    {
+                        if (arg.isEmpty() || arg.equals("all") || arg.equals(crate.id()))
+                        {
+                            targets.add(new Target("banner-" + crate.id(), () -> {
+                                DevOverrides.bannerCrate = crate.id();
+                                Minecraft.getInstance().setScreen(null);
+                            }));
+                        }
+                    }
+                }
                 case "block" -> blocks(targets, arg, colony);
                 case "catalogue" -> targets.add(new Target("catalogue", 60, () -> {
                     final BlockPos pos = Minecraft.getInstance().player.blockPosition();
