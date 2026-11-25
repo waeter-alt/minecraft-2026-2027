@@ -457,6 +457,10 @@ public class WarScenario implements Scenario
         {
             lines.add("PASS défense engagée (gardes ou villageois ont combattu)");
         }
+        else if (WarAssaults.guardsOf(colony).isEmpty())
+        {
+            lines.add("INFO aucune garnison dans la colonie : défense non testée");
+        }
         else
         {
             lines.add("FAIL personne n'a combattu les troupes");

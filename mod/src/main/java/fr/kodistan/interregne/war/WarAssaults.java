@@ -358,8 +358,13 @@ public final class WarAssaults
             for (int attempt = 0; attempt < 24; attempt++)
             {
                 final double angle = level.random.nextDouble() * Math.PI * 2.0D;
-                final BlockPos pos = defender.getCenter().offset((int) (Math.cos(angle) * margin), 0, (int) (Math.sin(angle) * margin));
-                final BlockPos found = BlockPosUtil.findAround(level, pos, 6, 6, BlockPosUtil.SOLID_AIR_POS_SELECTOR);
+                final int x = defender.getCenter().getX() + (int) (Math.cos(angle) * margin);
+                final int z = defender.getCenter().getZ() + (int) (Math.sin(angle) * margin);
+                // The real ground, not the colony centre's height ± a few blocks (found nothing on a superflat test
+                // world); loading the chunk first, since on a fresh world nobody has been out on the ring yet.
+                level.getChunkAt(new BlockPos(x, 0, z));
+                final int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+                final BlockPos found = standable(level, x, y, z) ? new BlockPos(x, y, z) : null;
                 if (found == null)
                 {
                     continue;
