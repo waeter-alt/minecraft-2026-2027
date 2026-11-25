@@ -220,6 +220,11 @@ public final class Garrison
     @Nullable
     public static String buy(final ServerPlayer player, final IColony colony, final int kind)
     {
+        // The garrison that defends is the one the colony had before: no topping it up mid-assault (stall rule).
+        if (fr.kodistan.interregne.war.WarAssaults.hasAssault(colony))
+        {
+            return "Impossible pendant un assaut : la garnison est figée.";
+        }
         final int level = troopLevel(colony, kind);
         if (level <= 0)
         {

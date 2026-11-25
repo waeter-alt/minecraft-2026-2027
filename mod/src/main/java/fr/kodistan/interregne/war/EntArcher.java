@@ -9,6 +9,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.level.Level;
 import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.animation.AnimationController;
@@ -22,10 +23,9 @@ import software.bernie.geckolib.animation.RawAnimation;
  * {@link EntLegionnaire}, and keeps it inside the raider threat tables guards and citizens already know how to
  * read.
  * <p>
- * No vanilla target/retaliate goal: unlike the légionnaire, which only ever reacts to being hit (see AssaultGoal's
- * "citizen-chasing bug" note), {@link AssaultRangedGoal} proactively scans for a nearby guard every tick — never a
- * plain civilian — and shoots it on sight, but never moves off its current spot to do so, so that scan can't
- * repeat the old bug and send it wandering across the colony. Once the area is clear it falls back to bombarding
+ * Same targeting as the légionnaire (HurtByTargetGoal, {@link SeekFoeGoal}: guards and enemy players, never a
+ * plain civilian unless it hits first), within a bounded range and leash so she never wanders across the colony.
+ * {@link AssaultRangedGoal} shoots the target, closing in when it's out of bow range or sight. Once the area is clear it falls back to bombarding
  * the assigned building from range, same structure-point contract as the légionnaire's battering but stood back
  * from the wall instead of pressed up against it.
  * <p>
@@ -60,7 +60,14 @@ public class EntArcher extends AssaultTroop implements IArcherBarbarianEntity
         RaiderMobUtils.setEquipment(this);
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new AssaultRangedGoal(this));
+        // Rides back at whoever hits her, and goes after nearby guards and enemy players; AssaultRangedGoal reads
+        // the target and shoots it, moving closer when it's out of bow range or out of sight.
+        this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
+        this.targetSelector.addGoal(2, new SeekFoeGoal(this, SEEK_RANGE));
     }
+
+    /** How far an archer looks for a guard or an enemy player to shoot. */
+    private static final double SEEK_RANGE = 24.0D;
 
     @Override
     protected void defineSynchedData(final SynchedEntityData.Builder builder)

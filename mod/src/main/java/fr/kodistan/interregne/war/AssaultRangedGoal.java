@@ -1,7 +1,6 @@
 package fr.kodistan.interregne.war;
 
 import com.minecolonies.api.colony.buildings.IBuilding;
-import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
 import com.minecolonies.api.entity.mobs.RaiderMobUtils;
 import com.minecolonies.core.entity.pathfinding.navigation.EntityNavigationUtils;
 import fr.kodistan.interregne.InterregneMod;
@@ -10,6 +9,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.item.ItemStack;
@@ -18,16 +18,14 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.EnumSet;
-import java.util.List;
 
 import static com.minecolonies.api.util.constant.Constants.TICKS_SECOND;
 
 /**
- * The archer's ranged behaviour. Every tick it first scans around its own feet for a guard in bow range and, if it
- * finds one, shoots it from wherever it already stands (no vanilla target/chase goal, no new navigation request —
- * the "citizen-chasing bug" {@link AssaultGoal} cut for the légionnaire never gets a chance to repeat here). Plain
- * civilians are never a target, armed or not: the war rule is troops only ever fight guards. Only once no guard is
- * in range does it fall back to the building: same {@link WarAssaults#assignedTarget} and structure-point hit
+ * The archer's ranged behaviour. Her target (a guard, an enemy player, or whoever hit her: see {@link EntArcher})
+ * comes first: she shoots it when it's in bow range and in sight, and otherwise walks closer until it is — the
+ * leash and give-up of {@link AssaultTroop#keepsChasing} keep that from dragging her across the colony or pinning
+ * her on a guard out of reach. Only with no target does she fall back to the building: same {@link WarAssaults#assignedTarget} and structure-point hit
  * through {@link WarAssaults#onHit} as the légionnaire, but a stand point several blocks back from the wall
  * ({@link WarAssaults#rangedSiegeSpot}) — an archer bombards from range, it doesn't press up against the building
  * like a pillager.
@@ -36,8 +34,10 @@ public class AssaultRangedGoal extends Goal
 {
     /** An arrow looses every half second, whether at a threat or at the wall — same rhythm as the légionnaire. */
     private static final int FIRE_EVERY = TICKS_SECOND / 2;
-    /** Bow range: far enough to matter, short enough that the archer never has to leave its siege spot to use it. */
+    /** Bow range: past it (or out of sight) the archer walks closer to her target. */
     private static final double THREAT_RANGE = 16.0D;
+    /** A closing-in path toward a moving target is refreshed this often, not every tick. */
+    private static final int REPATH_EVERY = 10;
     private static final double THREAT_RANGE_SQ = THREAT_RANGE * THREAT_RANGE;
     /** Close enough counts as "arrived at the firing spot" — measured against {@code standAt}, never against the
       * wall itself (see {@link WarAssaults#rangedSiegeSpot}). */
@@ -58,7 +58,7 @@ public class AssaultRangedGoal extends Goal
     private int stalled;
     private double closest;
     private boolean struck;
-    private AbstractEntityCitizen lastThreat;
+    private LivingEntity lastThreat;
 
     public AssaultRangedGoal(final EntArcher troop)
     {
@@ -97,7 +97,7 @@ public class AssaultRangedGoal extends Goal
     @Override
     public void tick()
     {
-        final AbstractEntityCitizen threat = nearestThreat();
+        final LivingEntity threat = currentFoe();
         if (threat != null)
         {
             engage(threat);
@@ -196,58 +196,49 @@ public class AssaultRangedGoal extends Goal
     }
 
     /**
-     * The nearest living guard of the troop's own colony within bow range — never a plain civilian, see the class
-     * doc. Line-of-sight gated, so an archer never shoots through the very wall it's besieging. Debug-only escape
-     * hatch: {@code /war debug archers-siege-only} ({@link WarAssaults#archersIgnoreThreats}) skips this entirely
-     * so the building bombardment can be eyeballed on its own, without waiting for every guard to clear out.
+     * The troop's current target, if she should keep fighting it ({@link AssaultTroop#keepsChasing}); a target let go
+     * is cleared here, nothing else would. Debug-only escape hatch: {@code /war debug archers-siege-only}
+     * ({@link WarAssaults#archersIgnoreThreats}) skips every fight so the building bombardment can be eyeballed alone.
      */
-    private AbstractEntityCitizen nearestThreat()
+    private LivingEntity currentFoe()
     {
-        if (WarAssaults.archersIgnoreThreats())
+        final LivingEntity target = troop.getTarget();
+        if (!WarAssaults.archersIgnoreThreats() && troop.keepsChasing(target))
         {
-            return null;
+            return target;
         }
-        final List<AbstractEntityCitizen> nearby = troop.level().getEntitiesOfClass(AbstractEntityCitizen.class,
-          troop.getBoundingBox().inflate(THREAT_RANGE), c -> c.isAlive() && isGuard(c)
-            && c.getCitizenColonyHandler().getColonyId() == troop.getColony().getID());
-        AbstractEntityCitizen nearest = null;
-        double best = THREAT_RANGE_SQ;
-        for (final AbstractEntityCitizen citizen : nearby)
+        if (target != null)
         {
-            final double dist = troop.distanceToSqr(citizen);
-            if (dist <= best && troop.hasLineOfSight(citizen))
-            {
-                best = dist;
-                nearest = citizen;
-            }
+            troop.setTarget(null);
         }
-        return nearest;
+        return null;
     }
 
-    /** Guards only — never a plain civilian (the war rule), armed or not. */
-    private static boolean isGuard(final AbstractEntityCitizen citizen)
-    {
-        final var data = citizen.getCitizenData();
-        return data != null && data.getJob() != null && data.getJob().isGuard();
-    }
-
-    /** Plants feet and shoots: a threat in range always takes priority over the siege, but never pulls the archer
-      * off the spot it's currently standing at — that's what kept a proactive scan safe here (see the class doc). */
-    private void engage(final AbstractEntityCitizen threat)
+    /** Shoots the target when it's in bow range and in sight — never through the very wall she's besieging — and
+      * otherwise walks closer until it is. */
+    private void engage(final LivingEntity threat)
     {
         if (threat != lastThreat)
         {
             lastThreat = threat;
-            InterregneMod.LOGGER.info("[war] archer {} engage le garde {} ({}) avant de reprendre le siège",
-              troop.getId(), threat.getId(), threat.getCitizenData() != null ? threat.getCitizenData().getName() : "?");
+            InterregneMod.LOGGER.info("[war] archer {} engage {} ({})", troop.getId(), threat.getId(), threat.getName().getString());
+        }
+        troop.getLookControl().setLookAt(threat.getX(), threat.getEyeY(), threat.getZ());
+        marching = null;
+        // The siege spot is stale once she has moved to fight: picked again from wherever she ends up.
+        anchor = null;
+        if (troop.distanceToSqr(threat) > THREAT_RANGE_SQ || !troop.hasLineOfSight(threat))
+        {
+            if (troop.tickCount % REPATH_EVERY == 0 || troop.getNavigation().isDone())
+            {
+                troop.getNavigation().moveTo(threat, 1.1D);
+            }
+            return;
         }
         if (!troop.getNavigation().isDone())
         {
             troop.getNavigation().stop();
         }
-        marching = null;
-        troop.getLookControl().setLookAt(threat.getX(), threat.getEyeY(), threat.getZ());
-
         if (--fireTick <= 0)
         {
             fireTick = FIRE_EVERY;
