@@ -55,12 +55,17 @@ public final class WarRecapScreen extends ParchmentScreen
 
     public WarRecapScreen(final WarRecapPayload recap)
     {
-        super(Component.literal("Guerre contre " + (recap.victory() ? recap.loser() : recap.winner())), null);
+        super(Component.literal((recap.outcome() == WarRecapPayload.BREAK ? "Alliance avec " : "Guerre contre ")
+          + (recap.victory() ? recap.loser() : recap.winner())), null);
         this.recap = recap;
+        if (recap.outcome() == WarRecapPayload.BREAK)
+        {
+            return;
+        }
         final boolean won = recap.victory();
         final LongFunction<String> plain = Long::toString;
         tiles.add(new Tile(COIN, won ? "Butin" : "Or pillé", recap.loot(), Wallet::format, won ? Tone.GOOD : Tone.BAD));
-        if (recap.capitulation())
+        if (recap.outcome() == WarRecapPayload.CAPITULATION)
         {
             tiles.add(new Tile(COIN, won ? "Tribut" : "Tribut payé", recap.tribute(), Wallet::format, won ? Tone.GOOD : Tone.BAD));
         }
@@ -95,9 +100,14 @@ public final class WarRecapScreen extends ParchmentScreen
         {
             openedAt = Util.getMillis();
             final var sounds = Minecraft.getInstance().getSoundManager();
-            sounds.play(recap.victory()
-              ? SimpleSoundInstance.forUI(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f)
-              : SimpleSoundInstance.forUI(SoundEvents.BELL_BLOCK, 0.5f));
+            sounds.play(switch (recap.outcome())
+            {
+                case WarRecapPayload.PEACE -> SimpleSoundInstance.forUI(SoundEvents.AMETHYST_BLOCK_CHIME, 1f, 1f);
+                case WarRecapPayload.BREAK -> SimpleSoundInstance.forUI(SoundEvents.SHIELD_BREAK, 0.8f);
+                default -> recap.victory()
+                  ? SimpleSoundInstance.forUI(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f)
+                  : SimpleSoundInstance.forUI(SoundEvents.BELL_BLOCK, 0.5f);
+            });
         }
     }
 
@@ -110,7 +120,12 @@ public final class WarRecapScreen extends ParchmentScreen
     @Override
     protected Integer headerFill()
     {
-        return recap.victory() ? Palette.AMBER : Palette.RED;
+        return switch (recap.outcome())
+        {
+            case WarRecapPayload.PEACE -> Palette.GREEN;
+            case WarRecapPayload.BREAK -> Palette.LEATHER;
+            default -> recap.victory() ? Palette.AMBER : Palette.RED;
+        };
     }
 
     @Override
@@ -129,42 +144,69 @@ public final class WarRecapScreen extends ParchmentScreen
         final BannerPatternLayers myFlag = won ? recap.winnerFlag() : recap.loserFlag();
         final BannerPatternLayers theirFlag = won ? recap.loserFlag() : recap.winnerFlag();
 
-        // Hero: our banner on the left, theirs on the right, the loser's dimmed, the winner's framed in gold
+        // Hero: our banner on the left, theirs on the right; after a real win, the loser's dimmed, the winner's framed in gold
         final int top = y0 + HEADER + 4;
-        drawBanner(g, x0 + 10, top, myFlag, won);
-        drawBanner(g, x0 + w - 44, top, theirFlag, !won);
+        final boolean decisive = recap.decisive();
+        drawBanner(g, x0 + 10, top, myFlag, decisive && won, decisive && !won);
+        drawBanner(g, x0 + w - 44, top, theirFlag, decisive && !won, decisive && won);
         final int nameW = w / 2 - 16;
         g.drawString(font, Ui.fit(font, mine, nameW), x0 + 8, top + 37, Palette.INK, false);
         final String theirName = Ui.fit(font, theirs, nameW);
         g.drawString(font, theirName, x0 + w - 8 - font.width(theirName), top + 37, Palette.INK, false);
 
-        // VICTOIRE ! / DÉFAITE, popping in from 3x to 2x
-        final String word = won ? "VICTOIRE !" : "DÉFAITE";
+        // VICTOIRE ! / DÉFAITE / PAIX SIGNÉE / ALLIANCE ROMPUE, popping in from 1.5x its size, 2x at most between the banners
+        final String word = switch (recap.outcome())
+        {
+            case WarRecapPayload.PEACE -> "PAIX SIGNÉE";
+            case WarRecapPayload.BREAK -> "ALLIANCE ROMPUE";
+            default -> won ? "VICTOIRE !" : "DÉFAITE";
+        };
         final float pop = Math.min(1f, elapsed / (float) TITLE_MS);
-        final float scale = 3f - pop;
+        final float scale = Math.min(2f, (w - 100f) / font.width(word)) * (1.5f - 0.5f * pop);
         final int cx = x0 + w / 2;
         final int titleY = top + 4;
         g.pose().pushPose();
         g.pose().translate(cx, titleY + 8, 0);
         g.pose().scale(scale, scale, 1f);
-        final int ink = won ? 0xFFE0A21E : Palette.RED;
+        final int ink = switch (recap.outcome())
+        {
+            case WarRecapPayload.PEACE -> Palette.GREEN;
+            case WarRecapPayload.BREAK -> Palette.RED;
+            default -> won ? 0xFFE0A21E : Palette.RED;
+        };
         // Shadow straight below only: a sideways one turns the accent of DÉFAITE into a circumflex
         g.drawString(font, word, -font.width(word) / 2, -4 + 1, Palette.EDGE, false);
         g.drawString(font, word, -font.width(word) / 2, -4, ink, false);
         g.pose().popPose();
 
-        final String cause = recap.capitulation()
-          ? (won ? "Ils ont capitulé" : "Vous avez capitulé")
-          : (won ? "Hôtel de ville pris" : "Hôtel de ville perdu");
-        g.drawString(font, cause, cx - font.width(cause) / 2, titleY + 22, Palette.MUTED, false);
+        final String cause = switch (recap.outcome())
+        {
+            case WarRecapPayload.CAPITULATION -> won ? "Ils ont capitulé" : "Vous avez capitulé";
+            case WarRecapPayload.PEACE -> won ? "Vous avez signé la paix" : theirs + " a signé la paix";
+            case WarRecapPayload.BREAK -> won ? "Vous avez rompu l'alliance" : theirs + " a rompu l'alliance";
+            default -> won ? "Hôtel de ville pris" : "Hôtel de ville perdu";
+        };
+        final String causeShown = Ui.fit(font, cause, w - 100);
+        g.drawString(font, causeShown, cx - font.width(causeShown) / 2, titleY + 22, Palette.MUTED, false);
 
         int y = top + 48;
         g.fill(x0 + 8, y, x0 + w - 8, y + 1, Palette.RULE);
         y += 4;
 
+        // A broken alliance has no figures: only what it changes
+        if (recap.outcome() == WarRecapPayload.BREAK)
+        {
+            y += 4;
+            Icon.of(Items.CHEST).draw(g, x0 + 8, y, 16);
+            Ui.wrapped(g, font, Component.literal("Plus de contrats commerciaux entre vos deux colonies."), x0 + 28, y + 4, w - 36, Palette.INK, 9);
+            y += 22;
+            Icon.of(Items.IRON_SWORD).draw(g, x0 + 8, y, 16);
+            Ui.wrapped(g, font, Component.literal("Une guerre entre vous redevient possible."), x0 + 28, y + 4, w - 36, Palette.INK, 9);
+        }
+
         // Figures, counting up one after the other
         final int avail = w - 16;
-        final int cols = Math.min(tiles.size(), Math.max(2, (avail + GAP) / (TILE_MIN_W + GAP)));
+        final int cols = Math.max(1, Math.min(tiles.size(), Math.max(2, (avail + GAP) / (TILE_MIN_W + GAP))));
         final int tileW = (avail - (cols - 1) * GAP) / cols;
         for (int i = 0; i < tiles.size(); i++)
         {
@@ -199,16 +241,16 @@ public final class WarRecapScreen extends ParchmentScreen
           Ui.inside(mouseX, mouseY, bx, actionY(), bw, Ui.BUTTON_H));
     }
 
-    private void drawBanner(final GuiGraphics g, final int x, final int y, final BannerPatternLayers flag, final boolean winner)
+    private void drawBanner(final GuiGraphics g, final int x, final int y, final BannerPatternLayers flag, final boolean framed, final boolean dimmed)
     {
-        if (winner)
+        if (framed)
         {
             Ui.plate(g, x - 2, y - 1, x + 34, y + 35, Palette.AMBER_SOFT, Palette.AMBER, Palette.AMBER_SOFT);
         }
         final ItemStack banner = new ItemStack(Items.WHITE_BANNER);
         banner.set(DataComponents.BANNER_PATTERNS, flag);
         Icon.of(banner).draw(g, x, y, 32);
-        if (!winner)
+        if (dimmed)
         {
             g.pose().pushPose();
             g.pose().translate(0, 0, 300);

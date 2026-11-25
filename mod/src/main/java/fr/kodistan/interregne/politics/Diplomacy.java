@@ -116,7 +116,13 @@ public final class Diplomacy
             }
             case DiplomacyActionPayload.WITHDRAW -> alliances.doWithdraw(me, you);
             // Les routes restent après une rupture (décision 19/11) : le lien est gardé pour une réalliance.
-            case DiplomacyActionPayload.BREAK -> alliances.doBreak(me, you);
+            case DiplomacyActionPayload.BREAK ->
+            {
+                if (alliances.doBreak(me, you))
+                {
+                    sendRecap(server, colony, other, WarRecapPayload.BREAK, new long[Wars.STAT_COUNT], 0, 0, 0, 0);
+                }
+            }
             case DiplomacyActionPayload.DECLARE_WAR ->
             {
                 final String refusal = declareWar(player, wars, alliances, colony, other);
@@ -127,10 +133,11 @@ public final class Diplomacy
             }
             case DiplomacyActionPayload.MAKE_PEACE ->
             {
-                if (!wars.end(me, you))
+                if (!wars.declaredBy(me, you))
                 {
                     return wars.declaredBy(you, me) ? "Seul celui qui a déclaré la guerre peut y mettre fin." : null;
                 }
+                signPeace(server, wars, colony, other);
             }
             case DiplomacyActionPayload.CAPITULATE ->
             {
@@ -222,6 +229,29 @@ public final class Diplomacy
     }
 
     /**
+     * The declarer ends its war without a winner: troops still on the road or on the field go home first (so the last
+     * assault counts in the tally), then both colonies get the peace recap. No shield, no Influence.
+     */
+    private static void signPeace(final MinecraftServer server, final Wars wars, final IColony attacker, final IColony defender)
+    {
+        if (WarMarches.marching(attacker.getID(), defender.getID()))
+        {
+            WarMarches.recall(server, attacker, defender.getID());
+        }
+        if (WarAssaults.assaulting(attacker.getID(), defender.getID()))
+        {
+            WarAssaults.recall(attacker, defender.getID());
+        }
+        final long[] tally = wars.stats(attacker.getID(), defender.getID());
+        final long declaredAt = wars.declaredAt(attacker.getID(), defender.getID());
+        if (wars.end(attacker.getID(), defender.getID()))
+        {
+            final long now = server.overworld().getGameTime();
+            sendRecap(server, attacker, defender, WarRecapPayload.PEACE, tally, declaredAt < 0 ? 0 : now - declaredAt, 0, 0, 0);
+        }
+    }
+
+    /**
      * The attacker won by force: called when the defender's town hall falls.
      */
     public static void victory(final MinecraftServer server, final IColony winner, final IColony loser)
@@ -257,13 +287,14 @@ public final class Diplomacy
         notifyMembers(server, loser, "Guerre perdue contre " + winner.getName() + " : personne ne peut vous déclarer la guerre pendant " + minutes + " min.");
         Alliances.broadcast(server, winner, loser);
         final long now = server.overworld().getGameTime();
-        sendRecap(server, winner, loser, capitulation, tally, declaredAt < 0 ? 0 : now - declaredAt, tribute, owner != null ? influence : 0, shieldTicks);
+        sendRecap(server, winner, loser, capitulation ? WarRecapPayload.CAPITULATION : WarRecapPayload.CONQUEST, tally, declaredAt < 0 ? 0 : now - declaredAt, tribute, owner != null ? influence : 0, shieldTicks);
     }
 
     /**
-     * Opens the victory screen for the winner's online members and the defeat screen for the loser's.
+     * Opens the recap screen for both colonies' online members (victory side for the winner's, defeat side for the
+     * loser's; for a peace or a break, "winner" is the colony that signed or broke).
      */
-    private static void sendRecap(final MinecraftServer server, final IColony winner, final IColony loser, final boolean capitulation, final long[] tally,
+    private static void sendRecap(final MinecraftServer server, final IColony winner, final IColony loser, final int outcome, final long[] tally,
                                   final long duration, final long tribute, final long influence, final long shieldTicks)
     {
         final BannerPatternLayers winnerFlag = winner.getColonyFlag() == null ? BannerPatternLayers.EMPTY : winner.getColonyFlag();
@@ -275,7 +306,7 @@ public final class Diplomacy
             {
                 continue;
             }
-            PacketDistributor.sendToPlayer(player, new WarRecapPayload(won, capitulation, winner.getName(), loser.getName(), winnerFlag, loserFlag, duration,
+            PacketDistributor.sendToPlayer(player, new WarRecapPayload(won, outcome, winner.getName(), loser.getName(), winnerFlag, loserFlag, duration,
               (int) tally[Wars.ASSAULTS], (int) tally[Wars.SENT], (int) tally[Wars.LOST], (int) tally[Wars.DESTROYED], tally[Wars.LOOT],
               (int) tally[Wars.FALLEN], tribute, influence, shieldTicks));
         }
