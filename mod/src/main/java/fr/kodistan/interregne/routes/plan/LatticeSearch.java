@@ -55,6 +55,17 @@ final class LatticeSearch
     /** Price of the line the last successful search returned. */
     float lastCost;
 
+    /** In a join mask: a road centre cell on a run along x, along z. */
+    static final byte ALONG_X = 1;
+    static final byte ALONG_Z = 2;
+    /** How far past or short of a node the line may stop on a road's centre. */
+    private static final int SNAP = 4;
+    /** The straight run the line comes in on to a road it ends on: enough for its eased corner to stay off that road. */
+    private static final int JOIN_RUN = 8;
+    /** Whether the last line found ends on a road of the join mask rather than at b. */
+    boolean joined;
+    private int[] distance;
+
     LatticeSearch(final HeightField field)
     {
         this.field = field;
@@ -271,6 +282,18 @@ final class LatticeSearch
      */
     List<int[]> search(final int ax, final int az, final int bx, final int bz, final float greed, final long deadlineNanos)
     {
+        return search(ax, az, bx, bz, greed, deadlineNanos, null);
+    }
+
+    /**
+     * @param join over the field, the centre cells of the roads this one may end on instead of b ({@link #ALONG_X},
+     *             {@link #ALONG_Z}, else 0); null for none. The line then ends on whichever of them, or b, is cheapest
+     *             to reach, arriving square to that road ({@link #joined} says which happened)
+     */
+    List<int[]> search(final int ax, final int az, final int bx, final int bz, final float greed, final long deadlineNanos, final byte[] join)
+    {
+        joined = false;
+        distance = join == null ? null : distances(join, bx, bz);
         // In a town the street threads between buildings a few blocks apart: every line there, not one in four,
         // or a gap off the lattice sends it round the whole town
         int tx0 = Integer.MAX_VALUE, tx1 = Integer.MIN_VALUE, tz0 = Integer.MAX_VALUE, tz1 = Integer.MIN_VALUE;
@@ -370,6 +393,26 @@ final class LatticeSearch
             final int x = xs[i];
             final int z = zs[j];
             final int y = level[node];
+            if (join != null && dir != NONE)
+            {
+                final int run = straightRun(current, parent, xs, zs, nx);
+                final int k = snap(join, x, z, y, dir, run);
+                if (k != Integer.MIN_VALUE)
+                {
+                    lastCost = g[current];
+                    joined = true;
+                    final List<int[]> cells = new ArrayList<>(unroll(current, parent, via, level, xs, zs, nx));
+                    for (int m = 0; m > k; m--)
+                    {
+                        cells.removeLast();
+                    }
+                    for (int m = 1; m <= k; m++)
+                    {
+                        cells.add(new int[] {x + DX[dir] * m, z + DZ[dir] * m, y, 0});
+                    }
+                    return cells;
+                }
+            }
             for (int nd = 0; nd < 4; nd++)
             {
                 final boolean turning = dir != NONE && nd != dir;
@@ -546,7 +589,114 @@ final class LatticeSearch
         g[state] = cost;
         parent[state] = from;
         via[state] = chord;
-        open.push(state, cost + greed * (Math.abs(bx - x) + Math.abs(bz - z)) + Tuning.STEP * Math.abs(goalY - y));
+        final float ahead = distance != null ? greed * distance[field.index(x, z)]
+                                             : greed * (Math.abs(bx - x) + Math.abs(bz - z)) + Tuning.STEP * Math.abs(goalY - y);
+        open.push(state, cost + ahead);
+    }
+
+    /**
+     * How many cells the line runs straight on its heading up to this state.
+     */
+    private static int straightRun(final int state, final int[] parent, final int[] xs, final int[] zs, final int nx)
+    {
+        final int dir = state % 5;
+        int run = 0;
+        for (int s = state; parent[s] >= 0 && s % 5 == dir; s = parent[s])
+        {
+            final int to = s / 5;
+            final int from = parent[s] / 5;
+            run += Math.abs(xs[to % nx] - xs[from % nx]) + Math.abs(zs[to / nx] - zs[from / nx]);
+            if (run >= JOIN_RUN + SNAP)
+            {
+                break;
+            }
+        }
+        return run;
+    }
+
+    /**
+     * Where, from a node reached heading dir after a straight run, the line meets the centre of a road it may end on
+     * square to it: cells to go on (negative: to go back), the nearest such; {@link Integer#MIN_VALUE} when there is
+     * none, or the line would come in too short to stay square past the eased corner before it.
+     */
+    private int snap(final byte[] join, final int x, final int z, final int y, final int dir, final int run)
+    {
+        final byte square = (dir >> 1) == 0 ? ALONG_Z : ALONG_X;
+        for (int d = 0; d <= SNAP; d++)
+        {
+            for (final int k : d == 0 ? new int[] {0} : new int[] {-d, d})
+            {
+                if (-k >= run || run + k < JOIN_RUN)
+                {
+                    continue;
+                }
+                final int cx = x + DX[dir] * k;
+                final int cz = z + DZ[dir] * k;
+                if (!field.inside(cx, cz) || join[field.index(cx, cz)] != square)
+                {
+                    continue;
+                }
+                boolean open = true;
+                for (int m = 1; m <= k && open; m++)
+                {
+                    open = cell(x + DX[dir] * m, z + DZ[dir] * m, y, dir >> 1) != INF;
+                }
+                if (open)
+                {
+                    return k;
+                }
+            }
+        }
+        return Integer.MIN_VALUE;
+    }
+
+    /**
+     * Blocks from every column to the nearest target (a cell of join, or b), along the axes.
+     */
+    private int[] distances(final byte[] join, final int bx, final int bz)
+    {
+        final int h = field.h;
+        final int[] dist = new int[w * h];
+        final int far = Integer.MAX_VALUE / 4;
+        for (int i = 0; i < dist.length; i++)
+        {
+            dist[i] = join[i] != 0 ? 0 : far;
+        }
+        if (field.inside(bx, bz))
+        {
+            dist[field.index(bx, bz)] = 0;
+        }
+        for (int z = 0; z < h; z++)
+        {
+            for (int x = 0; x < w; x++)
+            {
+                final int i = z * w + x;
+                if (x > 0)
+                {
+                    dist[i] = Math.min(dist[i], dist[i - 1] + 1);
+                }
+                if (z > 0)
+                {
+                    dist[i] = Math.min(dist[i], dist[i - w] + 1);
+                }
+            }
+        }
+        for (int z = h - 1; z >= 0; z--)
+        {
+            for (int x = w - 1; x >= 0; x--)
+            {
+                final int i = z * w + x;
+                if (x < w - 1)
+                {
+                    dist[i] = Math.min(dist[i], dist[i + 1] + 1);
+                }
+                if (z < h - 1)
+                {
+                    dist[i] = Math.min(dist[i], dist[i + w] + 1);
+                }
+            }
+        }
+        return dist;
     }
 
     /**

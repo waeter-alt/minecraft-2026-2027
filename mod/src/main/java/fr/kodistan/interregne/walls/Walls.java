@@ -115,7 +115,15 @@ public final class Walls
             }
         }
         // A new wall is paid in full; a retraced one pays only what it adds
-        final WallRegistry.Wall old = WallRegistry.get(player.server).of(colony);
+        final WallRegistry registry = WallRegistry.get(player.server);
+        final WallRegistry.Wall old = registry.of(colony);
+        if (old != null && registry.unfinished(key) && payload.level() <= old.level() && payload.closed() == old.closed() && points.equals(old.points())
+            && new java.util.HashSet<>(gates).equals(new java.util.HashSet<>(old.gates())))
+        {
+            // A site the server stopped in the middle of: already paid, it picks up where it was left
+            replay(player, colony, 0);
+            return;
+        }
         if (old == null)
         {
             apply(player, colony, null, points, gates, payload.closed(), 1, false, false);
@@ -158,7 +166,9 @@ public final class Walls
         final String key = RegionalTreasury.keyOf(colony);
         final Map<Long, Terrain.Probe> remembered = old == null ? Map.of() : old.ground();
         final Map<Long, Terrain.Probe> ground = new HashMap<>(remembered);
-        final java.util.Set<Long> own = old == null ? java.util.Set.of() : WallLayout.ownCells(old.points(), old.closed());
+        // A new wall looks through wall blocks on its own trace too: those of a site cut short by a server stop
+        // before this was saved would otherwise block the very wall that resumes them
+        final java.util.Set<Long> own = old == null ? WallLayout.ownCells(points, closed) : WallLayout.ownCells(old.points(), old.closed());
         final java.util.function.LongPredicate roads = fr.kodistan.interregne.routes.RouteRegistry.get(level.getServer())::onRoad;
         final WallLayout.Ground reader = (x, z) -> {
             final long cell = WallRegistry.cell(x, z);
@@ -257,11 +267,25 @@ public final class Walls
         final WallRegistry.Wall wall = new WallRegistry.Wall(List.copyOf(points), List.copyOf(gates), closed, wallLevel, ground,
           placed.stream().mapToLong(Long::longValue).toArray(), before + cost);
         final WallRegistry registry = WallRegistry.get(player.server);
+        // Saved now, not only once done: a server stopped mid-build must leave a wall that can be resumed or torn
+        // down. Until then it owns the old blocks too, so a demolition clears whatever the site had not removed yet.
+        final Set<Long> owned = new HashSet<>(placed);
+        if (old != null)
+        {
+            for (final long packed : old.placed())
+            {
+                owned.add(packed);
+            }
+        }
+        registry.put(colony, new WallRegistry.Wall(wall.points(), wall.gates(), closed, wallLevel, ground, owned.stream().mapToLong(Long::longValue).toArray(),
+          wall.spent()));
+        registry.unfinished(colony, true);
         BUILDING.add(key);
         sync(player.server, key, wall, true);
         WallSite.launch(level, steps, seconds, wallLevel, bannerOf(colony), colony.getCenter(), player, () -> {
             BUILDING.remove(key);
             registry.put(colony, wall);
+            registry.unfinished(colony, false);
             sync(player.server, key, wall, false);
             fr.kodistan.interregne.routes.RouteHooks.onWallBuilt(level, colony, layout);
             fr.kodistan.interregne.war.WarAssaults.onWallRepaired(level, colony);
@@ -291,6 +315,15 @@ public final class Walls
     public static void repair(final ServerPlayer player, final IColony colony)
     {
         final WallRegistry.Wall wall = WallRegistry.get(player.server).of(colony);
+        replay(player, colony, wall == null ? 0 : WallLevels.of(wall.level()).retouchPrice());
+    }
+
+    /**
+     * Replays the saved wall as {@link #repair} does; {@code spent} is what this adds to the wall's total paid.
+     */
+    private static void replay(final ServerPlayer player, final IColony colony, final long spent)
+    {
+        final WallRegistry.Wall wall = WallRegistry.get(player.server).of(colony);
         if (wall == null)
         {
             return;
@@ -316,7 +349,7 @@ public final class Walls
         final WallLayout.Claim claim = (x, z) -> colony.isCoordInColony(level, new BlockPos(x, 64, z));
         final WallLevels.Level look = WallLevels.of(wall.level());
         final WallLayout layout = WallLayout.of(wall.points(), wall.closed(), wall.gates(), look, reader, claim);
-        buildSite(player, colony, level, wall, wall.points(), wall.gates(), wall.closed(), wall.level(), ground, reader, claim, layout, look.retouchPrice());
+        buildSite(player, colony, level, wall, wall.points(), wall.gates(), wall.closed(), wall.level(), ground, reader, claim, layout, spent);
     }
 
     /**
@@ -456,7 +489,7 @@ public final class Walls
                 player.sendSystemMessage(Component.literal("Remboursé : " + Wallet.couronnes(refund, null) + " au trésor régional.").withStyle(ChatFormatting.GRAY));
             }
             // An empty wall tells the clients it is gone
-            PacketDistributor.sendToAllPlayers(new WallSyncPayload(key, List.of(), List.of(), false, 0, false, 0));
+            PacketDistributor.sendToAllPlayers(new WallSyncPayload(key, List.of(), List.of(), false, 0, false, 0, false));
         });
         player.sendSystemMessage(Component.literal("La muraille tombe.").withStyle(ChatFormatting.GOLD));
     }
@@ -466,15 +499,15 @@ public final class Walls
         player.sendSystemMessage(Component.literal(message).withStyle(ChatFormatting.RED));
     }
 
-    private static WallSyncPayload payloadOf(final String key, final WallRegistry.Wall wall, final boolean building)
+    private static WallSyncPayload payloadOf(final MinecraftServer server, final String key, final WallRegistry.Wall wall, final boolean building)
     {
         return new WallSyncPayload(key, WallTrace.flat(wall.points()), WallTrace.flat(wall.gates()), wall.closed(), wall.level(), building,
-          Math.max(0, wall.spent()));
+          Math.max(0, wall.spent()), !building && WallRegistry.get(server).unfinished(key));
     }
 
     private static void sync(final MinecraftServer server, final String key, final WallRegistry.Wall wall, final boolean building)
     {
-        PacketDistributor.sendToAllPlayers(payloadOf(key, wall, building));
+        PacketDistributor.sendToAllPlayers(payloadOf(server, key, wall, building));
     }
 
     /**
@@ -528,7 +561,7 @@ public final class Walls
         }
         for (final Map.Entry<String, WallRegistry.Wall> entry : WallRegistry.get(player.server).all().entrySet())
         {
-            PacketDistributor.sendToPlayer(player, payloadOf(entry.getKey(), entry.getValue(), false));
+            PacketDistributor.sendToPlayer(player, payloadOf(player.server, entry.getKey(), entry.getValue(), false));
         }
         fr.kodistan.interregne.routes.RouteRegistry.get(player.server).send(player);
     }

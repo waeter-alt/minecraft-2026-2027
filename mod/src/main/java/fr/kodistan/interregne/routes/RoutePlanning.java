@@ -134,7 +134,12 @@ public final class RoutePlanning
                     InterregneMod.LOGGER.info("Route surveyed in {} ticks: {} chunks, {} of them loaded or generated", study.ticks, study.survey.chunks(),
                       study.survey.generated());
                     study.survey = null;
-                    RouteRegistry.get(event.getServer()).overlay(field);
+                    final RouteRegistry registry = RouteRegistry.get(event.getServer());
+                    registry.overlay(field);
+                    // A road that already leads to B may be met square on instead of run alongside to B's gate
+                    final List<int[][]> joinable = study.endB == null ? List.of() : registry.joinRoads(study.endA == null ? 0 : study.endA.colony(),
+                      study.endB.colony());
+                    final byte[] join = joinable.isEmpty() ? null : RoutePlanner.joinMask(field, joinable);
                     for (final BlockPos end : new BlockPos[] {study.a, study.b})
                     {
                         field.set(end.getX(), end.getZ(), end.getY(), end.getY(), 0);
@@ -149,7 +154,7 @@ public final class RoutePlanning
                     final BlockPos a = study.a;
                     final BlockPos b = study.b;
                     study.planning = CompletableFuture.supplyAsync(
-                      () -> RoutePlanner.plan(field, a.getX(), a.getZ(), b.getX(), b.getZ(), PLAN_BUDGET_MILLIS, leadA, leadB), Util.backgroundExecutor());
+                      () -> RoutePlanner.plan(field, a.getX(), a.getZ(), b.getX(), b.getZ(), PLAN_BUDGET_MILLIS, leadA, leadB, join), Util.backgroundExecutor());
                 }
             }
             else if (study.planning != null && study.planning.isDone())

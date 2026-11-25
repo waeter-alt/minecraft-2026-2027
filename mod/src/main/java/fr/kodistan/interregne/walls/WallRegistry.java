@@ -35,6 +35,9 @@ public final class WallRegistry extends SavedData
 
     private final Map<String, Wall> walls = new HashMap<>();
 
+    /** Colonies whose wall site was launched but never finished (the server stopped mid-build). */
+    private final java.util.Set<String> unfinished = new java.util.HashSet<>();
+
     public static WallRegistry get(final MinecraftServer server)
     {
         return server.overworld().getDataStorage().computeIfAbsent(new Factory<>(WallRegistry::new, WallRegistry::load, null), NAME);
@@ -65,7 +68,21 @@ public final class WallRegistry extends SavedData
     public void remove(final IColony colony)
     {
         walls.remove(RegionalTreasury.keyOf(colony));
+        unfinished.remove(RegionalTreasury.keyOf(colony));
         setDirty();
+    }
+
+    public boolean unfinished(final String key)
+    {
+        return unfinished.contains(key);
+    }
+
+    public void unfinished(final IColony colony, final boolean value)
+    {
+        if (value ? unfinished.add(RegionalTreasury.keyOf(colony)) : unfinished.remove(RegionalTreasury.keyOf(colony)))
+        {
+            setDirty();
+        }
     }
 
     private static List<WallTrace.Point> points(final int[] xs, final int[] zs)
@@ -96,6 +113,10 @@ public final class WallRegistry extends SavedData
             registry.walls.put(key, new Wall(points(entry.getIntArray("x"), entry.getIntArray("z")), points(entry.getIntArray("gx"), entry.getIntArray("gz")),
               entry.getBoolean("closed"), Math.max(1, entry.getInt("level")), ground, entry.getLongArray("placed"),
               entry.contains("spent") ? entry.getLong("spent") : -1));
+        }
+        for (final net.minecraft.nbt.Tag key : tag.getList("unfinished", net.minecraft.nbt.Tag.TAG_STRING))
+        {
+            registry.unfinished.add(key.getAsString());
         }
         return registry;
     }
@@ -130,6 +151,12 @@ public final class WallRegistry extends SavedData
             all.put(entry.getKey(), wall);
         }
         tag.put("walls", all);
+        final net.minecraft.nbt.ListTag open = new net.minecraft.nbt.ListTag();
+        for (final String key : unfinished)
+        {
+            open.add(net.minecraft.nbt.StringTag.valueOf(key));
+        }
+        tag.put("unfinished", open);
         return tag;
     }
 }

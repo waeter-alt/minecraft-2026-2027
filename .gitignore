@@ -6,8 +6,9 @@ sources/
 __pycache__/
 *.pyc
 
-# Agent : worktrees, logs, drapeaux locaux. Seuls settings.json et statusline.sh sont partagés
+# Agent : worktrees, logs, drapeaux locaux. Seuls settings.json, statusline.sh et launch.json (aperçus) sont partagés
 .claude/*
 !.claude/settings.json
 !.claude/statusline.sh
+!.claude/launch.json
 mod/.claude/

@@ -238,4 +238,46 @@ class RoutePlannerTest
         }
         assertTrue(onDeck, "the route goes over the existing deck");
     }
+
+    @Test
+    void roadToTheSameColonyIsMetSquareOnAndNotRunAlong()
+    {
+        // A road along x at z 103, off the search's lattice, already leading to B; B's gate lies beyond it, well off
+        // to the side, so going there would mean running along it
+        final HeightField field = relief(320, 260, (x, z) -> 70 + bumps(x, z));
+        final int roadZ = 103;
+        final int[] xs = new int[201];
+        final int[] zs = new int[201];
+        for (int k = 0; k <= 200; k++)
+        {
+            xs[k] = 100 + k;
+            zs[k] = roadZ;
+            for (int dz = -3; dz <= 3; dz++)
+            {
+                field.set(xs[k], roadZ + dz, 70, 70, HeightField.ROAD);
+            }
+        }
+        final byte[] join = RoutePlanner.joinMask(field, java.util.List.<int[][]>of(new int[][] {xs, zs}));
+        final RoutePlan plan = RoutePlanner.plan(field, 200, 20, 60, 240, 20_000, null, null, join);
+        assertNotNull(plan, "a route exists");
+        assertTrue(plan.joined, "the route ends on the road already there");
+        final int n = plan.length();
+        assertEquals(roadZ, plan.z[n - 1], "it stops on that road's centre line, not a block or two off it");
+        assertTrue(plan.x[n - 1] >= 100 && plan.x[n - 1] <= 300);
+        for (int i = n - 8; i < n; i++)
+        {
+            assertEquals(plan.x[n - 1], plan.x[i], "the last stretch runs square to the road at " + i);
+        }
+        int inBand = 0;
+        for (int i = 0; i < n; i++)
+        {
+            if (Math.abs(plan.z[i] - roadZ) <= 3 && plan.x[i] >= 97 && plan.x[i] <= 303)
+            {
+                assertTrue(i >= n - 4, "only the very end of the route lies on the old road's band, at " + i);
+                inBand++;
+            }
+        }
+        assertEquals(4, inBand, "it does not run along the old road");
+        walkable(field, plan);
+    }
 }

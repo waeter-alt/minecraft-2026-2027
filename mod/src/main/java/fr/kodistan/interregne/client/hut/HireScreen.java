@@ -66,6 +66,12 @@ public final class HireScreen extends ParchmentScreen
 
     public static void open(final IBuildingView building, @Nullable final Screen parent)
     {
+        if (HutNav.isGuardTower(building))
+        {
+            // Guards are bought, never hired from the colony: several MineColonies windows still reach this screen for towers
+            HutScreen.open(building);
+            return;
+        }
         Minecraft.getInstance().setScreen(new HireScreen(building, parent));
     }
 

@@ -40,6 +40,16 @@ public final class RoutePlanner
      */
     public static RoutePlan plan(final HeightField field, int ax, int az, int bx, int bz, final long budgetMillis, final Lead leadA, final Lead leadB)
     {
+        return plan(field, ax, az, bx, bz, budgetMillis, leadA, leadB, null);
+    }
+
+    /**
+     * @param join over the field, the centre cells of roads already built that the route may end on instead of
+     *             reaching b ({@link #joinMask}); null for none
+     */
+    public static RoutePlan plan(final HeightField field, int ax, int az, int bx, int bz, final long budgetMillis, final Lead leadA, Lead leadB,
+      final byte[] join)
+    {
         if (leadA != null)
         {
             ax = leadA.outX();
@@ -61,7 +71,7 @@ public final class RoutePlanner
         List<int[]> line = null;
         for (final float greed : GREEDS)
         {
-            line = search.search(ax, az, bx, bz, greed, greed == 1.0F ? deadline : Long.MAX_VALUE);
+            line = search.search(ax, az, bx, bz, greed, greed == 1.0F ? deadline : Long.MAX_VALUE, join);
             if (line != null)
             {
                 break;
@@ -72,6 +82,14 @@ public final class RoutePlanner
             return null;
         }
         line = new ArrayList<>(line);
+        final boolean joined = search.joined;
+        if (joined)
+        {
+            // The road it ends on already leads to B: no lead into B's gate, and it meets that road at its level
+            leadB = null;
+            bx = line.getLast()[0];
+            bz = line.getLast()[1];
+        }
         if (leadA != null)
         {
             line.addAll(0, stub(leadA));
@@ -147,7 +165,38 @@ public final class RoutePlanner
         {
             return null;
         }
-        return new RoutePlan(xs, zs, profile.y(), profile.mode(), bend, footprint, profile.cost());
+        return new RoutePlan(xs, zs, profile.y(), profile.mode(), bend, footprint, profile.cost(), joined);
+    }
+
+    /**
+     * A join mask for {@link #plan}: each road's centre cells, marked with the way the road runs there. Cells in a
+     * bend, a diagonal or next to a gap (a tunnel) are left out: a road is only met square on a straight run.
+     *
+     * @param roads per road, its centre line as {xs, zs}
+     */
+    public static byte[] joinMask(final HeightField field, final List<int[][]> roads)
+    {
+        final byte[] mask = new byte[field.w * field.h];
+        for (final int[][] road : roads)
+        {
+            final int[] x = road[0];
+            final int[] z = road[1];
+            for (int i = 1; i < x.length - 1; i++)
+            {
+                if (!field.inside(x[i], z[i]))
+                {
+                    continue;
+                }
+                final int dx = x[i + 1] - x[i - 1];
+                final int dz = z[i + 1] - z[i - 1];
+                final byte along = dz == 0 && Math.abs(dx) == 2 ? LatticeSearch.ALONG_X : dx == 0 && Math.abs(dz) == 2 ? LatticeSearch.ALONG_Z : 0;
+                if (along != 0)
+                {
+                    mask[field.index(x[i], z[i])] = along;
+                }
+            }
+        }
+        return mask;
     }
 
     /** Cells over which a road narrows from its full width to a street before a town's land. */
