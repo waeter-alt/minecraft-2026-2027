@@ -149,9 +149,11 @@ public final class UiScenarios
                 }
                 case "war" -> {
                     // Settled long enough for the title pop and every figure's count-up to finish
-                    targets.add(new Target("war-recap-victory", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, false))));
-                    targets.add(new Target("war-recap-defeat", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(false, false))));
-                    targets.add(new Target("war-recap-capitulation", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, true))));
+                    targets.add(new Target("war-recap-victory", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.CONQUEST))));
+                    targets.add(new Target("war-recap-defeat", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(false, fr.kodistan.interregne.network.WarRecapPayload.CONQUEST))));
+                    targets.add(new Target("war-recap-capitulation", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.CAPITULATION))));
+                    targets.add(new Target("war-recap-peace", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(false, fr.kodistan.interregne.network.WarRecapPayload.PEACE))));
+                    targets.add(new Target("war-recap-break", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.BREAK))));
                 }
                 default -> throw new IllegalArgumentException("Unknown screen " + spec);
             }
@@ -440,7 +442,7 @@ public final class UiScenarios
         }
     }
 
-    private static fr.kodistan.interregne.network.WarRecapPayload fakeRecap(final boolean victory, final boolean capitulation)
+    private static fr.kodistan.interregne.network.WarRecapPayload fakeRecap(final boolean victory, final int outcome)
     {
         final var patterns = Minecraft.getInstance().level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BANNER_PATTERN);
         final var red = new net.minecraft.world.level.block.entity.BannerPatternLayers.Builder()
@@ -450,8 +452,16 @@ public final class UiScenarios
           .add(patterns.getHolderOrThrow(net.minecraft.world.level.block.entity.BannerPatterns.STRIPE_CENTER), net.minecraft.world.item.DyeColor.BLUE)
           .add(patterns.getHolderOrThrow(net.minecraft.world.level.block.entity.BannerPatterns.TRIANGLE_TOP), net.minecraft.world.item.DyeColor.YELLOW).build();
         // The winner is always the attacker: sent / lost are its troops, destroyed / loot / fallen the loser's losses
-        return new fr.kodistan.interregne.network.WarRecapPayload(victory, capitulation, "Hautebrume-sur-Loire", "Valdorée", red, blue,
-          20L * 60 * 72, capitulation ? 2 : 4, 38, 11, capitulation ? 3 : 7, 18_450, 9, capitulation ? 25_000 : 0, 120, 20L * 60 * 60 * 2);
+        if (outcome == fr.kodistan.interregne.network.WarRecapPayload.BREAK)
+        {
+            return new fr.kodistan.interregne.network.WarRecapPayload(victory, outcome, "Hautebrume-sur-Loire", "Valdorée", red, blue,
+              0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        }
+        final boolean capitulation = outcome == fr.kodistan.interregne.network.WarRecapPayload.CAPITULATION;
+        final boolean decisive = outcome != fr.kodistan.interregne.network.WarRecapPayload.PEACE;
+        return new fr.kodistan.interregne.network.WarRecapPayload(victory, outcome, "Hautebrume-sur-Loire", "Valdorée", red, blue,
+          20L * 60 * 72, capitulation ? 2 : 4, 38, 11, capitulation ? 3 : 7, 18_450, 9, capitulation ? 25_000 : 0,
+          decisive ? 120 : 0, decisive ? 20L * 60 * 60 * 2 : 0);
     }
 
     private static MapStatePayload fakeMap()
