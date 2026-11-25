@@ -1578,6 +1578,9 @@ public final class WarAssaults
         {
             return;
         }
+        final Entity killer = event.getSource().getEntity();
+        InterregneMod.LOGGER.info("[war] troupe {} tombée : {} ({})", troop.getId(), event.getSource().getMsgId(),
+          killer == null ? "?" : killer.getName().getString());
         assault.troopIds.remove(Integer.valueOf(troop.getId()));
         assault.standByTroop.remove(troop.getId());
         assault.marched.remove(troop.getId());

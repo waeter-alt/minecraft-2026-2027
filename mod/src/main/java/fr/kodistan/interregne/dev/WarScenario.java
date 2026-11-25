@@ -70,6 +70,10 @@ public class WarScenario implements Scenario
     private int clockFails;
     private String clockFailDetail = "";
 
+    private boolean sawEngaged;
+    private int sawDestroyed;
+    private long sawLoot;
+
     public WarScenario()
     {
         this(6, 0);
@@ -185,6 +189,10 @@ public class WarScenario implements Scenario
         {
             return;
         }
+        // Latched: the assault's own readings vanish the moment it ends (pushed back, timed out).
+        sawEngaged |= WarAssaults.engaged(colony);
+        sawDestroyed = Math.max(sawDestroyed, WarAssaults.destroyed(colony));
+        sawLoot = Math.max(sawLoot, WarAssaults.lootPaid(colony));
         watchClock(colony);
         watchFreeze(colony, tick);
         if (!aggroDone && WarAssaults.engaged(colony))
@@ -386,8 +394,8 @@ public class WarScenario implements Scenario
     public List<String> verdict(final IColony colony, final ServerLevel level)
     {
         final List<String> lines = new ArrayList<>(earlyLines);
-        final int destroyed = WarAssaults.destroyed(colony);
-        final long paid = WarAssaults.lootPaid(colony);
+        final int destroyed = Math.max(sawDestroyed, WarAssaults.destroyed(colony));
+        final long paid = Math.max(sawLoot, WarAssaults.lootPaid(colony));
         final long nowTreasury = RegionalTreasury.get(level.getServer()).balance(colony);
 
         if (destroyed > 0)
@@ -442,7 +450,7 @@ public class WarScenario implements Scenario
             lines.add("FAIL butin non crédité (payé " + paid + ", trésor " + startTreasury + " → " + nowTreasury + ")");
         }
 
-        if (WarAssaults.engaged(colony))
+        if (sawEngaged || WarAssaults.engaged(colony))
         {
             lines.add("PASS défense engagée (gardes ou villageois ont combattu)");
         }
