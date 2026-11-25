@@ -1171,7 +1171,7 @@ public final class WallPlannerScreen extends Screen
         {
             final String tip = refusal == null && !affordable ? "Il manque " + (cost - money) + " Couronnes (trésor régional et bourse comptés)."
                                  : "Finir le tracé".equals(refusal) ? "Cliquez sur le premier point pour fermer l'enceinte, ou sur la dernière tour pour la laisser ouverte."
-                                     : "Obstacles en rouge".equals(refusal) ? "Le tracé traverse un bâtiment, sort de la colonie, ou une porte ne tient plus sur un pan droit : corrigez les parties rouges."
+                                     : "Obstacles en rouge".equals(refusal) ? "Le tracé traverse un bâtiment, se pose sur une route (une route ne se franchit que par une porte), sort de la colonie, ou une porte ne tient plus sur un pan droit : corrigez les parties rouges."
                                      : "Placer une porte".equals(refusal) ? "Une muraille a besoin d'au moins une porte, posée sur un pan droit. La première est offerte."
                                      : "Chantier en cours".equals(refusal) ? "La muraille se construit : attendez la fin du chantier pour la retoucher."
                                      : refusal != null && refusal.startsWith("Hôtel") ? "Une muraille ne dépasse pas le niveau de l'hôtel de ville : améliorez-le d'abord."

@@ -191,7 +191,7 @@ public final class Walls
         {
             if (!upgrade)
             {
-                refuse(player, "La muraille touche un bâtiment, sort de la colonie ou une porte ne tient pas : retire les parties rouges.");
+                refuse(player, "La muraille touche un bâtiment, se pose sur une route, sort de la colonie ou une porte ne tient pas : retire les parties rouges.");
                 return;
             }
             player.sendSystemMessage(Component.literal("Attention : " + layout.blocked() + " section(s) de la muraille n'ont pas pu être générées "
