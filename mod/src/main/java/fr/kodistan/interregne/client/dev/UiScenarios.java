@@ -58,6 +58,7 @@ import java.util.Map;
  * type ({@code list} names the types present).</li>
  * <li>{@code citizen:<n>}: the n-th citizen's sheet (0 by default).</li>
  * <li>{@code hud}: no screen, the in-game HUD alone.</li>
+ * <li>{@code hud-war}: the HUD with the war indicator forced on.</li>
  * <li>{@code block:<bank|regionalbank|comptoir|market|throne|crops>|all}: our blocks' screens with fake data. They
  * send nothing to the server unless a button is clicked, and captures never click.</li>
  * <li>{@code catalogue}: the build catalogue.</li>
@@ -104,6 +105,10 @@ public final class UiScenarios
                 case "building" -> buildings(targets, arg, colony);
                 case "citizen" -> citizen(targets, arg, colony);
                 case "hud" -> targets.add(new Target("hud", () -> Minecraft.getInstance().setScreen(null)));
+                case "hud-war" -> targets.add(new Target("hud-war", () -> {
+                    Minecraft.getInstance().setScreen(null);
+                    DevOverrides.war = true;
+                }));
                 case "block" -> blocks(targets, arg, colony);
                 case "catalogue" -> targets.add(new Target("catalogue", 60, () -> {
                     final BlockPos pos = Minecraft.getInstance().player.blockPosition();
@@ -502,6 +507,6 @@ public final class UiScenarios
 
     static String describe()
     {
-        return Arrays.toString(new String[] {"hub:<page|all>", "hubtool:<tool|all>", "building:<type|all>", "citizen:<n>", "hud", "block:<name|all> (dont relais, relais-escorte, carte)", "catalogue"});
+        return Arrays.toString(new String[] {"hub:<page|all>", "hubtool:<tool|all>", "building:<type|all>", "citizen:<n>", "hud", "hud-war", "block:<name|all> (dont relais, relais-escorte, carte)", "catalogue"});
     }
 }

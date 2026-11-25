@@ -13,6 +13,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -25,6 +26,26 @@ public final class DiplomacyKey
 
     private DiplomacyKey()
     {
+    }
+
+    /**
+     * The colony the key opens, also the one the war indicator watches: the owned colony first, else the one the
+     * player stands in when they belong to it.
+     */
+    @Nullable
+    public static IColony playerColony(final Minecraft minecraft)
+    {
+        if (minecraft.level == null || minecraft.player == null)
+        {
+            return null;
+        }
+        final IColony owned = IColonyManager.getInstance().getIColonyByOwner(minecraft.level, minecraft.player);
+        if (owned != null)
+        {
+            return owned;
+        }
+        final IColonyView here = IColonyManager.getInstance().getColonyView(minecraft.level, minecraft.player.blockPosition());
+        return here != null && here.getPermissions().isColonyMember(minecraft.player) ? here : null;
     }
 
     @EventBusSubscriber(modid = InterregneMod.MODID, value = Dist.CLIENT)
@@ -55,16 +76,7 @@ public final class DiplomacyKey
 
         private static void open(final Minecraft minecraft)
         {
-            // The owned colony first; else the one the player stands in, when they belong to it
-            IColony colony = IColonyManager.getInstance().getIColonyByOwner(minecraft.level, minecraft.player);
-            if (colony == null)
-            {
-                final IColonyView here = IColonyManager.getInstance().getColonyView(minecraft.level, minecraft.player.blockPosition());
-                if (here != null && here.getPermissions().isColonyMember(minecraft.player))
-                {
-                    colony = here;
-                }
-            }
+            final IColony colony = playerColony(minecraft);
             if (colony instanceof IColonyView view && view.getTownHall() != null)
             {
                 ColonyHubScreen.openOn(view.getTownHall(), ColonyHubScreen.Page.DIPLOMACY);
