@@ -178,6 +178,21 @@ public final class Alliances extends SavedData
         PacketDistributor.sendToAllPlayers(syncOf(server, b, server.overworld()));
     }
 
+    /**
+     * Sends the player the diplomacy of every colony they belong to, so the war indicator is right after a relog.
+     */
+    public static void syncTo(final ServerPlayer player)
+    {
+        final net.minecraft.server.level.ServerLevel level = player.server.overworld();
+        for (final IColony colony : IColonyManager.getInstance().getColonies(level))
+        {
+            if (colony.getPermissions().isColonyMember(player))
+            {
+                PacketDistributor.sendToPlayer(player, syncOf(player.server, colony, level));
+            }
+        }
+    }
+
     static DiplomacySyncPayload syncOf(final MinecraftServer server, final IColony colony, final net.minecraft.server.level.ServerLevel level)
     {
         final Alliances alliances = get(server);
