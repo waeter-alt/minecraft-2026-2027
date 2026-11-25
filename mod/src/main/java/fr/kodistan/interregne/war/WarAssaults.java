@@ -175,6 +175,9 @@ public final class WarAssaults
         boolean townHallTaken;
         /** Defender guards by entity id: game time of their last blow exchanged with a troop. */
         final Map<Integer, Long> guardFights = new HashMap<>();
+        /** Troops fallen so far, and how many of them a defender guard killed. */
+        int troopsDead;
+        int guardKills;
         /** Where the troops spawned: the targets are sorted by distance to it. */
         BlockPos rallyPoint;
         /** Game time at which the assault is pushed back if it hasn't won. */
@@ -271,6 +274,7 @@ public final class WarAssaults
         final Assault assault = new Assault(defender, attacker, commander != null ? commander.getUUID() : null);
         BY_DEFENDER.put(defender.getID(), assault);
         STRIKES.remove(defender.getID());
+        GARRISON_WINS.remove(defender.getID());
 
         spawnTroops(level, WarEntities.LEGIONNAIRE.get(), legionLevels, Garrison.LEGIONNAIRE, 0, spawnPos, defender, event, assault, fromGarrison);
         spawnTroops(level, WarEntities.ARCHER.get(), archerLevels, Garrison.ARCHERE, legionnaires, spawnPos, defender, event, assault, fromGarrison);
@@ -1449,6 +1453,15 @@ public final class WarAssaults
      */
     private static final Map<Integer, double[]> STRIKES = new HashMap<>();
 
+    /** Per defender colony: whether its last assault was pushed back by its guards alone (every troop killed by a
+      * guard). Kept past the assault's end for WarScenario, reset at the next launch. */
+    private static final Map<Integer, Boolean> GARRISON_WINS = new HashMap<>();
+
+    public static boolean repelledByGarrison(final IColony defender)
+    {
+        return GARRISON_WINS.getOrDefault(defender.getID(), false);
+    }
+
     static void recordFirstBlow(final AssaultTroop troop, final BlockPos hut, final SiegeSpot spot, final double distance)
     {
         final double[] stats = STRIKES.computeIfAbsent(colonyOf(troop), id -> new double[2]);
@@ -1581,11 +1594,17 @@ public final class WarAssaults
         final Entity killer = event.getSource().getEntity();
         InterregneMod.LOGGER.info("[war] troupe {} tombée : {} ({})", troop.getId(), event.getSource().getMsgId(),
           killer == null ? "?" : killer.getName().getString());
+        assault.troopsDead++;
+        if (killer instanceof AbstractEntityCitizen citizen && isGuardOf(assault.defender, citizen))
+        {
+            assault.guardKills++;
+        }
         assault.troopIds.remove(Integer.valueOf(troop.getId()));
         assault.standByTroop.remove(troop.getId());
         assault.marched.remove(troop.getId());
         if (assault.troopIds.isEmpty() && !assault.over)
         {
+            GARRISON_WINS.put(assault.defender.getID(), assault.guardKills == assault.troopsDead);
             end(assault, "§aAssaut repoussé§r : " + assault.defender.getName() + " tient toujours.");
         }
     }

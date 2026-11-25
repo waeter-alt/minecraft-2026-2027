@@ -404,7 +404,10 @@ public class WarScenario implements Scenario
         }
         else
         {
-            lines.add("FAIL aucun bâtiment détruit — " + snapshot(colony, level));
+            // Under the garrison rule (mod/docs/assaut.md) the guards beating the band is a normal ending.
+            lines.add(WarAssaults.repelledByGarrison(colony)
+              ? "INFO la garnison a repoussé l'assaut avant toute chute (fin normale ; chute non vérifiée dans ce passage)"
+              : "FAIL aucun bâtiment détruit — " + snapshot(colony, level));
         }
 
         final BlockPos hut = target.getID();
@@ -459,9 +462,10 @@ public class WarScenario implements Scenario
             lines.add("FAIL personne n'a combattu les troupes");
         }
 
-        // Légionnaires batter from right against the wall (2.5 blocks); archers deliberately stand back
-        // (WarAssaults.RANGED_STANDOFF, up to 8) instead of pressing up against it like a pillager.
-        final double maxDistance = archers > 0 ? 9.0D : 2.5D;
+        // Légionnaires batter from right against the wall; archers deliberately stand back (WarAssaults.RANGED_STANDOFF,
+        // 8) instead of pressing up against it like a pillager. Thresholds match the goals' own tolerance: a troop stuck
+        // for 3 s batters from up to 4 blocks short of its stand (STALL_REACH in AssaultGoal / AssaultRangedGoal).
+        final double maxDistance = archers > 0 ? 12.0D : 4.0D;
         final double[] strikes = WarAssaults.strikeDistances(colony);
         if (strikes == null)
         {
