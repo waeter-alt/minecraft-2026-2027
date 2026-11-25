@@ -75,6 +75,12 @@ public final class WarRecapScreen extends ParchmentScreen
         tiles.add(new Tile(item(Items.IRON_SWORD), atk ? "Soldats engagés" : "Assaillants", recap.sent(), plain, Tone.NEUTRAL));
         tiles.add(new Tile(item(Items.SKELETON_SKULL), atk ? "Soldats perdus" : "Assaillants abattus", recap.lost(), plain, atk ? Tone.BAD : Tone.GOOD));
         tiles.add(new Tile(item(Items.BONE), atk ? "Défenseurs tombés" : "Habitants tombés", recap.fallen(), plain, atk ? Tone.GOOD : Tone.BAD));
+        if (!atk && recap.aidReceived() > 0)
+        {
+            // One tile for both figures: a tenth tile pushes the shield line under « Fermer » at GUI scale 4
+            final int aidFallen = recap.aidFallen();
+            tiles.add(new Tile(item(Items.SHIELD), "Renforts alliés", recap.aidReceived(), v -> v + " · " + aidFallen + " tombés", Tone.GOOD));
+        }
         tiles.add(new Tile(item(Items.CROSSBOW), atk ? "Assauts" : "Assauts subis", recap.assaults(), plain, Tone.NEUTRAL));
         tiles.add(new Tile(item(Items.CLOCK), "Durée", recap.durationTicks(), WarRecapScreen::duration, Tone.NEUTRAL));
         if (won && recap.influence() > 0)

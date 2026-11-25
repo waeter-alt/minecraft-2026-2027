@@ -261,6 +261,10 @@ public final class WarAssaults
         }
 
         planTargets(assault, level, spawnPos);
+        if (attacker.getID() != defender.getID())
+        {
+            fr.kodistan.interregne.politics.AllyAid.onAssault(level.getServer(), defender);
+        }
         if (commander != null)
         {
             commander.sendSystemMessage(Component.literal(
@@ -1345,7 +1349,8 @@ public final class WarAssaults
         if (event.getEntity() instanceof EntityCitizen citizen && !BY_DEFENDER.isEmpty())
         {
             final Assault defended = BY_DEFENDER.get(citizen.getCitizenColonyHandler().getColonyId());
-            if (defended != null && !defended.over)
+            // An ally's contingent is counted apart (AllyAid), not among the colony's own dead
+            if (defended != null && !defended.over && !fr.kodistan.interregne.politics.AllyAid.isGuest(citizen.getCitizenData()))
             {
                 defended.fallen++;
             }

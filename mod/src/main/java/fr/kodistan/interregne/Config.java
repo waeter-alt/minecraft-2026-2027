@@ -337,6 +337,18 @@ public final class Config
       .comment("Influence given to the winning colony's owner when the enemy town hall falls or the enemy capitulates")
       .defineInRange("warVictoryInfluence", 50L, 0L, Long.MAX_VALUE);
 
+    public static final ModConfigSpec.IntValue ALLY_AID_MAX_TROOPS = BUILDER
+      .comment("Aide de clan (provisional): most soldiers a colony keeps in reserve for one ally")
+      .defineInRange("allyAidMaxTroops", 10, 1, 100);
+
+    public static final ModConfigSpec.LongValue ALLY_AID_TROOP_PRICE = BUILDER
+      .comment("Aide de clan (provisional): couronnes the helper's town hall treasury pays per soldier put back into the reserve")
+      .defineInRange("allyAidTroopPrice", 150L, 0L, Long.MAX_VALUE);
+
+    public static final ModConfigSpec.IntValue ALLY_AID_TROOP_LEVEL = BUILDER
+      .comment("Aide de clan (provisional): troop level (1 to 5) of the contingent's soldiers")
+      .defineInRange("allyAidTroopLevel", 2, 1, 5);
+
     static
     {
         BUILDER.pop();

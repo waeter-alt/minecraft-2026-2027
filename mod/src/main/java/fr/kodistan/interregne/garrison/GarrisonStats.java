@@ -55,7 +55,8 @@ public final class GarrisonStats
     private static void apply(final GarrisonRoster roster, final IColony colony, final ICitizenData citizen, final AbstractEntityCitizen entity,
       final GarrisonRoster.Guard guard)
     {
-        final int level = Garrison.levelOf(colony, guard.kind());
+        // An ally's contingent keeps the level it was bought at, whatever this colony's schools
+        final int level = fr.kodistan.interregne.politics.AllyAid.isGuest(citizen) ? guard.level() : Garrison.levelOf(colony, guard.kind());
         set(entity, Attributes.MAX_HEALTH, HEALTH, Garrison.health(guard.kind(), level));
         set(entity, Attributes.ARMOR, ARMOR, Garrison.armor(guard.kind(), level));
         if (entity.getHealth() > entity.getMaxHealth())
