@@ -178,6 +178,7 @@ Déjà modifiés par nos mixins (à intégrer, pas à casser) :
 - `windowresourcescroll`, `windowbrowsebuilding`, `windowhuthome`, `windowselectres`, `windowhutnameentry`.
 - Les dialogues : `dialogdonecancel`, `windowinfo`, `windowreactivatebuilding`, `windowsuggestbuildtool`, `townhall/window*` colony management.
 - Remplacer `WindowBannerPicker` par l'éditeur de drapeau héraldique, qui n'est toujours pas fait.
+- **Onglet « La couronne Vaccante »** (chantier demandé le 2026-11-25) : pouvoir changer depuis les menus du mod toutes les touches liées au mod (la touche K de la diplomatie, entre autres), sans passer par les contrôles de Minecraft.
 
 ## Inventaire
 
