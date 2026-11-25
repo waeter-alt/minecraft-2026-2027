@@ -12,14 +12,15 @@ import net.minecraft.world.level.block.entity.BannerPatternLayers;
  * Server to client, when a war ends (or an alliance breaks): everything the recap screen shows, sent to each online
  * member of both colonies ({@code victory} from the receiver's side). Figures are the whole war's.
  * <p>
- * For {@link #PEACE} the "winner" is the declarer who signed it; for {@link #BREAK}, the colony that broke the alliance.
+ * The winner is the attacker after a {@link #CONQUEST} or a {@link #CAPITULATION}, the defender after an {@link #ABANDON};
+ * for {@link #BREAK}, the colony that broke the alliance.
  *
- * @param outcome       how it ended: {@link #CONQUEST}, {@link #CAPITULATION}, {@link #PEACE} or {@link #BREAK}
+ * @param outcome       how it ended: {@link #CONQUEST}, {@link #CAPITULATION}, {@link #ABANDON} or {@link #BREAK}
  * @param durationTicks from the declaration to the end
  * @param sent          attacking troops engaged, over all assaults
  * @param lost          of those, the ones that never came back
  * @param fallen        defending citizens killed
- * @param shieldTicks   how long nobody may declare war on the loser
+ * @param shieldTicks   how long nobody may declare war on the defender
  */
 public record WarRecapPayload(boolean victory, int outcome, String winner, String loser, BannerPatternLayers winnerFlag,
                               BannerPatternLayers loserFlag, long durationTicks, int assaults, int sent, int lost, int destroyed, long loot,
@@ -29,8 +30,8 @@ public record WarRecapPayload(boolean victory, int outcome, String winner, Strin
     public static final int CONQUEST     = 0;
     /** The loser paid the tribute. */
     public static final int CAPITULATION = 1;
-    /** The declarer signed the peace. */
-    public static final int PEACE        = 2;
+    /** The attacker gave up: the defender wins. */
+    public static final int ABANDON      = 2;
     /** An alliance was broken: no war, no figures. */
     public static final int BREAK        = 3;
 
@@ -61,7 +62,13 @@ public record WarRecapPayload(boolean victory, int outcome, String winner, Strin
     /** A war that ended with a winner and a loser (shield, Influence, gold or red tiles). */
     public boolean decisive()
     {
-        return outcome == CONQUEST || outcome == CAPITULATION;
+        return outcome != BREAK;
+    }
+
+    /** Whether the receiver's colony was the one that declared the war. */
+    public boolean attacking()
+    {
+        return victory != (outcome == ABANDON);
     }
 
     @Override

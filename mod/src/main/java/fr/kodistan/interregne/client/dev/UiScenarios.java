@@ -152,7 +152,8 @@ public final class UiScenarios
                     targets.add(new Target("war-recap-victory", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.CONQUEST))));
                     targets.add(new Target("war-recap-defeat", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(false, fr.kodistan.interregne.network.WarRecapPayload.CONQUEST))));
                     targets.add(new Target("war-recap-capitulation", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.CAPITULATION))));
-                    targets.add(new Target("war-recap-peace", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(false, fr.kodistan.interregne.network.WarRecapPayload.PEACE))));
+                    targets.add(new Target("war-recap-abandon-win", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.ABANDON))));
+                    targets.add(new Target("war-recap-abandon-loss", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(false, fr.kodistan.interregne.network.WarRecapPayload.ABANDON))));
                     targets.add(new Target("war-recap-break", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.BREAK))));
                 }
                 default -> throw new IllegalArgumentException("Unknown screen " + spec);
@@ -458,10 +459,9 @@ public final class UiScenarios
               0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }
         final boolean capitulation = outcome == fr.kodistan.interregne.network.WarRecapPayload.CAPITULATION;
-        final boolean decisive = outcome != fr.kodistan.interregne.network.WarRecapPayload.PEACE;
         return new fr.kodistan.interregne.network.WarRecapPayload(victory, outcome, "Hautebrume-sur-Loire", "Valdorée", red, blue,
           20L * 60 * 72, capitulation ? 2 : 4, 38, 11, capitulation ? 3 : 7, 18_450, 9, capitulation ? 25_000 : 0,
-          decisive ? 120 : 0, decisive ? 20L * 60 * 60 * 2 : 0);
+          120, 20L * 60 * 60 * 2);
     }
 
     private static MapStatePayload fakeMap()
