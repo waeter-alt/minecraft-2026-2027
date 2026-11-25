@@ -32,7 +32,7 @@ import java.util.stream.Stream;
  * <p>
  * Drop {@code uishot/request.properties} in the client's game directory:
  * <pre>
- * world=Test_citadelle            (optional: opened from the title screen when no world is loaded)
+ * world=SandboxV2            (optional: opened from the title screen when no world is loaded)
  * screen=hub:intendance,block:all (what to capture, see {@link UiScenarios}; "list" only reports the building types,
  *                                  "none" only opens the world, "menu" captures the FancyMenu-styled vanilla menus:
  *                                  title screen without a world, title + pause screen with one)
