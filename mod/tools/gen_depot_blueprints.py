@@ -30,6 +30,7 @@ import nbtlib  # noqa: E402
 from nbtlib import Compound, List, String, Int, Short, Byte, IntArray  # noqa: E402
 
 import gen_relais_blueprints as R  # noqa: E402  (Grid, Palette, connect, roofs: same tools, same conventions)
+import check_blueprints  # noqa: E402
 
 RES = os.path.join(os.path.dirname(__file__), '..', 'src', 'main', 'resources')
 CAT = os.path.join(RES, 'blueprints', 'interregne', 'interregne', 'regions')
@@ -476,6 +477,7 @@ if __name__ == '__main__':
     decor = {}
     for lvl in LEVELS:
         name, root, size, parts = build(lvl)
+        check_blueprints.require_ok(root, name)
         nbtlib.File(root, gzipped=True).save(os.path.join(CAT, name + '.blueprint'))
         decor[str(lvl)] = [{'pos': [x, y, z], 'block': block, 'props': props} for x, y, z, block, props in parts]
         print('wrote', name, size, len(parts), 'decor parts')

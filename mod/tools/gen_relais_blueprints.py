@@ -18,8 +18,13 @@ Layout of a .blueprint: gzip NBT; `blocks` packs two palette indices per int, or
 The hut block sits at `primary_offset`; its block entity tells MineColonies which building it is and the box to build.
 """
 import os
+import sys
+
 import nbtlib
 from nbtlib import Compound, List, String, Int, Short, Byte, IntArray
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import check_blueprints  # noqa: E402
 
 OUT = os.path.join(os.path.dirname(__file__), '..', 'src', 'main', 'resources', 'blueprints', 'interregne', 'interregne')
 CAT = os.path.join(OUT, 'commerce')
@@ -32,6 +37,7 @@ STONE = M + 'stone_bricks'
 ROOF = 'deepslate_tile'  # stairs and slabs of the roofs
 ROOF_FULL = M + 'deepslate_tiles'  # also the tile material of the shingles (see shingle_tile_entities)
 ROOF_SUPPORT = M + 'dark_oak_planks'  # wood showing under the shingle tiles
+ROOF_SUPPORT_STAIR = 'dark_oak'  # upside-down stairs filling under each shingle row
 SHINGLE = 'domum_ornamentum:shingle'
 FLOOR = M + 'spruce_planks'
 
@@ -139,7 +145,9 @@ class Grid:
         `slope`: axis the roof falls along ('z' or 'x'); a0..a1: wall span on it; v0..v1: wall span along the ridge;
         y: height of the first roof row, directly above the top wall row. The gable ends are filled with wall.
         An odd span ends in a single ridge column, closed with a full block of the roof material."""
-        low, high = ('north', 'south') if slope == 'z' else ('west', 'east')
+        # A shingle (like a stair) faces the way the roof rises: the low-side row looks toward the ridge, i.e. 'south'/'east'.
+        # Checked against the stock MineColonies huts by check_blueprints.py, which every generator runs before saving.
+        low, high = ('south', 'north') if slope == 'z' else ('east', 'west')
 
         def at(a, v, yy):
             return (v, yy, a) if slope == 'z' else (a, yy, v)
@@ -153,9 +161,16 @@ class Grid:
             for v in range(v0 - ridge_over, v1 + ridge_over + 1):
                 if lo == hi:
                     self.put(*at(lo, v, hb), ROOF_FULL)
+                    if self.get(*at(lo, v, hb - 1)) is None:
+                        self.put(*at(lo, v, hb - 1), ROOF_SUPPORT)
                 else:
                     self.shingle(*at(lo, v, hb), low)
                     self.shingle(*at(hi, v, hb), high)
+                    # Filler under every shingle, as in the stock huts: an upside-down stair looking outward. Without it
+                    # the thin shingle model leaves a gap between rows and the roof shows holes (Duncan, 2026-11-26).
+                    for a, out in ((lo, high), (hi, low)):
+                        if self.get(*at(a, v, hb - 1)) is None:
+                            self.stair(*at(a, v, hb - 1), ROOF_SUPPORT_STAIR, out, half='top')
             for end in (v0, v1):
                 for a in {lo, hi}:
                     if a0 <= a <= a1:
@@ -182,7 +197,7 @@ def awning(g, x0, x1, z_wall, y, depth=2):
     """Striped red and white awning, falling away to the north from a wall at z_wall."""
     for x in range(x0, x1 + 1):
         red = (x - x0) % 2 == 0
-        g.stair(x, y, z_wall - 1, 'brick' if red else 'quartz', 'north')
+        g.stair(x, y, z_wall - 1, 'brick' if red else 'quartz', 'south')  # tall side against the wall
         for d in range(2, depth + 1):
             g.slab(x, y, z_wall - d, 'brick' if red else 'quartz', 'bottom')
 
@@ -948,5 +963,6 @@ if __name__ == '__main__':
     os.makedirs(CAT, exist_ok=True)
     for lvl in LEVELS:
         name, root, size = build(lvl)
+        check_blueprints.require_ok(root, name)
         nbtlib.File(root, gzipped=True).save(os.path.join(CAT, name + '.blueprint'))
         print('wrote', name, size)
