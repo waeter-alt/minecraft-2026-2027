@@ -65,7 +65,7 @@ public final class ColonyHubScreen extends ParchmentScreen
      */
     static boolean openOriginal;
 
-    enum Page
+    public enum Page
     {
         OVERVIEW("Vue d'ensemble", Icon.module("main")),
         BUILDINGS("Bâtiments", Icon.of(Items.BRICKS)),
@@ -166,6 +166,17 @@ public final class ColonyHubScreen extends ParchmentScreen
         if (townHall instanceof ITownHallView view)
         {
             Minecraft.getInstance().setScreen(new ColonyHubScreen(view));
+        }
+    }
+
+    /** Opens the hub straight on one page (the Diplomacy key opens it from anywhere). */
+    public static void openOn(final IBuildingView townHall, final Page page)
+    {
+        if (townHall instanceof ITownHallView view)
+        {
+            final ColonyHubScreen screen = new ColonyHubScreen(view);
+            screen.page = page;
+            Minecraft.getInstance().setScreen(screen);
         }
     }
 

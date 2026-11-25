@@ -63,17 +63,19 @@ public final class WarRecapScreen extends ParchmentScreen
             return;
         }
         final boolean won = recap.victory();
+        // The figures read from the side of the war: after an abandon the winner is the defender
+        final boolean atk = recap.attacking();
         final LongFunction<String> plain = Long::toString;
-        tiles.add(new Tile(COIN, won ? "Butin" : "Or pillé", recap.loot(), Wallet::format, won ? Tone.GOOD : Tone.BAD));
+        tiles.add(new Tile(COIN, atk ? "Butin" : "Or pillé", recap.loot(), Wallet::format, atk ? Tone.GOOD : Tone.BAD));
         if (recap.outcome() == WarRecapPayload.CAPITULATION)
         {
             tiles.add(new Tile(COIN, won ? "Tribut" : "Tribut payé", recap.tribute(), Wallet::format, won ? Tone.GOOD : Tone.BAD));
         }
-        tiles.add(new Tile(item(Items.TNT), won ? "Bâtiments rasés" : "Bâtiments perdus", recap.destroyed(), plain, won ? Tone.GOOD : Tone.BAD));
-        tiles.add(new Tile(item(Items.IRON_SWORD), won ? "Soldats engagés" : "Assaillants", recap.sent(), plain, Tone.NEUTRAL));
-        tiles.add(new Tile(item(Items.SKELETON_SKULL), won ? "Soldats perdus" : "Assaillants abattus", recap.lost(), plain, won ? Tone.BAD : Tone.GOOD));
-        tiles.add(new Tile(item(Items.BONE), won ? "Défenseurs tombés" : "Habitants tombés", recap.fallen(), plain, won ? Tone.GOOD : Tone.BAD));
-        tiles.add(new Tile(item(Items.CROSSBOW), won ? "Assauts" : "Assauts subis", recap.assaults(), plain, Tone.NEUTRAL));
+        tiles.add(new Tile(item(Items.TNT), atk ? "Bâtiments rasés" : "Bâtiments perdus", recap.destroyed(), plain, atk ? Tone.GOOD : Tone.BAD));
+        tiles.add(new Tile(item(Items.IRON_SWORD), atk ? "Soldats engagés" : "Assaillants", recap.sent(), plain, Tone.NEUTRAL));
+        tiles.add(new Tile(item(Items.SKELETON_SKULL), atk ? "Soldats perdus" : "Assaillants abattus", recap.lost(), plain, atk ? Tone.BAD : Tone.GOOD));
+        tiles.add(new Tile(item(Items.BONE), atk ? "Défenseurs tombés" : "Habitants tombés", recap.fallen(), plain, atk ? Tone.GOOD : Tone.BAD));
+        tiles.add(new Tile(item(Items.CROSSBOW), atk ? "Assauts" : "Assauts subis", recap.assaults(), plain, Tone.NEUTRAL));
         tiles.add(new Tile(item(Items.CLOCK), "Durée", recap.durationTicks(), WarRecapScreen::duration, Tone.NEUTRAL));
         if (won && recap.influence() > 0)
         {
@@ -102,7 +104,6 @@ public final class WarRecapScreen extends ParchmentScreen
             final var sounds = Minecraft.getInstance().getSoundManager();
             sounds.play(switch (recap.outcome())
             {
-                case WarRecapPayload.PEACE -> SimpleSoundInstance.forUI(SoundEvents.AMETHYST_BLOCK_CHIME, 1f, 1f);
                 case WarRecapPayload.BREAK -> SimpleSoundInstance.forUI(SoundEvents.SHIELD_BREAK, 0.8f);
                 default -> recap.victory()
                   ? SimpleSoundInstance.forUI(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f)
@@ -122,7 +123,6 @@ public final class WarRecapScreen extends ParchmentScreen
     {
         return switch (recap.outcome())
         {
-            case WarRecapPayload.PEACE -> Palette.GREEN;
             case WarRecapPayload.BREAK -> Palette.LEATHER;
             default -> recap.victory() ? Palette.AMBER : Palette.RED;
         };
@@ -154,10 +154,9 @@ public final class WarRecapScreen extends ParchmentScreen
         final String theirName = Ui.fit(font, theirs, nameW);
         g.drawString(font, theirName, x0 + w - 8 - font.width(theirName), top + 37, Palette.INK, false);
 
-        // VICTOIRE ! / DÉFAITE / PAIX SIGNÉE / ALLIANCE ROMPUE, popping in from 1.5x its size, 2x at most between the banners
+        // VICTOIRE ! / DÉFAITE / ALLIANCE ROMPUE, popping in from 1.5x its size, 2x at most between the banners
         final String word = switch (recap.outcome())
         {
-            case WarRecapPayload.PEACE -> "PAIX SIGNÉE";
             case WarRecapPayload.BREAK -> "ALLIANCE ROMPUE";
             default -> won ? "VICTOIRE !" : "DÉFAITE";
         };
@@ -170,7 +169,6 @@ public final class WarRecapScreen extends ParchmentScreen
         g.pose().scale(scale, scale, 1f);
         final int ink = switch (recap.outcome())
         {
-            case WarRecapPayload.PEACE -> Palette.GREEN;
             case WarRecapPayload.BREAK -> Palette.RED;
             default -> won ? 0xFFE0A21E : Palette.RED;
         };
@@ -182,7 +180,7 @@ public final class WarRecapScreen extends ParchmentScreen
         final String cause = switch (recap.outcome())
         {
             case WarRecapPayload.CAPITULATION -> won ? "Ils ont capitulé" : "Vous avez capitulé";
-            case WarRecapPayload.PEACE -> won ? "Vous avez signé la paix" : theirs + " a signé la paix";
+            case WarRecapPayload.ABANDON -> won ? "Ils ont abandonné" : "Vous avez abandonné";
             case WarRecapPayload.BREAK -> won ? "Vous avez rompu l'alliance" : theirs + " a rompu l'alliance";
             default -> won ? "Hôtel de ville pris" : "Hôtel de ville perdu";
         };
@@ -224,11 +222,11 @@ public final class WarRecapScreen extends ParchmentScreen
         final int rows = (tiles.size() + cols - 1) / cols;
         y += rows * (TILE_H + GAP) + 2;
 
-        // The loser's shield, under a white flag of truce
+        // The defender's shield, under a white flag of truce
         if (recap.shieldTicks() > 0)
         {
             Icon.of(Items.WHITE_BANNER).draw(g, x0 + 8, y, 16);
-            final String text = won
+            final String text = recap.attacking()
               ? theirs + " ne peut plus être attaquée pendant " + duration(recap.shieldTicks()) + "."
               : "Votre colonie est à l'abri de toute guerre pendant " + duration(recap.shieldTicks()) + ".";
             final int lines = font.split(Component.literal(text), w - 36).size();

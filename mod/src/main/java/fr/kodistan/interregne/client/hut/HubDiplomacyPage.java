@@ -15,8 +15,8 @@ final class HubDiplomacyPage
 {
     private final ColonyHubScreen hub;
     /**
-     * Whether the colonies list was asked from the server, and the ally whose « Rompre » was clicked once (a second
-     * click confirms).
+     * Whether the colonies list was asked from the server, and the ally whose « Rompre » (or the enemy whose
+     * « Abandonner ») was clicked once (a second click confirms).
      */
     boolean asked;
     private int confirmBreak = -1;
@@ -168,9 +168,9 @@ final class HubDiplomacyPage
             }
             case A_WAR_OUT_NOTICE, A_WAR_OUT ->
             {
-                primary = "Faire la paix";
+                primary = confirmBreak == id ? "Confirmer l'abandon" : "Abandonner";
                 primaryAction = DiplomacyActionPayload.MAKE_PEACE;
-                primaryStyle = Ui.ButtonStyle.SECONDARY;
+                primaryStyle = Ui.ButtonStyle.DANGER;
             }
             case A_NONE ->
             {
@@ -193,10 +193,10 @@ final class HubDiplomacyPage
             final int pw = hub.font().width(primary) + 16;
             bx -= pw;
             reserved += pw;
-            final boolean breaking = status == A_ALLIED;
+            final boolean twoClicks = status == A_ALLIED || status == A_WAR_OUT || status == A_WAR_OUT_NOTICE;
             final int action = primaryAction;
             hub.seatButton(graphics, mouseX, mouseY, bx, by, pw, primary, primaryStyle, mayAct, () -> {
-                if (breaking && confirmBreak != id)
+                if (twoClicks && confirmBreak != id)
                 {
                     confirmBreak = id;
                     return;
@@ -204,6 +204,10 @@ final class HubDiplomacyPage
                 confirmBreak = -1;
                 ClientDiplomacy.act(mine, action, id);
             });
+            if (action == DiplomacyActionPayload.MAKE_PEACE && mouseX >= bx && mouseX < bx + pw && mouseY >= by && mouseY < by + Ui.BUTTON_H)
+            {
+                hub.hint = "Vos troupes rentrent et la guerre est perdue : l'adversaire gagne l'Influence de la victoire et un bouclier.";
+            }
         }
         if (secondary != null)
         {

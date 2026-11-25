@@ -137,7 +137,7 @@ public final class Diplomacy
                 {
                     return wars.declaredBy(you, me) ? "Seul celui qui a déclaré la guerre peut y mettre fin." : null;
                 }
-                signPeace(server, wars, colony, other);
+                abandon(server, colony, other);
             }
             case DiplomacyActionPayload.CAPITULATE ->
             {
@@ -224,15 +224,16 @@ public final class Diplomacy
         {
             WarAssaults.recall(attacker, colony.getID());
         }
-        settle(server, attacker, colony, "§e" + colony.getName() + " capitule§r devant " + attacker.getName() + " et lui verse " + tribute + " couronnes de tribut.", true, tribute);
+        settle(server, attacker, colony, WarRecapPayload.CAPITULATION,
+          "§e" + colony.getName() + " capitule§r devant " + attacker.getName() + " et lui verse " + tribute + " couronnes de tribut.", tribute);
         return null;
     }
 
     /**
-     * The declarer ends its war without a winner: troops still on the road or on the field go home first (so the last
-     * assault counts in the tally), then both colonies get the peace recap. No shield, no Influence.
+     * The declarer gives up its war: a defeat. Troops still on the road or on the field go home first (so the last
+     * assault counts in the tally), then the defender wins: shield and Influence, no tribute.
      */
-    private static void signPeace(final MinecraftServer server, final Wars wars, final IColony attacker, final IColony defender)
+    private static void abandon(final MinecraftServer server, final IColony attacker, final IColony defender)
     {
         if (WarMarches.marching(attacker.getID(), defender.getID()))
         {
@@ -242,13 +243,8 @@ public final class Diplomacy
         {
             WarAssaults.recall(attacker, defender.getID());
         }
-        final long[] tally = wars.stats(attacker.getID(), defender.getID());
-        final long declaredAt = wars.declaredAt(attacker.getID(), defender.getID());
-        if (wars.end(attacker.getID(), defender.getID()))
-        {
-            final long now = server.overworld().getGameTime();
-            sendRecap(server, attacker, defender, WarRecapPayload.PEACE, tally, declaredAt < 0 ? 0 : now - declaredAt, 0, 0, 0);
-        }
+        settle(server, attacker, defender, WarRecapPayload.ABANDON,
+          "§a" + attacker.getName() + " abandonne§r la guerre contre " + defender.getName() + ".", 0);
     }
 
     /**
@@ -256,25 +252,28 @@ public final class Diplomacy
      */
     public static void victory(final MinecraftServer server, final IColony winner, final IColony loser)
     {
-        settle(server, winner, loser, "§c" + loser.getName() + " est tombée§r : " + winner.getName() + " a pris son hôtel de ville.", false, 0);
+        settle(server, winner, loser, WarRecapPayload.CONQUEST, "§c" + loser.getName() + " est tombée§r : " + winner.getName() + " a pris son hôtel de ville.", 0);
     }
 
     /**
-     * Ends a war that the attacker won: shield for the loser, Influence for the winner's owner, news for everyone.
+     * Ends a war with a winner: the attacker after a conquest or a capitulation, the defender after an abandon. The
+     * defender always gets the shield (it is the one a new war would hit), the winner's owner the Influence.
      */
-    private static void settle(final MinecraftServer server, final IColony winner, final IColony loser, final String news, final boolean capitulation,
+    private static void settle(final MinecraftServer server, final IColony attacker, final IColony defender, final int outcome, final String news,
                                final long tribute)
     {
         final Wars wars = Wars.get(server);
         // Read before end(), which forgets the war's tally.
-        final long[] tally = wars.stats(winner.getID(), loser.getID());
-        final long declaredAt = wars.declaredAt(winner.getID(), loser.getID());
-        if (!wars.end(winner.getID(), loser.getID()))
+        final long[] tally = wars.stats(attacker.getID(), defender.getID());
+        final long declaredAt = wars.declaredAt(attacker.getID(), defender.getID());
+        if (!wars.end(attacker.getID(), defender.getID()))
         {
             return;
         }
+        final IColony winner = outcome == WarRecapPayload.ABANDON ? defender : attacker;
+        final IColony loser = winner == attacker ? defender : attacker;
         final long shieldTicks = Config.WAR_SHIELD_SECONDS.get() * 20L;
-        wars.shield(loser.getID(), server.overworld().getGameTime() + shieldTicks);
+        wars.shield(defender.getID(), server.overworld().getGameTime() + shieldTicks);
         final long influence = Config.WAR_VICTORY_INFLUENCE.get();
         final java.util.UUID owner = winner.getPermissions().getOwner();
         if (influence > 0 && owner != null)
@@ -283,16 +282,26 @@ public final class Diplomacy
         }
         Proclamations.announce(server, news);
         final int minutes = (int) Math.ceil(shieldTicks / 1200.0);
-        notifyMembers(server, winner, "Guerre gagnée contre " + loser.getName() + (influence > 0 ? " : +" + influence + " d'Influence." : "."));
-        notifyMembers(server, loser, "Guerre perdue contre " + winner.getName() + " : personne ne peut vous déclarer la guerre pendant " + minutes + " min.");
-        Alliances.broadcast(server, winner, loser);
+        final String shieldNote = "personne ne peut vous déclarer la guerre pendant " + minutes + " min.";
+        final String gain = influence > 0 ? "+" + influence + " d'Influence" : "";
+        if (outcome == WarRecapPayload.ABANDON)
+        {
+            notifyMembers(server, defender, attacker.getName() + " abandonne la guerre : " + (gain.isEmpty() ? "" : gain + ", et ") + shieldNote);
+            notifyMembers(server, attacker, "Guerre abandonnée contre " + defender.getName() + ".");
+        }
+        else
+        {
+            notifyMembers(server, attacker, "Guerre gagnée contre " + defender.getName() + (gain.isEmpty() ? "." : " : " + gain + "."));
+            notifyMembers(server, defender, "Guerre perdue contre " + attacker.getName() + " : " + shieldNote);
+        }
+        Alliances.broadcast(server, attacker, defender);
         final long now = server.overworld().getGameTime();
-        sendRecap(server, winner, loser, capitulation ? WarRecapPayload.CAPITULATION : WarRecapPayload.CONQUEST, tally, declaredAt < 0 ? 0 : now - declaredAt, tribute, owner != null ? influence : 0, shieldTicks);
+        sendRecap(server, winner, loser, outcome, tally, declaredAt < 0 ? 0 : now - declaredAt, tribute, owner != null ? influence : 0, shieldTicks);
     }
 
     /**
      * Opens the recap screen for both colonies' online members (victory side for the winner's, defeat side for the
-     * loser's; for a peace or a break, "winner" is the colony that signed or broke).
+     * loser's; for a break, "winner" is the colony that broke).
      */
     private static void sendRecap(final MinecraftServer server, final IColony winner, final IColony loser, final int outcome, final long[] tally,
                                   final long duration, final long tribute, final long influence, final long shieldTicks)
@@ -323,7 +332,7 @@ public final class Diplomacy
         {
             case Alliances.SENT ->
             {
-                toOther = colony.getName() + " vous propose une alliance. Répondez-lui depuis l'onglet Diplomatie de l'hôtel de ville.";
+                toOther = colony.getName() + " vous propose une alliance. Répondez-lui depuis la Diplomatie (touche K).";
                 toMe = null;
             }
             case Alliances.ALLIED ->
@@ -334,7 +343,7 @@ public final class Diplomacy
             case Alliances.WAR_OUT_NOTICE, Alliances.WAR_OUT ->
             {
                 final int minutes = (int) Math.ceil(Config.WAR_NOTICE_SECONDS.get() / 60.0);
-                toOther = "§c" + colony.getName() + " vous déclare la guerre§r : assauts possibles dans " + minutes + " min.";
+                toOther = "§c" + colony.getName() + " vous déclare la guerre§r : assauts possibles dans " + minutes + " min. Capituler : Diplomatie (touche K).";
                 toMe = "Guerre déclarée à " + other.getName() + " : assauts possibles dans " + minutes + " min.";
             }
             default ->
