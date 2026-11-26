@@ -58,9 +58,11 @@ import java.util.Map;
  * type ({@code list} names the types present).</li>
  * <li>{@code citizen:<n>}: the n-th citizen's sheet (0 by default).</li>
  * <li>{@code hud}: no screen, the in-game HUD alone.</li>
+ * <li>{@code hud-war}: the HUD with the war indicator forced on.</li>
  * <li>{@code block:<bank|regionalbank|comptoir|market|throne|crops>|all}: our blocks' screens with fake data. They
  * send nothing to the server unless a button is clicked, and captures never click.</li>
  * <li>{@code catalogue}: the build catalogue.</li>
+ * <li>{@code war}: the end-of-war recap, as the winner, the loser, and after a capitulation.</li>
  * </ul>
  * Names of the real colony's data are captured as they are; fake states exist where the real colony can't show them.
  */
@@ -116,6 +118,10 @@ public final class UiScenarios
                         }
                     }
                 }
+                case "hud-war" -> targets.add(new Target("hud-war", () -> {
+                    Minecraft.getInstance().setScreen(null);
+                    DevOverrides.war = true;
+                }));
                 case "block" -> blocks(targets, arg, colony);
                 case "catalogue" -> targets.add(new Target("catalogue", 60, () -> {
                     final BlockPos pos = Minecraft.getInstance().player.blockPosition();
@@ -159,6 +165,17 @@ public final class UiScenarios
                     targets.add(new Target("walledit-same", 80, () -> net.minecraft.client.Minecraft.getInstance().setScreen(new fr.kodistan.interregne.client.walls.WallPlannerScreen(colony.getTownHall()))));
                     targets.add(new Target("walledit-moved", 80, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.openEditDemo(colony.getTownHall())));
                 }
+                case "war" -> {
+                    // Settled long enough for the title pop and every figure's count-up to finish
+                    targets.add(new Target("war-recap-victory", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.CONQUEST))));
+                    targets.add(new Target("war-recap-defeat", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(false, fr.kodistan.interregne.network.WarRecapPayload.CONQUEST))));
+                    targets.add(new Target("war-recap-capitulation", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.CAPITULATION))));
+                    targets.add(new Target("war-recap-abandon-win", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.ABANDON))));
+                    targets.add(new Target("war-recap-abandon-loss", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(false, fr.kodistan.interregne.network.WarRecapPayload.ABANDON))));
+                    targets.add(new Target("war-recap-defense-aid", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(withAid(fakeRecap(false, fr.kodistan.interregne.network.WarRecapPayload.CONQUEST)))));
+                    targets.add(new Target("war-recap-defense-aid-win", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(withAid(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.ABANDON)))));
+                    targets.add(new Target("war-recap-break", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.BREAK))));
+                }
                 default -> throw new IllegalArgumentException("Unknown screen " + spec);
             }
         }
@@ -184,16 +201,55 @@ public final class UiScenarios
             {
                 targets.add(new Target("hub-diplomacy", () -> {
                     final var fake = new java.util.ArrayList<fr.kodistan.interregne.network.DiplomacySyncPayload.Entry>();
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(11, "Port-Sombrebois", "Alix", 14, 410, -120, 3, 0));
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(12, "Haute-Garde", "Brenn", 31, -300, 260, 1, 0));
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(13, "Les Trois Moulins", "Cassandre", 8, 150, 520, 2, 0));
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(14, "Val-de-Cendre", "Dorian", 22, -640, -90, 0, 0));
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(15, "Fort-Écarlate avec un nom très long", "Eloïse", 40, 900, 900, 0, 0));
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(16, "Rive-Noire", "Fenn", 12, 200, 700, 4, 150));
-                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(17, "Mont-Cuivre", "Gaël", 19, -500, 400, 7, 0));
-                    fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), fake));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(11, "Port-Sombrebois", "Alix", 14, 410, -120, 3, 0, 0, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(12, "Haute-Garde", "Brenn", 31, -300, 260, 1, 0, 2, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(13, "Les Trois Moulins", "Cassandre", 8, 150, 520, 2, 0, 0, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(14, "Val-de-Cendre", "Dorian", 22, -640, -90, 0, 0, 0, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(15, "Fort-Écarlate avec un nom très long", "Eloïse", 40, 900, 900, 0, 0, 0, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(16, "Rive-Noire", "Fenn", 12, 200, 700, 4, 150, 1, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(17, "Mont-Cuivre", "Gaël", 19, -500, 400, 5, 0, 2, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(18, "Bourg-Ferrant", "Hugo", 9, 700, -300, 5, 0, 2, 1));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(19, "Crête-Grise", "Inès", 15, -200, -800, 7, 0, 1, 2));
+                    fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), 6, 3, 20, 500L, 1240L, fake));
                     ColonyHubScreen.openDev(colony.getTownHall(), "diplomacy", 0);
                 }));
+                // Wars sit below the fold on the full list: this target shows only them.
+                targets.add(new Target("hub-diplomacy-war", () -> {
+                    final var fake = new java.util.ArrayList<fr.kodistan.interregne.network.DiplomacySyncPayload.Entry>();
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(16, "Rive-Noire", "Fenn", 12, 200, 700, 4, 150, 1, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(17, "Mont-Cuivre", "Gaël", 19, -500, 400, 5, 0, 2, 0));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(18, "Bourg-Ferrant", "Hugo", 9, 700, -300, 5, 0, 2, 1));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(19, "Crête-Grise", "Inès", 15, -200, -800, 7, 0, 1, 2));
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(20, "Roc-aux-Corbeaux", "Jade", 27, 380, 610, 6, 240, 1, 0));
+                    // Treasury short of the tribute: shows the grey « Capituler » with have/cost in red.
+                    fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), 6, 3, 20, 500L, 320L, fake));
+                    ColonyHubScreen.openDev(colony.getTownHall(), "diplomacy", 0);
+                }));
+                // Only the wars waged on us, so the « Capituler » buttons are above the fold: payable, then short.
+                for (final long treasury : new long[] {1240L, 320L})
+                {
+                    targets.add(new Target(treasury >= 500L ? "hub-diplomacy-surrender" : "hub-diplomacy-surrender-short", () -> {
+                        final var fake = new java.util.ArrayList<fr.kodistan.interregne.network.DiplomacySyncPayload.Entry>();
+                        fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(19, "Crête-Grise", "Inès", 15, -200, -800, 7, 0, 1, 2));
+                        fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(20, "Roc-aux-Corbeaux", "Jade", 27, 380, 610, 6, 240, 1, 0));
+                        fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), 6, 3, 20, 500L, treasury, fake));
+                        ColonyHubScreen.openDev(colony.getTownHall(), "diplomacy", 0);
+                    }));
+                }
+                // Aide de clan: only allies, so the contingent lines are above the fold. « Remplir » payable (900 of
+                // 1240), then short; a full contingent, an engaged one, and reinforcements kept for us.
+                for (final long treasury : new long[] {1240L, 320L})
+                {
+                    targets.add(new Target(treasury >= 900L ? "hub-diplomacy-aid" : "hub-diplomacy-aid-short", () -> {
+                        final var fake = new java.util.ArrayList<fr.kodistan.interregne.network.DiplomacySyncPayload.Entry>();
+                        fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(21, "Haute-Garde", "Brenn", 31, -300, 260, 1, 0, 2, 0, 4, 5, -1, -1));
+                        fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(22, "Fort-Écarlate avec un nom très long", "Eloïse", 40, 900, 900, 1, 0, 2, 0, 0, 0, -1, -1));
+                        fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(23, "Port-Sombrebois", "Alix", 14, 410, -120, 1, 0, 2, 0, 3, 0, 7, -1));
+                        fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(24, "Mont-Cuivre", "Gaël", 19, -500, 400, 1, 0, 2, 0, 10, 0, -1, 6));
+                        fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), 6, 3, 20, 500L, treasury, 150L, 10, fake));
+                        ColonyHubScreen.openDev(colony.getTownHall(), "diplomacy", 0);
+                    }));
+                }
                 continue;
             }
             if (!page.equals("intendance"))
@@ -421,6 +477,34 @@ public final class UiScenarios
         }
     }
 
+    /** The same recap seen by a defender that two allies' contingents helped (Aide de clan). */
+    private static fr.kodistan.interregne.network.WarRecapPayload withAid(final fr.kodistan.interregne.network.WarRecapPayload p)
+    {
+        return new fr.kodistan.interregne.network.WarRecapPayload(p.victory(), p.outcome(), p.winner(), p.loser(), p.winnerFlag(), p.loserFlag(), p.durationTicks(),
+          p.assaults(), p.sent(), p.lost(), p.destroyed(), p.loot(), p.fallen(), p.tribute(), p.influence(), p.shieldTicks(), 14, 5);
+    }
+
+    private static fr.kodistan.interregne.network.WarRecapPayload fakeRecap(final boolean victory, final int outcome)
+    {
+        final var patterns = Minecraft.getInstance().level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BANNER_PATTERN);
+        final var red = new net.minecraft.world.level.block.entity.BannerPatternLayers.Builder()
+          .add(patterns.getHolderOrThrow(net.minecraft.world.level.block.entity.BannerPatterns.CROSS), net.minecraft.world.item.DyeColor.RED)
+          .add(patterns.getHolderOrThrow(net.minecraft.world.level.block.entity.BannerPatterns.BORDER), net.minecraft.world.item.DyeColor.BLACK).build();
+        final var blue = new net.minecraft.world.level.block.entity.BannerPatternLayers.Builder()
+          .add(patterns.getHolderOrThrow(net.minecraft.world.level.block.entity.BannerPatterns.STRIPE_CENTER), net.minecraft.world.item.DyeColor.BLUE)
+          .add(patterns.getHolderOrThrow(net.minecraft.world.level.block.entity.BannerPatterns.TRIANGLE_TOP), net.minecraft.world.item.DyeColor.YELLOW).build();
+        // The winner is always the attacker: sent / lost are its troops, destroyed / loot / fallen the loser's losses
+        if (outcome == fr.kodistan.interregne.network.WarRecapPayload.BREAK)
+        {
+            return new fr.kodistan.interregne.network.WarRecapPayload(victory, outcome, "Hautebrume-sur-Loire", "Valdorée", red, blue,
+              0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        }
+        final boolean capitulation = outcome == fr.kodistan.interregne.network.WarRecapPayload.CAPITULATION;
+        return new fr.kodistan.interregne.network.WarRecapPayload(victory, outcome, "Hautebrume-sur-Loire", "Valdorée", red, blue,
+          20L * 60 * 72, capitulation ? 2 : 4, 38, 11, capitulation ? 3 : 7, 18_450, 9, capitulation ? 25_000 : 0,
+          120, 20L * 60 * 60 * 2);
+    }
+
     private static MapStatePayload fakeMap()
     {
         return new MapStatePayload(List.of(
@@ -459,6 +543,6 @@ public final class UiScenarios
 
     static String describe()
     {
-        return Arrays.toString(new String[] {"hub:<page|all>", "hubtool:<tool|all>", "building:<type|all>", "citizen:<n>", "hud", "block:<name|all> (dont relais, relais-escorte, carte)", "catalogue"});
+        return Arrays.toString(new String[] {"hub:<page|all>", "hubtool:<tool|all>", "building:<type|all>", "citizen:<n>", "hud", "hud-war", "block:<name|all> (dont relais, relais-escorte, carte)", "catalogue"});
     }
 }

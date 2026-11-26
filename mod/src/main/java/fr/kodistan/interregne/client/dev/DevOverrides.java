@@ -28,6 +28,10 @@ public final class DevOverrides
     public static String bannerCrate;
     public static String bannerName = "Brumeval";
     /**
+     * True to show the HUD war indicator without a real war.
+     */
+    public static boolean war;
+    /**
      * Forced mouse position in GUI pixels for our screens, so captures never show a stray hover.
      */
     @Nullable
@@ -46,5 +50,6 @@ public final class DevOverrides
         influence = null;
         bannerCrate = null;
         hover = null;
+        war = false;
     }
 }

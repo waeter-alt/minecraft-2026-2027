@@ -3,7 +3,14 @@ package fr.kodistan.interregne.politics;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.permissions.Action;
+import fr.kodistan.interregne.Config;
+import fr.kodistan.interregne.economy.RegionalTreasury;
+import fr.kodistan.interregne.garrison.Garrison;
 import fr.kodistan.interregne.network.DiplomacyActionPayload;
+import fr.kodistan.interregne.routes.RouteRegistry;
+import fr.kodistan.interregne.routes.WarRoad;
+import fr.kodistan.interregne.war.WarAssaults;
+import fr.kodistan.interregne.war.WarMarches;
 import fr.kodistan.interregne.network.DiplomacySyncPayload;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -142,7 +149,20 @@ public final class Alliances extends SavedData
         final boolean mayAct = colony.getPermissions().hasPermission(player, Action.EDIT_PERMISSIONS);
         if (payload.action() != DiplomacyActionPayload.REFRESH && mayAct && other != null && other.getID() != colony.getID())
         {
-            final String refusal = Diplomacy.apply(player, colony, other, payload.action());
+            final String refusal = switch (payload.action())
+            {
+                case DiplomacyActionPayload.LAUNCH_ASSAULT -> WarMarches.start(player.server, colony, other, payload.amount() / 1000, payload.amount() % 1000);
+                case DiplomacyActionPayload.RECALL_TROOPS -> WarMarches.marching(colony.getID(), other.getID())
+                  ? WarMarches.recall(player.server, colony, other.getID())
+                  : WarAssaults.recall(colony, other.getID());
+                case DiplomacyActionPayload.REFILL_AID -> AllyAid.refill(player.server, colony, other);
+                default -> Diplomacy.apply(player, colony, other, payload.action());
+            };
+            if (refusal == null && (payload.action() == DiplomacyActionPayload.LAUNCH_ASSAULT || payload.action() == DiplomacyActionPayload.RECALL_TROOPS
+                                      || payload.action() == DiplomacyActionPayload.REFILL_AID))
+            {
+                broadcast(player.server, colony, other);
+            }
             if (refusal != null)
             {
                 player.sendSystemMessage(Component.literal(refusal).withStyle(net.minecraft.ChatFormatting.RED));
@@ -154,15 +174,32 @@ public final class Alliances extends SavedData
     /**
      * Sends both colonies' views to every player, after something changed between them.
      */
-    static void broadcast(final MinecraftServer server, final IColony a, final IColony b)
+    public static void broadcast(final MinecraftServer server, final IColony a, final IColony b)
     {
         PacketDistributor.sendToAllPlayers(syncOf(server, a, server.overworld()));
         PacketDistributor.sendToAllPlayers(syncOf(server, b, server.overworld()));
     }
 
+    /**
+     * Sends the player the diplomacy of every colony they belong to, so the war indicator is right after a relog.
+     */
+    public static void syncTo(final ServerPlayer player)
+    {
+        final net.minecraft.server.level.ServerLevel level = player.server.overworld();
+        for (final IColony colony : IColonyManager.getInstance().getColonies(level))
+        {
+            if (colony.getPermissions().isColonyMember(player))
+            {
+                PacketDistributor.sendToPlayer(player, syncOf(player.server, colony, level));
+            }
+        }
+    }
+
     static DiplomacySyncPayload syncOf(final MinecraftServer server, final IColony colony, final net.minecraft.server.level.ServerLevel level)
     {
         final Alliances alliances = get(server);
+        final RouteRegistry routes = RouteRegistry.get(server);
+        final AllyAid aid = AllyAid.get(server);
         final List<DiplomacySyncPayload.Entry> entries = new ArrayList<>();
         for (final IColony other : IColonyManager.getInstance().getColonies(level))
         {
@@ -170,11 +207,20 @@ public final class Alliances extends SavedData
             {
                 continue;
             }
-            final int[] relation = Diplomacy.relation(server, alliances, colony.getID(), other.getID());
-            entries.add(new DiplomacySyncPayload.Entry(other.getID(), other.getName(), other.getPermissions().getOwnerName(),
-              other.getCitizenManager().getCurrentCitizenCount(), other.getCenter().getX(), other.getCenter().getZ(), relation[0], relation[1]));
+            final int me = colony.getID();
+            final int you = other.getID();
+            final int[] relation = Diplomacy.relation(server, alliances, me, you);
+            final int road = WarRoad.building(me, you) ? DiplomacySyncPayload.ROAD_BUILDING
+              : routes.pathBetween(me, you) != null ? DiplomacySyncPayload.ROAD_READY
+              : WarRoad.impossible(me, you) ? DiplomacySyncPayload.ROAD_IMPOSSIBLE : DiplomacySyncPayload.ROAD_NONE;
+            final int campaign = WarMarches.marching(me, you) ? DiplomacySyncPayload.CAMPAIGN_MARCHING
+              : WarAssaults.assaulting(me, you) ? DiplomacySyncPayload.CAMPAIGN_ASSAULTING : DiplomacySyncPayload.CAMPAIGN_NONE;
+            entries.add(new DiplomacySyncPayload.Entry(you, other.getName(), other.getPermissions().getOwnerName(),
+              other.getCitizenManager().getCurrentCitizenCount(), other.getCenter().getX(), other.getCenter().getZ(), relation[0], relation[1], road, campaign,
+              aid.reserve(me, you), aid.reserve(you, me), aid.isEngaged(me, you) ? aid.alive(me, you) : -1, aid.isEngaged(you, me) ? aid.alive(you, me) : -1));
         }
-        return new DiplomacySyncPayload(colony.getID(), entries);
+        return new DiplomacySyncPayload(colony.getID(), Garrison.available(server, colony, Garrison.LEGIONNAIRE), Garrison.available(server, colony, Garrison.ARCHERE),
+          Config.WAR_DECLARATION_COST.get().intValue(), Config.WAR_TRIBUTE.get(), RegionalTreasury.get(server).balance(colony), AllyAid.price(), AllyAid.max(), entries);
     }
 
     // Package-private moves for Diplomacy, which holds the rules.

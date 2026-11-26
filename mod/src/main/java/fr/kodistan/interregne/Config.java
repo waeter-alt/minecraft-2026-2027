@@ -305,6 +305,50 @@ public final class Config
       .comment("Seconds a road takes to vanish once the alliance it served is broken")
       .defineInRange("roadDecaySeconds", 300, 10, 86400);
 
+    public static final ModConfigSpec.LongValue WAR_ROAD_COST = BUILDER
+      .comment("Couronnes taken from the declaring colony's treasury to build the war road when the two colonies have no road yet (the war is refused without them)")
+      .defineInRange("warRoadCost", 300L, 0L, Long.MAX_VALUE);
+
+    public static final ModConfigSpec.IntValue WAR_ROAD_SECONDS = BUILDER
+      .comment("Seconds the war road takes to build; troops wait for it before marching")
+      .defineInRange("warRoadSeconds", 60, 5, 3600);
+
+    public static final ModConfigSpec.LongValue WAR_TRIBUTE = BUILDER
+      .comment("Couronnes the defender pays from its treasury to the attacker's to capitulate and end the war")
+      .defineInRange("warTribute", 500L, 0L, Long.MAX_VALUE);
+
+    public static final ModConfigSpec.IntValue WAR_SHIELD_SECONDS = BUILDER
+      .comment("Seconds a colony that lost a war (town hall taken or capitulation) cannot be declared war on")
+      .defineInRange("warShieldSeconds", 7200, 0, 604800);
+
+    public static final ModConfigSpec.LongValue WAR_LOOT_PER_BUILDING = BUILDER
+      .comment("Most couronnes one fallen building moves from the defender's treasury to the attacker's")
+      .defineInRange("warLootPerBuilding", 100L, 0L, Long.MAX_VALUE);
+
+    public static final ModConfigSpec.LongValue WAR_LOOT_PER_ASSAULT = BUILDER
+      .comment("Most couronnes one assault can loot in total")
+      .defineInRange("warLootPerAssault", 1000L, 0L, Long.MAX_VALUE);
+
+    public static final ModConfigSpec.LongValue WAR_TREASURY_RESERVE = BUILDER
+      .comment("Couronnes of a defender's treasury that loot never touches")
+      .defineInRange("warTreasuryReserve", 200L, 0L, Long.MAX_VALUE);
+
+    public static final ModConfigSpec.LongValue WAR_VICTORY_INFLUENCE = BUILDER
+      .comment("Influence given to the winning colony's owner when the enemy town hall falls or the enemy capitulates")
+      .defineInRange("warVictoryInfluence", 50L, 0L, Long.MAX_VALUE);
+
+    public static final ModConfigSpec.IntValue ALLY_AID_MAX_TROOPS = BUILDER
+      .comment("Aide de clan (provisional): most soldiers a colony keeps in reserve for one ally")
+      .defineInRange("allyAidMaxTroops", 10, 1, 100);
+
+    public static final ModConfigSpec.LongValue ALLY_AID_TROOP_PRICE = BUILDER
+      .comment("Aide de clan (provisional): couronnes the helper's town hall treasury pays per soldier put back into the reserve")
+      .defineInRange("allyAidTroopPrice", 150L, 0L, Long.MAX_VALUE);
+
+    public static final ModConfigSpec.IntValue ALLY_AID_TROOP_LEVEL = BUILDER
+      .comment("Aide de clan (provisional): troop level (1 to 5) of the contingent's soldiers")
+      .defineInRange("allyAidTroopLevel", 2, 1, 5);
+
     static
     {
         BUILDER.pop();

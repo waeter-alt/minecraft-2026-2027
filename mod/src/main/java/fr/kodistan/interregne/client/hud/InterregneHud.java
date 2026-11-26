@@ -1,6 +1,12 @@
 package fr.kodistan.interregne.client.hud;
 
+import com.minecolonies.api.colony.IColony;
 import fr.kodistan.interregne.InterregneMod;
+import fr.kodistan.interregne.client.dev.DevOverrides;
+import fr.kodistan.interregne.client.hut.ClientDiplomacy;
+import fr.kodistan.interregne.client.hut.DiplomacyKey;
+import fr.kodistan.interregne.network.DiplomacySyncPayload;
+import fr.kodistan.interregne.politics.Alliances;
 import fr.kodistan.interregne.economy.Wallet;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -25,6 +31,7 @@ public final class InterregneHud
     private static final ResourceLocation COIN_ICON      = ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "textures/gui/hud_coin.png");
     private static final ResourceLocation BANK_ICON      = ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "textures/gui/hud_bank.png");
     private static final ResourceLocation REGION_ICON    = ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "textures/gui/hud_region.png");
+    private static final ResourceLocation WAR_ICON       = ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "textures/gui/hud_war.png");
     private static final ResourceLocation PURSE_ICON     = ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "textures/gui/hud_purse.png");
 
     private static final int PAPER       = 0xFFE9D8A6;
@@ -88,6 +95,7 @@ public final class InterregneHud
     public static void onRegisterLayers(final RegisterGuiLayersEvent event)
     {
         event.registerAbove(VanillaGuiLayers.HOTBAR, ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "score"), InterregneHud::render);
+        event.registerAbove(VanillaGuiLayers.HOTBAR, ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "war"), InterregneHud::renderWar);
     }
 
     /**
@@ -253,6 +261,74 @@ public final class InterregneHud
             return value < 10_000 ? String.format(java.util.Locale.FRANCE, "%.1fk", value / 1_000.0) : (value / 1_000) + "k";
         }
         return value < 10_000_000 ? String.format(java.util.Locale.FRANCE, "%.1fM", value / 1_000_000.0) : (value / 1_000_000) + "M";
+    }
+
+    /**
+     * While the player's colony is at war (notice countdown included), a paper tab glued to the right edge of the
+     * screen shows the sealed declaration and the Diplomacy key, so nobody forgets they can surrender or give up.
+     */
+    private static void renderWar(final GuiGraphics graphics, final DeltaTracker delta)
+    {
+        final Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || minecraft.options.hideGui || minecraft.getDebugOverlay().showDebugScreen() || !atWar(minecraft))
+        {
+            return;
+        }
+        final Font font = minecraft.font;
+        final double guiScale = minecraft.getWindow().getGuiScale();
+        final float scale = guiScale > 2 ? (float) (SCREEN_SIZE / guiScale) : 1F;
+        graphics.pose().pushPose();
+        graphics.pose().scale(scale, scale, 1);
+        final int screenRight = (int) Math.ceil(graphics.guiWidth() / scale);
+        final int middle = (int) (graphics.guiHeight() / scale) / 2;
+
+        final String key = DiplomacyKey.MAPPING.getTranslatedKeyMessage().getString();
+        final int keyWidth = Math.max(11, font.width(key) + 5);
+        final int width = 4 + keyWidth + 1 + 16 + 2;
+        final int height = 20;
+        final int left = screenRight - width;
+        final int top = middle - height / 2;
+        // Two pixels past the edge: the right rounded corners fall off-screen and the tab looks glued to the border
+        roundedPlate(graphics, left, top, screenRight + 2, top + height, PAPER, PAPER_EDGE, PAPER_LIGHT);
+        keycap(graphics, font, left + 4, top + 4, keyWidth, key);
+        graphics.blit(WAR_ICON, left + 4 + keyWidth + 1, top + 2, 16, 16, 0, 0, 16, 16, 16, 16);
+        graphics.pose().popPose();
+    }
+
+    private static boolean atWar(final Minecraft minecraft)
+    {
+        if (DevOverrides.war)
+        {
+            return true;
+        }
+        final IColony colony = DiplomacyKey.playerColony(minecraft);
+        final DiplomacySyncPayload diplomacy = colony == null ? null : ClientDiplomacy.of(colony.getID());
+        if (diplomacy == null)
+        {
+            return false;
+        }
+        for (final DiplomacySyncPayload.Entry entry : diplomacy.entries())
+        {
+            if (entry.status() >= Alliances.WAR_OUT_NOTICE && entry.status() <= Alliances.WAR_IN)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * A small stone keycap: dark outline with cut corners, light face, darker bottom lip, the key name in the middle.
+     */
+    private static void keycap(final GuiGraphics graphics, final Font font, final int x, final int y, final int width, final String key)
+    {
+        final int height = 12;
+        graphics.fill(x + 1, y, x + width - 1, y + height, 0xFF1E1E1E);
+        graphics.fill(x, y + 1, x + width, y + height - 1, 0xFF1E1E1E);
+        graphics.fill(x + 1, y + 1, x + width - 1, y + height - 3, 0xFFD6D6D6);
+        graphics.fill(x + 1, y + height - 3, x + width - 1, y + height - 1, 0xFF8C8C8C);
+        graphics.fill(x + 1, y + 1, x + width - 1, y + 2, 0xFFF4F4F4);
+        graphics.drawString(font, key, x + (width - font.width(key) + 1) / 2, y + 2, 0xFF2A2A2A, false);
     }
 
     /**

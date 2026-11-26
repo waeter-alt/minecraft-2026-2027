@@ -299,49 +299,6 @@ public final class RouteRegistry extends SavedData
     }
 
     /**
-     * The alliance between these two colonies is over: its link is forgotten (a new route may be made) and the roads
-     * built for it start to vanish, their cells in random order.
-     *
-     * @return how many roads started to decay
-     */
-    public int beginDecay(final int a, final int b)
-    {
-        final boolean unlinked = colonyLinks.remove(Pair.ofColonies(a, b));
-        int started = 0;
-        final java.util.Random random = new java.util.Random();
-        final int low = Math.min(a, b);
-        final int high = Math.max(a, b);
-        for (int i = 0; i < roads.size(); i++)
-        {
-            final Road road = roads.get(i);
-            final boolean ours = Math.min(road.pairA(), road.pairB()) == low && Math.max(road.pairA(), road.pairB()) == high;
-            if (!ours || road.decay() != null || road.x().length == 0)
-            {
-                continue;
-            }
-            final int n = road.x().length;
-            final List<Integer> shuffled = new ArrayList<>(n);
-            for (int k = 0; k < n; k++)
-            {
-                shuffled.add(k);
-            }
-            java.util.Collections.shuffle(shuffled, random);
-            roads.set(i, new Road(road.x(), road.y(), road.z(), road.colonyA(), road.gateA(), road.colonyB(), road.gateB(), road.pairA(), road.pairB(),
-              new Decay(shuffled.stream().mapToInt(Integer::intValue).toArray(), new boolean[n]), road.level(), road.joinRoad(), road.joinAt()));
-            started++;
-        }
-        if (unlinked || started > 0)
-        {
-            centres = null;
-            band = null;
-            levels = null;
-            setDirty();
-            broadcast();
-        }
-        return started;
-    }
-
-    /**
      * One step of every decaying road: a fraction of its cells go, among those whose chunk is loaded. A road with
      * nothing left becomes an empty one (its index stays).
      */
