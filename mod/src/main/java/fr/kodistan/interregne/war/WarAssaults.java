@@ -2100,11 +2100,33 @@ public final class WarAssaults
         end(assault, line, false);
     }
 
+    private static void end(final Assault assault, final String line, final boolean repelled)
+    {
+        end(assault, line, repelled, null, -1);
+    }
+
+    /**
+     * Stops every assault that involves a colony that no longer exists, as attacker or defender. The troops vanish; the
+     * survivors of an attacker still there go back to its towers like at the end of a normal assault. No war record,
+     * no victory: the war itself is closed by the caller.
+     */
+    public static void colonyGone(final MinecraftServer server, final int colony)
+    {
+        for (final Assault assault : new ArrayList<>(BY_DEFENDER.values()))
+        {
+            if (assault.attacker.getID() == colony || assault.defender.getID() == colony)
+            {
+                end(assault, "", false, server, colony);
+            }
+        }
+    }
+
     /**
      * @param repelled whether the defender pushed it back (its troops all fell, or its time ran out): what lets the
      *                 defender demand the attacker's surrender (see {@link Wars#surrenderWait})
+     * @param gone     the id of the colony that no longer exists (-1 for a normal end), {@code goneServer} the way to the world then
      */
-    private static void end(final Assault assault, final String line, final boolean repelled)
+    private static void end(final Assault assault, final String line, final boolean repelled, @Nullable final MinecraftServer goneServer, final int gone)
     {
         assault.over = true;
         BY_DEFENDER.remove(assault.defender.getID());
@@ -2114,11 +2136,18 @@ public final class WarAssaults
         }
         int back = 0;
         int homeless = 0;
-        if (assault.defender.getWorld() instanceof ServerLevel level)
+        final ServerLevel world = gone >= 0 ? goneServer.overworld() : assault.defender.getWorld() instanceof ServerLevel own ? own : null;
+        if (world != null)
         {
+            final ServerLevel level = world;
+            if (assault.defender.getID() == gone)
+            {
+                // The defender's buildings can no longer be reached: the cracks come off the samples taken while they showed
+                assault.crackSamples.values().forEach(sample -> sample.forEach(pos -> level.destroyBlockProgress(breakerIdFor(pos), pos, -1)));
+            }
             for (final BlockPos pos : assault.targets)
             {
-                final IBuilding building = assault.defender.getBuildingManager().getBuilding(pos);
+                final IBuilding building = assault.defender.getID() == gone ? null : assault.defender.getBuildingManager().getBuilding(pos);
                 if (building != null && !pos.equals(assault.ruinHall))
                 {
                     clearCracks(assault, level, building, pos);
@@ -2127,7 +2156,11 @@ public final class WarAssaults
             }
             for (final Marched troop : assault.marched.values())
             {
-                if (Garrison.welcomeBack(level.getServer(), assault.attacker, troop.kind(), troop.level()))
+                if (assault.attacker.getID() == gone)
+                {
+                    homeless++;
+                }
+                else if (Garrison.welcomeBack(level.getServer(), assault.attacker, troop.kind(), troop.level()))
                 {
                     back++;
                 }
@@ -2147,21 +2180,29 @@ public final class WarAssaults
         final int lost = assault.sent - back - homeless;
         assault.marched.clear();
         assault.troopIds.clear();
-        for (final var entry : assault.defender.getEventManager().getEvents().values())
+        if (assault.defender.getID() != gone)
         {
-            if (entry instanceof AssautEvent)
+            for (final var entry : assault.defender.getEventManager().getEvents().values())
             {
-                entry.setStatus(com.minecolonies.api.colony.colonyEvents.EventStatus.CANCELED);
+                if (entry instanceof AssautEvent)
+                {
+                    entry.setStatus(com.minecolonies.api.colony.colonyEvents.EventStatus.CANCELED);
+                }
             }
         }
-        announce(assault, line);
-        if (assault.sent > 0 && assault.defender.getWorld() instanceof ServerLevel level)
+        if (gone < 0)
         {
-            Diplomacy.notifyMembers(level.getServer(), assault.attacker, "⚔ Retour de " + assault.defender.getName() + " : "
+            announce(assault, line);
+        }
+        // With a colony gone the caller tells the other one; an attacker still there hears only about its troops
+        if (assault.sent > 0 && assault.attacker.getID() != gone && world != null)
+        {
+            Diplomacy.notifyMembers(world.getServer(), assault.attacker, "⚔ Retour de " + assault.defender.getName() + " : "
               + back + " soldat(s) rentrent aux tours, " + lost + " tombé(s)"
               + (homeless > 0 ? ", " + homeless + " sans place libre dans les tours (perdus)" : "") + ".");
         }
-        if (assault.defender.getWorld() instanceof ServerLevel level)
+        // No war record nor sync for a colony that is gone: its war is closed by the caller
+        if (gone < 0 && assault.defender.getWorld() instanceof ServerLevel level)
         {
             Wars.get(level.getServer()).record(assault.attacker.getID(), assault.defender.getID(), assault.sent, lost + homeless,
               assault.destroyed, assault.loot, assault.fallen);
