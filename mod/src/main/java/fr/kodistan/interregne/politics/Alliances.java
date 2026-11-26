@@ -318,6 +318,59 @@ public final class Alliances extends SavedData
         return false;
     }
 
+    /**
+     * The colony is gone: its alliances and proposals are erased.
+     *
+     * @return the colonies that were allied with it or had proposals with it
+     */
+    Set<Integer> removeColony(final int colony)
+    {
+        final Set<Integer> others = new HashSet<>();
+        allied.removeIf(pair -> {
+            final int low = (int) (pair >> 32);
+            final int high = pair.intValue();
+            if (low == colony || high == colony)
+            {
+                others.add(low == colony ? high : low);
+                return true;
+            }
+            return false;
+        });
+        proposals.removeIf(pair -> {
+            final int from = (int) (pair >> 32);
+            final int to = pair.intValue();
+            if (from == colony || to == colony)
+            {
+                others.add(from == colony ? to : from);
+                return true;
+            }
+            return false;
+        });
+        dayStart.keySet().removeIf(pair -> (int) (pair >> 32) == colony || pair.intValue() == colony);
+        if (!others.isEmpty())
+        {
+            setDirty();
+        }
+        return others;
+    }
+
+    /** Every colony id this state mentions, for the purge of colonies that no longer exist. */
+    Set<Integer> colonyIds()
+    {
+        final Set<Integer> ids = new HashSet<>();
+        for (final long pair : allied)
+        {
+            ids.add((int) (pair >> 32));
+            ids.add((int) pair);
+        }
+        for (final long pair : proposals)
+        {
+            ids.add((int) (pair >> 32));
+            ids.add((int) pair);
+        }
+        return ids;
+    }
+
     @Override
     public CompoundTag save(final CompoundTag tag, final HolderLookup.Provider registries)
     {
