@@ -2070,6 +2070,20 @@ public final class WarAssaults
         return null;
     }
 
+    /** Every assault still running, as {attacker, defender} pairs. */
+    public static List<IColony[]> running()
+    {
+        final List<IColony[]> pairs = new ArrayList<>();
+        for (final Assault assault : BY_DEFENDER.values())
+        {
+            if (!assault.over)
+            {
+                pairs.add(new IColony[] {assault.attacker, assault.defender});
+            }
+        }
+        return pairs;
+    }
+
     /** True while this attacker has an assault running on this defender. */
     public static boolean assaulting(final int attackerId, final int defenderId)
     {
@@ -2194,6 +2208,10 @@ public final class WarAssaults
             Wars.get(level.getServer()).record(assault.attacker.getID(), assault.defender.getID(), assault.sent, lost + homeless,
               assault.destroyed, assault.loot, assault.fallen);
             Wars.get(level.getServer()).finishAssault(assault.attacker.getID(), assault.defender.getID(), level.getGameTime(), repelled);
+            if (repelled)
+            {
+                fr.kodistan.interregne.politics.InfluenceSources.repelled(level.getServer(), assault.attacker, assault.defender);
+            }
             Alliances.broadcast(level.getServer(), assault.attacker, assault.defender);
         }
     }

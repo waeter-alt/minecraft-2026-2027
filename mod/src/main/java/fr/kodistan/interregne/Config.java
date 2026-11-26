@@ -349,6 +349,22 @@ public final class Config
       .comment("Influence given to the winning colony's owner when the enemy town hall falls or the enemy capitulates")
       .defineInRange("warVictoryInfluence", 50L, 0L, Long.MAX_VALUE);
 
+    public static final ModConfigSpec.LongValue INFLUENCE_REPELLED = BUILDER
+      .comment("Influence given to the defending colony's owner for each assault it repels (its troops all fell or the clock ran out; not a recall)")
+      .defineInRange("influenceRepelled", 12L, 0L, Long.MAX_VALUE);
+
+    public static final ModConfigSpec.LongValue INFLUENCE_ALLY_AID = BUILDER
+      .comment("Influence given to the owner of each allied colony whose clan-aid contingent was at the defender when an assault was repelled")
+      .defineInRange("influenceAllyAid", 12L, 0L, Long.MAX_VALUE);
+
+    public static final ModConfigSpec.LongValue INFLUENCE_ALLIANCE_SIGNED = BUILDER
+      .comment("Influence given to both colonies' owners the first time a pair of colonies signs an alliance (never again for that pair)")
+      .defineInRange("influenceAllianceSigned", 10L, 0L, Long.MAX_VALUE);
+
+    public static final ModConfigSpec.LongValue INFLUENCE_ALLIANCE_DAILY = BUILDER
+      .comment("Influence given to both colonies' owners for each full Minecraft day (24000 ticks) of active alliance")
+      .defineInRange("influenceAllianceDaily", 1L, 0L, Long.MAX_VALUE);
+
     public static final ModConfigSpec.IntValue ALLY_AID_MAX_TROOPS = BUILDER
       .comment("Aide de clan (provisional): most soldiers a colony keeps in reserve for one ally")
       .defineInRange("allyAidMaxTroops", 10, 1, 100);

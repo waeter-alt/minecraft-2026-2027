@@ -53,6 +53,10 @@ public final class Alliances extends SavedData
     private final Set<Long> allied = new HashSet<>();
     /** Proposals as {@code from << 32 | to}. */
     private final Set<Long> proposals = new HashSet<>();
+    /** Pairs that already earned the Influence of signing: once per pair, even after a break and a new alliance. */
+    private final Set<Long> signed = new HashSet<>();
+    /** Per allied pair, the game time from which the next day of alliance is counted. */
+    private final java.util.Map<Long, Long> dayStart = new java.util.HashMap<>();
 
     public static Alliances get(final MinecraftServer server)
     {
@@ -130,6 +134,7 @@ public final class Alliances extends SavedData
     {
         if (allied.remove(pair(me, other)))
         {
+            dayStart.remove(pair(me, other));
             setDirty();
         }
     }
@@ -226,12 +231,12 @@ public final class Alliances extends SavedData
     }
 
     // Package-private moves for Diplomacy, which holds the rules.
-    void doPropose(final int me, final int other)
+    public void doPropose(final int me, final int other)
     {
         propose(me, other);
     }
 
-    void doAccept(final int me, final int other)
+    public void doAccept(final int me, final int other)
     {
         accept(me, other);
     }
@@ -241,7 +246,7 @@ public final class Alliances extends SavedData
         withdraw(me, other);
     }
 
-    boolean doBreak(final int me, final int other)
+    public boolean doBreak(final int me, final int other)
     {
         final boolean was = allied.contains(pair(me, other));
         breakOff(me, other);
@@ -254,10 +259,63 @@ public final class Alliances extends SavedData
     void clearBetween(final int a, final int b)
     {
         final boolean changed = allied.remove(pair(a, b)) | proposals.remove(directed(a, b)) | proposals.remove(directed(b, a));
+        dayStart.remove(pair(a, b));
         if (changed)
         {
             setDirty();
         }
+    }
+
+    /**
+     * The first signing of this pair's alliance: true once per pair for the whole game, so the Influence it earns
+     * cannot be farmed by breaking and signing again.
+     */
+    public boolean firstSigning(final int a, final int b)
+    {
+        if (signed.add(pair(a, b)))
+        {
+            setDirty();
+            return true;
+        }
+        return false;
+    }
+
+    /** The allied pairs as {smaller id, larger id}. */
+    public List<int[]> alliedPairs()
+    {
+        final List<int[]> pairs = new ArrayList<>();
+        for (final long value : allied)
+        {
+            pairs.add(new int[] {(int) (value >> 32), (int) value});
+        }
+        return pairs;
+    }
+
+    /**
+     * Whether a full day of alliance ({@code dayTicks}) has run for this pair since the last one was counted. A day is
+     * paid once and the count restarts at {@code now}: server game time only runs while the server does, and a long gap
+     * is never made up.
+     */
+    public boolean claimDay(final int a, final int b, final long now, final long dayTicks)
+    {
+        if (!allied.contains(pair(a, b)))
+        {
+            return false;
+        }
+        final Long start = dayStart.get(pair(a, b));
+        if (start == null || start > now)
+        {
+            dayStart.put(pair(a, b), now);
+            setDirty();
+            return false;
+        }
+        if (now - start >= dayTicks)
+        {
+            dayStart.put(pair(a, b), now);
+            setDirty();
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -288,6 +346,7 @@ public final class Alliances extends SavedData
             }
             return false;
         });
+        dayStart.keySet().removeIf(pair -> (int) (pair >> 32) == colony || pair.intValue() == colony);
         if (!others.isEmpty())
         {
             setDirty();
@@ -317,6 +376,15 @@ public final class Alliances extends SavedData
     {
         tag.putLongArray("allied", allied.stream().mapToLong(Long::longValue).toArray());
         tag.putLongArray("proposals", proposals.stream().mapToLong(Long::longValue).toArray());
+        tag.putLongArray("signed", signed.stream().mapToLong(Long::longValue).toArray());
+        final net.minecraft.nbt.ListTag days = new net.minecraft.nbt.ListTag();
+        dayStart.forEach((key, time) -> {
+            final CompoundTag entry = new CompoundTag();
+            entry.putLong("pair", key);
+            entry.putLong("start", time);
+            days.add(entry);
+        });
+        tag.put("dayStart", days);
         return tag;
     }
 
@@ -330,6 +398,15 @@ public final class Alliances extends SavedData
         for (final long value : tag.getLongArray("proposals"))
         {
             alliances.proposals.add(value);
+        }
+        for (final long value : tag.getLongArray("signed"))
+        {
+            alliances.signed.add(value);
+        }
+        for (final net.minecraft.nbt.Tag t : tag.getList("dayStart", net.minecraft.nbt.Tag.TAG_COMPOUND))
+        {
+            final CompoundTag entry = (CompoundTag) t;
+            alliances.dayStart.put(entry.getLong("pair"), entry.getLong("start"));
         }
         return alliances;
     }
