@@ -192,6 +192,58 @@ public final class AllyAid extends SavedData
     }
 
     /**
+     * The colony is gone. Its reserves and the contingents it received vanish with it (those were citizens of the gone
+     * colony); the contingents it had sent elsewhere are taken out of those colonies.
+     *
+     * @return the guests of the gone helper still standing in other colonies, as {helped colony, guest}, for the caller
+     * to dismiss from their towers
+     */
+    public List<Map.Entry<Integer, Guest>> removeColony(final int colony)
+    {
+        final List<Map.Entry<Integer, Guest>> toDismiss = new ArrayList<>();
+        reserves.keySet().removeIf(key -> helperOf(key) == colony || helpedOf(key) == colony);
+        engaged.keySet().removeIf(key -> helperOf(key) == colony || helpedOf(key) == colony);
+        guests.remove(colony);
+        tally.remove(colony);
+        for (final Map.Entry<Integer, List<Guest>> entry : guests.entrySet())
+        {
+            for (final Guest guest : entry.getValue())
+            {
+                if (guest.helper() == colony)
+                {
+                    toDismiss.add(Map.entry(entry.getKey(), guest));
+                }
+            }
+            entry.getValue().removeIf(guest -> guest.helper() == colony);
+        }
+        guests.values().removeIf(List::isEmpty);
+        setDirty();
+        return toDismiss;
+    }
+
+    /** Every colony id this state mentions, for the purge of colonies that no longer exist. */
+    public Set<Integer> colonyIds()
+    {
+        final Set<Integer> ids = new HashSet<>(guests.keySet());
+        tally.keySet().forEach(ids::add);
+        for (final long key : reserves.keySet())
+        {
+            ids.add(helperOf(key));
+            ids.add(helpedOf(key));
+        }
+        for (final long key : engaged.keySet())
+        {
+            ids.add(helperOf(key));
+            ids.add(helpedOf(key));
+        }
+        for (final List<Guest> list : guests.values())
+        {
+            list.forEach(guest -> ids.add(guest.helper()));
+        }
+        return ids;
+    }
+
+    /**
      * The first assault on {@code helped}: every allied helper's reserve that is not out yet appears, half légionnaires
      * and half archères (the odd one is a légionnaire). Soldiers the colony cannot take stay in the reserve.
      */

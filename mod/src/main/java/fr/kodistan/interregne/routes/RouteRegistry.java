@@ -163,6 +163,34 @@ public final class RouteRegistry extends SavedData
         return colonyLinks.contains(new Pair(-1L - colony, post.asLong()));
     }
 
+    /**
+     * Forgets the links that name a colony that no longer exists. The roads stay where they are, as does the rest of the registry.
+     */
+    public boolean forgetColony(final int colony)
+    {
+        final boolean changed = colonyLinks.removeIf(pair -> pair.low() >= 0 ? pair.low() == colony || pair.high() == colony : pair.low() == -1L - colony);
+        if (changed)
+        {
+            setDirty();
+        }
+        return changed;
+    }
+
+    /** The colony ids the colony links mention. */
+    public java.util.Set<Integer> colonyIds()
+    {
+        final java.util.Set<Integer> ids = new HashSet<>();
+        for (final Pair pair : colonyLinks)
+        {
+            ids.add((int) (pair.low() < 0 ? -1L - pair.low() : pair.low()));
+            if (pair.low() >= 0)
+            {
+                ids.add((int) pair.high());
+            }
+        }
+        return ids;
+    }
+
     public boolean areLinked(final int a, final int b)
     {
         return colonyLinks.contains(Pair.ofColonies(a, b));

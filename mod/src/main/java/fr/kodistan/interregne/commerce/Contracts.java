@@ -316,11 +316,17 @@ public final class Contracts extends SavedData
      */
     private static void refundEscort(@Nullable final ServerPlayer player, @Nullable final IColony answering, final Contract contract, @Nullable final MinecraftServer server)
     {
+        refundEscort(player, answering, contract, server, id -> server == null ? null : IColonyManager.getInstance().getColonyByWorld(id, server.overworld()));
+    }
+
+    private static void refundEscort(@Nullable final ServerPlayer player, @Nullable final IColony answering, final Contract contract, @Nullable final MinecraftServer server,
+      final java.util.function.IntFunction<IColony> colonies)
+    {
         if (contract.escortPaid() <= 0 || server == null)
         {
             return;
         }
-        final IColony seller = IColonyManager.getInstance().getColonyByWorld(contract.seller, server.overworld());
+        final IColony seller = colonies.apply(contract.seller);
         if (seller == null)
         {
             return;
@@ -335,6 +341,73 @@ public final class Contracts extends SavedData
         }
         contract.escortFromTreasury = 0;
         contract.escortFromPurse = 0;
+    }
+
+    /**
+     * Cancels every contract between two colonies, as a broken alliance does on the next tick: offers give the escort
+     * money back, caravans on the road disappear, the buyer gets the price back and the crates return to the seller.
+     */
+    public void cancelBetween(final MinecraftServer server, final int a, final int b)
+    {
+        cancelIf(server, contract -> contract.seller == a && contract.buyer == b || contract.seller == b && contract.buyer == a,
+          id -> IColonyManager.getInstance().getColonyByWorld(id, server.overworld()));
+    }
+
+    /**
+     * Cancels every contract of a colony that no longer exists. Same rule as a broken alliance: the buyer still there is
+     * refunded, the crates go back to the seller still there and are lost when the seller is the one gone.
+     */
+    public void cancelOf(final MinecraftServer server, final int colony)
+    {
+        cancelOf(server, colony, id -> IColonyManager.getInstance().getColonyByWorld(id, server.overworld()));
+    }
+
+    /**
+     * {@link #cancelOf(MinecraftServer, int)} with the colonies found by {@code colonies}, which answers null for a colony that is gone.
+     */
+    public void cancelOf(final MinecraftServer server, final int colony, final java.util.function.IntFunction<IColony> colonies)
+    {
+        cancelIf(server, contract -> contract.seller == colony || contract.buyer == colony, colonies);
+    }
+
+    /** Every colony id the contracts mention. */
+    public java.util.Set<Integer> colonyIds()
+    {
+        final java.util.Set<Integer> ids = new java.util.HashSet<>();
+        for (final Contract contract : contracts)
+        {
+            ids.add(contract.seller);
+            ids.add(contract.buyer);
+        }
+        return ids;
+    }
+
+    private void cancelIf(final MinecraftServer server, final java.util.function.Predicate<Contract> which, final java.util.function.IntFunction<IColony> colonies)
+    {
+        final ServerLevel level = server.overworld();
+        boolean changed = false;
+        for (final Iterator<Contract> it = contracts.iterator(); it.hasNext(); )
+        {
+            final Contract contract = it.next();
+            if (!which.test(contract))
+            {
+                continue;
+            }
+            if (contract.state == Contract.OFFER)
+            {
+                refundEscort(null, null, contract, server, colonies);
+            }
+            else
+            {
+                abort(server, level, contract, colonies);
+            }
+            it.remove();
+            changed = true;
+        }
+        if (changed)
+        {
+            setDirty();
+        }
     }
 
     public static int stockOf(final IColony colony, final Crate crate)
@@ -901,9 +974,14 @@ public final class Contracts extends SavedData
      */
     private void abort(final MinecraftServer server, final ServerLevel level, final Contract contract)
     {
+        abort(server, level, contract, id -> IColonyManager.getInstance().getColonyByWorld(id, level));
+    }
+
+    private void abort(final MinecraftServer server, final ServerLevel level, final Contract contract, final java.util.function.IntFunction<IColony> colonies)
+    {
         removePuppet(level, contract);
-        final IColony seller = IColonyManager.getInstance().getColonyByWorld(contract.seller, level);
-        final IColony buyer = IColonyManager.getInstance().getColonyByWorld(contract.buyer, level);
+        final IColony seller = colonies.apply(contract.seller);
+        final IColony buyer = colonies.apply(contract.buyer);
         final Crate crate = Crate.byId(contract.crate);
         if (seller != null && crate != null)
         {
