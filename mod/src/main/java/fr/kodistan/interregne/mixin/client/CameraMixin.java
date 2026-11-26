@@ -40,7 +40,6 @@ public abstract class CameraMixin
         }
         else if (AssaultCamera.active())
         {
-            AssaultCamera.frame();
             final Vec3 position = AssaultCamera.position();
             setRotation(AssaultCamera.yaw(), AssaultCamera.pitch());
             setPosition(position.x, position.y, position.z);

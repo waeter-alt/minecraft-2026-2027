@@ -1,39 +1,39 @@
 package fr.kodistan.interregne.client.war;
 
-import net.minecraft.Util;
+import fr.kodistan.interregne.InterregneMod;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderHandEvent;
-import fr.kodistan.interregne.InterregneMod;
 
 /**
- * The spectator camera of the assault wait screen: high above the attacked colony, looking down on the fight, slowly
- * circling on its own; the player can turn it by dragging and zoom with the wheel. Applied by CameraMixin, the
- * death tilt is cancelled by GameRendererMixin while it runs.
+ * The spectator camera of the assault wait screen, steered like the wall planner's: it starts above the attacked
+ * colony's town hall, the movement keys slide it over the ground, dragging turns it, the wheel zooms. It stays
+ * within range of the town hall. Applied by CameraMixin; the death tilt is cancelled by GameRendererMixin meanwhile.
  */
 @EventBusSubscriber(modid = InterregneMod.MODID, value = Dist.CLIENT)
 public final class AssaultCamera
 {
     private static final float MIN_PITCH = 30;
-    private static final float MAX_PITCH = 85;
-    private static final double MIN_DISTANCE = 24;
-    private static final double MAX_DISTANCE = 120;
-    /** Degrees per second of the idle circling, and how long after the last drag it starts again. */
-    private static final float SPIN = 4f;
-    private static final long IDLE_MS = 2500;
+    private static final float MAX_PITCH = 88;
+    private static final double MIN_DISTANCE = 12;
+    private static final double MAX_DISTANCE = 110;
+    /** How far from the town hall the camera may roam: the assault zone. */
+    private static final double RANGE = 160;
 
     private static boolean active;
+    private static double anchorX;
+    private static double anchorZ;
     private static double focusX;
     private static double focusY;
     private static double focusZ;
     private static float yaw;
     private static float pitch;
     private static double distance;
-    private static long lastInput;
-    private static long lastFrame;
 
     private AssaultCamera()
     {
@@ -52,14 +52,14 @@ public final class AssaultCamera
     static void start(final BlockPos focus, final float startYaw)
     {
         active = true;
-        focusX = focus.getX() + 0.5;
+        anchorX = focus.getX() + 0.5;
+        anchorZ = focus.getZ() + 0.5;
+        focusX = anchorX;
         focusY = focus.getY();
-        focusZ = focus.getZ() + 0.5;
+        focusZ = anchorZ;
         yaw = startYaw;
-        pitch = 55;
-        distance = 64;
-        lastInput = 0;
-        lastFrame = Util.getMillis();
+        pitch = 58;
+        distance = 48;
     }
 
     static void stop()
@@ -72,28 +72,47 @@ public final class AssaultCamera
         return active;
     }
 
-    static void drag(final double dx, final double dy)
+    static void rotate(final double dYaw, final double dPitch)
     {
-        yaw += (float) (dx * 0.5);
-        pitch = (float) Math.max(MIN_PITCH, Math.min(MAX_PITCH, pitch + dy * 0.5));
-        lastInput = Util.getMillis();
+        yaw = (float) (yaw + dYaw);
+        pitch = (float) Math.max(MIN_PITCH, Math.min(MAX_PITCH, pitch + dPitch));
     }
 
-    static void zoom(final double steps)
+    static void zoom(final double factor)
     {
-        distance = Math.max(MIN_DISTANCE, Math.min(MAX_DISTANCE, distance * Math.pow(0.88, steps)));
-        lastInput = Util.getMillis();
+        distance = Math.max(MIN_DISTANCE, Math.min(MAX_DISTANCE, distance * factor));
     }
 
-    /** Called once per frame, before the camera is placed: advances the idle circling. */
-    public static void frame()
+    static double distance()
     {
-        final long now = Util.getMillis();
-        if (now - lastInput > IDLE_MS)
+        return distance;
+    }
+
+    /**
+     * Slides the focus over the ground: forward along the view, right across it, kept within range of the town hall,
+     * its height easing toward the ground below.
+     */
+    static void move(final double forward, final double right, final double seconds)
+    {
+        final double y = Math.toRadians(yaw);
+        focusX += -Math.sin(y) * forward - Math.cos(y) * right;
+        focusZ += Math.cos(y) * forward - Math.sin(y) * right;
+        final double dx = focusX - anchorX;
+        final double dz = focusZ - anchorZ;
+        final double far = Math.sqrt(dx * dx + dz * dz);
+        if (far > RANGE)
         {
-            yaw += SPIN * (now - lastFrame) / 1000f;
+            focusX = anchorX + dx * RANGE / far;
+            focusZ = anchorZ + dz * RANGE / far;
         }
-        lastFrame = now;
+        final Minecraft minecraft = Minecraft.getInstance();
+        final int bx = (int) Math.floor(focusX);
+        final int bz = (int) Math.floor(focusZ);
+        if (minecraft.level != null && minecraft.level.hasChunk(bx >> 4, bz >> 4))
+        {
+            final int ground = minecraft.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, bx, bz);
+            focusY += (ground - focusY) * Math.min(1, seconds * 4);
+        }
     }
 
     public static float yaw()

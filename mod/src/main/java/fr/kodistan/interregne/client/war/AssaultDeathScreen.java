@@ -6,7 +6,9 @@ import fr.kodistan.interregne.client.ui.Ui;
 import fr.kodistan.interregne.network.AssaultDeathPayload;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Axis;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.Util;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.DeathScreen;
@@ -257,6 +259,7 @@ public final class AssaultDeathScreen extends Screen
     @Override
     public void render(final GuiGraphics graphics, final int mouseX, final int mouseY, final float partialTick)
     {
+        steer();
         super.render(graphics, mouseX, mouseY, partialTick);
         final Layout at = layout();
         final int cx = width / 2;
@@ -384,6 +387,30 @@ public final class AssaultDeathScreen extends Screen
         graphics.setColor(1f, 1f, 1f, 1f);
     }
 
+    private long lastFrame;
+
+    /** Slides the aerial camera with the player's own movement keys (ZQSD on an AZERTY keyboard), faster with sprint. */
+    private void steer()
+    {
+        final long now = Util.getMillis();
+        final double seconds = lastFrame == 0 ? 0 : Math.min(0.1, (now - lastFrame) / 1000.0);
+        lastFrame = now;
+        if (!AssaultCamera.active())
+        {
+            return;
+        }
+        final double forward = (held(minecraft.options.keyUp) ? 1 : 0) - (held(minecraft.options.keyDown) ? 1 : 0);
+        final double right = (held(minecraft.options.keyRight) ? 1 : 0) - (held(minecraft.options.keyLeft) ? 1 : 0);
+        final double speed = AssaultCamera.distance() * (held(minecraft.options.keySprint) ? 1.8 : 0.9) * seconds;
+        AssaultCamera.move(forward * speed, right * speed, seconds);
+    }
+
+    private boolean held(final KeyMapping key)
+    {
+        final InputConstants.Key bound = key.getKey();
+        return bound.getType() == InputConstants.Type.KEYSYM && InputConstants.isKeyDown(minecraft.getWindow().getWindow(), bound.getValue());
+    }
+
     private void drawScaled(final GuiGraphics graphics, final String text, final int cx, final int y, final int scale, final int color)
     {
         graphics.pose().pushPose();
@@ -416,7 +443,7 @@ public final class AssaultDeathScreen extends Screen
     {
         if (AssaultCamera.active())
         {
-            AssaultCamera.drag(dragX, dragY);
+            AssaultCamera.rotate(dragX * 0.5, dragY * 0.4);
             return true;
         }
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
@@ -427,7 +454,7 @@ public final class AssaultDeathScreen extends Screen
     {
         if (AssaultCamera.active())
         {
-            AssaultCamera.zoom(scrollY);
+            AssaultCamera.zoom(Math.pow(0.88, scrollY));
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
