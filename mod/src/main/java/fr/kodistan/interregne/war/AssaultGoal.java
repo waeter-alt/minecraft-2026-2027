@@ -74,16 +74,15 @@ public class AssaultGoal extends Goal
     }
 
     /**
-     * Whether the troop is genuinely still fighting something. Nothing here re-scans for a new target (that's the
-     * citizen-chasing bug we cut) — the only thing that ever sets {@link EntLegionnaire#getTarget()} is
-     * HurtByTargetGoal, reacting once per hit. Once the target dies, nothing clears that reference on its own:
-     * checking only for null left a troop permanently idle after its fight ended (the target stayed non-null, just
-     * dead), which read as "stopped attacking" with no way back into AssaultGoal.
+     * Whether the troop is genuinely still fighting something ({@link AssaultTroop#keepsChasing}: alive, on the
+     * leash, reachable). The target comes from HurtByTargetGoal, SeekFoeGoal (guards and enemy players only, never
+     * civilians: the citizen-chasing bug stays cut) or the assault's shared aggro. Once the target is let go, nothing
+     * clears that reference on its own: {@link #tick} does, otherwise the troop would stay idle with no way back
+     * into AssaultGoal.
      */
     private boolean isTargetActive()
     {
-        final LivingEntity target = troop.getTarget();
-        return target != null && target.isAlive();
+        return troop.keepsChasing(troop.getTarget());
     }
 
     @Override

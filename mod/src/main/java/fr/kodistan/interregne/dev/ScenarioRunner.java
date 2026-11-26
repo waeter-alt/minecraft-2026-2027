@@ -163,6 +163,7 @@ public final class ScenarioRunner
     private static void run(final MinecraftServer server)
     {
         final ServerLevel level = (ServerLevel) colony.getWorld();
+        scenario.tick(colony, level, ticks);
         if (ticks % every == 0 || ticks >= duration)
         {
             report.add(ticks + ": " + scenario.snapshot(colony, level));

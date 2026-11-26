@@ -53,12 +53,17 @@ public class EntLegionnaire extends AssaultTroop implements IMeleeBarbarianEntit
         super(type, world);
         RaiderMobUtils.setEquipment(this);
         // MobAIRegistry attaches nothing to a légionnaire (MobAiRegistryMixin): its whole AI is here, vanilla and
-        // ours. Fight back against whoever hits it — never a proactive scan — and otherwise march and batter.
+        // ours. Fight back against whoever hits it, go after nearby guards and enemy players (never civilians), and
+        // otherwise march and batter.
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new RetaliateGoal(this));
         this.goalSelector.addGoal(2, new AssaultGoal(this));
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
+        this.targetSelector.addGoal(2, new SeekFoeGoal(this, SEEK_RANGE));
     }
+
+    /** How far a légionnaire looks for a guard or an enemy player to go after. */
+    private static final double SEEK_RANGE = 16.0D;
 
     /** Every blow — a melee hit or a strike at the wall (AssaultGoal) — goes through swing(): one place to play the animation. */
     @Override
@@ -148,7 +153,8 @@ public class EntLegionnaire extends AssaultTroop implements IMeleeBarbarianEntit
     }
 
     /**
-     * Vanilla melee chase, started from the vanilla target alone (set only by HurtByTargetGoal). The stock
+     * Vanilla melee chase, started from the vanilla target alone (HurtByTargetGoal, SeekFoeGoal, or the assault's
+     * shared aggro), and dropped once {@link AssaultTroop#keepsChasing} lets the target go. The stock
      * MeleeAttackGoal.canUse needs createPath(), which the MineColonies navigator always answers null (async
      * pathing): a troop hit from out of arm's reach would never fight back, and stand frozen with a target set.
      * The chase itself goes through navigation.moveTo(entity), which the navigator does support.
@@ -163,8 +169,13 @@ public class EntLegionnaire extends AssaultTroop implements IMeleeBarbarianEntit
         @Override
         public boolean canUse()
         {
-            final LivingEntity target = this.mob.getTarget();
-            return target != null && target.isAlive();
+            return ((AssaultTroop) this.mob).keepsChasing(this.mob.getTarget());
+        }
+
+        @Override
+        public boolean canContinueToUse()
+        {
+            return super.canContinueToUse() && ((AssaultTroop) this.mob).keepsChasing(this.mob.getTarget());
         }
     }
 }

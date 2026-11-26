@@ -19,6 +19,13 @@ public interface Scenario
     List<String> setup(IColony colony, ServerLevel level);
 
     /**
+     * Called every server tick while the game runs, for checks that need to watch a state change as it happens.
+     */
+    default void tick(final IColony colony, final ServerLevel level, final long tick)
+    {
+    }
+
+    /**
      * One line of measures, taken at regular intervals while the game runs.
      */
     String snapshot(IColony colony, ServerLevel level);

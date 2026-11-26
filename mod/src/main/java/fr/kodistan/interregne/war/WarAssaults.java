@@ -33,6 +33,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -102,6 +103,19 @@ public final class WarAssaults
       * troop's own battering rhythm (see {@link AssaultGoal#BATTER_EVERY}), so a lone attacker never notices it. */
     private static final int EFFECT_COOLDOWN_TICKS = 4;
 
+    // Combat rules validated 2026-11-25 (mod/docs/assaut.md). Starting values, to revisit at balancing.
+    /** A fighting guard this close (horizontal) to the targeted building freezes its structure points. */
+    private static final double GUARD_HOLD_RADIUS = 24.0D;
+    /** A guard counts as fighting this long after its last blow exchanged with a troop: a guard walled in or out of
+      * reach never fights, so it never holds a building. */
+    private static final long GUARD_FIGHT_WINDOW = 20L * 10;
+    private static final long CLOCK_START = 20L * 60 * 8;
+    private static final long CLOCK_CAP = 20L * 60 * 12;
+    private static final long CLOCK_PER_STRUCTURE = 20L * 90;
+    private static final long CLOCK_PER_GUARD = 20L * 30;
+    /** A troop that gets hit calls the troops of its assault this close to it. */
+    private static final double ALERT_RADIUS = 16.0D;
+
     private static final Map<Integer, Assault> BY_DEFENDER = new HashMap<>();
 
     /** Paced final sweeps in progress, drained a few blocks per tick by {@link #onServerTick}. */
@@ -159,6 +173,16 @@ public final class WarAssaults
         boolean over;
         /** Set when the defender's town hall falls; the war is settled on the next server tick. */
         boolean townHallTaken;
+        /** Defender guards by entity id: game time of their last blow exchanged with a troop. */
+        final Map<Integer, Long> guardFights = new HashMap<>();
+        /** Troops fallen so far, and how many of them a defender guard killed. */
+        int troopsDead;
+        int guardKills;
+        /** Where the troops spawned: the targets are sorted by distance to it. */
+        BlockPos rallyPoint;
+        /** Game time at which the assault is pushed back if it hasn't won. */
+        long deadline;
+        ServerBossEvent clock;
 
         Assault(final IColony defender, final IColony attacker, final UUID commander)
         {
@@ -250,6 +274,7 @@ public final class WarAssaults
         final Assault assault = new Assault(defender, attacker, commander != null ? commander.getUUID() : null);
         BY_DEFENDER.put(defender.getID(), assault);
         STRIKES.remove(defender.getID());
+        GARRISON_WINS.remove(defender.getID());
 
         spawnTroops(level, WarEntities.LEGIONNAIRE.get(), legionLevels, Garrison.LEGIONNAIRE, 0, spawnPos, defender, event, assault, fromGarrison);
         spawnTroops(level, WarEntities.ARCHER.get(), archerLevels, Garrison.ARCHERE, legionnaires, spawnPos, defender, event, assault, fromGarrison);
@@ -260,7 +285,9 @@ public final class WarAssaults
             return "Le spawn des troupes a échoué.";
         }
 
+        assault.rallyPoint = spawnPos;
         planTargets(assault, level, spawnPos);
+        assault.deadline = level.getGameTime() + CLOCK_START;
         if (attacker.getID() != defender.getID())
         {
             fr.kodistan.interregne.politics.AllyAid.onAssault(level.getServer(), defender);
@@ -269,6 +296,11 @@ public final class WarAssaults
         {
             commander.sendSystemMessage(Component.literal(
               "§6Assaut lancé§r : " + legionnaires + " légionnaire(s), " + archers + " archer(s) en route vers " + defender.getName() + "."));
+        }
+        if (attacker.getID() != defender.getID())
+        {
+            Diplomacy.notifyMembers(level.getServer(), defender, "§c⚔ " + attacker.getName() + " lance un assaut sur " + defender.getName()
+              + "§r : " + (legionnaires + archers) + " soldat(s) en approche.");
         }
         return null;
     }
@@ -330,8 +362,13 @@ public final class WarAssaults
             for (int attempt = 0; attempt < 24; attempt++)
             {
                 final double angle = level.random.nextDouble() * Math.PI * 2.0D;
-                final BlockPos pos = defender.getCenter().offset((int) (Math.cos(angle) * margin), 0, (int) (Math.sin(angle) * margin));
-                final BlockPos found = BlockPosUtil.findAround(level, pos, 6, 6, BlockPosUtil.SOLID_AIR_POS_SELECTOR);
+                final int x = defender.getCenter().getX() + (int) (Math.cos(angle) * margin);
+                final int z = defender.getCenter().getZ() + (int) (Math.sin(angle) * margin);
+                // The real ground, not the colony centre's height ± a few blocks (found nothing on a superflat test
+                // world); loading the chunk first, since on a fresh world nobody has been out on the ring yet.
+                level.getChunkAt(new BlockPos(x, 0, z));
+                final int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+                final BlockPos found = standable(level, x, y, z) ? new BlockPos(x, y, z) : null;
                 if (found == null)
                 {
                     continue;
@@ -353,17 +390,17 @@ public final class WarAssaults
         return anywhere;
     }
 
-    /** Every building is a target, the town hall last (victory target of the full war system) — but if the colony
-      * has a wall, it's the very first target of all: see {@link #planWallBreach}. */
+    /** Every building is a target, nearest to the rally point first so the band advances through the colony, the
+      * town hall last (victory target of the full war system) — but if the colony has a wall, it's the very first
+      * target of all: see {@link #planWallBreach}. */
     private static void planTargets(final Assault assault, final ServerLevel level, final BlockPos rallyPoint)
     {
         planWallBreach(assault, level, rallyPoint);
 
-        final BlockPos spawn = assault.defender.getCenter();
         final List<IBuilding> buildings = new ArrayList<>(assault.defender.getBuildingManager().getBuildings().values());
         final WarRuinsData ruins = WarRuinsData.get(level);
         buildings.removeIf(b -> b.getBuildingLevel() <= 0 || ruins.isRuined(b.getID()));
-        buildings.sort(Comparator.comparingDouble(b -> BlockPosUtil.getDistance(b.getID(), spawn)));
+        buildings.sort(Comparator.comparingDouble(b -> BlockPosUtil.getDistance(b.getID(), rallyPoint)));
         final IBuilding townHall = buildings.stream().filter(b -> b.getID().equals(assault.defender.getCenter())).findFirst().orElse(null);
         if (townHall != null)
         {
@@ -461,10 +498,147 @@ public final class WarAssaults
         return new WallBreach(new BlockPos(bestX, groundY, bestZ), bestAlongX, bestAlongZ, signedOutX, signedOutZ);
     }
 
-    static boolean isEngaged(final AssaultTroop troop)
+    /**
+     * The foe this troop should go after, within {@code range}: the defender's guards first, then enemy players, never
+     * a civilian or a neutral (those only become targets by hitting a troop first: HurtByTargetGoal and
+     * {@link #rally}). A guard counts only if the troop can see it or it is fighting — a guard walled in out of sight
+     * must not lure the band away from the siege for nothing. Players need to be in sight.
+     */
+    @Nullable
+    static LivingEntity pickFoe(final AssaultTroop troop, final double range)
     {
         final Assault assault = BY_DEFENDER.get(colonyOf(troop));
-        return assault != null && assault.engaged;
+        if (assault == null || !(troop.level() instanceof ServerLevel level))
+        {
+            return null;
+        }
+        final long now = level.getGameTime();
+        final double rangeSq = range * range;
+        LivingEntity best = null;
+        double bestSq = rangeSq;
+        for (final AbstractEntityCitizen citizen : level.getEntitiesOfClass(AbstractEntityCitizen.class, troop.getBoundingBox().inflate(range),
+          c -> c.isAlive() && isGuardOf(assault.defender, c)))
+        {
+            final double distSq = troop.distanceToSqr(citizen);
+            if (distSq <= bestSq && !troop.shuns(citizen) && (fighting(assault, citizen, now) || troop.hasLineOfSight(citizen)))
+            {
+                bestSq = distSq;
+                best = citizen;
+            }
+        }
+        if (best != null)
+        {
+            return best;
+        }
+        for (final ServerPlayer player : level.players())
+        {
+            final double distSq = troop.distanceToSqr(player);
+            if (distSq <= bestSq && !troop.shuns(player) && isEnemyPlayer(assault, player) && troop.hasLineOfSight(player))
+            {
+                bestSq = distSq;
+                best = player;
+            }
+        }
+        return best;
+    }
+
+    /** A guard of {@code colony}, alive or not (a dying guard is already dead to isAlive). */
+    private static boolean isGuardOf(final IColony colony, final AbstractEntityCitizen citizen)
+    {
+        final var data = citizen.getCitizenData();
+        return citizen.getCitizenColonyHandler().getColonyId() == colony.getID() && data != null && data.getJob() != null && data.getJob().isGuard();
+    }
+
+    /**
+     * A player the troops attack on sight: a member of the defending colony, or of a colony at open war with the
+     * attacker. Never a member of the attacking colony, and never a neutral or an ally who stays out of the war.
+     */
+    private static boolean isEnemyPlayer(final Assault assault, final Player player)
+    {
+        if (!player.isAlive() || player.isCreative() || player.isSpectator() || assault.attacker.getPermissions().isColonyMember(player))
+        {
+            return false;
+        }
+        if (assault.defender.getPermissions().isColonyMember(player))
+        {
+            return true;
+        }
+        final MinecraftServer server = player.getServer();
+        if (server == null)
+        {
+            return false;
+        }
+        for (final IColony colony : IColonyManager.getInstance().getAllColonies())
+        {
+            if (colony.getPermissions().isColonyMember(player)
+                  && (Diplomacy.mayAssault(server, assault.attacker.getID(), colony.getID()) || Diplomacy.mayAssault(server, colony.getID(), assault.attacker.getID())))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean fighting(final Assault assault, final Entity guard, final long now)
+    {
+        final Long last = assault.guardFights.get(guard.getId());
+        return last != null && now - last <= GUARD_FIGHT_WINDOW;
+    }
+
+    /** Whether a fighting defender guard stands close enough to this building to keep it from losing structure. */
+    private static boolean guardHolds(final Assault assault, final ServerLevel level, final BlockPos hut)
+    {
+        final long now = level.getGameTime();
+        final Iterator<Map.Entry<Integer, Long>> it = assault.guardFights.entrySet().iterator();
+        while (it.hasNext())
+        {
+            final Map.Entry<Integer, Long> entry = it.next();
+            if (now - entry.getValue() > GUARD_FIGHT_WINDOW)
+            {
+                it.remove();
+                continue;
+            }
+            final Entity guard = level.getEntity(entry.getKey());
+            if (guard == null || !guard.isAlive())
+            {
+                it.remove();
+                continue;
+            }
+            final double dx = guard.getX() - (hut.getX() + 0.5D);
+            final double dz = guard.getZ() - (hut.getZ() + 0.5D);
+            if (dx * dx + dz * dz <= GUARD_HOLD_RADIUS * GUARD_HOLD_RADIUS)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Pushes the assault's deadline back after progress, never past {@link #CLOCK_CAP} from now. */
+    private static void addTime(final Assault assault, final long ticks)
+    {
+        if (assault.defender.getWorld() instanceof ServerLevel level)
+        {
+            assault.deadline = Math.min(level.getGameTime() + CLOCK_CAP, assault.deadline + ticks);
+        }
+    }
+
+    /** Shared aggro: the troops of this assault near the one that got hit turn on whoever hit it, unless already busy. */
+    private static void rally(final Assault assault, final ServerLevel level, final AssaultTroop hurt, final LivingEntity hitter)
+    {
+        if (hitter instanceof Player player && (player.isCreative() || player.isSpectator() || assault.attacker.getPermissions().isColonyMember(player)))
+        {
+            return;
+        }
+        for (final int id : assault.troopIds)
+        {
+            if (level.getEntity(id) instanceof AssaultTroop troop && troop != hurt && troop.isAlive()
+                  && troop.distanceToSqr(hurt) <= ALERT_RADIUS * ALERT_RADIUS
+                  && (troop.getTarget() == null || !troop.getTarget().isAlive()))
+            {
+                troop.setTarget(hitter);
+            }
+        }
     }
 
     /**
@@ -526,15 +700,24 @@ public final class WarAssaults
         {
             return false;
         }
-        final int left = assault.structure.merge(hut, -1, Integer::sum);
         final boolean isWall = assault.wallBreach != null && hut.equals(assault.wallBreach.center());
+        // The wall can be breached under fire; a building can't lose structure while a guard fights near it.
+        if (!isWall && assault.defender.getWorld() instanceof ServerLevel held && guardHolds(assault, held, hut))
+        {
+            if (effectsDue(assault, held, hut))
+            {
+                updateBar(assault, hut, assault.structure.get(hut), false, true);
+            }
+            return false;
+        }
+        final int left = assault.structure.merge(hut, -1, Integer::sum);
         boolean showEffects = false;
         if (assault.defender.getWorld() instanceof ServerLevel level)
         {
             showEffects = effectsDue(assault, level, hut);
             if (showEffects)
             {
-                updateBar(assault, hut, left, isWall);
+                updateBar(assault, hut, left, isWall, false);
                 if (isWall)
                 {
                     wallDamageEffects(level, assault.wallBreach);
@@ -553,6 +736,7 @@ public final class WarAssaults
         }
         if (left <= 0)
         {
+            addTime(assault, CLOCK_PER_STRUCTURE);
             if (isWall)
             {
                 breachWall(assault, hut);
@@ -802,8 +986,8 @@ public final class WarAssaults
           net.minecraft.sounds.SoundSource.HOSTILE, 1.0F, 1.1F + level.random.nextFloat() * 0.3F);
     }
 
-    /** Shows (and keeps in sync) the target's health bar, visible to nearby players only. */
-    private static void updateBar(final Assault assault, final BlockPos hut, final int left, final boolean isWall)
+    /** Shows (and keeps in sync) the target's health bar, visible to nearby players only; blue while guards hold it. */
+    private static void updateBar(final Assault assault, final BlockPos hut, final int left, final boolean isWall, final boolean held)
     {
         if (!(assault.defender.getWorld() instanceof ServerLevel level))
         {
@@ -825,6 +1009,7 @@ public final class WarAssaults
             return new ServerBossEvent(name, BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10);
         });
         bar.setProgress(Mth.clamp((float) left / total, 0.0F, 1.0F));
+        bar.setColor(held ? BossEvent.BossBarColor.BLUE : BossEvent.BossBarColor.RED);
         for (final ServerPlayer player : level.players())
         {
             if (player.distanceToSqr(hut.getX() + 0.5D, hut.getY() + 0.5D, hut.getZ() + 0.5D) <= BAR_VIEW_DISTANCE_SQ)
@@ -1277,6 +1462,15 @@ public final class WarAssaults
      */
     private static final Map<Integer, double[]> STRIKES = new HashMap<>();
 
+    /** Per defender colony: whether its last assault was pushed back by its guards alone (every troop killed by a
+      * guard). Kept past the assault's end for WarScenario, reset at the next launch. */
+    private static final Map<Integer, Boolean> GARRISON_WINS = new HashMap<>();
+
+    public static boolean repelledByGarrison(final IColony defender)
+    {
+        return GARRISON_WINS.getOrDefault(defender.getID(), false);
+    }
+
     static void recordFirstBlow(final AssaultTroop troop, final BlockPos hut, final SiegeSpot spot, final double distance)
     {
         final double[] stats = STRIKES.computeIfAbsent(colonyOf(troop), id -> new double[2]);
@@ -1319,8 +1513,21 @@ public final class WarAssaults
             if (assault.townHallTaken && !assault.over)
             {
                 // end first: it adds this assault to the war's tally, which the victory then reads for the recap
-                end(assault, "§cL'hôtel de ville est tombé§r : la guerre est perdue.");
+                end(assault, "§cL'hôtel de ville de " + assault.defender.getName() + " est tombé§r : " + assault.attacker.getName() + " gagne la guerre.");
                 Diplomacy.victory(event.getServer(), assault.attacker, assault.defender);
+                continue;
+            }
+            if (!assault.over && assault.defender.getWorld() instanceof ServerLevel level)
+            {
+                final long left = assault.deadline - level.getGameTime();
+                if (left <= 0)
+                {
+                    end(assault, "§aTemps écoulé§r : l'assaut sur " + assault.defender.getName() + " est repoussé.");
+                }
+                else if (level.getGameTime() % 20 == 0)
+                {
+                    updateClock(assault, level, left);
+                }
             }
         }
         if (PENDING_SWEEPS.isEmpty())
@@ -1342,7 +1549,31 @@ public final class WarAssaults
         }
     }
 
-    /** Closes the assault when its last troop falls. */
+    /** The assault's clock bar, shown to the online members of both colonies wherever they are. */
+    private static void updateClock(final Assault assault, final ServerLevel level, final long left)
+    {
+        if (assault.clock == null)
+        {
+            assault.clock = new ServerBossEvent(Component.empty(), BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.PROGRESS);
+        }
+        final long seconds = (left + 19) / 20;
+        assault.clock.setName(Component.literal("⚔ Assaut sur " + assault.defender.getName() + " — "
+          + seconds / 60 + ":" + String.format(java.util.Locale.ROOT, "%02d", seconds % 60)));
+        assault.clock.setProgress(Mth.clamp((float) left / CLOCK_CAP, 0.0F, 1.0F));
+        for (final ServerPlayer player : level.getServer().getPlayerList().getPlayers())
+        {
+            if (assault.attacker.getPermissions().isColonyMember(player) || assault.defender.getPermissions().isColonyMember(player))
+            {
+                assault.clock.addPlayer(player);
+            }
+            else
+            {
+                assault.clock.removePlayer(player);
+            }
+        }
+    }
+
+    /** Closes the assault when its last troop falls; a defender guard's death buys the attacker time. */
     @SubscribeEvent
     public static void onDeath(final LivingDeathEvent event)
     {
@@ -1353,6 +1584,11 @@ public final class WarAssaults
             if (defended != null && !defended.over && !fr.kodistan.interregne.politics.AllyAid.isGuest(citizen.getCitizenData()))
             {
                 defended.fallen++;
+                defended.guardFights.remove(citizen.getId());
+                if (isGuardOf(defended.defender, citizen))
+                {
+                    addTime(defended, CLOCK_PER_GUARD);
+                }
             }
             return;
         }
@@ -1365,29 +1601,69 @@ public final class WarAssaults
         {
             return;
         }
+        final Entity killer = event.getSource().getEntity();
+        InterregneMod.LOGGER.info("[war] troupe {} tombée : {} ({})", troop.getId(), event.getSource().getMsgId(),
+          killer == null ? "?" : killer.getName().getString());
+        assault.troopsDead++;
+        if (killer instanceof AbstractEntityCitizen citizen && isGuardOf(assault.defender, citizen))
+        {
+            assault.guardKills++;
+        }
         assault.troopIds.remove(Integer.valueOf(troop.getId()));
         assault.standByTroop.remove(troop.getId());
         assault.marched.remove(troop.getId());
         if (assault.troopIds.isEmpty() && !assault.over)
         {
-            end(assault, "§aAssaut repoussé§r : la colonie tient toujours.");
+            GARRISON_WINS.put(assault.defender.getID(), assault.guardKills == assault.troopsDead);
+            end(assault, "§aAssaut repoussé§r : " + assault.defender.getName() + " tient toujours.");
         }
     }
 
-    /** The engagement flag: any hit exchanged between a troop and a defender. */
+    /**
+     * Every blow exchanged between a troop and anything: flags the assault as engaged, stamps the defender guard
+     * involved as fighting (what lets it hold a building, see {@link #guardHolds}), and on a troop getting hurt calls
+     * its neighbours in ({@link #rally}). The source entity is the shooter for an arrow.
+     */
     @SubscribeEvent
     public static void onDamage(final LivingDamageEvent.Post event)
     {
-        final LivingEntity victim = event.getEntity();
-        if (victim instanceof AssaultTroop || (victim instanceof EntityCitizen && !BY_DEFENDER.isEmpty()))
+        if (BY_DEFENDER.isEmpty())
         {
-            for (final Assault assault : BY_DEFENDER.values())
+            return;
+        }
+        final LivingEntity victim = event.getEntity();
+        final Entity source = event.getSource().getEntity();
+        if (victim instanceof AssaultTroop troop)
+        {
+            final Assault assault = BY_DEFENDER.get(colonyOf(troop));
+            if (assault == null || !(troop.level() instanceof ServerLevel level))
             {
-                if (victim instanceof AssaultTroop troop ? colonyOf(troop) == assault.defender.getID()
-                      : victim.level() == assault.defender.getWorld())
-                {
-                    assault.engaged = true;
-                }
+                return;
+            }
+            assault.engaged = true;
+            if (source instanceof AbstractEntityCitizen citizen && isGuardOf(assault.defender, citizen))
+            {
+                assault.guardFights.put(citizen.getId(), level.getGameTime());
+            }
+            if (source instanceof LivingEntity hitter && !(hitter instanceof AssaultTroop))
+            {
+                rally(assault, level, troop, hitter);
+            }
+            return;
+        }
+        if (source instanceof AssaultTroop troop)
+        {
+            final Assault assault = BY_DEFENDER.get(colonyOf(troop));
+            if (assault == null || !(troop.level() instanceof ServerLevel level))
+            {
+                return;
+            }
+            assault.engaged = true;
+            // What tells a chase it's getting somewhere (AssaultTroop#keepsChasing), arrows included.
+            troop.setLastHurtMob(victim);
+            if (victim instanceof AbstractEntityCitizen citizen && isGuardOf(assault.defender, citizen))
+            {
+                assault.guardFights.put(citizen.getId(), level.getGameTime());
             }
         }
     }
@@ -1571,6 +1847,80 @@ public final class WarAssaults
         return assault == null ? 0 : assault.loot;
     }
 
+    /** Seconds left on the assault's clock, or -1 when no assault runs. */
+    public static long secondsLeft(final IColony defender)
+    {
+        final Assault assault = BY_DEFENDER.get(defender.getID());
+        if (assault == null || !(assault.defender.getWorld() instanceof ServerLevel level))
+        {
+            return -1;
+        }
+        return Math.max(0, (assault.deadline - level.getGameTime() + 19) / 20);
+    }
+
+    /** Structure points left on a target of the running assault, or -1 when it isn't one. */
+    public static int structureLeft(final IColony defender, final BlockPos hut)
+    {
+        final Assault assault = BY_DEFENDER.get(defender.getID());
+        return assault == null ? -1 : assault.structure.getOrDefault(hut, -1);
+    }
+
+    /** The running assault's remaining targets, in the order they'll be attacked. */
+    public static List<BlockPos> targetOrder(final IColony defender)
+    {
+        final Assault assault = BY_DEFENDER.get(defender.getID());
+        return assault == null ? List.of() : List.copyOf(assault.targets);
+    }
+
+    /** Where the running assault's troops rallied (the targets are ordered by distance to it), or null. */
+    @Nullable
+    public static BlockPos rallyPoint(final IColony defender)
+    {
+        final Assault assault = BY_DEFENDER.get(defender.getID());
+        return assault == null ? null : assault.rallyPoint;
+    }
+
+    /** The clock's ceiling in seconds, for tests. */
+    public static long clockCapSeconds()
+    {
+        return CLOCK_CAP / 20L;
+    }
+
+    /** Whether a fighting guard currently freezes this target's structure points (read for tests). */
+    public static boolean guardHolding(final IColony defender, final BlockPos hut)
+    {
+        final Assault assault = BY_DEFENDER.get(defender.getID());
+        return assault != null && assault.defender.getWorld() instanceof ServerLevel level && guardHolds(assault, level, hut);
+    }
+
+    /** The defender's loaded, living guards (read for tests). */
+    public static List<AbstractEntityCitizen> guardsOf(final IColony defender)
+    {
+        final List<AbstractEntityCitizen> guards = new ArrayList<>();
+        for (final var data : defender.getCitizenManager().getCitizens())
+        {
+            data.getEntity().ifPresent(entity ->
+            {
+                if (entity.isAlive() && isGuardOf(defender, entity))
+                {
+                    guards.add(entity);
+                }
+            });
+        }
+        return guards;
+    }
+
+    /** Test hook ({@link fr.kodistan.interregne.dev.WarScenario}): marks a guard as having just traded a blow with a
+      * troop, exactly what {@link #onDamage} does, so the freeze can be exercised without waiting for a real duel. */
+    public static void debugStampFight(final IColony defender, final AbstractEntityCitizen guard)
+    {
+        final Assault assault = BY_DEFENDER.get(defender.getID());
+        if (assault != null && guard.level() instanceof ServerLevel level)
+        {
+            assault.guardFights.put(guard.getId(), level.getGameTime());
+        }
+    }
+
     public static boolean engaged(final IColony defender)
     {
         final Assault assault = BY_DEFENDER.get(defender.getID());
@@ -1596,7 +1946,8 @@ public final class WarAssaults
             }
         }
         return "troupes " + alive + "/" + assault.troopIds.size() + ", cibles " + assault.targets.size()
-          + ", détruits " + assault.destroyed + ", butin " + assault.loot + ", combat " + assault.engaged;
+          + ", détruits " + assault.destroyed + ", butin " + assault.loot + ", combat " + assault.engaged
+          + ", chrono " + secondsLeft(defender) + " s";
     }
 
     static void stopAll(final MinecraftServer server, final Player reporter)
@@ -1646,6 +1997,10 @@ public final class WarAssaults
     {
         assault.over = true;
         BY_DEFENDER.remove(assault.defender.getID());
+        if (assault.clock != null)
+        {
+            assault.clock.removeAllPlayers();
+        }
         int back = 0;
         int homeless = 0;
         if (assault.defender.getWorld() instanceof ServerLevel level)
@@ -1713,14 +2068,18 @@ public final class WarAssaults
         announce(assault, Component.literal(line));
     }
 
+    /** To the commander and the online members of both colonies. */
     private static void announce(final Assault assault, final Component line)
     {
-        if (assault.commander != null && assault.defender.getWorld() instanceof ServerLevel level)
+        if (assault.defender.getWorld() instanceof ServerLevel level)
         {
-            final Player player = level.getServer().getPlayerList().getPlayer(assault.commander);
-            if (player != null)
+            for (final ServerPlayer player : level.getServer().getPlayerList().getPlayers())
             {
-                player.sendSystemMessage(line);
+                if (player.getUUID().equals(assault.commander) || assault.attacker.getPermissions().isColonyMember(player)
+                      || assault.defender.getPermissions().isColonyMember(player))
+                {
+                    player.sendSystemMessage(line);
+                }
             }
         }
         InterregneMod.LOGGER.info("[war] {}", line.getString());
