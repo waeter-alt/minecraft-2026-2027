@@ -104,6 +104,15 @@ public final class HutNav
         return "guardtower".equals(type) || "barrackstower".equals(type);
     }
 
+    /**
+     * The combat academy and the archery sell troops: nobody is ever hired to work there.
+     */
+    public static boolean isGuardSchool(final IBuildingView building)
+    {
+        final String type = building.getBuildingType().getRegistryName().getPath();
+        return "combatacademy".equals(type) || "archery".equals(type);
+    }
+
     public static List<IBuildingModuleView> pages(final IBuildingView building)
     {
         final List<IBuildingModuleView> pages = new ArrayList<>();

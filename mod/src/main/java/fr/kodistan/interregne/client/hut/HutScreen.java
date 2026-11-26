@@ -963,7 +963,12 @@ public final class HutScreen extends ParchmentScreen implements BodyKit.Host
             }
             return new Banner(Ui.State.OK, residents >= home.getMax() ? "Pleine" : "Habitée", residents + " sur " + home.getMax() + (home.getMax() > 1 ? " lits occupés" : " lit occupé"), null, null);
         }
-        if (workers.isEmpty() && hasJobs())
+        // A tower is filled by guards bought at the academy or the archery, never hired here
+        if (workers.isEmpty() && HutNav.isGuardTower(building))
+        {
+            return new Banner(Ui.State.WAIT, "Sans garnison", "aucun garde n'est logé ici", null, null);
+        }
+        if (workers.isEmpty() && hasJobs() && !HutNav.isGuardSchool(building))
         {
             return new Banner(Ui.State.BAD, "Bloqué", "aucun ouvrier : rien n'est produit", "Embaucher ›", this::hire);
         }
