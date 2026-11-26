@@ -73,6 +73,7 @@
     "client.BossHealthOverlayAccessor",
     "client.ColonyBlueprintRendererMixin",
     "client.CameraMixin",
+    "client.GameRendererMixin",
     "client.GuiGraphicsProbeMixin",
     "client.LivingEntityRendererMixin",
     "client.ModuleViewWindowMixin",

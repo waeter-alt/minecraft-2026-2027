@@ -2069,6 +2069,20 @@ public final class WarAssaults
         return null;
     }
 
+    /** Every assault still running, as {attacker, defender} pairs. */
+    public static List<IColony[]> running()
+    {
+        final List<IColony[]> pairs = new ArrayList<>();
+        for (final Assault assault : BY_DEFENDER.values())
+        {
+            if (!assault.over)
+            {
+                pairs.add(new IColony[] {assault.attacker, assault.defender});
+            }
+        }
+        return pairs;
+    }
+
     /** True while this attacker has an assault running on this defender. */
     public static boolean assaulting(final int attackerId, final int defenderId)
     {
