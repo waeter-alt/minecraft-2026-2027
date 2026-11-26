@@ -757,7 +757,9 @@ public final class ColonyHubScreen extends ParchmentScreen
             return new BuildingState(Ui.State.BAD, "Pas construit");
         }
         final List<WorkerBuildingModuleView> jobs = building.getModuleViews(WorkerBuildingModuleView.class);
-        if (!jobs.isEmpty() && jobs.stream().allMatch(m -> m.getAssignedCitizens().isEmpty()))
+        // Towers house guards bought at the academy or the archery, which sell them: none of the three hires anyone
+        final boolean hires = !HutNav.isGuardTower(building) && !HutNav.isGuardSchool(building);
+        if (hires && !jobs.isEmpty() && jobs.stream().allMatch(m -> m.getAssignedCitizens().isEmpty()))
         {
             return new BuildingState(Ui.State.BAD, "Sans ouvrier");
         }

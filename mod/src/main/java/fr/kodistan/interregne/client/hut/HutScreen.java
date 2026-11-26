@@ -968,7 +968,7 @@ public final class HutScreen extends ParchmentScreen implements BodyKit.Host
         {
             return new Banner(Ui.State.WAIT, "Sans garnison", "aucun garde n'est logé ici", null, null);
         }
-        if (workers.isEmpty() && hasJobs())
+        if (workers.isEmpty() && hasJobs() && !HutNav.isGuardSchool(building))
         {
             return new Banner(Ui.State.BAD, "Bloqué", "aucun ouvrier : rien n'est produit", "Embaucher ›", this::hire);
         }
