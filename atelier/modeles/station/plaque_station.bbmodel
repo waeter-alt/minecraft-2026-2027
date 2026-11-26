@@ -1,0 +1,149 @@
+{
+ "meta": {
+  "format_version": "4.10",
+  "model_format": "java_block",
+  "box_uv": false
+ },
+ "name": "plaque_station",
+ "parent": "block/block",
+ "ambientocclusion": false,
+ "front_gui_light": false,
+ "visible_box": [
+  3,
+  2,
+  0
+ ],
+ "resolution": {
+  "width": 16,
+  "height": 16
+ },
+ "elements": [
+  {
+   "name": "plaque",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "from": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "to": [
+    16.0,
+    16.0,
+    16.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    8.0,
+    8.0,
+    8.0
+   ],
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0.0,
+      0.0,
+      16.0,
+      16.0
+     ],
+     "texture": 0
+    },
+    "east": {
+     "uv": [
+      0.0,
+      0.0,
+      16.0,
+      16.0
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      0.0,
+      0.0,
+      16.0,
+      16.0
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      0.0,
+      0.0,
+      16.0,
+      16.0
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      0.0,
+      0.0,
+      16.0,
+      16.0
+     ],
+     "texture": 1
+    },
+    "down": {
+     "uv": [
+      0.0,
+      0.0,
+      16.0,
+      16.0
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "64a65981-450e-5b3c-bf95-425f11771e8d"
+  }
+ ],
+ "outliner": [
+  "64a65981-450e-5b3c-bf95-425f11771e8d"
+ ],
+ "textures": [
+  {
+   "path": "",
+   "name": "cuivre.png",
+   "folder": "block/station",
+   "namespace": "donjon",
+   "id": "0",
+   "width": 16,
+   "height": 16,
+   "uv_width": 16,
+   "uv_height": 16,
+   "particle": false,
+   "render_mode": "default",
+   "visible": true,
+   "internal": true,
+   "saved": true,
+   "uuid": "4ca7c04d-9f0f-5150-b969-9ee5e5f7bf17",
+   "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABVUlEQVR4nKWTvUoDURCF5y5bBAsJQYKFWIUUkirsEwRLCwsfQKx8AJ/BR7AWy5DaSqxThJBi2SrVYhGChGAhdivfjSfMLnYZWPbOzLkzZ35uGN9l1UXvzJBi+WEnx0cm6XY70YaAWa83exs4zinO99kygk7bLfv8+o7OvNzY4C8QugJJB8eXYBicd+JlZZINwGt2FTPpIme+1fYn6mH1fF/ZAZIWi6JWM3VKYCBWlAkr2VVmInq+YThEGVFQLoIjIJhR1ts1USA1xzNQEGVXMHTOgTH67oqRBFYaoQ+ODV/qqWo0nokuCye/bImv+T8WZEH39SsZowz543Ulen4Lm5MAjLAvYkXiUD7dHrYH01le60GzVl+ithX7S39kD9uFJc2GiSp/9WJ+ebOnrkTDt8luCn6RqEtvAFGdw3Ji1m7VtpSAJIlj9CvsHw6BRFuPh7+SsIm/Uu7mHW30rTsAAAAASUVORK5CYII="
+  },
+  {
+   "path": "",
+   "name": "plaque_haut.png",
+   "folder": "block/station",
+   "namespace": "donjon",
+   "id": "1",
+   "width": 16,
+   "height": 16,
+   "uv_width": 16,
+   "uv_height": 16,
+   "particle": false,
+   "render_mode": "default",
+   "visible": true,
+   "internal": true,
+   "saved": true,
+   "uuid": "01b53dc1-00a5-5b70-b24b-42601b9b4839",
+   "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABzElEQVR4nKWTPWsVQRiFn3lnZj+uEMUqWFgIRquUVv4CEQTB3kKwsvNnaAorCwtrUwlpFLQQKzvjFbz4B1JY5N6YvTu78yG7110TbhP1wMA7H+fMmTkz6sf764nfuHF/MZR8ernBWcblf8gdVOeg6zy7ew1DQrxgsoSkQB0U1IqU50jjCJmQvAKjefR62gvIoLQRM5KPOLGkZUZ0mp23M3Y+fKMInmICSQnnUAjt6MgMlqoYsKmAWOFTSakjD26u5ho0Lgh5bDiymvM6jseRQaloAi4Fgljmfp+Desa92xf6Nm/2qasvuCSUoaU6HvdFBiU1AWs91qzsdcQBf+qMQEaRmfUUVDI8eTNjvvh+inxSpHafefruKyq0YwoyKKXoOCucxLFWVy5f6h/S8ztbqEbIrXBQT9dc7O4dctFuoSJErXm4N+vvToYFRXfbheIneiScJHfQpaY1Cu/VmIIZUpi+MkwmDY1WbGZXWSyF3b1Zv2hTtmlzT+tA+RxYrqcQo6I6LgmtpgoaHQ0vPtK3QxVIjYY80SiP5GpMYQzUFJG89VTaUFQZWel4fGubsIxgW2ybOKo0urDE4McUeoFVZzXwNx/pVAr/Qu5EfwE7m+kaVW1ABQAAAABJRU5ErkJggg=="
+  }
+ ]
+}

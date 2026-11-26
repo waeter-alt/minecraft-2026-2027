@@ -112,7 +112,7 @@ public final class ParavoileClient {
             if (joueur == null || mc.isPaused()) {
                 return;
             }
-            boolean espace = joueur.input.jumping && mc.screen == null;
+            boolean espace = TouchesDonjon.PARAVOILE.isDown() && mc.screen == null;
             boolean appui = espace && !espaceAvant;
             espaceAvant = espace;
             if (actif) {

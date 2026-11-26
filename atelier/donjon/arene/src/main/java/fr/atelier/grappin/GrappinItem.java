@@ -1,5 +1,5 @@
 // [claude-build] L'objet grappin (3) : clic droit lance le crochet ; il ne s'accroche qu'a un point d'ancrage et nous tire alors en ligne droite vers lui.
-// Crochet en vol : un clic le rappelle. Crochet accroche (on est en train d'etre tire) : un clic le lache et relance aussitot (enchainement de points).
+// Il faut RESTER APPUYE : relacher le clic droit lache le crochet (le client le demande, voir GrappinClient.Traction). Tant qu'un crochet existe, un clic ne fait rien.
 package fr.atelier.grappin;
 
 import java.util.List;
@@ -24,13 +24,10 @@ public class GrappinItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player joueur, InteractionHand main) {
         ItemStack pile = joueur.getItemInHand(main);
         if (!level.isClientSide) {
-            List<Crochet> lances = Crochet.crochetsDe(joueur);
-            boolean accroche = lances.stream().anyMatch(Crochet::estAccroche);
-            lances.forEach(Crochet::rappeler);
-            if (!lances.isEmpty() && !accroche) {          // crochet encore en vol : on le rappelle, c'est tout
+            if (!Crochet.crochetsDe(joueur).isEmpty()) {    // un crochet est deja lance : on ne fait rien, il part quand on relache le clic
                 return InteractionResultHolder.success(pile);
             }
-            Crochet crochet = new Crochet(level, joueur);   // sinon on lance (ou on lache le crochet accroche et on relance aussitot)
+            Crochet crochet = new Crochet(level, joueur);   // sinon on lance
             crochet.shootFromRotation(joueur, joueur.getXRot(), joueur.getYRot(), 0.0F, Reglages.VITESSE_CROCHET.get().floatValue(), 0.0F);
             level.addFreshEntity(crochet);
             level.playSound(null, joueur.getX(), joueur.getY(), joueur.getZ(), SoundEvents.FISHING_BOBBER_THROW, SoundSource.PLAYERS, 0.8F, 0.6F);

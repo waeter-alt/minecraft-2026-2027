@@ -34,7 +34,7 @@ client spell-engine
 client spell-power
 client structure-pool-api
 client wizards
-both local:atelier/exports/donjon-4.6.0.jar
+both local:atelier/exports/donjon-4.8.0.jar
 client fancymenu
 client konkrete
 client melody
