@@ -19,10 +19,10 @@
             "size": 258672818
         },
         {
-            "name": "Test_citadelle",
-            "url": "https://github.com/waeter-alt/minecraft-2026-2027/releases/download/env-saves/Test_citadelle-5dde7a8d.zip",
-            "sha256": "5dde7a8d1affe740951825a23d916591c6254fef7d2fb797ada19d7ee07572e4",
-            "size": 8231571
+            "name": "SandboxV2",
+            "url": "https://github.com/waeter-alt/minecraft-2026-2027/releases/download/env-saves/SandboxV2-1efb7388.zip",
+            "sha256": "1efb7388072596085d36c3300794bd7466d1acbb75fcdc7f0356994d263af266",
+            "size": 2204808
         },
         {
             "name": "Test_garnison",

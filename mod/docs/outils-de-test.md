@@ -23,7 +23,7 @@ Toutes les commandes se lancent depuis `mod/`, en **Git Bash** (pas PowerShell).
 ./gradlew build --console=plain -q
 ```
 
-**Les mondes de test ne sont pas dans git** (`mod/run/` est ignoré) mais ils s'installent tout seuls : `./gradlew syncEnv` (ou simplement `runClient`) télécharge `Test_citadelle`, `ColoniesV2`, `Routes_A`, `Arene Hub` et `rpgtest` dans `mod/run/client/saves/`. Pour en partager un nouveau : `./gradlew publishSave -Psave="Nom"` (voir « Environnement partagé » dans `CLAUDE.md`).
+**Les mondes de test ne sont pas dans git** (`mod/run/` est ignoré) mais ils s'installent tout seuls : `./gradlew syncEnv` (ou simplement `runClient`) télécharge `SandboxV2` (le monde de test par défaut : superflat, colonie montée par Duncan), `ColoniesV2`, `Routes_A`, `Arene Hub` et `rpgtest` dans `mod/run/client/saves/`. Pour en partager un nouveau : `./gradlew publishSave -Psave="Nom"` (voir « Environnement partagé » dans `CLAUDE.md`).
 
 **Signale qu'un test tourne.** Pendant qu'un build, un serveur ou un client de test tourne, crée le fichier `.claude/testing.flag` à la racine du repo, et supprime-le dès que c'est fini (règle du `CLAUDE.md`). Si ton agent affiche une barre de statut, il peut s'en servir pour indiquer « tests en cours ».
 
@@ -66,7 +66,7 @@ Le client ouvre le monde, affiche chaque écran demandé avec des données facti
 3. Écris `run/client/uishot/request.properties` :
 
    ```properties
-   world=Test_citadelle
+   world=SandboxV2
    screen=hub:all,building:farmer
    # optionnel :
    only=farmer-fields
@@ -114,9 +114,9 @@ Pour tout ce qui a besoin d'une vraie colonie. Le jeu tourne aussi vite que la m
 1. **Copie le monde** (le scénario le modifie) :
 
    ```bash
-   rm -rf run/client/saves/Scenario_citadelle
-   cp -r run/client/saves/Test_citadelle run/client/saves/Scenario_citadelle
-   rm -f run/client/saves/Scenario_citadelle/session.lock
+   rm -rf run/client/saves/Scenario_sandbox
+   cp -r run/client/saves/SandboxV2 run/client/saves/Scenario_sandbox
+   rm -f run/client/saves/Scenario_sandbox/session.lock
    ```
 
 2. Écris `run/client/scenario/request.properties` :
@@ -134,7 +134,7 @@ Pour tout ce qui a besoin d'une vraie colonie. Le jeu tourne aussi vite que la m
 3. Pour que le client ouvre le monde tout seul, écris aussi `run/client/uishot/request.properties` :
 
    ```properties
-   world=Scenario_citadelle
+   world=Scenario_sandbox
    screen=none
    ```
 
