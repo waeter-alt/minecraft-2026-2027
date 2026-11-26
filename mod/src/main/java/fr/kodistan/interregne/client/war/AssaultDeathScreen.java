@@ -176,20 +176,23 @@ public final class AssaultDeathScreen extends Screen
     }
 
     /** The crown's scale and where everything sits, recomputed per frame so it follows the window. */
-    private record Layout(int scale, int titleY, int crownX, int crownY, int numberY, int barY, int lineY, int buttonY) {}
+    private record Layout(float scale, int titleY, int crownX, int crownY, int numberY, int barY, int lineY, int buttonY) {}
 
     private Layout layout()
     {
-        // Title 16, number 24, bar + line + button 51, gaps 30: what's left goes to the crown and its pedestal, in whole steps
+        // Title 16, number 24, bar + line + button 51, gaps 30: what's left goes to the crown and its pedestal
         final int rest = 16 + 24 + 51 + 30;
-        final int scale = Mth.clamp((height - rest) / (CROWN_SEAT + PEDESTAL_H), 1, 3);
-        final int total = rest + scale * (CROWN_SEAT + PEDESTAL_H);
-        final int top = Math.max(4, (height - total) / 2);
-        final int crownY = top + 16 + 6 - scale * 2;
-        final int numberY = crownY + scale * (CROWN_SEAT + PEDESTAL_H) + 6;
+        final int fit = Mth.clamp((height - rest) / (CROWN_SEAT + PEDESTAL_H), 1, 3);
+        // 80 % of the size that fits, rounded to whole screen pixels per texture pixel so the pixel art stays even
+        final double gui = minecraft.getWindow().getGuiScale();
+        final float scale = (float) (Math.max(1, Math.round(fit * gui * 0.8)) / gui);
+        final int crownH = Math.round(scale * (CROWN_SEAT + PEDESTAL_H));
+        final int top = Math.max(4, (height - rest - crownH) / 2);
+        final int crownY = top + 16 + 6 - Math.round(scale * 2);
+        final int numberY = crownY + crownH + 6;
         final int barY = numberY + 24 + 6;
         final int lineY = barY + 9;
-        return new Layout(scale, top, (width - CROWN_W * scale) / 2, crownY, numberY, barY, lineY, lineY + 16);
+        return new Layout(scale, top, Math.round((width - CROWN_W * scale) / 2), crownY, numberY, barY, lineY, lineY + 16);
     }
 
     private int buttonX()
@@ -269,11 +272,11 @@ public final class AssaultDeathScreen extends Screen
      */
     private void renderCrown(final GuiGraphics graphics, final Layout at, final float progress, final long sinceReady)
     {
-        final int s = at.scale();
+        final float s = at.scale();
         final int x = at.crownX();
         final int y = at.crownY();
         RenderSystem.enableBlend();
-        blit(graphics, PEDESTAL, x, y + CROWN_SEAT * s, CROWN_W, PEDESTAL_H, s, 1f);
+        blit(graphics, PEDESTAL, x, y + Math.round(CROWN_SEAT * s), CROWN_W, PEDESTAL_H, s, 1f);
         blit(graphics, SLOT, x, y, CROWN_W, CROWN_H, s, 1f - ramp(progress, 0.45f, 0.63f));
 
         final float gold = sinceReady < 0 ? 0f : Mth.clamp(sinceReady / 400f, 0f, 1f);
@@ -304,7 +307,7 @@ public final class AssaultDeathScreen extends Screen
 
     private void renderShard(final GuiGraphics graphics, final Layout at, final int shard, final float flight)
     {
-        final int s = at.scale();
+        final float s = at.scale();
         final float centerX = SHARD_CENTERS[shard][0] * s;
         final float centerY = SHARD_CENTERS[shard][1] * s;
         // Ease out with a small overshoot, so each shard snaps into place
@@ -325,7 +328,7 @@ public final class AssaultDeathScreen extends Screen
 
     private void renderSparkles(final GuiGraphics graphics, final Layout at, final long sinceReady)
     {
-        final int s = at.scale();
+        final float s = at.scale();
         for (final int[] sparkle : SPARKLES)
         {
             final long age = sinceReady - sparkle[2];
@@ -335,9 +338,9 @@ public final class AssaultDeathScreen extends Screen
             }
             final float life = age / 900f;
             final int alpha = (int) (255 * (1f - life));
-            final int arm = (life < 0.3f ? 2 : 1) * s;
-            final int px = at.crownX() + sparkle[0] * s;
-            final int py = at.crownY() + sparkle[1] * s - (int) (life * 6 * s);
+            final int arm = Math.max(1, Math.round((life < 0.3f ? 2 : 1) * s));
+            final int px = at.crownX() + Math.round(sparkle[0] * s);
+            final int py = at.crownY() + Math.round(sparkle[1] * s - life * 6 * s);
             final int color = (alpha << 24) | 0xFFF2A8;
             graphics.fill(px - arm, py, px + arm + 1, py + 1, color);
             graphics.fill(px, py - arm, px + 1, py + arm + 1, color);
@@ -345,7 +348,7 @@ public final class AssaultDeathScreen extends Screen
     }
 
     private static void blit(final GuiGraphics graphics, final ResourceLocation texture, final int x, final int y, final int w, final int h,
-      final int scale, final float alpha)
+      final float scale, final float alpha)
     {
         if (alpha <= 0.01f)
         {
