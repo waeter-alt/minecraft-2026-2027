@@ -122,5 +122,6 @@ public class InterregneMod
             }
         }
         LOGGER.info("L'Interregne: {} MineColonies mixin targets loaded", targets.size());
+        fr.kodistan.interregne.colony.ColonyColors.subscribe();
     }
 }

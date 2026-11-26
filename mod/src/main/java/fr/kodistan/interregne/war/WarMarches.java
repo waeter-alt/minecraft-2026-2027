@@ -286,9 +286,13 @@ public final class WarMarches
             troop.setInvulnerable(true);
             troop.addTag(NAME_TAG);
             final IColony attacker = colony(level.getServer(), march.attacker);
+            if (attacker != null)
+            {
+                troop.setSenderColor(fr.kodistan.interregne.colony.ColonyColors.rgb(attacker));
+            }
             if (attacker != null && slot == 0)
             {
-                troop.setCustomName(Component.literal("⚔ Troupes de " + attacker.getName()));
+                troop.setCustomName(Component.literal("⚔ Troupes de " + attacker.getName()).withStyle(attacker.getTeamColonyColor()));
                 troop.setCustomNameVisible(true);
             }
             place(troop, march, slot);
