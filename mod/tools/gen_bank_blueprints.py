@@ -27,6 +27,7 @@ import nbtlib  # noqa: E402
 from nbtlib import Compound, List, String, Int, Short, Byte, IntArray  # noqa: E402
 
 import gen_relais_blueprints as R  # noqa: E402
+import check_blueprints  # noqa: E402
 
 RES = os.path.join(os.path.dirname(__file__), '..', 'src', 'main', 'resources')
 CAT = os.path.join(RES, 'blueprints', 'interregne', 'interregne', 'regions')
@@ -320,6 +321,7 @@ if __name__ == '__main__':
     layout = {}
     for lvl in LEVELS:
         name, root, size, slots = build(lvl)
+        check_blueprints.require_ok(root, name)
         nbtlib.File(root, gzipped=True).save(os.path.join(CAT, name + '.blueprint'))
         # hut-relative: y counted from the hut (the hut is at y=1)
         layout[str(lvl)] = [{'pos': [s['x'], s['y'] - 1, s['z']], 'kind': s['kind'], 'facing': s['facing'], 'from': s['from'], 'span': s['span']} for s in slots]

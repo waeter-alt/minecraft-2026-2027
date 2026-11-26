@@ -115,6 +115,8 @@ def face_textures(name, props):
             else:
                 tex = (base,) * 3
             return tuple(T.get(t) for t in tex)
+    if n == 'shingle':  # tile material set by the tile entity (gen_relais_blueprints.ROOF_FULL)
+        return (T.get('deepslate_tiles'),) * 3
     if n in SPECIAL:
         top, side, bottom = SPECIAL[n]
         return T.get(top), T.get(side), T.get(bottom)
@@ -138,11 +140,13 @@ def boxes(name, props):
     """Axis-aligned boxes (x0, y0, z0, x1, y1, z1 in 1/16 block) with a texture slot index: 0 top, 1 side, 2 bottom handled by the renderer."""
     n = name.split(':')[1]
     f = props.get('facing', 'north')
-    if n.endswith('_stairs'):
+    if n.endswith('_stairs') or n == 'shingle':
         top = props.get('half') == 'top'
         base = (0, 8, 0, 16, 16, 16) if top else (0, 0, 0, 16, 8, 16)
         y0, y1 = (0, 8) if top else (8, 16)
-        step = {'north': (0, y0, 8, 16, y1, 16), 'south': (0, y0, 0, 16, y1, 8), 'east': (0, y0, 0, 8, y1, 16), 'west': (8, y0, 0, 16, y1, 16)}[f]
+        # the tall half sits on the FACING side (vanilla stairs and Domum shingles alike). This was inverted until
+        # 2026-11-26, which made upside-down roofs look right in these renders.
+        step = {'north': (0, y0, 0, 16, y1, 8), 'south': (0, y0, 8, 16, y1, 16), 'east': (8, y0, 0, 16, y1, 16), 'west': (0, y0, 0, 8, y1, 16)}[f]
         return [base, step]
     if n.endswith('_slab'):
         k = props.get('type', 'bottom')
@@ -312,7 +316,7 @@ def load(level):
     return blocks, (sx, sy, sz), (int(off['x']), int(off['y']), int(off['z']))
 
 
-FULL_OPAQUE_SKIP = ('_carpet', '_bed', 'lectern', 'bell', 'flower_pot', 'ladder', '_stairs', '_slab', '_trapdoor', '_fence', '_wall', 'glass_pane', 'lantern', 'chain', 'banner', 'water', 'campfire', 'cauldron')
+FULL_OPAQUE_SKIP = ('shingle', '_carpet', '_bed', 'lectern', 'bell', 'flower_pot', 'ladder', '_stairs', '_slab', '_trapdoor', '_fence', '_wall', 'glass_pane', 'lantern', 'chain', 'banner', 'water', 'campfire', 'cauldron')
 
 
 def is_opaque_cube(entry):
