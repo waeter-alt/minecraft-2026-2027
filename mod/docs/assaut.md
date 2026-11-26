@@ -13,6 +13,7 @@ Les défenseurs tuent, les attaquants détruisent. Un assaut est un duel entre l
 3. **Combat** : un garde du défenseur qui se bat (il a donné ou reçu un coup d'une troupe d'assaut dans les 10 dernières secondes) et qui se trouve à 24 blocs ou moins du bâtiment visé **fige** ce bâtiment : il ne perd plus de points de structure, mais garde ses dégâts. Un garde emmuré ou hors d'atteinte ne se bat pas, donc il ne bloque rien.
 4. **Destruction** : les bâtiments tombent du plus proche au plus éloigné du point de ralliement. Quand les gardes reviennent, on repasse en phase 3.
 5. **Hôtel de ville** : dernière cible, pas verrouillée. Sa chute donne la victoire immédiate.
+   - **En ruine** (jamais reconstruit après un assaut précédent) : il reste la dernière cible, mais on le **prend** au lieu de le démolir. Les troupes marchent au centre de la ruine ; la prise avance tant qu'au moins une troupe vivante se tient à moins de 6 blocs du centre (12 blocs de hauteur de tolérance), et il faut **60 s cumulées** (`warRuinCaptureSeconds`). Si la zone se vide, la prise se met en pause sans revenir à zéro. Elle s'affiche dans la barre de chrono (« prise des ruines n % », barre rouge). Une fois complète : butin plafonné payé une fois, victoire par le chemin habituel (Influence, bouclier du perdant). La ruine n'est pas re-détruite. Le chrono de départ gagne la durée de la prise (60 s) pour que les troupes aient le temps de s'y rendre.
 
 ## Qui les troupes ciblent
 
@@ -39,11 +40,26 @@ Par ordre de priorité :
 - Pas d'achat de garde pendant un assaut sur sa propre colonie : la garnison qui défend est celle qu'on avait avant.
 - Le plafond de la garnison reste celui des tours (inchangé).
 
+## Verrou d'assaut : une colonie à la fois
+
+- Quand une colonie A lance un assaut contre D, **D est réservée à A pendant 2 h de temps de jeu** (`warAssaultLockMinutes` = 120), comptées depuis ce premier assaut. A peut relancer des assauts contre D pendant la fenêtre, mais elle ne se prolonge pas.
+- Les autres colonies en guerre contre D sont refusées : « D est aux prises avec A : encore N min avant de pouvoir l'attaquer. » Le refus tombe au départ de la troupe (le bouton « Lancer l'assaut » est grisé dans la Diplomatie, la raison au survol) et à l'arrivée si la fenêtre s'est fermée entre-temps.
+- La fenêtre expirée, le premier qui lance un assaut prend une nouvelle fenêtre de 2 h. Le verrou tombe aussitôt que la guerre A–D se termine (paix, capitulation, reddition, chute). Il est sauvegardé (`Wars`) et survit à un redémarrage.
+
+## Reddition imposée par le défenseur
+
+Bouton « Exiger la reddition » de l'onglet Diplomatie, à côté de « Capituler » (deux clics). Disponible quand, dans cette guerre :
+
+- **(a)** le défenseur a **repoussé** au moins un assaut : un assaut fini sans prise de l'hôtel de ville parce que toutes les troupes sont tombées ou que le chrono a atteint zéro (un rappel par l'attaquant ou un arrêt du serveur ne comptent pas) ; **ou**
+- **(b)** l'attaquant n'a lancé **aucun assaut depuis 6 h de temps de jeu** (`warIdleSurrenderHours`), comptées depuis la fin du préavis ou la fin de son dernier assaut. Troupes en marche ou sur le terrain : pas d'inaction, donc indisponible.
+
+Effets : la guerre se ferme comme une défaite de l'attaquant (ses troupes rentrent). Un **tribut** est pris au trésor régional de l'attaquant et versé au défenseur : au plus le tribut de capitulation (`warTribute`), sans jamais descendre sous la réserve inviolable du butin (`warTreasuryReserve`) ; il peut donc être partiel ou nul. Le défenseur gagne l'Influence de victoire (`warVictoryInfluence`). Le **bouclier de 2 h va à l'attaquant**, qui a perdu. Bilan de guerre des deux côtés, cause « Reddition imposée ». Indisponible : bouton grisé, le survol dit la condition manquante et le temps d'inaction restant.
+
 ## Fins d'assaut
 
 - Hôtel de ville tombé : victoire de l'attaquant.
-- Toutes les troupes mortes : repoussé.
-- Chrono à zéro : repoussé.
+- Toutes les troupes mortes : repoussé (compte pour la reddition imposée).
+- Chrono à zéro : repoussé (idem).
 - Rappel des troupes par l'attaquant, ou arrêt du serveur.
 
 Les messages d'assaut vont aux membres connectés des deux colonies.

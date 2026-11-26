@@ -173,6 +173,9 @@ public final class WarAssaults
         boolean over;
         /** Set when the defender's town hall falls; the war is settled on the next server tick. */
         boolean townHallTaken;
+        /** A town hall in ruins is taken, not battered: where it stands and how far the taking went (see {@link RuinCapture}). */
+        BlockPos ruinHall;
+        RuinCapture capture;
         /** Defender guards by entity id: game time of their last blow exchanged with a troop. */
         final Map<Integer, Long> guardFights = new HashMap<>();
         /** Troops fallen so far, and how many of them a defender guard killed. */
@@ -248,6 +251,14 @@ public final class WarAssaults
         {
             return "Impossible : aucune guerre ouverte contre cette colonie.";
         }
+        if (attacker.getID() != defender.getID())
+        {
+            final String locked = fr.kodistan.interregne.politics.WarRules.lockRefusal(level.getServer(), attacker.getID(), defender.getID());
+            if (locked != null)
+            {
+                return locked;
+            }
+        }
         if (SafeZones.get(level.getServer()).at(level.dimension(), defender.getCenter()) != null)
         {
             return "Impossible : cette colonie est en zone sûre.";
@@ -288,8 +299,14 @@ public final class WarAssaults
         assault.rallyPoint = spawnPos;
         planTargets(assault, level, spawnPos);
         assault.deadline = level.getGameTime() + CLOCK_START;
+        if (assault.capture != null)
+        {
+            // The troops still have to be there for the whole taking: the chrono gets its length on top
+            assault.deadline += assault.capture.neededTicks();
+        }
         if (attacker.getID() != defender.getID())
         {
+            fr.kodistan.interregne.politics.WarRules.onAssaultLaunched(level.getServer(), attacker.getID(), defender.getID());
             fr.kodistan.interregne.politics.AllyAid.onAssault(level.getServer(), defender);
         }
         if (commander != null)
@@ -413,6 +430,14 @@ public final class WarAssaults
             assault.targets.add(building.getID());
             assault.structure.put(building.getID(), sp);
             assault.spTotal.put(building.getID(), sp);
+        }
+        // A town hall already in ruins is no longer battered, so it would never fall: it stays the last target, taken
+        // by standing on it (the dev slice, a colony against itself, has no war to win)
+        if (assault.attacker != assault.defender)
+        {
+            final BlockPos hall = assault.defender.getCenter();
+            assault.capture = RuinCapture.plan(assault.targets, hall, ruins.isRuined(hall), Config.WAR_RUIN_CAPTURE_SECONDS.get() * 20L);
+            assault.ruinHall = assault.capture == null ? null : hall;
         }
     }
 
@@ -1522,11 +1547,18 @@ public final class WarAssaults
                 final long left = assault.deadline - level.getGameTime();
                 if (left <= 0)
                 {
-                    end(assault, "§aTemps écoulé§r : l'assaut sur " + assault.defender.getName() + " est repoussé.");
+                    end(assault, "§aTemps écoulé§r : l'assaut sur " + assault.defender.getName() + " est repoussé.", true);
                 }
-                else if (level.getGameTime() % 20 == 0)
+                else
                 {
-                    updateClock(assault, level, left);
+                    if (assault.capture != null && level.getGameTime() % CAPTURE_STEP == 0)
+                    {
+                        stepCapture(assault, level);
+                    }
+                    if (level.getGameTime() % 20 == 0)
+                    {
+                        updateClock(assault, level, left);
+                    }
                 }
             }
         }
@@ -1549,6 +1581,59 @@ public final class WarAssaults
         }
     }
 
+    /** How often the taking of a ruined town hall looks at who stands around it, in ticks. */
+    private static final int CAPTURE_STEP = 10;
+
+    /** Whether the ruined town hall is the target the troops are on now: the last one left. */
+    private static boolean capturing(final Assault assault)
+    {
+        return assault.capture != null && assault.targets.size() == 1 && assault.targets.get(0).equals(assault.ruinHall);
+    }
+
+    /**
+     * Moves the taking of a ruined town hall on by one step when it is the target now: the progress grows while a living
+     * troop stands in its zone, waits when nobody does. Complete, it counts as the town hall falling (the loot is paid
+     * once, the victory follows on the next tick), and the ruin is left as it is.
+     */
+    private static void stepCapture(final Assault assault, final ServerLevel level)
+    {
+        if (!capturing(assault) || assault.townHallTaken)
+        {
+            return;
+        }
+        final BlockPos hall = assault.ruinHall;
+        int present = 0;
+        for (final int id : assault.troopIds)
+        {
+            if (level.getEntity(id) instanceof AssaultTroop troop && troop.isAlive()
+                  && RuinCapture.inZone(troop.getX() - (hall.getX() + 0.5D), troop.getY() - hall.getY(), troop.getZ() - (hall.getZ() + 0.5D)))
+            {
+                present++;
+            }
+        }
+        if (assault.capture.advance(present, CAPTURE_STEP))
+        {
+            assault.loot += takeLoot(assault, level.getServer());
+            assault.townHallTaken = true;
+            assault.targets.remove(hall);
+            announce(assault, "§cLes ruines de l'hôtel de ville sont prises§r : " + assault.attacker.getName() + " les occupe.");
+        }
+    }
+
+    /** True when the troop's target is the ruined town hall, to be taken by standing around it rather than battered. */
+    static boolean isCaptureTarget(final AssaultTroop troop, final BlockPos hut)
+    {
+        final Assault assault = BY_DEFENDER.get(colonyOf(troop));
+        return assault != null && assault.capture != null && hut.equals(assault.ruinHall);
+    }
+
+    /** The taking of the running assault's ruined town hall, 0 to 1, or -1 when it has none (for tests). */
+    public static float captureProgress(final IColony defender)
+    {
+        final Assault assault = BY_DEFENDER.get(defender.getID());
+        return assault == null || assault.capture == null ? -1F : assault.capture.progress();
+    }
+
     /** The assault's clock bar, shown to the online members of both colonies wherever they are. */
     private static void updateClock(final Assault assault, final ServerLevel level, final long left)
     {
@@ -1557,8 +1642,11 @@ public final class WarAssaults
             assault.clock = new ServerBossEvent(Component.empty(), BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.PROGRESS);
         }
         final long seconds = (left + 19) / 20;
+        final boolean taking = capturing(assault);
+        assault.clock.setColor(taking ? BossEvent.BossBarColor.RED : BossEvent.BossBarColor.YELLOW);
         assault.clock.setName(Component.literal("⚔ Assaut sur " + assault.defender.getName() + " — "
-          + seconds / 60 + ":" + String.format(java.util.Locale.ROOT, "%02d", seconds % 60)));
+          + seconds / 60 + ":" + String.format(java.util.Locale.ROOT, "%02d", seconds % 60)
+          + (taking ? " · prise des ruines " + Math.round(assault.capture.progress() * 100) + " %" : "")));
         assault.clock.setProgress(Mth.clamp((float) left / CLOCK_CAP, 0.0F, 1.0F));
         for (final ServerPlayer player : level.getServer().getPlayerList().getPlayers())
         {
@@ -1615,7 +1703,7 @@ public final class WarAssaults
         if (assault.troopIds.isEmpty() && !assault.over)
         {
             GARRISON_WINS.put(assault.defender.getID(), assault.guardKills == assault.troopsDead);
-            end(assault, "§aAssaut repoussé§r : " + assault.defender.getName() + " tient toujours.");
+            end(assault, "§aAssaut repoussé§r : " + assault.defender.getName() + " tient toujours.", true);
         }
     }
 
@@ -1995,7 +2083,12 @@ public final class WarAssaults
      */
     private static void end(final Assault assault, final String line)
     {
-        end(assault, line, null, -1);
+        end(assault, line, false);
+    }
+
+    private static void end(final Assault assault, final String line, final boolean repelled)
+    {
+        end(assault, line, repelled, null, -1);
     }
 
     /**
@@ -2009,13 +2102,17 @@ public final class WarAssaults
         {
             if (assault.attacker.getID() == colony || assault.defender.getID() == colony)
             {
-                end(assault, "", server, colony);
+                end(assault, "", false, server, colony);
             }
         }
     }
 
-    /** {@code gone} is the id of the colony that no longer exists (-1 for a normal end), {@code goneServer} the way to the world then. */
-    private static void end(final Assault assault, final String line, @Nullable final MinecraftServer goneServer, final int gone)
+    /**
+     * @param repelled whether the defender pushed it back (its troops all fell, or its time ran out): what lets the
+     *                 defender demand the attacker's surrender (see {@link Wars#surrenderWait})
+     * @param gone     the id of the colony that no longer exists (-1 for a normal end), {@code goneServer} the way to the world then
+     */
+    private static void end(final Assault assault, final String line, final boolean repelled, @Nullable final MinecraftServer goneServer, final int gone)
     {
         assault.over = true;
         BY_DEFENDER.remove(assault.defender.getID());
@@ -2037,7 +2134,7 @@ public final class WarAssaults
             for (final BlockPos pos : assault.targets)
             {
                 final IBuilding building = assault.defender.getID() == gone ? null : assault.defender.getBuildingManager().getBuilding(pos);
-                if (building != null)
+                if (building != null && !pos.equals(assault.ruinHall))
                 {
                     clearCracks(assault, level, building, pos);
                 }
@@ -2095,6 +2192,7 @@ public final class WarAssaults
         {
             Wars.get(level.getServer()).record(assault.attacker.getID(), assault.defender.getID(), assault.sent, lost + homeless,
               assault.destroyed, assault.loot, assault.fallen);
+            Wars.get(level.getServer()).finishAssault(assault.attacker.getID(), assault.defender.getID(), level.getGameTime(), repelled);
             Alliances.broadcast(level.getServer(), assault.attacker, assault.defender);
         }
     }

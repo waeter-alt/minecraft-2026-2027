@@ -172,6 +172,8 @@ public final class UiScenarios
                     targets.add(new Target("war-recap-capitulation", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.CAPITULATION))));
                     targets.add(new Target("war-recap-abandon-win", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.ABANDON))));
                     targets.add(new Target("war-recap-abandon-loss", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(false, fr.kodistan.interregne.network.WarRecapPayload.ABANDON))));
+                    targets.add(new Target("war-recap-reddition-win", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.REDDITION))));
+                    targets.add(new Target("war-recap-reddition-loss", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(false, fr.kodistan.interregne.network.WarRecapPayload.REDDITION))));
                     targets.add(new Target("war-recap-defense-aid", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(withAid(fakeRecap(false, fr.kodistan.interregne.network.WarRecapPayload.CONQUEST)))));
                     targets.add(new Target("war-recap-defense-aid-win", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(withAid(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.ABANDON)))));
                     targets.add(new Target("war-recap-break", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.BREAK))));
@@ -236,6 +238,26 @@ public final class UiScenarios
                         ColonyHubScreen.openDev(colony.getTownHall(), "diplomacy", 0);
                     }));
                 }
+                // « Exiger la reddition » on the wars suffered: available, then waiting out the attacker's idleness, then troops out
+                for (final String state : new String[] {"ready", "wait", "out"})
+                {
+                    targets.add(new Target("hub-diplomacy-demand-" + state, () -> {
+                        final int seconds = state.equals("ready") ? 0 : state.equals("wait") ? 5 * 3600 + 12 * 60 : -1;
+                        final var fake = new java.util.ArrayList<fr.kodistan.interregne.network.DiplomacySyncPayload.Entry>();
+                        fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(19, "Crête-Grise", "Inès", 15, -200, -800, 7, 0, 1, 0, 0, 0, -1, -1, seconds, "", 0));
+                        fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(20, "Roc-aux-Corbeaux", "Jade", 27, 380, 610, 7, 0, 1, 2, 0, 0, -1, -1,
+                          fr.kodistan.interregne.network.DiplomacySyncPayload.SURRENDER_NO, "", 0));
+                        fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), 6, 3, 20, 500L, 1240L, fake));
+                        ColonyHubScreen.openDev(colony.getTownHall(), "diplomacy", 0);
+                    }));
+                }
+                // Assault launcher while another colony holds the defender (grey button, hover says why)
+                targets.add(new Target("hub-diplomacy-locked", () -> {
+                    final var fake = new java.util.ArrayList<fr.kodistan.interregne.network.DiplomacySyncPayload.Entry>();
+                    fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(17, "Mont-Cuivre", "Gaël", 19, -500, 400, 5, 0, 2, 0, 0, 0, -1, -1, -1, "Bourg-Ferrant", 4000));
+                    fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), 6, 3, 20, 500L, 1240L, fake));
+                    ColonyHubScreen.openDev(colony.getTownHall(), "diplomacy", 0);
+                }));
                 // Aide de clan: only allies, so the contingent lines are above the fold. « Remplir » payable (900 of
                 // 1240), then short; a full contingent, an engaged one, and reinforcements kept for us.
                 for (final long treasury : new long[] {1240L, 320L})
@@ -499,7 +521,8 @@ public final class UiScenarios
             return new fr.kodistan.interregne.network.WarRecapPayload(victory, outcome, "Hautebrume-sur-Loire", "Valdorée", red, blue,
               0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }
-        final boolean capitulation = outcome == fr.kodistan.interregne.network.WarRecapPayload.CAPITULATION;
+        final boolean capitulation = outcome == fr.kodistan.interregne.network.WarRecapPayload.CAPITULATION
+                                       || outcome == fr.kodistan.interregne.network.WarRecapPayload.REDDITION;
         return new fr.kodistan.interregne.network.WarRecapPayload(victory, outcome, "Hautebrume-sur-Loire", "Valdorée", red, blue,
           20L * 60 * 72, capitulation ? 2 : 4, 38, 11, capitulation ? 3 : 7, 18_450, 9, capitulation ? 25_000 : 0,
           120, 20L * 60 * 60 * 2);

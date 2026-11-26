@@ -37,16 +37,28 @@ public record DiplomacySyncPayload(int colony, int legionAvailable, int archersA
     /**
      * {@code aidOut}: soldiers this colony keeps in reserve for that one; {@code aidIn}: the other way round.
      * {@code engagedOut} / {@code engagedIn}: soldiers of that contingent still standing while it is out, -1 when it is not.
+     * {@code surrenderSeconds}: for an open war that colony wages on this one, the seconds before this one may demand its surrender
+     * (see {@link #SURRENDER_NO}). {@code lockHolder} / {@code lockSeconds}: for an open war this colony wages on that one, the other colony
+     * that has it reserved for its assaults and for how many seconds yet ({@code ""} and 0 when none).
      */
     public record Entry(int id, String name, String owner, int citizens, int x, int z, int status, int noticeSeconds, int roadState, int campaign,
-                        int aidOut, int aidIn, int engagedOut, int engagedIn)
+                        int aidOut, int aidIn, int engagedOut, int engagedIn, int surrenderSeconds, String lockHolder, int lockSeconds)
     {
+        public Entry(final int id, final String name, final String owner, final int citizens, final int x, final int z, final int status, final int noticeSeconds,
+                     final int roadState, final int campaign, final int aidOut, final int aidIn, final int engagedOut, final int engagedIn)
+        {
+            this(id, name, owner, citizens, x, z, status, noticeSeconds, roadState, campaign, aidOut, aidIn, engagedOut, engagedIn, SURRENDER_NO, "", 0);
+        }
+
         public Entry(final int id, final String name, final String owner, final int citizens, final int x, final int z, final int status, final int noticeSeconds,
                      final int roadState, final int campaign)
         {
             this(id, name, owner, citizens, x, z, status, noticeSeconds, roadState, campaign, 0, 0, -1, -1);
         }
     }
+
+    /** {@link Entry#surrenderSeconds}: nothing to wait for, the attacker's troops are out (or there is no open war against this colony). 0 means the surrender may be demanded now. */
+    public static final int SURRENDER_NO = -1;
 
     public static final Type<DiplomacySyncPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "diplomacy_sync"));
 
@@ -76,6 +88,9 @@ public record DiplomacySyncPayload(int colony, int legionAvailable, int archersA
             ByteBufCodecs.VAR_INT.encode(buf, entry.aidIn());
             ByteBufCodecs.INT.encode(buf, entry.engagedOut());
             ByteBufCodecs.INT.encode(buf, entry.engagedIn());
+            ByteBufCodecs.INT.encode(buf, entry.surrenderSeconds());
+            ByteBufCodecs.STRING_UTF8.encode(buf, entry.lockHolder());
+            ByteBufCodecs.VAR_INT.encode(buf, entry.lockSeconds());
         }
     }, buf -> {
         final int colony = ByteBufCodecs.VAR_INT.decode(buf);
@@ -93,7 +108,8 @@ public record DiplomacySyncPayload(int colony, int legionAvailable, int archersA
             entries.add(new Entry(ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf),
               ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.INT.decode(buf), ByteBufCodecs.INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf),
               ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf),
-              ByteBufCodecs.INT.decode(buf), ByteBufCodecs.INT.decode(buf)));
+              ByteBufCodecs.INT.decode(buf), ByteBufCodecs.INT.decode(buf), ByteBufCodecs.INT.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf),
+              ByteBufCodecs.VAR_INT.decode(buf)));
         }
         return new DiplomacySyncPayload(colony, legion, archers, warCost, tribute, treasury, aidPrice, aidMax, entries);
     });

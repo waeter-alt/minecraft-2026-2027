@@ -46,6 +46,9 @@ Une colonie prospère grâce à son économie et à ses routes. Elle peut s'alli
 - La paix, proposée par le déclarant (existe déjà).
 - La capitulation du défenseur, qui paie un tribut en couronnes.
 - La chute de l'hôtel de ville : victoire immédiate de l'attaquant, la guerre se ferme, le perdant reçoit un bouclier.
+- La **reddition imposée par le défenseur** ✅ (Duncan, 26/11) : une fois un assaut repoussé, ou après 6 h sans assaut de l'attaquant, le défenseur peut exiger la reddition ; il gagne l'Influence et un tribut plafonné pris au trésor de l'attaquant, qui reçoit le bouclier.
+- Un hôtel de ville laissé **en ruine** ne protège plus : les troupes le prennent en restant 60 s cumulées sur place, ce qui vaut chute.
+- **Une colonie à la fois** : une défenseuse est réservée pendant 2 h à la première qui l'assaille ; les autres colonies en guerre contre elle attendent.
 
 **B. Que rapporte une victoire ?** ✅ Validé par Duncan : le butin est pris dans le trésor régional du perdant, plafonné, avec une réserve inviolable, plus de l'Influence pour le vainqueur. Le perdant garde de quoi reconstruire.
 

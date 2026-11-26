@@ -217,7 +217,9 @@ public final class Alliances extends SavedData
               : WarAssaults.assaulting(me, you) ? DiplomacySyncPayload.CAMPAIGN_ASSAULTING : DiplomacySyncPayload.CAMPAIGN_NONE;
             entries.add(new DiplomacySyncPayload.Entry(you, other.getName(), other.getPermissions().getOwnerName(),
               other.getCitizenManager().getCurrentCitizenCount(), other.getCenter().getX(), other.getCenter().getZ(), relation[0], relation[1], road, campaign,
-              aid.reserve(me, you), aid.reserve(you, me), aid.isEngaged(me, you) ? aid.alive(me, you) : -1, aid.isEngaged(you, me) ? aid.alive(you, me) : -1));
+              aid.reserve(me, you), aid.reserve(you, me), aid.isEngaged(me, you) ? aid.alive(me, you) : -1, aid.isEngaged(you, me) ? aid.alive(you, me) : -1,
+              relation[0] == WAR_IN ? WarRules.surrenderSeconds(server, you, me) : DiplomacySyncPayload.SURRENDER_NO,
+              relation[0] == WAR_OUT ? WarRules.lockHolderName(server, me, you) : "", relation[0] == WAR_OUT ? WarRules.lockSeconds(server, me, you) : 0));
         }
         return new DiplomacySyncPayload(colony.getID(), Garrison.available(server, colony, Garrison.LEGIONNAIRE), Garrison.available(server, colony, Garrison.ARCHERE),
           Config.WAR_DECLARATION_COST.get().intValue(), Config.WAR_TRIBUTE.get(), RegionalTreasury.get(server).balance(colony), AllyAid.price(), AllyAid.max(), entries);

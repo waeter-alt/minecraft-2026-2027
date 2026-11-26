@@ -94,6 +94,11 @@ public final class WarMarches
         {
             return "Impossible : aucune guerre ouverte contre cette colonie (ou préavis en cours).";
         }
+        final String locked = fr.kodistan.interregne.politics.WarRules.lockRefusal(server, attacker.getID(), defender.getID());
+        if (locked != null)
+        {
+            return locked;
+        }
         if (marching(attacker.getID(), defender.getID()) || WarAssaults.assaulting(attacker.getID(), defender.getID()))
         {
             return "Vos troupes sont déjà en campagne contre cette colonie.";

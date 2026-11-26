@@ -321,6 +321,18 @@ public final class Config
       .comment("Seconds a colony that lost a war (town hall taken or capitulation) cannot be declared war on")
       .defineInRange("warShieldSeconds", 7200, 0, 604800);
 
+    public static final ModConfigSpec.IntValue WAR_ASSAULT_LOCK_MINUTES = BUILDER
+      .comment("Minutes of game time a defender is reserved for the colony that first assaulted it: the others at war with it cannot assault it meanwhile")
+      .defineInRange("warAssaultLockMinutes", 120, 0, 10080);
+
+    public static final ModConfigSpec.IntValue WAR_IDLE_SURRENDER_HOURS = BUILDER
+      .comment("Hours of game time without any assault from the attacker (counted from the end of the notice or of its last assault) after which the defender may demand its surrender")
+      .defineInRange("warIdleSurrenderHours", 6, 0, 720);
+
+    public static final ModConfigSpec.IntValue WAR_RUIN_CAPTURE_SECONDS = BUILDER
+      .comment("Seconds of cumulated presence of an assault troop around a ruined town hall to take it (the war is then won)")
+      .defineInRange("warRuinCaptureSeconds", 60, 1, 3600);
+
     public static final ModConfigSpec.LongValue WAR_LOOT_PER_BUILDING = BUILDER
       .comment("Most couronnes one fallen building moves from the defender's treasury to the attacker's")
       .defineInRange("warLootPerBuilding", 100L, 0L, Long.MAX_VALUE);
