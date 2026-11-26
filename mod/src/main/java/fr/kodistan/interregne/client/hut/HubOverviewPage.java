@@ -153,7 +153,11 @@ final class HubOverviewPage
 
         if (payable)
         {
-            hub.addHit(x, y, width, h, () -> PacketDistributor.sendToServer(new WarRebuildPayload(hub.colony.getID())));
+            hub.addHit(x, y, width, h, () ->
+            {
+                PacketDistributor.sendToServer(new WarRebuildPayload(hub.colony.getID()));
+                hub.onClose();
+            });
         }
         if (over && !payable)
         {
