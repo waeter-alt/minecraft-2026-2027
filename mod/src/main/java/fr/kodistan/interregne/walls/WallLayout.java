@@ -296,29 +296,36 @@ public final class WallLayout
 
     /**
      * A road's paving (cobblestone, bricks, planks...) is not natural ground, so the probe reads it as a building in
-     * the way; where a road's centre line passes within its paving's reach the cell is let through, which is where
-     * {@link #crossings} puts the gate.
+     * the way; where a road's centre line passes within its paving's reach the cell is let through, so a gatehouse's
+     * turrets may stand on the paving's edges. The road's walkable core (as wide as a gate's passage, dirt roads
+     * included) is flagged: wall and towers there show red, so the road is only ever crossed at a gate.
      */
     public static Terrain.Probe overRoad(final Terrain.Probe probe, final int x, final int z, final java.util.function.LongPredicate onRoad)
     {
-        if (!probe.loaded() || !probe.blocked())
+        if (!probe.loaded())
         {
             return probe;
         }
+        boolean near = false;
         for (int dz = -ROAD_REACH; dz <= ROAD_REACH; dz++)
         {
             for (int dx = -ROAD_REACH; dx <= ROAD_REACH; dx++)
             {
                 if (onRoad.test(WallRegistry.cell(x + dx, z + dz)))
                 {
-                    return new Terrain.Probe(probe.ground(), false, probe.water(), true);
+                    if (Math.abs(dx) <= ROAD_CORE && Math.abs(dz) <= ROAD_CORE)
+                    {
+                        return new Terrain.Probe(probe.ground(), false, probe.water(), true, true);
+                    }
+                    near = true;
                 }
             }
         }
-        return probe;
+        return near ? new Terrain.Probe(probe.ground(), false, probe.water(), true) : probe;
     }
 
     private static final int ROAD_REACH = 3;
+    private static final int ROAD_CORE = PASSAGE_HALF;
 
     private static boolean clearOf(final WallTrace.Point cell, final List<WallTrace.Point> others)
     {
@@ -363,7 +370,7 @@ public final class WallLayout
                     final int z = point.z() + dz;
                     towerCells.add(key(x, z));
                     final Terrain.Probe probe = ground.at(x, z);
-                    final Status cell = statusOf(probe, ground, claim, x, z);
+                    final Status cell = onRoad(probe, statusOf(probe, ground, claim, x, z));
                     if (cell == Status.OK)
                     {
                         low = Math.min(low, probe.ground());
@@ -535,7 +542,7 @@ public final class WallLayout
             final int x = (int) (cellKey >> 32);
             final int z = (int) cellKey;
             final Terrain.Probe probe = assignedProbe.get(cellKey);
-            final Status status = statusOf(probe, ground, claim, x, z);
+            final Status status = onRoad(probe, statusOf(probe, ground, claim, x, z));
             if (status != Status.OK)
             {
                 // Where it cannot stand, show the slice of wall that would cut through, at the crest
@@ -815,6 +822,14 @@ public final class WallLayout
             }
         }
         return cells;
+    }
+
+    /**
+     * Masonry on a road's walkable core would cut it: the road may only be crossed through a gate's passage.
+     */
+    private static Status onRoad(final Terrain.Probe probe, final Status status)
+    {
+        return status == Status.OK && probe.road() ? Status.BLOCKED : status;
     }
 
     private static Status statusOf(final Terrain.Probe probe, final Ground ground, final Claim claim, final int x, final int z)

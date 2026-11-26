@@ -128,7 +128,7 @@ Pour tout ce qui a besoin d'une vraie colonie. Le jeu tourne aussi vite que la m
 
    (`24000` ticks = un jour Minecraft ; `every` = intervalle entre deux lignes de mesures.)
 
-   Scénarios disponibles : `restaurant`, `restaurant-healthy`, `intendance`, `apiary`, `production`, `war`, `war-archers`, `wall-spawn`.
+   Scénarios disponibles : `restaurant`, `restaurant-healthy`, `intendance`, `apiary`, `production`, `war`, `war-archers`, `wall-spawn`, `mur-route` (route posée, muraille tracée dessus puis construite, route tracée ensuite vers la colonie murée ; `ticks=24000`, `every=2000`, tourne aussi sur `runServer` sans joueur).
 
 3. Pour que le client ouvre le monde tout seul, écris aussi `run/client/uishot/request.properties` :
 

@@ -29,9 +29,17 @@ public final class Terrain
      * @param water   the ground is water: the wall will stand on piles
      * @param loaded  false when the chunk is not loaded: nothing is known
      */
-    public record Probe(int ground, boolean blocked, boolean water, boolean loaded)
+    /**
+     * @param road the cell is in the walkable core of a trade road: only a gate's passage may stand there
+     */
+    public record Probe(int ground, boolean blocked, boolean water, boolean loaded, boolean road)
     {
         public static final Probe UNKNOWN = new Probe(0, true, false, false);
+
+        public Probe(final int ground, final boolean blocked, final boolean water, final boolean loaded)
+        {
+            this(ground, blocked, water, loaded, false);
+        }
     }
 
     private static final int TREE_HEIGHT = 32;
