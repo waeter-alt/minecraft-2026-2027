@@ -165,6 +165,11 @@ public final class UiScenarios
                     targets.add(new Target("walledit-same", 80, () -> net.minecraft.client.Minecraft.getInstance().setScreen(new fr.kodistan.interregne.client.walls.WallPlannerScreen(colony.getTownHall()))));
                     targets.add(new Target("walledit-moved", 80, () -> fr.kodistan.interregne.client.walls.WallPlannerScreen.openEditDemo(colony.getTownHall())));
                 }
+                case "respawn" -> {
+                    // Death during an assault: mid-wait, then the wait over with the button
+                    targets.add(new Target("respawn-wait", 10, () -> fr.kodistan.interregne.client.war.AssaultDeathScreen.openDemo(9_000, 16_000, "votre hôtel de ville")));
+                    targets.add(new Target("respawn-ready", 10, () -> fr.kodistan.interregne.client.war.AssaultDeathScreen.openDemo(0, 8_000, "l'hôtel de ville de Valombre")));
+                }
                 case "war" -> {
                     // Settled long enough for the title pop and every figure's count-up to finish
                     targets.add(new Target("war-recap-victory", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.CONQUEST))));
