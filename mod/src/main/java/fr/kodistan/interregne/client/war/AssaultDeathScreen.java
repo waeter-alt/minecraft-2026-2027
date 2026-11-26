@@ -20,6 +20,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
@@ -84,6 +85,16 @@ public final class AssaultDeathScreen extends Screen
         if (pending != null && event.getNewScreen() instanceof DeathScreen)
         {
             event.setNewScreen(fromPending());
+        }
+    }
+
+    /** The player's HUD (hotbar, hearts, our own counters) stays off while the wait screen is up. */
+    @SubscribeEvent
+    public static void onRenderGui(final RenderGuiEvent.Pre event)
+    {
+        if (Minecraft.getInstance().screen instanceof AssaultDeathScreen)
+        {
+            event.setCanceled(true);
         }
     }
 
@@ -188,11 +199,16 @@ public final class AssaultDeathScreen extends Screen
         final float scale = (float) (Math.max(1, Math.round(fit * gui * 0.8)) / gui);
         final int crownH = Math.round(scale * (CROWN_SEAT + PEDESTAL_H));
         final int top = Math.max(4, (height - rest - crownH) / 2);
-        final int crownY = top + 16 + 6 - Math.round(scale * 2);
-        final int numberY = crownY + crownH + 6;
-        final int barY = numberY + 24 + 6;
-        final int lineY = barY + 9;
-        return new Layout(scale, top, Math.round((width - CROWN_W * scale) / 2), crownY, numberY, barY, lineY, lineY + 16);
+        // Below the title: crown, timer (the button takes its place once the wait is over), bar, line. The room left
+        // above the hotbar is shared out as breathing space between these blocks, the most of it under the title.
+        final int fixed = 16 + crownH + 24 + 4 + 8;
+        // The HUD is hidden behind this screen (onRenderGui): only a small margin at the bottom
+        final int extra = Math.max(0, height - 16 - top - fixed - 24);
+        final int crownY = top + 16 + 6 + extra * 34 / 100 - Math.round(scale * 2);
+        final int numberY = crownY + Math.round(scale * 2) + crownH + 6 + extra * 26 / 100;
+        final int barY = numberY + 24 + 6 + extra * 22 / 100;
+        final int lineY = barY + 4 + 6 + extra * 18 / 100;
+        return new Layout(scale, top, Math.round((width - CROWN_W * scale) / 2), crownY, numberY, barY, lineY, numberY);
     }
 
     private int buttonX()
