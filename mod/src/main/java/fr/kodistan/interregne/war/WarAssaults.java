@@ -1220,6 +1220,22 @@ public final class WarAssaults
 
     /** Drains the pending collapse sweeps a few blocks at a time, so a building falling never costs more than
       * {@link #SWEEP_BLOCKS_PER_TICK} block edits in any single tick. */
+    /**
+     * MineColonies' own barbarian raids stay off whatever the server's config says (decision of 19/11): the only
+     * attackers are the war assaults, which start their event directly and never go through RaidManager.canRaid.
+     */
+    @SubscribeEvent
+    public static void onServerStarted(final net.neoforged.neoforge.event.server.ServerStartedEvent event)
+    {
+        final com.minecolonies.api.configuration.ServerConfiguration config =
+          (com.minecolonies.api.configuration.ServerConfiguration) com.minecolonies.core.MineColonies.getConfig().getServer();
+        if (config.enableColonyRaids.get())
+        {
+            config.enableColonyRaids.set(false);
+            InterregneMod.LOGGER.info("MineColonies raids forced off: only war assaults attack colonies");
+        }
+    }
+
     @SubscribeEvent
     public static void onServerTick(final ServerTickEvent.Post event)
     {
