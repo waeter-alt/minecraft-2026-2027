@@ -80,6 +80,7 @@ public class InterregneMod
         // One line per feature: each feature registers its own payloads, so features don't edit the same list
         final PayloadRegistrar registrar = event.registrar("1");
         fr.kodistan.interregne.commerce.CommerceNetwork.register(registrar);
+        fr.kodistan.interregne.garrison.GarrisonNetwork.register(registrar);
         ColonyNetwork.register(registrar);
         EconomyNetwork.register(registrar);
         PoliticsNetwork.register(registrar);

@@ -80,6 +80,9 @@ public final class Reglages {
     public static final ModConfigSpec.DoubleValue QUEUE_DEGATS = B.comment("Leviathan : degats du coup de queue.").defineInRange("leviathanQueue", 6.0, 0.0, 100.0);
     public static final ModConfigSpec.IntValue RAYON_LEVIATHAN_CHARGE = B.comment("Leviathan : duree d'avertissement avant le rayon, en ticks.").defineInRange("leviathanRayonCharge", 40, 10, 200);
 
+    public static final ModConfigSpec.DoubleValue CRISTAL_SOIN = B.comment("Cristal des mers : points de vie rendus au Leviathan par seconde, par cristal encore debout.").defineInRange("cristalSoin", 2.0, 0.0, 100.0);
+    public static final ModConfigSpec.DoubleValue CRISTAL_PORTEE = B.comment("Cristal des mers : distance (en blocs) jusqu'a laquelle il soigne le Leviathan.").defineInRange("cristalPortee", 100.0, 8.0, 400.0);
+
     public static final ModConfigSpec SPEC = B.build();
 
     private Reglages() {

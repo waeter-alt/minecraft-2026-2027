@@ -222,6 +222,7 @@ public final class RouteBuilder implements RouteWork
     public List<RouteStep> slice(final int i)
     {
         final List<RouteStep> out = new ArrayList<>(256);
+        final RouteRegistry registry = RouteRegistry.get(level.getServer());
         final Direction dir = travel[i];
         // A cell riding a road that is already there (its steps, a deck) adds nothing beside it: no bank is raised
         // along an existing bridge, no shoulder cut twice
@@ -249,6 +250,12 @@ public final class RouteBuilder implements RouteWork
                     case RoutePlan.TUNNEL -> boreColumn(out, i, x, z, d2, side, along == 0);
                     default ->
                     {
+                        // Slabs already laid by another road at its own level: laying ours over them doubles them a
+                        // block or two off. Only on the surface: a deck or a bore over/under that road is still needed.
+                        if (registry.inBand(x, z))
+                        {
+                            continue;
+                        }
                         if (plan.footprint.road(x, z))
                         {
                             roadColumn(out, i, x, z, d2);

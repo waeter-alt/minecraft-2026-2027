@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=false": {
+      "model": "donjon:block/station/plaque_station_eteinte"
+    },
+    "active=true": {
+      "model": "donjon:block/station/plaque_station_allumee"
+    }
+  }
+}

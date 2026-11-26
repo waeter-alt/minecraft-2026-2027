@@ -1,5 +1,5 @@
-// [claude-build] Message client -> serveur : le joueur appuie sur ESPACE pour lacher son crochet. Le jeu n'envoie pas la touche de saut
-// au serveur (hors vehicule), d'ou ce message. Le serveur ne supprime que les crochets accroches de ce joueur.
+// [claude-build] Message client -> serveur : le joueur lache le grappin (il relache le clic droit, appuie sur ESPACE, ou arrive). Le jeu n'envoie pas la touche de saut
+// ni le relachement du clic au serveur (hors vehicule), d'ou ce message. Le serveur supprime tous les crochets de ce joueur, en vol ou accroches.
 package fr.atelier.grappin;
 
 import io.netty.buffer.ByteBuf;
@@ -21,7 +21,7 @@ public record LacherPayload() implements CustomPacketPayload {
     public static void traiter(LacherPayload message, IPayloadContext contexte) {
         contexte.enqueueWork(() -> {
             Player joueur = contexte.player();
-            Crochet.crochetsDe(joueur).stream().filter(Crochet::estAccroche).forEach(Crochet::rappeler);
+            Crochet.crochetsDe(joueur).forEach(Crochet::rappeler);
         });
     }
 }

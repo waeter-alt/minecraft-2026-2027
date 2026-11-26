@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Server to client: one colony's wall (key as RegionalTreasury.keyOf), so windows can show it. points and gates are flat x, z pairs.
  */
-public record WallSyncPayload(String colony, List<Integer> points, List<Integer> gates, boolean closed, int level, boolean building, long refund)
+public record WallSyncPayload(String colony, List<Integer> points, List<Integer> gates, boolean closed, int level, boolean building, long refund, boolean unfinished)
   implements CustomPacketPayload
 {
     public static final Type<WallSyncPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "wall_sync"));
@@ -21,7 +21,8 @@ public record WallSyncPayload(String colony, List<Integer> points, List<Integer>
     private static final StreamCodec<ByteBuf, List<Integer>> GATES = ByteBufCodecs.VAR_INT.apply(ByteBufCodecs.list(64));
 
     /**
-     * refund: the Couronnes a demolition gives back to the colony.
+     * refund: the Couronnes a demolition gives back to the colony. unfinished: its site was cut short (server stopped
+     * mid-build), so validating the unchanged trace resumes it for free.
      */
     public static final StreamCodec<ByteBuf, WallSyncPayload> STREAM_CODEC = StreamCodec.of((buf, payload) -> {
         ByteBufCodecs.STRING_UTF8.encode(buf, payload.colony());
@@ -31,8 +32,9 @@ public record WallSyncPayload(String colony, List<Integer> points, List<Integer>
         ByteBufCodecs.VAR_INT.encode(buf, payload.level());
         ByteBufCodecs.BOOL.encode(buf, payload.building());
         ByteBufCodecs.VAR_LONG.encode(buf, payload.refund());
+        ByteBufCodecs.BOOL.encode(buf, payload.unfinished());
     }, buf -> new WallSyncPayload(ByteBufCodecs.STRING_UTF8.decode(buf), POINTS.decode(buf), GATES.decode(buf), ByteBufCodecs.BOOL.decode(buf),
-      ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.BOOL.decode(buf), ByteBufCodecs.VAR_LONG.decode(buf)));
+      ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.BOOL.decode(buf), ByteBufCodecs.VAR_LONG.decode(buf), ByteBufCodecs.BOOL.decode(buf)));
 
     @Override
     public Type<? extends CustomPacketPayload> type()

@@ -34,7 +34,7 @@ public final class LeviathanComportement {
 
     private static final double VUE = 8.0;                  // distance a laquelle on regarde devant pour eviter un obstacle
     private static final double ACCELERATION = 0.06;
-    private static final double DISTANCE_ORBITE = 14.0;      // hors attaque le serpent tourne autour du joueur a cette distance
+    private static final double DISTANCE_ORBITE = 12.0;      // hors attaque le serpent tourne autour du joueur a cette distance
 
     /** Distance libre dans la direction `dir` depuis `de` : VUE si rien ne barre la route, sinon la distance au bloc solide (les fluides ne comptent pas). */
     static double distanceLibre(Leviathan boss, Vec3 de, Vec3 dir) {
@@ -233,7 +233,7 @@ public final class LeviathanComportement {
                         return;
                     }
                     Vec3 queue = boss.positionSection(Leviathan.QUEUE).add(0, boss.getBbHeight() / 2, 0);
-                    boolean prochaQueue = !joueursA(queue, 6.0).isEmpty();
+                    boolean prochaQueue = !joueursA(queue, 4.5).isEmpty();
                     LeviathanLogique.Attaque a = LeviathanLogique.choisirAttaque(boss.phase(), prochaQueue, n -> boss.getRandom().nextInt(n));
                     LOG.debug("[Leviathan] attaque : {} (phase {})", a, boss.phase());
                     switch (a) {
@@ -324,7 +324,7 @@ public final class LeviathanComportement {
                 return;
             }
             Vec3 tete = boss.position().add(0, boss.getBbHeight() / 2, 0);
-            for (Player p : joueursA(tete, 3.0)) {
+            for (Player p : joueursA(tete, 2.5)) {
                 p.hurt(boss.sourceDegats(), Reglages.MORSURE_DEGATS.get().floatValue());
                 Vec3 dir = p.position().subtract(boss.position()).normalize();
                 p.setDeltaMovement(dir.x * 1.2, 0.4, dir.z * 1.2);
@@ -336,7 +336,7 @@ public final class LeviathanComportement {
 
         private void coupDeQueue(Vec3 queue) {
             boss.playSound(SoundEvents.ENDER_DRAGON_FLAP, 4.0F, 0.6F);
-            for (Player p : joueursA(queue, 6.0)) {
+            for (Player p : joueursA(queue, 4.5)) {
                 Vec3 dir = p.position().subtract(queue).normalize();
                 p.hurt(boss.sourceDegats(), Reglages.QUEUE_DEGATS.get().floatValue());
                 p.setDeltaMovement(dir.x * 1.6, 0.4, dir.z * 1.6);

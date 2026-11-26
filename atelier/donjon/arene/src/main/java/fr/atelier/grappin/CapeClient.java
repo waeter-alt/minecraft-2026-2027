@@ -12,14 +12,13 @@ import java.util.Map;
 import java.util.Set;
 
 import org.joml.Quaternionf;
-import org.lwjgl.glfw.GLFW;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
 import io.wispforest.accessories.api.client.AccessoriesRendererRegistry;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -36,6 +35,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.material.FogType;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
@@ -46,6 +46,7 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.RenderBlockScreenEffectEvent;
 import net.neoforged.neoforge.client.event.RenderPlayerEvent;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
@@ -61,9 +62,6 @@ public final class CapeClient {
     private static final double FOV_PIC_ELAN = 0.25;
     private static final double FOV_RETOUR_PROJECTION = 24.0;
     private static final double FOV_PIC_PROJECTION = 0.35;
-
-    // V par defaut : a verifier contre les touches de sorts des mods RPG Series du modpack (reaffectable dans Options > Commandes).
-    static final KeyMapping TOUCHE_LEST = new KeyMapping("key.donjon.lest", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V, "key.categories.donjon");
 
     /** Debut (temps de jeu, en ticks) du dernier tourbillon de chaque entite, d'apres le serveur. */
     private static final Map<Integer, Long> TOURBILLONS = new HashMap<>();
@@ -155,7 +153,7 @@ public final class CapeClient {
                 return;
             }
 
-            while (TOUCHE_LEST.consumeClick()) {
+            while (TouchesDonjon.LEST.consumeClick()) {
                 if (!CapeLesteeItem.porte(j)) {
                     continue;
                 }
@@ -179,6 +177,10 @@ public final class CapeClient {
             boolean avant = active;
             active = possible(j, avant);
             boolean sprint = mc.options.keySprint.isDown();
+            if (!active) {
+                while (TouchesDonjon.DASH.consumeClick()) {      // hors nage rapide, le dash ne s'accumule pas
+                }
+            }
             if (active) {
                 if (!avant) {
                     Vec3 v = j.getDeltaMovement();
@@ -197,7 +199,7 @@ public final class CapeClient {
                     nager(j, sprint);
                 }
                 if (mc.screen == null) {
-                    while (mc.options.keyAttack.consumeClick()) {
+                    while (TouchesDonjon.DASH.consumeClick()) {
                         long maintenant = mc.level.getGameTime();
                         if (CapeCalcul.rechargee(maintenant, dernierClic, Reglages.TOURBILLON_RECHARGE.get())) {
                             dernierClic = maintenant;
@@ -211,8 +213,12 @@ public final class CapeClient {
                             }
                         }
                     }
-                    // Le clic garde enfonce ne doit pas non plus miner ni declencher l'attaque de Better Combat.
-                    mc.options.keyAttack.setDown(false);
+                    if (TouchesDonjon.DASH.getKey().equals(mc.options.keyAttack.getKey())) {
+                        // Meme bouton que l'attaque (reglage par defaut) : le clic ne sert qu'au dash, il ne doit ni frapper, ni miner, ni declencher l'attaque de Better Combat.
+                        while (mc.options.keyAttack.consumeClick()) {
+                        }
+                        mc.options.keyAttack.setDown(false);
+                    }
                 }
             } else if (avant) {
                 if (!j.isInWater() && (projection > 0 || vy > 0.1)) {
@@ -464,6 +470,8 @@ public final class CapeClient {
     @EventBusSubscriber(modid = Grappin.MODID, value = Dist.CLIENT)
     public static final class Effets {
         private static final Set<Integer> TOURNES = new HashSet<>();
+        /** Couleur de fond sous l'eau avec la cape (RVB 0..1) : un bleu clair, pas le bleu nuit du fond des oceans. */
+        private static final float[] COULEUR_EAU_CLAIRE = {0.20F, 0.45F, 0.78F};
 
         /** Le champ de vision s'elargit nettement au tourbillon (plus encore a la projection), puis revient en douceur. */
         @SubscribeEvent
@@ -476,6 +484,43 @@ public final class CapeClient {
             double e = CapeCalcul.aCoup(t, FOV_MONTEE, retourFov);
             if (e > 0) {
                 evenement.setFOV(evenement.getFOV() * (1 + picFov * e * mc.options.fovEffectScale().get()));
+            }
+        }
+
+        /** Cape portee et camera dans l'eau : plus de brouillard ni de voile bleus (la lumiere du fond est rendue cote serveur, vision nocturne). */
+        private static boolean visionClaire(Camera camera) {
+            Minecraft mc = Minecraft.getInstance();
+            return mc.player != null && camera.getEntity() == mc.player && camera.getFluidInCamera() == FogType.WATER && CapeLesteeItem.porte(mc.player);
+        }
+
+        /** Le brouillard d'eau (visibilite de 24 a 96 blocs, bleue) est repousse jusqu'au bout de la distance d'affichage. */
+        @SubscribeEvent
+        static void brouillard(ViewportEvent.RenderFog evenement) {
+            if (!visionClaire(evenement.getCamera())) {
+                return;
+            }
+            float loin = Minecraft.getInstance().gameRenderer.getRenderDistance();
+            evenement.setNearPlaneDistance(loin * 0.9F);
+            evenement.setFarPlaneDistance(loin);
+            evenement.setCanceled(true);
+        }
+
+        /** Au-dela de la distance d'affichage il ne reste que cette couleur : un bleu d'eau claire, au lieu du bleu sombre du biome qui s'assombrit avec la profondeur. */
+        @SubscribeEvent
+        static void couleurDuBrouillard(ViewportEvent.ComputeFogColor evenement) {
+            if (!visionClaire(evenement.getCamera())) {
+                return;
+            }
+            evenement.setRed(COULEUR_EAU_CLAIRE[0]);
+            evenement.setGreen(COULEUR_EAU_CLAIRE[1]);
+            evenement.setBlue(COULEUR_EAU_CLAIRE[2]);
+        }
+
+        /** Le voile d'eau plaque sur l'ecran quand la tete est immergee (sombre et bleu) disparait avec la cape. */
+        @SubscribeEvent
+        static void voileDEau(RenderBlockScreenEffectEvent evenement) {
+            if (evenement.getOverlayType() == RenderBlockScreenEffectEvent.OverlayType.WATER && CapeLesteeItem.porte(evenement.getPlayer())) {
+                evenement.setCanceled(true);
             }
         }
 
@@ -592,7 +637,10 @@ public final class CapeClient {
     public static final class Enregistrement {
         @SubscribeEvent
         static void touches(RegisterKeyMappingsEvent evenement) {
-            evenement.register(TOUCHE_LEST);
+            evenement.register(TouchesDonjon.LEST);
+            evenement.register(TouchesDonjon.DASH);
+            evenement.register(TouchesDonjon.LACHER);
+            evenement.register(TouchesDonjon.PARAVOILE);
         }
 
         @SubscribeEvent

@@ -26,6 +26,7 @@ import com.minecolonies.core.client.gui.WindowRequestDetail;
 import fr.kodistan.interregne.client.hut.ClipboardScreen;
 import fr.kodistan.interregne.client.hut.RequestScreen;
 import net.minecraft.client.Minecraft;
+import com.minecolonies.core.client.gui.huts.WindowBarracksBuilding;
 import com.minecolonies.core.client.gui.huts.WindowHutLiving;
 import com.minecolonies.core.client.gui.huts.WindowHutWorkerModulePlaceholder;
 import com.minecolonies.core.client.gui.townhall.WindowMainPage;
@@ -54,7 +55,8 @@ public abstract class BOWindowMixin
         {
             ci.cancel();
         }
-        else if ((type == WindowHutWorkerModulePlaceholder.class || type == WindowHutMinPlaceholder.class || type == WindowHutLiving.class) && HutScreen.enabled())
+        else if ((type == WindowHutWorkerModulePlaceholder.class || type == WindowHutMinPlaceholder.class || type == WindowHutLiving.class
+            || type == WindowBarracksBuilding.class) && HutScreen.enabled())
         {
             ci.cancel();
             final var building = ((AbstractWindowModuleBuildingAccessor) this).interregne$building();
@@ -87,6 +89,13 @@ public abstract class BOWindowMixin
                     net.neoforged.neoforge.network.PacketDistributor.sendToServer(new fr.kodistan.interregne.commerce.RelaisActionPayload(
                       fr.kodistan.interregne.commerce.RelaisActionPayload.OPEN, building.getColony().getID(), 0, 0, 0, 0, 0, 0));
                 }
+            }
+            else if (building != null && ("combatacademy".equals(building.getBuildingType().getRegistryName().getPath())
+              || "archery".equals(building.getBuildingType().getRegistryName().getPath())))
+            {
+                // Guards are bought here: open now, the server answers with the recruiting state
+                HutScreen.open(building);
+                fr.kodistan.interregne.client.hut.HutBodies.openGarrison(building);
             }
             else
             {

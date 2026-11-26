@@ -169,7 +169,7 @@ public final class WallPlanner
         Terrain.Probe probe = PROBES.get(key);
         if (probe == null)
         {
-            probe = fr.kodistan.interregne.walls.WallLayout.overRoad(Terrain.probe(minecraft.level, x, z, OWN.contains(key) ? fr.kodistan.interregne.walls.WallBlocks::isWallBlock : null),
+            probe = fr.kodistan.interregne.walls.WallLayout.overRoad(Terrain.probe(minecraft.level, x, z, (FRESH || OWN.contains(key)) ? fr.kodistan.interregne.walls.WallBlocks::isWallBlock : null),
               x, z, cell -> ClientRoads.at((int) (cell >> 32), (int) cell) != null);
             if (probe.loaded())
             {
@@ -183,6 +183,18 @@ public final class WallPlanner
      * Cells of the colony's own built wall: the terrain is read through its blocks there, as the ground it was built on.
      */
     private static final java.util.Set<Long> OWN = new java.util.HashSet<>();
+
+    /**
+     * Tracing a colony's first wall: wall blocks left by a site cut short before it was ever recorded are read
+     * through like its own, as the server does on the new trace.
+     */
+    private static boolean FRESH;
+
+    static void fresh(final boolean on)
+    {
+        FRESH = on;
+        PROBES.clear();
+    }
 
     static void own(final java.util.Collection<Long> cells)
     {

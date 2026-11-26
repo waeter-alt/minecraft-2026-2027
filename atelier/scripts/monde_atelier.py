@@ -47,9 +47,9 @@ def datapack(save):
     return dp
 
 
-def level_neuf(nom, couches=None, difficulte=None, apparition=None, mode_jeu=None):
+def level_neuf(nom, couches=None, difficulte=None, apparition=None, mode_jeu=None, retoucher=None):
     """level.dat d'un monde superflat neuf, au nom `nom`, tire du modele. Options : `couches` [(bloc, hauteur)] du bas vers le haut (un superflat profond pour des sous-sols : le modele n'a que 3 blocs de terre),
-    `difficulte` (0 paisible, 1 facile, 2 normal, 3 difficile ; le modele est paisible, donc sans monstres), `apparition` (x, y, z) du point d'apparition du monde, `mode_jeu` (0 survie, 1 creatif ; le modele est creatif)."""
+    `difficulte` (0 paisible, 1 facile, 2 normal, 3 difficile ; le modele est paisible, donc sans monstres), `apparition` (x, y, z) du point d'apparition du monde, `mode_jeu` (0 survie, 1 creatif ; le modele est creatif), `retoucher` (fonction appelee en dernier avec le Compound `Data`, pour tout le reste : generateur, graine, regles...)."""
     f = nbtlib.load(MODELE)
     d = f["Data"]
     d["LevelName"] = String(nom)
@@ -64,6 +64,8 @@ def level_neuf(nom, couches=None, difficulte=None, apparition=None, mode_jeu=Non
         d["SpawnX"], d["SpawnY"], d["SpawnZ"] = Int(apparition[0]), Int(apparition[1]), Int(apparition[2])
     d["LastPlayed"] = Long(int(time.time() * 1000))
     d["WorldGenSettings"]["seed"] = Long(random.randint(-2 ** 62, 2 ** 62))
+    if retoucher:
+        retoucher(d)
     return f
 
 

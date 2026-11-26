@@ -33,6 +33,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -72,6 +73,8 @@ public final class GrappinClient {
             event.registerLayerDefinition(LevierRendu.COUCHE, LevierGeometrie::creerCouche);
             event.registerLayerDefinition(CasierRendu.COUCHE, CasierGeometrie::creerCouche);
             event.registerLayerDefinition(LevierStationRendu.COUCHE, LevierStationGeometrie::creerCouche);
+            event.registerLayerDefinition(ValveStationRendu.COUCHE, ValveStationGeometrie::creerCouche);
+            event.registerLayerDefinition(PorteStationRendu.COUCHE, PorteStationGeometrie::creerCouche);
             event.registerLayerDefinition(LeviathanModele.COUCHE, LeviathanModele::creerCouche);
         }
 
@@ -90,6 +93,9 @@ public final class GrappinClient {
             event.registerBlockEntityRenderer(DonjonBlocs.CASIER_ENTITE.get(), CasierRendu::new);
             event.registerBlockEntityRenderer(StationBlocs.POMPE_ENTITE.get(), PompeRendu::new);
             event.registerBlockEntityRenderer(StationBlocs.LEVIER_ENTITE.get(), LevierStationRendu::new);
+            event.registerBlockEntityRenderer(StationBlocs.VALVE_ENTITE.get(), ValveStationRendu::new);
+            event.registerEntityRenderer(Grappin.CRISTAL.get(), CristalMarinRendu::new);
+            event.registerEntityRenderer(StationBlocs.PORTE.get(), PorteStationRendu::new);
             event.registerEntityRenderer(Grappin.LEVIATHAN.get(), LeviathanRendu::new);
         }
     }
@@ -120,8 +126,15 @@ public final class GrappinClient {
                 return;
             }
             Crochet c = crochetAccroche(joueur);
-            boolean appuiEspace = joueur.input.jumping && !espaceAvant;
-            espaceAvant = joueur.input.jumping;
+            if (Minecraft.getInstance().options.keyUse.isDown() || !crochetsLances(joueur)) {
+                relache = false;
+            } else if (!relache) {                          // le clic droit est relache alors qu'un crochet existe : on le lache, en vol comme accroche
+                relache = true;
+                lacher();
+            }
+            boolean touche = TouchesDonjon.LACHER.isDown() && Minecraft.getInstance().screen == null;
+            boolean appuiEspace = touche && !espaceAvant;
+            espaceAvant = touche;
             if (c == null) {
                 if (crochetId != -1) {                      // le crochet vient de se detacher
                     if (elan) {                             // lache avec ESPACE : on garde sa vitesse (reglable) et on saute
@@ -169,6 +182,27 @@ public final class GrappinClient {
         }
 
         private static boolean espaceAvant = false;         // etat d'ESPACE au tick precedent : on ne lache qu'a l'appui, pas en le maintenant
+        private static boolean relache = false;             // le clic droit a ete relache et le lacher est deja demande (un seul message par lancer)
+        private static boolean boutonAvant = false;         // etat du clic droit a la fin du tick precedent : sert a ignorer la repetition d'un clic maintenu
+
+        private static boolean crochetsLances(LocalPlayer joueur) {
+            return !joueur.level().getEntitiesOfClass(Crochet.class, joueur.getBoundingBox().inflate(Reglages.PORTEE.get() + 10), k -> k.getOwner() == joueur).isEmpty();
+        }
+
+        @SubscribeEvent
+        static void finDeTick(ClientTickEvent.Post event) {
+            boutonAvant = Minecraft.getInstance().options.keyUse.isDown();
+        }
+
+        /** Le jeu repete le clic droit tant qu'on le maintient : avec le grappin, maintenir ne doit pas relancer sans cesse (il faut un nouvel appui). */
+        @SubscribeEvent
+        static void clic(InputEvent.InteractionKeyMappingTriggered event) {
+            LocalPlayer joueur = Minecraft.getInstance().player;
+            if (event.isUseItem() && boutonAvant && joueur != null && joueur.getItemInHand(event.getHand()).getItem() instanceof GrappinItem) {
+                event.setCanceled(true);
+                event.setSwingHand(false);
+            }
+        }
     }
 
     /** Le crochet en vol : le modele 3D donjon:item/crochet (griffes vers +X), tourne comme une fleche dans le sens du vol. */

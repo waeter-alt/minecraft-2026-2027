@@ -116,6 +116,10 @@ public final class ParavoileEvenements {
             if (secondaire.getItem() instanceof ParavoileItem && secondaire.getDamageValue() > 0) {
                 secondaire.setDamageValue(Math.max(0, secondaire.getDamageValue() - recharge));
             }
+            ItemStack auDos = ParavoileItem.portee(j);                  // portee dans la case du dos d'Accessories
+            if (!auDos.isEmpty() && auDos.getDamageValue() > 0) {
+                auDos.setDamageValue(Math.max(0, auDos.getDamageValue() - recharge));
+            }
         }
     }
 

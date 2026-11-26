@@ -234,7 +234,8 @@ def bank(g, p):
             g.put(far - 3 * sx, 1, z0 + 3, DARK)
             g.put(far - 3 * sx, 2, z0 + 3, M + 'lectern', facing='west' if sx > 0 else 'east')
             g.lantern(far - 3 * sx, 2, z0 + 4)
-    g.lantern(0, top - 3, zd - 3, hanging=True)
+    if top - 3 > 1:  # under a low ceiling the lantern would land on the hut block
+        g.lantern(0, top - 3, zd - 3, hanging=True)
     if p.get('fountain'):
         for x in (-1, 0, 1):
             for z in (z0 - 6, z0 - 5, z0 - 4):
@@ -306,7 +307,7 @@ def build(level_n):
         'required_mods': List[String]([String('minecolonies'), String('interregne')]),
         'entities': List[Compound]([]),
         'blocks': IntArray(packed),
-        'tile_entities': List[Compound]([te]),
+        'tile_entities': List[Compound]([te] + R.shingle_tile_entities(g, x0, y0, z0)),
         'name': String(name), 'palette': List[Compound](pal.entries),
         'version': Byte(1), 'mcversion': Int(2730),
         'optional_data': Compound({'structurize': Compound({'primary_offset': Compound({'x': Int(hx), 'y': Int(hy), 'z': Int(hz)})})}),
