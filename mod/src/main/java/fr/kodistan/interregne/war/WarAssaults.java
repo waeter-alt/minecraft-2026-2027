@@ -350,6 +350,7 @@ public final class WarAssaults
             // unregistered (eventID 0) raider discards itself.
             troop.setColony(defender);
             troop.setEventID(event.getID());
+            troop.setSenderColor(fr.kodistan.interregne.colony.ColonyColors.rgb(assault.attacker));
             level.addFreshEntity(troop);
             // Glowing outline, trackable from afar through walls: setGlowingTag alone doesn't stick, since
             // LivingEntity re-syncs that flag every tick from the real GLOWING effect (absent here, it

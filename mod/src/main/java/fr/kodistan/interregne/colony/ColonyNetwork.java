@@ -7,6 +7,7 @@ public final class ColonyNetwork
 {
     public static void register(final PayloadRegistrar r)
     {
+        Net.toClient(r, ColonyColorsPayload.TYPE, ColonyColorsPayload.STREAM_CODEC, fr.kodistan.interregne.client.ClientColonyColors::receive);
         r.playToServer(FarmCropPayload.TYPE, FarmCropPayload.STREAM_CODEC, FarmChoice::onChoice);
         Net.toClient(r, OpenFarmCropPayload.TYPE, OpenFarmCropPayload.STREAM_CODEC,
           p -> fr.kodistan.interregne.client.blocks.CropChoiceScreen.openForFarm(p));
