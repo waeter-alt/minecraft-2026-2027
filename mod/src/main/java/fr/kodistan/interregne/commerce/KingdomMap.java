@@ -62,7 +62,7 @@ public final class KingdomMap
             }
             final double[] where = Contracts.where(contract);
             final Crate crate = Crate.byId(contract.crate);
-            final String label = names.getOrDefault(contract.seller, "?") + " → " + names.getOrDefault(contract.buyer, "?") + " : " + contract.quantity + " × "
+            final String label = names.getOrDefault(contract.seller, "?") + " → " + (contract.imperial() ? "l'Empire" : names.getOrDefault(contract.buyer, "?")) + " : " + contract.quantity + " × "
                                    + (crate == null ? "?" : crate.displayName().toLowerCase());
             final int percent = (int) Math.round(100.0 * contract.progress / (contract.path.length - 1));
             caravans.add(new MapStatePayload.Caravan(contract.id, contract.seller, contract.buyer, label, (int) Math.round(where[0]), (int) Math.round(where[1]),

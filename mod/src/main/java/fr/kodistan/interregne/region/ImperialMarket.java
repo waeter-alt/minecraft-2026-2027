@@ -76,6 +76,25 @@ public final class ImperialMarket extends SavedData
     }
 
     /**
+     * The same price from explicit settings, so a client can estimate a sale from the curve the server sent
+     * ({@link #sellCurve()}) without reading the server's config.
+     */
+    public static int sellPriceAt(final int stock, final double baseStock, final double baseSell, final double elasticity, final double minFactor, final double maxFactor)
+    {
+        final double factor = Math.clamp(1.0 + elasticity * (baseStock - stock) / baseStock, minFactor, maxFactor);
+        return (int) Math.max(1, Math.round(baseSell * factor));
+    }
+
+    /**
+     * {baseStock, baseSell, elasticity, minFactor, maxFactor}, the arguments of the explicit {@code sellPriceAt}.
+     */
+    public static double[] sellCurve()
+    {
+        return new double[] {Config.MARKET_BASE_STOCK.get(), Config.MARKET_SELL_PRICE.get(), Config.MARKET_ELASTICITY.get(), Config.MARKET_MIN_FACTOR.get(),
+          Config.MARKET_MAX_FACTOR.get()};
+    }
+
+    /**
      * Total price of buying this many crates in a row, each one raising the next.
      */
     public long buyTotal(final Crate crate, final int amount)

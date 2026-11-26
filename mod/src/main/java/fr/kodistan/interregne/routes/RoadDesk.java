@@ -122,6 +122,10 @@ public final class RoadDesk
     {
         final RouteRegistry registry = RouteRegistry.get(level.getServer());
         final int from = registry.level(road);
+        if (registry.war(road))
+        {
+            return "Route de guerre : elle ne s'améliore pas. Une fois alliés, ouvrez une route commerciale au poste : elle la remplacera.";
+        }
         if (from >= RoadLevels.MAX)
         {
             return "Route de niveau " + from + "/" + RoadLevels.MAX + " : voie romaine, rien au-dessus.";

@@ -84,6 +84,9 @@ public final class RouteShot
     private static boolean quit;
     private static final List<Pose> poses = new ArrayList<>();
     private static final List<BlockPos[]> routes = new ArrayList<>();
+    private static final List<Integer> routeLevels = new ArrayList<>();
+    private static final List<Boolean> routeWar = new ArrayList<>();
+    private static final List<Boolean> routePeace = new ArrayList<>();
     private static final List<int[]> posts = new ArrayList<>();
     private static double[] home;
     private static boolean show;
@@ -178,6 +181,9 @@ public final class RouteShot
         report.clear();
         poses.clear();
         routes.clear();
+        routeLevels.clear();
+        routeWar.clear();
+        routePeace.clear();
         index = 0;
         pending = null;
         worldAsked = false;
@@ -229,11 +235,14 @@ public final class RouteShot
                 continue;
             }
             final String[] n = spec.trim().split(",");
-            if (n.length != 6)
+            if (n.length < 6 || n.length > 8)
             {
-                report.add("ERROR route ignored, expected ax,ay,az,bx,by,bz: " + spec.trim());
+                report.add("ERROR route ignored, expected ax,ay,az,bx,by,bz[,level][,war]: " + spec.trim());
                 continue;
             }
+            routeLevels.add(n.length > 6 ? Integer.parseInt(n[6].trim()) : 1);
+            routeWar.add(n.length > 7 && (n[7].trim().equals("war") || n[7].trim().equals("peace")));
+            routePeace.add(n.length > 7 && n[7].trim().equals("peace"));
             routes.add(new BlockPos[] {
               new BlockPos(Integer.parseInt(n[0].trim()), Integer.parseInt(n[1].trim()), Integer.parseInt(n[2].trim())),
               new BlockPos(Integer.parseInt(n[3].trim()), Integer.parseInt(n[4].trim()), Integer.parseInt(n[5].trim()))});
@@ -420,7 +429,10 @@ public final class RouteShot
             return;
         }
         final BlockPos[] ends = routes.get(index);
-        pending = server.submit(() -> RouteDev.build(server.overworld(), ends[0], ends[1], show)).thenCompose(future -> future)
+        final int roadLevel = routeLevels.get(index);
+        final boolean war = routeWar.get(index);
+        final boolean peace = routePeace.get(index);
+        pending = server.submit(() -> RouteDev.build(server.overworld(), ends[0], ends[1], show, roadLevel, war, peace)).thenCompose(future -> future)
           .exceptionally(e -> {
               InterregneMod.LOGGER.error("RouteShot: route failed", e);
               return "ERROR route " + ends[0].toShortString() + " -> " + ends[1].toShortString() + ": " + e;

@@ -43,6 +43,8 @@ public abstract class AssaultTroop extends AbstractEntityMinecoloniesRaider impl
     public static final int MAX_LEVEL = 5;
 
     private static final EntityDataAccessor<Integer> LEVEL = SynchedEntityData.defineId(AssaultTroop.class, EntityDataSerializers.INT);
+    /** RGB of the attacking colony's color (its glowing outline); -1 for a free troop, which glows white. */
+    private static final EntityDataAccessor<Integer> COLOR = SynchedEntityData.defineId(AssaultTroop.class, EntityDataSerializers.INT);
 
     /** Dev-only: level given to every troop spawned from now on (see {@code /war debug troop-level}). */
     private static int defaultLevel = 1;
@@ -61,6 +63,7 @@ public abstract class AssaultTroop extends AbstractEntityMinecoloniesRaider impl
     {
         super.defineSynchedData(builder);
         builder.define(LEVEL, 1);
+        builder.define(COLOR, -1);
     }
 
     /** Upgrade level 1-5; only the look changes for now. */
@@ -72,6 +75,19 @@ public abstract class AssaultTroop extends AbstractEntityMinecoloniesRaider impl
     public void setTroopLevel(final int level)
     {
         entityData.set(LEVEL, Math.max(1, Math.min(MAX_LEVEL, level)));
+    }
+
+    /** Tints the troop's glow with its colony's color: {@link #getColony()} is the defender, not the sender. */
+    public void setSenderColor(final int rgb)
+    {
+        entityData.set(COLOR, rgb);
+    }
+
+    @Override
+    public int getTeamColor()
+    {
+        final int color = entityData.get(COLOR);
+        return color < 0 ? super.getTeamColor() : color;
     }
 
     public static void setDefaultLevel(final int level)

@@ -14,7 +14,7 @@ import java.util.List;
  * (a refusal, or empty).
  */
 public record RelaisStatePayload(int colony, String colonyName, int level, int capacity, long available, String notice, List<Partner> partners, List<Row> contracts,
-  List<Tier> tiers)
+  List<Tier> tiers, Imperial imperial)
   implements CustomPacketPayload
 {
     /**
@@ -43,6 +43,33 @@ public record RelaisStatePayload(int colony, String colonyName, int level, int c
      */
     public record Tier(long cost, int swordsmen, int archers)
     {
+    }
+
+    /**
+     * What the colony needs to sell to the Empire: the destinations and the state of its road to each, the price of opening
+     * one, the largest caravan, and the Empire's stock and price curve so the client can estimate a sale itself.
+     *
+     * @param treasury the regional treasury, which pays the road
+     * @param stock    the Empire's stock of each crate, in {@code Crate} order
+     * @param curve    {baseStock, baseSell, elasticity, minFactor, maxFactor} (see {@code ImperialMarket.sellCurve})
+     */
+    public record Imperial(long routeCost, long treasury, int maxCrates, int[] stock, double[] curve, List<Dock> docks)
+    {
+        public static final Imperial NONE = new Imperial(0, 0, 0, new int[0], new double[5], List.of());
+    }
+
+    /**
+     * One Marché impérial a road can lead to.
+     *
+     * @param pos      its packed position
+     * @param distance blocks from the colony
+     * @param state    {@link #CLOSED}, {@link #BUILDING} or {@link #OPEN}
+     */
+    public record Dock(long pos, int distance, int state)
+    {
+        public static final int CLOSED = 0;
+        public static final int BUILDING = 1;
+        public static final int OPEN = 2;
     }
 
     public static final Type<RelaisStatePayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "relais_state"));
@@ -87,6 +114,25 @@ public record RelaisStatePayload(int colony, String colonyName, int level, int c
             buf.writeVarInt(tier.swordsmen);
             buf.writeVarInt(tier.archers);
         }
+        buf.writeVarLong(p.imperial.routeCost);
+        buf.writeVarLong(p.imperial.treasury);
+        buf.writeVarInt(p.imperial.maxCrates);
+        buf.writeVarInt(p.imperial.stock.length);
+        for (final int stock : p.imperial.stock)
+        {
+            buf.writeVarInt(stock);
+        }
+        for (final double value : p.imperial.curve)
+        {
+            buf.writeDouble(value);
+        }
+        buf.writeVarInt(p.imperial.docks.size());
+        for (final Dock dock : p.imperial.docks)
+        {
+            buf.writeVarLong(dock.pos);
+            buf.writeVarInt(dock.distance);
+            buf.writeVarInt(dock.state);
+        }
     }
 
     private static RelaisStatePayload read(final RegistryFriendlyByteBuf buf)
@@ -113,7 +159,25 @@ public record RelaisStatePayload(int colony, String colonyName, int level, int c
         {
             tiers.add(new Tier(buf.readVarLong(), buf.readVarInt(), buf.readVarInt()));
         }
-        return new RelaisStatePayload(colony, name, level, capacity, available, notice, partners, rows, tiers);
+        final long routeCost = buf.readVarLong();
+        final long treasury = buf.readVarLong();
+        final int maxCrates = buf.readVarInt();
+        final int[] stock = new int[buf.readVarInt()];
+        for (int i = 0; i < stock.length; i++)
+        {
+            stock[i] = buf.readVarInt();
+        }
+        final double[] curve = new double[5];
+        for (int i = 0; i < curve.length; i++)
+        {
+            curve[i] = buf.readDouble();
+        }
+        final List<Dock> docks = new ArrayList<>();
+        for (int i = buf.readVarInt(); i > 0; i--)
+        {
+            docks.add(new Dock(buf.readVarLong(), buf.readVarInt(), buf.readVarInt()));
+        }
+        return new RelaisStatePayload(colony, name, level, capacity, available, notice, partners, rows, tiers, new Imperial(routeCost, treasury, maxCrates, stock, curve, docks));
     }
 
     @Override

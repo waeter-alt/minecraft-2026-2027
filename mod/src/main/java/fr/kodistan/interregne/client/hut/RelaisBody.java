@@ -28,6 +28,7 @@ import java.util.List;
 final class RelaisBody implements HutBody
 {
     private static final String OFFER = "offre";
+    private static final String IMPERIAL = "empire";
     private static final String[] CRATES = {"Bois", "Brique", "Blé", "Pierre", "Minerai"};
 
     @Nullable
@@ -40,6 +41,9 @@ final class RelaisBody implements HutBody
     private static int quantity = 10;
     private static long price = 10;
     private static int escort;
+    private static int dock;
+    private static int empireCrate;
+    private static int empireQuantity = 10;
 
     static void receive(final RelaisStatePayload payload)
     {
@@ -59,7 +63,8 @@ final class RelaisBody implements HutBody
     @Override
     public List<Tab> tabs(final IBuildingView building)
     {
-        return List.of(new Tab(OFFER, "Nouvelle offre", Icon.of(Crate.values()[0].stack(1))));
+        return List.of(new Tab(OFFER, "Nouvelle offre", Icon.of(Crate.values()[0].stack(1))),
+          new Tab(IMPERIAL, "Empire", Icon.of(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.GOLD_INGOT))));
     }
 
     @Override
@@ -109,7 +114,97 @@ final class RelaisBody implements HutBody
             y += Ui.banner(graphics, kit.font(), x, y, width, Ui.State.BAD, "Refusé", relais.notice());
             y += 25;
         }
+        if (IMPERIAL.equals(tab))
+        {
+            return empire(kit, graphics, mouseX, mouseY, relais, x, y, width);
+        }
         return OFFER.equals(tab) ? form(kit, graphics, mouseX, mouseY, relais, x, y, width) : contracts(kit, graphics, mouseX, mouseY, relais, x, y, width);
+    }
+
+    /**
+     * Selling to the Empire: open the road to a Marché impérial (paid by the treasury), then send caravans of crates along it.
+     * The Empire always accepts; the price is the Marché's on arrival, so it can only be estimated here.
+     */
+    private static int empire(final BodyKit kit, final GuiGraphics graphics, final int mouseX, final int mouseY, final RelaisStatePayload relais, final int x, int y,
+      final int width)
+    {
+        final var font = kit.font();
+        final RelaisStatePayload.Imperial imperial = relais.imperial();
+        final List<RelaisStatePayload.Dock> docks = imperial.docks();
+        if (docks.isEmpty())
+        {
+            return kit.note(graphics, x + 2, y, width - 4, "Les Intendants n'ont pas encore posé de Marché impérial : pas de route possible.", Palette.MUTED) + 4;
+        }
+        dock = Math.clamp(dock, 0, docks.size() - 1);
+        final RelaisStatePayload.Dock target = docks.get(dock);
+        Ui.label(graphics, font, "MARCHÉ IMPÉRIAL", x, y);
+        y += 12;
+        final int count = docks.size();
+        final String where = (count > 1 ? (dock + 1) + "/" + count + " · " : "") + "à " + target.distance() + " blocs";
+        int px = x;
+        if (count > 1)
+        {
+            px += kit.button(graphics, mouseX, mouseY, px, y, "<", Ui.ButtonStyle.SECONDARY, true, null, () -> dock = (dock + count - 1) % count) + 4;
+        }
+        graphics.drawString(font, where, px, y + 3, Palette.INK, false);
+        px += font.width(where) + 6;
+        if (count > 1)
+        {
+            kit.button(graphics, mouseX, mouseY, px, y, ">", Ui.ButtonStyle.SECONDARY, true, null, () -> dock = (dock + 1) % count);
+        }
+        y += 20;
+        if (target.state() != RelaisStatePayload.Dock.OPEN)
+        {
+            if (target.state() == RelaisStatePayload.Dock.BUILDING)
+            {
+                return kit.note(graphics, x + 2, y, width - 4, "La route impériale est en chantier : vos caravanes pourront partir dès qu'elle sera achevée.", Palette.MUTED) + 4;
+            }
+            y = kit.note(graphics, x + 2, y, width - 4, "Aucune route jusqu'à ce Marché : il en faut une pour envoyer des caravanes. Elle reste ouverte pour toujours.", Palette.MUTED) + 4;
+            return kit.priceButton(graphics, mouseX, mouseY, x, y, width, "Ouvrir la route impériale", imperial.routeCost(), imperial.treasury(), null,
+              () -> send(relais.colony(), RelaisActionPayload.OPEN_ROUTE, 0, target.pos(), 0, 0, 0, 0));
+        }
+        y = kit.note(graphics, x + 2, y, width - 4, "Route ouverte : l'Empire achète tout, sans négocier.", Palette.GREEN_TEXT) + 4;
+        final int labelW = Math.max(font.width("Caisses"), font.width("Quantité")) + 8;
+        final int cx = x + labelW;
+        graphics.drawString(font, "Caisses", x + 2, y + 3, Palette.INK, false);
+        y = kit.segmented(graphics, mouseX, mouseY, cx, x + width, y, List.of(CRATES), empireCrate, i -> empireCrate = i) + 1;
+        final Crate chosen = Crate.values()[empireCrate];
+        final int maxQuantity = Math.max(1, imperial.maxCrates());
+        empireQuantity = Math.clamp(empireQuantity, 1, maxQuantity);
+        final int stock = ClientCrateStock.get(chosen);
+        graphics.drawString(font, "Quantité", x + 2, y + 3, Palette.INK, false);
+        stepper(kit, graphics, mouseX, mouseY, cx, y, String.valueOf(empireQuantity), empireQuantity > 1, empireQuantity < maxQuantity,
+          d -> empireQuantity = Math.clamp((long) empireQuantity + d, 1, maxQuantity));
+        y += 14;
+        y = kit.note(graphics, x + 2, y + 1, width - 4, "à l'entrepôt : " + stock + " · " + maxQuantity + " par caravane au plus", stock >= empireQuantity ? Palette.MUTED : Palette.RED) + 5;
+        final long estimate = estimate(imperial, chosen, empireQuantity);
+        y = kit.note(graphics, x + 2, y, width - 4, "Estimation : " + BodyKit.couronnes(estimate) + " à l'arrivée. Le prix baisse quand l'Empire a trop de stock : "
+                                                      + "le montant final peut être plus bas.", Palette.MUTED) + 6;
+        final boolean ok = stock >= empireQuantity && relais.contracts().size() < relais.capacity();
+        final String why = stock < empireQuantity ? "Pas assez de caisses à l'entrepôt." : relais.contracts().size() >= relais.capacity() ? "Trop de contrats : améliorez le Relais." : null;
+        final int sellCrate = empireCrate;
+        final int sellQuantity = empireQuantity;
+        y = kit.bigButton(graphics, mouseX, mouseY, x, y, width, "Envoyer la caravane", ok, why,
+          () -> send(relais.colony(), RelaisActionPayload.SELL_IMPERIAL, 0, target.pos(), sellCrate, sellQuantity, 0, 0));
+        return y + 4;
+    }
+
+    /**
+     * What the Empire would pay for this many crates at its current stock, each one lowering the price of the next.
+     */
+    static long estimate(final RelaisStatePayload.Imperial imperial, final Crate crate, final int quantity)
+    {
+        if (imperial.stock().length <= crate.ordinal())
+        {
+            return 0;
+        }
+        final double[] curve = imperial.curve();
+        long total = 0;
+        for (int i = 0; i < quantity; i++)
+        {
+            total += fr.kodistan.interregne.region.ImperialMarket.sellPriceAt(imperial.stock()[crate.ordinal()] + i, curve[0], curve[1], curve[2], curve[3], curve[4]);
+        }
+        return total;
     }
 
     private static int contracts(final BodyKit kit, final GuiGraphics graphics, final int mouseX, final int mouseY, final RelaisStatePayload relais, final int x, int y,

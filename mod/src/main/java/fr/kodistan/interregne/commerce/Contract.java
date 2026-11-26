@@ -17,6 +17,12 @@ public final class Contract
     /** The caravan has arrived but the buyer's warehouse could not take everything yet. */
     public static final int WAITING = 2;
 
+    /**
+     * The "buyer" of a sale to the Empire: it accepts at once and pays on arrival, at the Marché's price of that moment.
+     * Such a contract goes straight to {@link #TRANSIT}; {@link #unitPrice} is only the estimate made at departure.
+     */
+    public static final int IMPERIAL = -1;
+
     public final long id;
     public final int seller;
     public final int buyer;
@@ -59,6 +65,11 @@ public final class Contract
         this.crate = crate;
         this.quantity = quantity;
         this.unitPrice = unitPrice;
+    }
+
+    public boolean imperial()
+    {
+        return buyer == IMPERIAL;
     }
 
     public long escortPaid()

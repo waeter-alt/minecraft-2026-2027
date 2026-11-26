@@ -32,6 +32,11 @@ public final class DevOverrides
      */
     public static boolean war;
     /**
+     * Crates shown as carried by the HUD, without a real inventory.
+     */
+    @Nullable
+    public static Integer crates;
+    /**
      * Forced mouse position in GUI pixels for our screens, so captures never show a stray hover.
      */
     @Nullable
@@ -51,5 +56,6 @@ public final class DevOverrides
         bannerCrate = null;
         hover = null;
         war = false;
+        crates = null;
     }
 }

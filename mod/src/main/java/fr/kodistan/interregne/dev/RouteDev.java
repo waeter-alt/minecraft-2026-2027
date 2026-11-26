@@ -2,6 +2,7 @@ package fr.kodistan.interregne.dev;
 
 import fr.kodistan.interregne.InterregneMod;
 import fr.kodistan.interregne.colony.RouteSite;
+import fr.kodistan.interregne.routes.RoadStyle;
 import fr.kodistan.interregne.routes.RouteBuilder;
 import fr.kodistan.interregne.routes.RoutePlanning;
 import fr.kodistan.interregne.routes.RouteProbe;
@@ -52,9 +53,27 @@ public final class RouteDev
      * of it on the spot — or, with show, raises it through a real {@link RouteSite} in a few seconds, the way a
      * player sees it. Call on the server thread.
      *
+     * @param roadLevel 1 to 5: the laid road is then raised level by level on the spot, as the upgrade works would
+     * @param war       dressed as a war road (deepslate, blackstone, soul lanterns) instead of a trade road
+     *
      * @return completes with one line saying what was built, starting with ERROR when nothing was
      */
     public static CompletableFuture<String> build(final ServerLevel level, final BlockPos a, final BlockPos b, final boolean show)
+    {
+        return build(level, a, b, show, 1, false);
+    }
+
+    public static CompletableFuture<String> build(final ServerLevel level, final BlockPos a, final BlockPos b, final boolean show,
+      final int roadLevel, final boolean war)
+    {
+        return build(level, a, b, show, roadLevel, war, false);
+    }
+
+    /**
+     * @param peace laid as a war road, then laid again as the level 1 road its colonies open once allied
+     */
+    public static CompletableFuture<String> build(final ServerLevel level, final BlockPos a, final BlockPos b, final boolean show,
+      final int roadLevel, final boolean war, final boolean peace)
     {
         final CompletableFuture<String> result = new CompletableFuture<>();
         final long started = System.currentTimeMillis();
@@ -69,7 +88,7 @@ public final class RouteDev
                     return;
                 }
                 final long studied = System.currentTimeMillis();
-                final RouteBuilder builder = new RouteBuilder(level, plan);
+                final RouteBuilder builder = new RouteBuilder(level, plan, war);
                 final int index = ++built;
                 final List<String> poses = poses(level, plan, "r" + index);
                 final Path dir = level.getServer().getServerDirectory().resolve("routeshot");
@@ -91,20 +110,34 @@ public final class RouteDev
                 int blocks = 0;
                 for (int i = 0; i < builder.cells(); i++)
                 {
-                    for (final RouteStep step : builder.slice(i))
+                    blocks += lay(level, builder.slice(i));
+                }
+                final RouteRegistry registry = RouteRegistry.get(level.getServer());
+                registry.record(plan, null, null, war);
+                final int road = registry.roadCount() - 1;
+                if (war && peace)
+                {
+                    final RouteBuilder rebuild = new RouteBuilder(level, registry.plan(road), RoadStyle.PATH, road);
+                    for (int i = 0; i < rebuild.cells(); i++)
                     {
-                        BlockState state = step.state();
-                        if (!state.isAir())
-                        {
-                            final BlockState shaped = Block.updateFromNeighbourShapes(state, level, step.pos());
-                            state = shaped.isAir() ? state : shaped;
-                        }
-                        level.setBlock(step.pos(), state, Block.UPDATE_ALL);
-                        blocks++;
+                        blocks += lay(level, rebuild.slice(i));
+                    }
+                    registry.makePeace(road);
+                }
+                // Raised the way an upgrade does it: the whole road laid again over itself, one level at a time
+                for (int done = 1; done < roadLevel && !war; done++)
+                {
+                    final RouteBuilder rebuild = new RouteBuilder(level, registry.plan(road), RoadStyle.of(done + 1), road);
+                    for (int i = 0; i < rebuild.cells(); i++)
+                    {
+                        blocks += lay(level, rebuild.slice(i));
                     }
                 }
-                RouteRegistry.get(level.getServer()).record(plan, null, null);
-                RouteRegistry.get(level.getServer()).broadcast();
+                if (roadLevel > 1)
+                {
+                    registry.setLevel(road, roadLevel);
+                }
+                registry.broadcast();
                 final String line = head + blocks + " blocks laid in " + (System.currentTimeMillis() - studied) + " ms, " + poses.size() + " poses";
                 InterregneMod.LOGGER.info("RouteDev: {}", line);
                 result.complete(line);
@@ -120,6 +153,21 @@ public final class RouteDev
             result.complete("ERROR too far: " + from.toShortString() + " to " + to.toShortString());
         }
         return result;
+    }
+
+    private static int lay(final ServerLevel level, final List<RouteStep> steps)
+    {
+        for (final RouteStep step : steps)
+        {
+            BlockState state = step.state();
+            if (!state.isAir())
+            {
+                final BlockState shaped = Block.updateFromNeighbourShapes(state, level, step.pos());
+                state = shaped.isAir() ? state : shaped;
+            }
+            level.setBlock(step.pos(), state, Block.UPDATE_ALL);
+        }
+        return steps.size();
     }
 
     /** The block of ground a route ends on in this column: under the Poste commercial when one stands there. */

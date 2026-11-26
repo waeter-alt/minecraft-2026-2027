@@ -120,6 +120,15 @@ public final class Footprint
      * Whether this column is part of the road itself (not a shoulder): seven wide on an open run, narrower where
      * the route funnels into a gate.
      */
+    /**
+     * Half-width of the road at this cell of the centre line (0 to 3, as given when it was planned).
+     */
+    public int half(final int i)
+    {
+        final int cap = roadCap[i];
+        return cap <= 1 ? 0 : cap == 2 ? 1 : cap == 6 ? 2 : 3;
+    }
+
     public boolean road(final int x, final int z)
     {
         final int i = owner(x, z);

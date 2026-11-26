@@ -132,7 +132,8 @@ public final class RouteEnds
         double bestD = Double.MAX_VALUE;
         for (final IColony colony : IColonyManager.getInstance().getColonies(level))
         {
-            if (colony.getID() == from.getID() || registry.areLinked(from.getID(), colony.getID())
+            // A war road links them for the troops only: their first trade road is still to open
+            if (colony.getID() == from.getID() || registry.areLinked(from.getID(), colony.getID()) && registry.warRoad(from.getID(), colony.getID()) < 0
                   || !fr.kodistan.interregne.politics.Alliances.get(level.getServer()).areAllied(from.getID(), colony.getID()))
             {
                 continue;

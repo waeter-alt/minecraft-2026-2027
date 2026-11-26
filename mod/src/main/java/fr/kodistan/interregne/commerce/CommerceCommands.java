@@ -57,6 +57,10 @@ public final class CommerceCommands
           .executes(CommerceCommands::accept))));
         root.then(literal("retirer").then(argument("colonie", IntegerArgumentType.integer(1)).then(argument("contrat", LongArgumentType.longArg(1))
           .executes(CommerceCommands::withdraw))));
+        root.then(literal("empire").then(literal("marches").executes(CommerceCommands::markets))
+          .then(argument("colonie", IntegerArgumentType.integer(1)).then(literal("route").executes(CommerceCommands::imperialRoute))
+            .then(literal("vendre").then(argument("type", StringArgumentType.word()).then(argument("nombre", IntegerArgumentType.integer(1, Contracts.MAX_QUANTITY))
+              .executes(CommerceCommands::sellImperial))))));
         root.then(literal("etat").executes(CommerceCommands::state));
         event.getDispatcher().register(root);
     }
@@ -169,6 +173,58 @@ public final class CommerceCommands
         final int count = IntegerArgumentType.getInteger(ctx, "nombre");
         final int stored = Contracts.store(colony, crate, count);
         return say(ctx, stored + " / " + count + " caisses rangées à l'entrepôt de " + colony.getName() + ".");
+    }
+
+    private static int markets(final CommandContext<CommandSourceStack> ctx)
+    {
+        final var docks = ImperialGate.docks(ctx.getSource().getServer(), BlockPos.containing(ctx.getSource().getPosition()));
+        if (docks.isEmpty())
+        {
+            return say(ctx, "Aucun Marché impérial connu (pose-en un, ou ouvre-en un une fois).");
+        }
+        for (final ImperialGate.Dock dock : docks)
+        {
+            say(ctx, "Marché en " + dock.pos().toShortString() + ", à " + dock.distance() + " blocs.");
+        }
+        return docks.size();
+    }
+
+    /**
+     * Opens the colony's road to the nearest Marché impérial, paid by its treasury like in the Relais.
+     */
+    private static int imperialRoute(final CommandContext<CommandSourceStack> ctx)
+    {
+        final IColony colony = colony(ctx, "colonie");
+        if (colony == null)
+        {
+            return fail(ctx, "Colonie inconnue.");
+        }
+        final var server = ctx.getSource().getServer();
+        final BlockPos market = ImperialGate.find(server, colony, 0);
+        if (market == null)
+        {
+            return fail(ctx, "Aucun Marché impérial connu.");
+        }
+        final String refusal = ImperialRoutes.get(server).open(server.overworld(), colony, market);
+        return refusal == null ? say(ctx, "Route impériale lancée vers " + market.toShortString() + ".") : fail(ctx, refusal);
+    }
+
+    private static int sellImperial(final CommandContext<CommandSourceStack> ctx)
+    {
+        final IColony colony = colony(ctx, "colonie");
+        final Crate crate = Crate.byId(StringArgumentType.getString(ctx, "type"));
+        if (colony == null || crate == null)
+        {
+            return fail(ctx, "Colonie ou type de caisse inconnu.");
+        }
+        final var server = ctx.getSource().getServer();
+        final BlockPos market = ImperialGate.find(server, colony, 0);
+        if (market == null)
+        {
+            return fail(ctx, "Aucun Marché impérial connu.");
+        }
+        final String refusal = Contracts.get(server).sellImperial(null, server, colony, market, crate, IntegerArgumentType.getInteger(ctx, "nombre"));
+        return refusal == null ? say(ctx, "Caravane impériale partie.") : fail(ctx, refusal);
     }
 
     private static int treasury(final CommandContext<CommandSourceStack> ctx)

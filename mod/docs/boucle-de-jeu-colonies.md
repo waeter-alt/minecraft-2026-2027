@@ -80,7 +80,7 @@ Puits d'or : constructions, Intendance, caisses de matériaux, frais de guerre, 
 2. **Route de guerre automatique** et marche sur route.
 3. **Fin de guerre** : capitulation, chute de l'hôtel de ville, bouclier, butin pris au perdant.
 4. **Influence branchée** : victoire de guerre, arène, diplomatie (le commerce, lui, rapporte de l'or).
-5. **Or de la citadelle** : vente au marché impérial, route commerciale automatique vers la citadelle.
+5. **Or de la citadelle** : vente au marché impérial, route commerciale automatique vers la citadelle. *(Fait, voir « Or de la citadelle » ci-dessous.)*
 6. **Aide de clan** : contingent allié téléporté en défense.
 7. **Test de bout en bout** : un scénario multi-colonies qui joue toute la boucle (alliance, commerce, rupture, guerre, aide, victoire, reconstruction).
 
@@ -99,3 +99,18 @@ L'Influence est par joueur et va au **propriétaire de la colonie**, comme la vi
 | Alliance qui dure | 1 | par jour Minecraft complet (24000 ticks) d'alliance active, pour chaque colonie de la paire ; un seul jour payé après une longue interruption, pas de rattrapage (`influenceAllianceDaily`) |
 
 Repères : la déclaration de guerre coûte 20. Un assaut repoussé vaut environ un quart d'une victoire ; l'alliance signée un peu moins. Le raccourci admin `/diplomatie allier` ne verse rien.
+
+## Or de la citadelle (livré)
+
+Le commerce rapporte de l'or, jamais d'Influence. Une colonie vend ses surplus (des caisses) à l'Empire de deux façons.
+
+**Route impériale et caravane.** Onglet « Empire » du Relais commercial :
+- « Ouvrir la route impériale » (prix `imperialRoadCost`, pris au trésor régional) trace et construit une route jusqu'à un bloc Marché impérial avec le même mécanisme que la route de guerre (`RoutePlanning` puis `RouteSite`, `RouteBuilder`). Si aucun tracé n'est possible, le trésor est remboursé. Une route ouverte est réutilisée et ne disparaît jamais.
+- « Envoyer la caravane » prend jusqu'à `imperialMaxCrates` caisses de l'entrepôt. L'Empire accepte toujours, sans confirmation. À l'arrivée, les caisses vont au stock de l'Empire (`ImperialMarket`) au **prix de vente du Marché à cet instant** (chaque caisse baisse le prix de la suivante) et l'or est versé au trésor de la colonie. Le joueur voit une estimation au départ, avec l'avertissement que le prix final peut baisser.
+- La caravane suit les règles des autres : mule, conducteur, visible près d'un joueur, pillable par une colonie en guerre contre le vendeur (les caisses tombent au sol, rien n'est versé). Pas d'escorte pour l'instant. Un contrat impérial est un `Contract` dont l'acheteur vaut `Contract.IMPERIAL` (-1) ; il compte dans la capacité du Relais.
+
+**Point d'arrivée.** Tout ce qui sait où arrive la route est dans `commerce/ImperialGate` : aujourd'hui le bloc Marché impérial le plus proche (ou celui que le joueur choisit quand il y en a plusieurs), connu par `region/MarketSites` (inscrit à la pose ou au premier usage du bloc). Quand la cité aura sa propre colonie admin, c'est cette seule classe qui change. Les routes ouvertes sont gardées par `commerce/ImperialRoutes` (colonie, Marché, cellules du chemin).
+
+**Vente à pied alourdie.** La vente directe au bloc Marché reste telle quelle, mais chaque caisse portée ralentit : rien jusqu'à `cratesSlowness1` caisses, puis un niveau de Lenteur de plus toutes les `cratesPerSlowLevel` caisses, plafonné à `cratesSlowMax` (`CrateEncumbrance.slowLevel`). Le HUD affiche, sous le portefeuille, une petite étiquette avec une caisse et leur nombre, en rouge quand la Lenteur agit. Ce réglage remplace l'ancien `cratesSlowness2`.
+
+**Config** (réglable par les admins) : `imperialRoadCost` (400), `imperialRoadSeconds` (60), `imperialMaxCrates` (64), `cratesSlowness1` (6), `cratesPerSlowLevel` (10), `cratesSlowMax` (4).
