@@ -50,11 +50,16 @@ def verifier(exports=RACINE / "exports"):
     leviers = infos["leviers"]
     t = Terrain(blocs, a1.PLAINE)
     a_pied = marcher(t, depart, CHUTE)
-    for nom, cible, attendu in (("le Hall", (120, a1.SOL + 1, 200), True), ("le Vestiaire", (30, a1.SOL + 1, 185), True), ("le volant 2", leviers[2], True),
+    for nom, cible, attendu in (("le Hall", (120, a1.SOL + 1, 200), True), ("le Vestiaire (porte fermee)", (30, a1.SOL + 1, 185), False), ("le volant 2", leviers[2], True),
                                 ("le fond du plongeon", (78, a1.FOND_PLONGEON + 1, 168), True), ("le volant 1", leviers[1], False), ("le volant 3", leviers[3], False),
                                 ("la coursive de la Cuve", infos["coursive"], False)):
         if a_cote(a_pied, cible) != attendu:
             erreurs.append(f"a pied : {nom} {'pas ' if attendu else ''}atteint")
+    avec_vestiaire = dict(blocs)                                                              # les trois valves tournees : la porte du Vestiaire est ouverte
+    for p in infos["porte_vestiaire"]:
+        avec_vestiaire[p] = AIR
+    if not a_cote(marcher(Terrain(avec_vestiaire, a1.PLAINE), depart, CHUTE), (30, a1.SOL + 1, 185)):
+        erreurs.append("a pied, porte du Vestiaire ouverte : le Vestiaire pas atteint")
     grappin, nb_air = fermeture(t, depart, ancrages)
     for nom, cible, attendu in (("le volant 1", leviers[1], True), ("le volant 3", leviers[3], True), ("la coursive de la Cuve", infos["coursive"], False)):
         if a_cote(grappin, cible) != attendu:

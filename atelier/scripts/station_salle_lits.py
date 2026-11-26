@@ -11,10 +11,11 @@ Pur calcul, comme station_create : a appeler a la fin de station_create.salles_d
     station_salle_lits.refaire(parts, infos)
 Renvoie {"pompes": [(p, facing)], "cadrans": [p]} (pour le datapack, si on veut mettre les pompes en marche au retour de la pompe A).
 """
+import station_vannes
 from suspendu_outils import S
 
 LITS = ((30, 33, 3, 30), (44, 47, 15, 42), (58, 61, 3, 30))     # x0, x1, z0, z1 (station_secteurs.LITS)
-Y_SOL, Y_HAUT = 60, 68                                           # sol de la salle ; le dessus des lits
+Y_SOL, Y_HAUT = 60, 74                                           # sol de la salle ; le dessus des lits : ils montent jusqu'au plafond (Luca, 25/11), le slalom est obligatoire
 LIBRE = ("minecraft:water", "minecraft:air")
 EAU = S("minecraft:water", level=0)
 CUIVRE = S("create:copper_casing")
@@ -22,7 +23,7 @@ VITRE = S("create:framed_glass")
 GRILLE = S("minecraft:waxed_copper_grate", waterlogged=True)
 REBORD = S("minecraft:waxed_cut_copper")
 COUCHES = {61: S("minecraft:gravel"), 62: S("minecraft:gravel"), 63: S("minecraft:sand"), 64: S("minecraft:sand"),
-           65: S("minecraft:coal_block"), 66: EAU, 67: EAU}                       # de bas en haut : gravier, sable, anthracite, l'eau a filtrer
+           65: S("minecraft:coal_block")}                                         # de bas en haut : gravier, sable, anthracite, puis l'eau a filtrer jusqu'au plafond
 
 
 def _tuyau(axe, eau=True):
@@ -71,11 +72,26 @@ def cuve(blocs, x0, x1, z0, z1):
                     b = REBORD if (bord_x or bord_z) else GRILLE                         # le rebord, la grille par-dessus l'eau
                 elif bord_x or bord_z:
                     b = CUIVRE if cote else VITRE                                        # les cotes, et les vitres entre elles
-                elif y == 66 and (z - z0) % 4 == 2:
+                elif y in (66, 71) and (z - z0) % 4 == 2:
                     b = S("minecraft:light", level=15, waterlogged=True)                 # l'eau enfermee de la cuve n'est pas dans le noir (verif_station_suite)
                 else:
-                    b = COUCHES[y]
+                    b = COUCHES.get(y, EAU)
                 blocs[(x, y, z)] = b
+
+
+BARRAGES = ((32, 31, 42), (45, 3, 14), (59, 31, 42))          # x, z0, z1 : un barrage de planches dans chaque passage entre deux lits, en travers du slalom
+
+
+def barrages(blocs):
+    """Les barrages de planches (donjon:planche_station) : de plancher a plafond dans chaque passage du slalom, que la Cape lestee brise d'un tourbillon. Renvoie [(case, axe)]."""
+    planches = []
+    for (x, z0, z1) in BARRAGES:
+        for z in range(z0, z1 + 1):
+            for y in range(Y_SOL + 1, Y_HAUT + 1):
+                if _libre(blocs, (x, y, z)):
+                    blocs[(x, y, z)] = station_vannes.planche("z", True)
+                    planches.append(((x, y, z), "z"))
+    return planches
 
 
 def refaire(parts, infos):
@@ -99,8 +115,9 @@ def refaire(parts, infos):
                 blocs[p] = S("donjon:pompe_station", facing=face, en_marche=False, waterlogged=True)
                 pompes.append((p, face))
                 break
+    planches = barrages(blocs)
     ax0, ax1, az0, az1, _, ay1 = infos["a"]["a3"]                                     # station_secteurs.A3 : x0, x1, z0, z1, y0, y1
     for x in range(ax0 + 4, ax1, 8):                                                     # des manometres sur les longs murs, a mi-hauteur
         _cadran(blocs, (x, ay1 - 6, az0), "south", cadrans)
         _cadran(blocs, (x, ay1 - 6, az1), "north", cadrans)
-    return {"pompes": pompes, "cadrans": cadrans}
+    return {"pompes": pompes, "cadrans": cadrans, "planches": planches}

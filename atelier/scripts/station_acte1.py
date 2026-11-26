@@ -7,6 +7,7 @@ Coordonnees du gabarit (240 x 112 x 240) ; nord = z decroissant. Pur calcul : re
 import math
 from functools import lru_cache
 
+import station_vannes
 from suspendu_outils import AIR, S, h01
 
 SX, SY, SZ = 240, 112, 240
@@ -42,10 +43,15 @@ BOUCHES = {"A": (270, 64, 70), "C": (0, 48, 54), "B": (90, 32, 38), "D": (40, 31
 TUYAUX = (22, 110, 160, 200, 250, 320)         # les six colonnes de tuyaux de la Cuve (azimuts)
 PLONGEOIRS = (60, 135, 225, 300)               # les ouvertures du garde-corps de la Coursive, avec un plongeoir
 LEVIERS = {1: (77, SOL + 1, 180), 2: (141, SOL + 1, 188), 3: (150, SOMMET_TOUR + 1, 178)}
-TEMOINS_SAS = ((118, 91, 157), (120, 91, 157), (122, 91, 157))
+TEMOINS_SAS = ((59, SOL + 7, 183), (59, SOL + 7, 184), (59, SOL + 7, 185))   # les trois voyants des valves, au-dessus de la porte du Vestiaire (mur du Hall, a l'entree du couloir)
+X_PORTE_VESTIAIRE = 58                         # la porte du Vestiaire ferme le couloir en x 58 (z 182 a 186, 5 de haut)
+LEVIER_SAS = (55, SOL + 2, 187)                # le levier de la grande porte (le Sas) : il apparait DANS le Vestiaire quand on a pris la cape, a l'endroit ou Luca l'a deplace a la main (25/11) : sur le mur est, pres de l'entree
+LEVIER_SAS_ETAT = "face=wall,facing=west,powered=false"
 TEMOINS_POMPES = ((118, 91, 130), (120, 91, 130), (122, 91, 130))
-CASIER = (34, SOL + 1, 175)                    # le casier de la cape (une case de la rangee nord du Vestiaire)
-EMBUSCADE = ((100, FOND50 + 1, 173), (115, FOND50 + 1, 182), (130, FOND50 + 1, 175), (122, FOND50 + 1, 178))   # 3 zombies et un squelette
+CASIER = (28, SOL + 1, 194)                    # le casier de la cape : l'une des cabines orange du Vestiaire (rangee sud, tournee vers le nord)
+COFFRE_PISCINE = (115, FOND50 + 1, 178)         # le coffre qui apparait au fond de la piscine quand l'embuscade est vaincue
+EMBUSCADE = ((100, FOND50 + 1, 173), (115, FOND50 + 1, 182), (130, FOND50 + 1, 175), (122, FOND50 + 1, 178),   # un squelette toutes les quatre places :
+             (95, FOND50 + 1, 181), (108, FOND50 + 1, 177), (127, FOND50 + 1, 172), (135, FOND50 + 1, 181))   # 6 zombies et 2 squelettes (deux fois plus qu'avant, Luca 26/11)
 
 
 def az(x, z, c):
@@ -495,13 +501,14 @@ def construire():
         poser_si_libre((x, SOL + 1, z), S("potted_fern"))
 
     # ---------------------------------------------------------- les volants (des leviers), les temoins du Sas et des pompes, la vanne du Sas, le casier
-    for k, p in LEVIERS.items():
-        blocs[p] = S("lever", face="floor", facing="north", powered=False)
     for p in TEMOINS_SAS + TEMOINS_POMPES:
         blocs[p] = S("waxed_copper_bulb", lit=False, powered=False)
     vanne = [(x, y, SAS[3]) for x in range(SAS[0], SAS[1] + 1) for y in range(SOL + 1, SOL + HAUT_SAS + 1)]
     for p in vanne:
-        blocs[p] = S("iron_bars", waterlogged=False)
+        blocs[p] = station_vannes.BARRIERE                                                  # la porte du Sas (entite donjon:porte_station) ; la barriere ferme le passage
+    porte_vestiaire = [(X_PORTE_VESTIAIRE, y, z) for z in range(COULOIR_V[2], COULOIR_V[3] + 1) for y in range(SOL + 1, SOL + 6)]
+    for p in porte_vestiaire:
+        blocs[p] = station_vannes.BARRIERE
     couleurs = ("bleu_clair", "cyan", "vert", "jaune", "orange")
     for z in (175, 194):                                                          # deux rangees de vrais casiers (donjon:casier) dans le Vestiaire, la porte vers le banc
         face = "south" if z == 175 else "north"
@@ -515,8 +522,6 @@ def construire():
         for x in range(21, 49):
             if x % 6 != 2:
                 blocs[(x, SOL + 1, z + (3 if z == 175 else -3))] = banc("east")
-    blocs[CASIER] = S("donjon:casier", facing="south", couleur="orange", half="lower", open=False)        # le casier de la cape (vide au depart)
-    blocs[(CASIER[0], CASIER[1] + 1, CASIER[2])] = S("donjon:casier", facing="south", couleur="orange", half="upper", open=False)
     for (x, z) in ((16, 165), (53, 165), (16, 204), (53, 204), (35, 184), (35, 185)):
         blocs[(x, SOL + 1, z)] = S("potted_fern")
     amenager_vestiaire(blocs, sources)
@@ -556,10 +561,11 @@ def construire():
                 d = abs((az(x, z, CUVE) - a_deg + 180) % 360 - 180)
                 for y in range(y0 - 1, y1 + 2):
                     if d < 5.5 and y0 <= y <= y1:
-                        blocs[(x, y, z)] = S("iron_bars", waterlogged=False)          # la vanne de la bouche, scellee
-                        cases.append((x, y, z))
+                        cases.append((x, y, z))                                       # la vanne de la bouche, scellee (bloc du mod, posee plus bas)
                     elif d < 8:
                         blocs[(x, y, z)] = S("waxed_cut_copper")                      # son cadre de cuivre
+        for p in cases:
+            blocs[p] = station_vannes.vanne(p, cases, False)
         bouches[nom] = cases
     ancrages_cuve = []
     for nom, y in (("A", BOUCHES["A"][2] + 4), ("C", BOUCHES["C"][2] + 4)):
@@ -576,7 +582,9 @@ def construire():
     for z in sorted(rangees):
         xs = sorted(rangees[z])
         couches.append((xs[0], xs[-1], z))
-    infos = {"entree": (119, PLAINE + 1, PAVILLON[3] - 1), "leviers": LEVIERS, "temoins_sas": TEMOINS_SAS, "temoins_pompes": TEMOINS_POMPES, "vanne_sas": vanne, "casier": CASIER,
+    infos = {"entree": (119, PLAINE + 1, PAVILLON[3] - 1), "leviers": LEVIERS, "temoins_sas": TEMOINS_SAS, "temoins_pompes": TEMOINS_POMPES, "vanne_sas": vanne, "casier": CASIER, "coffre_piscine": COFFRE_PISCINE, "porte_vestiaire": porte_vestiaire, "levier_sas": LEVIER_SAS,
+             "portes": {"sas": station_vannes.porte_station(((SAS[0] + SAS[1]) / 2 + 0.5, SAS[3] + 0.5), SOL + 1, SAS[1] - SAS[0] + 1, HAUT_SAS, 0, vanne),
+                        "vestiaire": station_vannes.porte_station((X_PORTE_VESTIAIRE + 0.5, (COULOIR_V[2] + COULOIR_V[3]) / 2 + 0.5), SOL + 1, COULOIR_V[3] - COULOIR_V[2] + 1, 5, 90, porte_vestiaire)},
              "embuscade": EMBUSCADE, "bassin50": BASSIN50, "fond50": FOND50, "ancrages": ancrages + ancrages_cuve, "plateformes": {n: ((x0 + x1) // 2, y + 1, (z0 + z1) // 2) for n, ((x0, x1, z0, z1), y) in PLATEFORMES.items()},
              "corniches": {n: (x, y + 1, z) for n, (x, y, z) in corniches.items()}, "sommet": (TOUR[0], SOMMET_TOUR + 1, TOUR[1]), "cuve": {"centre": CUVE, "rayon": R_CUVE, "fond": FOND_CUVE, "rangees": couches,
              "niveaux": NIVEAUX}, "coursive": (120, SOL + 1, 128), "bouches": bouches, "plongeoirs": plongeoirs, "sources": sources, "marches": [(x, y + 1, z) for (z, y) in marches for x in range(ESCALIER_X[0], ESCALIER_X[1] + 1)],

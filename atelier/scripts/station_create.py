@@ -1,33 +1,26 @@
 # [claude-build]
-"""station_create.py - les machines Create (6.0.9) du Donjon de la Station : volants a tourner (valve handles), lignes d'arbres et d'engrenages
+"""station_create.py - les machines Create (6.0.9) du Donjon de la Station : lignes d'arbres et d'engrenages
 qui tournent (moteurs creatifs caches), pompes et tuyaux, turbines du secteur C et de la Cheminee (grandes roues dentees, qu'un moteur pose par le datapack met en route).
 Pur calcul : des blocs a ajouter aux dicts de station_acte1 et station_secteurs, et les lignes de datapack qui lisent un volant.
 
-Un volant Create garde, tant qu'on le tourne, un compteur `InUse` dans son entite de bloc : le datapack le lit (`data get block ... InUse`) et cumule les ticks
-ou il est tourne ; au-dela de SEUIL_VOLANT, le volant est « tourne ». Les blocs Create poses sans proprietes prennent leurs valeurs par defaut (waterlogged...)."""
+Les volants (les trois valves de la piscine et celles des trois pompes) sont la valve 3D du mod, donjon:valve_station : un clic droit la tourne, le datapack lit sa propriete
+`tournee`. Les blocs Create poses sans proprietes prennent leurs valeurs par defaut (waterlogged...)."""
 import math
 
 from suspendu_outils import AIR, S
 
-SEUIL_VOLANT = 30                       # ticks cumules de rotation pour qu'un volant compte (1,5 s)
-COULEURS_VOLANTS = {"v1": "red", "v2": "yellow", "v3": "light_blue", "pA": "lime", "pB": "orange", "pC": "cyan"}
+COULEURS_POMPES = {"pA": "vert", "pB": "orange", "pC": "cyan"}                                    # la peinture des valves 3D des trois pompes
+COULEURS_VALVES = {1: "rouge", 2: "vert", 3: "bleu"}                                              # les trois valves 3D du Hall (plongeon, bassin de 50 m, tour du toboggan)
 
 
-def volant(couleur, haut="up", eau=False):
-    return S(f"create:{couleur}_valve_handle", facing=haut, waterlogged=eau)
+def valve(couleur, eau=False):
+    """La valve 3D du mod (donjon:valve_station) : un clic droit la tourne a fond."""
+    return S("donjon:valve_station", couleur=couleur, tournee=False, waterlogged=eau)
 
 
-def lignes_volant(cle, pos_txt, fonction, drapeau, condition="", refus=None):
-    """Tick : si le volant `cle` (drapeau 0) est tourne, on cumule ; au seuil, `fonction`. `refus` : fonction appelee si on le tourne alors que `condition` n'est pas remplie."""
-    h, c = f"#h{cle}", f"#c{cle}"
-    lignes = [f"execute if score {drapeau} station matches 0 store result score {h} station run data get block {pos_txt} InUse",
-              f"execute if score {drapeau} station matches 0 if score {h} station matches 1.. {condition} run scoreboard players add {c} station 1",
-              f"execute if score {drapeau} station matches 0 if score {h} station matches 1.. {condition} positioned {pos_txt} run particle minecraft:crit ~0.5 ~0.8 ~0.5 0.3 0.2 0.3 0.05 2",
-              f"execute if score {drapeau} station matches 0 if score {c} station matches {SEUIL_VOLANT}.. run function atelier:{fonction}"]
-    if refus:
-        neg = condition.replace("if score", "unless score", 1) if condition.startswith("if ") else condition
-        lignes.append(f"execute if score {drapeau} station matches 0 if score {h} station matches 1.. {neg} run function atelier:{refus}")
-    return [" ".join(l.split()) for l in lignes]
+def lignes_valve(pos_txt, fonction, drapeau):
+    """Tick : si la valve en `pos_txt` est tournee (propriete tournee) et que `drapeau` est a 0, on appelle `fonction`."""
+    return [f"execute if score {drapeau} station matches 0 if block {pos_txt} donjon:valve_station[tournee=true] run function atelier:{fonction}"]
 
 
 def ligne_machine(blocs, depart, axe, longueur, moteur=True, motif="cog"):
@@ -68,8 +61,8 @@ def libre(blocs, p):
 
 def decor_acte1(blocs, infos, a1):
     """Le Hall, la Cuve : volants, conduites qui tournent sous le plafond, tuyaux des colonnes de la Cuve, stations de pompage sur la Coursive."""
-    for k, p in infos["leviers"].items():
-        blocs[p] = volant(COULEURS_VOLANTS[f"v{k}"])
+    for k, p in infos["leviers"].items():                                                   # les trois valves de la piscine : le bloc 3D du mod, un clic droit les tourne a fond
+        blocs[p] = S("donjon:valve_station", couleur=COULEURS_VALVES[k], tournee=False)
     x0, x1, z0, z1 = a1.HALL
     yh = a1.PLAFOND - 2                                                                     # sous le plafond, le long des murs nord et sud : arbres et engrenages qui tournent
     for z in (z0 + 1, z1 - 1):
@@ -121,9 +114,9 @@ def _decor_secteurs(parts, infos):
     """Les secteurs : volants des pompes, turbines en grandes roues Create (sans moteur : le datapack le pose au lancement), machines qui tournent."""
     A, B, C, D = infos["a"], infos["b"], infos["c"], infos["d"]
     A["volant_pos"] = (15, 62, 23)                                                          # pompe A (sous l'eau) : le volant vert, sur son socle (pose dans salles_des_pompes)
-    parts["station_b"][B["levier"]] = volant(COULEURS_VOLANTS["pB"])
+    parts["station_b"][B["levier"]] = valve(COULEURS_POMPES["pB"])
     B["volant_pos"] = B["levier"]
-    parts["station_c"][C["levier"]] = volant(COULEURS_VOLANTS["pC"])
+    parts["station_c"][C["levier"]] = valve(COULEURS_POMPES["pC"])
     C["volant_pos"] = C["levier"]
     # secteur C : l'arbre central en arbres Create, coupe aux grilles (trois troncons : chaque turbine a le sien) ; chaque turbine, deux grandes roues dentees
     cx, cz = int(C["puits"][0]), int(C["puits"][1])
@@ -141,6 +134,8 @@ def _decor_secteurs(parts, infos):
         for y in (yt, yt + 1):
             parts["station_c"][(cx, y, cz)] = S("create:large_cogwheel", axis="y", waterlogged=True)
         moteurs[k] = (cx, bas[k - 1], cz)
+    for p in moteurs.values():                                                              # les turbines tournent des le depart (moteur pose avec la structure) : on ne les lance plus
+        parts["station_c"][p] = S("create:creative_motor", facing="up")
     C["moteurs"] = moteurs
     # la Cheminee : sa turbine aussi
     tc = D["turbine"]["centre"]
@@ -150,7 +145,7 @@ def _decor_secteurs(parts, infos):
     parts["station_cheminee"][tc] = S("create:large_cogwheel", axis="y", waterlogged=True)
     parts["station_cheminee"][(tc[0], tc[1] + 1, tc[2])] = S("create:large_cogwheel", axis="y", waterlogged=True)
     D["moteur"] = (tc[0], tc[1] - 1, tc[2])
-    parts["station_cheminee"][D["moteur"]] = S("create:shaft", axis="y", waterlogged=True)
+    parts["station_cheminee"][D["moteur"]] = S("create:creative_motor", facing="up")                  # la turbine de la Cheminee tourne des le depart (plus de turbine a lancer en fonçant dessus)
     # secteur B : la halle haute a ses machines (arbres et engrenages sous les poutres), les chaudieres leurs cuves Create
     bx0, bx1, bz0, bz1, _, by1 = B["b3"]                                                 # (x0, x1, z0, z1, y0, y1)
     ligne_machine(parts["station_b"], (bx0 + 1, by1 - 2, bz0 + 1), "x", bx1 - bx0 - 1)
@@ -243,13 +238,13 @@ def salles_des_pompes(parts, infos):
     infos["salle_lits"] = station_salle_lits.refaire(parts, infos)
     # des panneaux debout (le datapack les pose) : (case, rotation 0 sud / 4 ouest / 8 nord / 12 est, lignes, sous l'eau)
     infos["panneaux_secteurs"] = [
-        ((82, 64, 93), 12, ("A  FILTRATION", "Pompe A :", "au bout,", "a l'ouest"), True),
+        ((82, 64, 93), 12, ("A  FILTRATION", "Pompe A :", "au bout", ""), True),
         ((75, 64, 89), 0, ("Galerie", "au bout : la", "salle des lits", ""), True),
-        ((74, 61, 40), 0, ("Salle des lits", "gardiens !", "Pompe A :", "a l'ouest"), True),
+        ((74, 61, 40), 0, ("Salle des lits", "gardiens !", "Pompe A :", "au bout"), True),
         ((19, 61, 26), 12, ("POMPE A", "tourne le", "volant vert", ""), True),
         ((155, 32, 93), 4, ("B  CHAUFFERIE", "contre le courant :", "marche au fond", ""), True),
         ((192, 40, 93), 4, ("3 plaques :", "tiens-toi debout", "dessus, dans", "l'ordre 1 2 3"), True),
-        ((197, 58, 87), 12, ("POMPE B", "au bout, a l'est", "au grappin", "volant orange"), False),
+        ((197, 58, 87), 12, ("POMPE B", "au bout", "au grappin", "volant orange"), False),
         ((120, 48, 57), 0, ("C  TURBINES", "nage contre une", "turbine pour", "la lancer"), True),
         ((120, 86, 12), 0, ("POMPE C", "volant cyan", "", ""), False)]
 
@@ -284,7 +279,7 @@ def salle_pompe_a(blocs, A):
         for x in (cx - 2, cx + 2):
             blocs[(x, y1, z)] = S("create:fluid_pipe", north=True, south=True, east=False, west=False, up=False, down=False)
     blocs[(15, 61, 23)] = S("create:copper_casing")                                         # le socle du volant, et le volant vert
-    blocs[(15, 62, 23)] = volant(COULEURS_VOLANTS["pA"], eau=True)
+    blocs[(15, 62, 23)] = valve(COULEURS_POMPES["pA"], eau=True)
     for (x, z) in ((cx - 3, cz - 3), (cx + 3, cz - 3), (cx - 3, cz + 3), (cx + 3, cz + 3), (16, 21), (16, 25)):
         blocs[(x, y0 - 1, z)] = S("minecraft:verdant_froglight", axis="y")                  # des feux verts dans le sol autour de la machine
     for x in range(x0 - 1, x1 + 2):                                                         # les murs : carreaux de cuivre en bas, une bande de cuivre, des vitres eclairees en haut

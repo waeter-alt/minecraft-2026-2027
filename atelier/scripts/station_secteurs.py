@@ -13,16 +13,13 @@ import math
 from functools import lru_cache
 
 import station_acte1 as a1
+import station_vannes
 from station_acte1 import CUVE, SOL, az, r_de
 from suspendu_outils import AIR, S
 
 EAU = S("water", level=0)
 
-# ---------------------------------------------------------------- le Drain : du bassin d'essai du Hall au pied de la Cuve (puits de 4 x 4 a echelle, puis conduit)
-DRAIN_PUITS = (172, 175, 159, 162)              # x0, x1, z0, z1 ; de y 31 au fond du bassin d'essai
-DRAIN_NS = (172, 175, 108, 158)                 # le conduit vers le nord, y 31..34
-DRAIN_EO = (140, 171, 108, 111)                 # le conduit vers l'ouest jusqu'a la Cuve
-DRAIN_Y = (31, 34)
+# Le Drain (un conduit du bassin d'essai du Hall jusqu'au fond de la Cuve, vers une salle vide) a ete SUPPRIME le 25/11 (Luca) : le bassin d'essai n'est plus qu'un bassin.
 
 # ---------------------------------------------------------------- secteur A : la Filtration (nager vite), a l'ouest
 ECL_A = (80, 88, 92, 98, 64, 70)                # x0, x1, z0, z1, y0, y1 : l'ecluse
@@ -80,10 +77,10 @@ PORTE_POSTE = 143
 # ---------------------------------------------------------------- acte V : le Reservoir et l'Exutoire
 R_RES = 44.0
 RES_Y = (1, 24)
-EXU_SUD = (118, 122, 139, 146)
-EXU_OUEST = (98, 122, 142, 146)
-EXU_PUITS = (98, 102, 142, 146)
-LAC = (94, 106, 138, 150)
+EXU_SUD = (118, 122, 139, 140)                  # l'Exutoire : un couloir court au sud du Reservoir (y 1 a 4), ferme par sa grille en z 140
+EXU_PUITS = (118, 122, 141, 145)                # puis une colonne de bulles de y 1 a 26 (Luca : plus de long couloir ni de sortie a la surface)
+SALLE_SORTIE = (108, 132, 140, 158, 27, 34)     # x0, x1, z0, z1, y0, y1 : la salle de sortie, sous terre, au-dessus du Reservoir (sol a 26)
+Y_SORTIE = 26
 
 
 def cyl(c, r, x_marge=2):
@@ -106,14 +103,13 @@ def tube(a_deg, r0, r1, demi):
 
 
 STYLES = {
-    "station_drain": lambda x, y, z: S("waxed_oxidized_cut_copper") if (x + y + z) % 5 else S("waxed_oxidized_copper"),
     "station_a": lambda x, y, z: S("smooth_sandstone") if y % 4 else S("white_concrete"),
     "station_b": lambda x, y, z: S("waxed_weathered_copper") if (x + z) % 3 else S("bricks"),
     "station_c": lambda x, y, z: S("prismarine_bricks") if y % 6 else S("dark_prismarine"),
     "station_cheminee": lambda x, y, z: S("tuff_bricks") if y % 5 else S("waxed_cut_copper"),
     "station_reservoir": lambda x, y, z: S("deepslate_tiles") if (x + z) % 7 else S("cracked_deepslate_tiles"),
 }
-LAMPES = {"station_drain": S("sea_lantern"), "station_a": S("verdant_froglight", axis="y"), "station_b": S("ochre_froglight", axis="y"), "station_c": S("sea_lantern"),
+LAMPES = {"station_a": S("verdant_froglight", axis="y"), "station_b": S("ochre_froglight", axis="y"), "station_c": S("sea_lantern"),
           "station_cheminee": S("sea_lantern"), "station_reservoir": S("sea_lantern")}
 
 
@@ -133,11 +129,6 @@ def construire():
         parts.setdefault(nom, {})[p] = bloc
 
     # ======================================================== les volumes
-    # le Drain
-    x0, x1, z0, z1 = DRAIN_PUITS
-    vider("station_drain", boite(x0, x1, DRAIN_Y[0], a1.SOL - 3, z0, z1), EAU)           # jusqu'au fond du bassin d'essai (perce)
-    for (x0, x1, z0, z1) in (DRAIN_NS, DRAIN_EO):
-        vider("station_drain", boite(x0, x1, DRAIN_Y[0], DRAIN_Y[1], z0, z1), EAU)
     # secteur A
     ex0, ex1, ez0, ez1, ey0, ey1 = ECL_A
     vider("station_a", boite(ex0, ex1, ey0, ey1, ez0, ez1), EAU)
@@ -192,12 +183,12 @@ def construire():
     # le Reservoir et l'Exutoire
     for (x, z) in cyl(CUVE, R_RES):
         vider("station_reservoir", boite(x, x, RES_Y[0], RES_Y[1], z, z), EAU)
-    for (x0, x1, z0, z1) in (EXU_SUD, EXU_OUEST):
-        vider("station_reservoir", boite(x0, x1, 1, 4, z0, z1), EAU)
+    x0, x1, z0, z1 = EXU_SUD
+    vider("station_reservoir", boite(x0, x1, 1, 4, z0, z1), EAU)
     x0, x1, z0, z1 = EXU_PUITS
-    vider("station_reservoir", boite(x0, x1, 1, a1.PLAINE - 4, z0, z1), EAU)
-    x0, x1, z0, z1 = LAC
-    vider("station_reservoir", boite(x0, x1, a1.PLAINE - 3, a1.PLAINE, z0, z1), EAU)
+    vider("station_reservoir", boite(x0, x1, 1, Y_SORTIE, z0, z1), EAU)                # la colonne debouche dans le sol de la salle (bassin a fleur du sol)
+    sx0, sx1, sz0, sz1, sy0, sy1 = SALLE_SORTIE
+    vider("station_reservoir", boite(sx0, sx1, sy0, sy1, sz0, sz1), AIR)
 
     # on ne touche jamais au vide de l'acte I (la Cuve reste seche avant la mise en eau) ; ses parois, on peut les percer (le Drain, le couloir du Poste)
     for p in list(creux):
@@ -240,20 +231,10 @@ def construire():
 
     # ======================================================== les decors et les mecanismes
     infos = {"sources": sources}
-    # --- le Drain : une echelle dans le puits (contre la paroi nord), le bassin d'essai perce
-    x0, x1, z0, z1 = DRAIN_PUITS
-    echelle_drain = [(x0 + 1, y, z1) for y in range(DRAIN_Y[1] + 1, a1.SOL - 2)]
-    for p in echelle_drain:
-        poser("station_drain", p, S("ladder", facing="north", waterlogged=True))
-    infos["drain"] = {"poussees": [((x0, x1, DRAIN_Y[1] + 1, a1.SOL - 3, z0, z1), (0, 0.8, 0)),
-                                   ((DRAIN_NS[0], DRAIN_NS[1], DRAIN_Y[0], DRAIN_Y[1], DRAIN_NS[2], z1), (0, 0, 0.8)),
-                                   ((DRAIN_EO[0], DRAIN_EO[1], DRAIN_Y[0], DRAIN_Y[1], DRAIN_EO[2], DRAIN_EO[3]), (0.8, 0, 0))],
-                      "bouche": ((x0 + x1) // 2, a1.SOL - 3, (z0 + z1) // 2), "arrivee": (DRAIN_EO[0] + 8, DRAIN_Y[0], (DRAIN_EO[2] + DRAIN_EO[3]) // 2)}
-
     # --- les ecluses : vanne exterieure = la bouche de la Cuve (acte I), vanne interieure = des barreaux
-    def barreaux(nom, cases):
+    def barreaux(nom, cases, eau=True):
         for p in cases:
-            poser(nom, p, S("iron_bars", waterlogged=True))
+            poser(nom, p, station_vannes.vanne(p, cases, eau))                         # une vanne du mod (plus de grille vanilla)
         return cases
 
     ecluses = {}
@@ -317,7 +298,7 @@ def construire():
         cases = []
         for dx in (-1, 0, 1):
             for dz in (-1, 0, 1):
-                poser("station_b", (px + dx, 39, pz + dz), S("waxed_cut_copper"))
+                poser("station_b", (px + dx, 39, pz + dz), S("donjon:plaque_station", active=False))             # la plaque de pression du mod : on voit qu'on doit aller dessus
                 cases.append((px + dx, 40, pz + dz))
         plaques.append(cases)
     jets = {}
@@ -328,11 +309,11 @@ def construire():
                 if x in (x0, x1) or z in (z0, z1):
                     for y in range(40, 45):
                         p = (x, y, z)
-                        poser("station_b", p, S("iron_bars", waterlogged=True))
+                        poser("station_b", p, S(station_vannes.VANNE, axis="z" if x in (x0, x1) and z not in (z0, z1) else "x", waterlogged=True))
                         if (cote == "s" and z == z1 or cote == "n" and z == z0) and x0 < x < x1:
                             porte.append(p)
                 for y in (45,):
-                    poser("station_b", (x, y, z), S("iron_bars", waterlogged=True))
+                    poser("station_b", (x, y, z), S(station_vannes.VANNE, axis="y", waterlogged=True))
         jets[k] = porte
     vanne_colonne = barreaux("station_b", boite(COLONNE_B[0], COLONNE_B[1], B2[5] + 1, B2[5] + 1, COLONNE_B[2], COLONNE_B[3]))
     cxb, czb = (COLONNE_B[0] + COLONNE_B[1]) // 2, (COLONNE_B[2] + COLONNE_B[3]) // 2
@@ -396,11 +377,32 @@ def construire():
         for (x, z) in cyl(PUITS_C, R_PUITS_C):
             p = (x, y, z)
             if TARTRE_C[0] <= x <= TARTRE_C[1] and TARTRE_C[2] <= z <= TARTRE_C[3]:
-                poser("station_c", p, S("dripstone_block"))
-                cases.append(p)
+                cases.append(p)                                                                # le trou de la grille : une trappe (vanne du mod, a plat), plus de bouchon de tartre
             else:
                 poser("station_c", p, S("waxed_copper_grate", waterlogged=True))
+        for p in cases:
+            poser("station_c", p, station_vannes.vanne(p, cases, True))
         tartres[i + 1] = cases
+    # --- la salle du Scaphandrier (l'etage 2 des Turbines, entre les deux grilles) : quatre colonnes de refroidissement (de l'abri contre le harpon, a 45, 135, 225, 315 degres) et, devant
+    #     chacune, un cristal des mers qui soigne le Scaphandrier par un rayon : il est invulnerable tant qu'il en reste un (comme les cristaux de l'Ender Dragon)
+    valves1 = [(int(cx) - 15, 48, int(cz)), (int(cx) + 15, 48, int(cz))]                      # etage 1 : une valve a chaque bout de la chambre, il faut nager vite de l'une a l'autre
+    for v, couleur in zip(valves1, ("rouge", "bleu")):
+        poser("station_c", v, S("donjon:valve_station", couleur=couleur, tournee=False, waterlogged=True))
+    rotor_cristaux, colonnes_rotor = [], []
+    for ang in (45, 135, 225, 315):
+        a = math.radians(ang)
+        px, pz = int(round(cx + 10 * math.sin(a))), int(round(cz - 10 * math.cos(a)))
+        for x in range(px - 1, px + 2):
+            for z in range(pz - 1, pz + 2):
+                for y in range(GRILLES_C[0] + 1, GRILLES_C[1]):
+                    poser("station_c", (x, y, z), S("create:copper_casing") if y % 6 else S("waxed_cut_copper"))
+        for (dx, dz) in ((1, 0), (-1, 0), (0, 1), (0, -1)):                                  # un feu de mer sur chaque face, a mi-hauteur
+            p = (px + dx, GRILLES_C[0] + 7, pz + dz)
+            poser("station_c", p, S("sea_lantern"))
+            sources.append(p)
+        colonnes_rotor.append((px, pz))
+        v = (int(round(cx + 14 * math.sin(a))), GRILLES_C[0] + 1, int(round(cz - 14 * math.cos(a))))
+        rotor_cristaux.append(v)                                                              # un cristal des mers (pose par le datapack) flotte la, posé sur la grille
     axe = [(int(cx), y, int(cz)) for y in range(48, EAU_C + 1)]
     for p in axe:
         poser("station_c", p, S("waxed_copper_block"))
@@ -437,7 +439,7 @@ def construire():
     infos["c"] = {"puits": (cx, cz), "rayon": R_PUITS_C, "tartres": tartres, "pales": pales, "sable": sable_c, "centre_tartre": ((TARTRE_C[0] + TARTRE_C[1]) // 2, 0, (TARTRE_C[2] + TARTRE_C[3]) // 2),
                   "grilles": GRILLES_C, "eau": EAU_C, "salle": SALLE_C, "grille_salle": grille_salle, "levier": levier_c, "pompe": pompe_c, "coffre": coffre_c,
                   "vagues": {1: [(112, 54, 40), (128, 54, 28), (126, 54, 44), (114, 56, 26)], 2: [(112, 68, 40), (128, 68, 28), (126, 70, 44), (114, 70, 26)],
-                             3: [(112, 79, 40), (128, 79, 28), (126, 79, 44), (114, 79, 26)]}, "rotor": (126, 70, 34)}
+                             3: [(112, 79, 40), (128, 79, 28), (126, 79, 44), (114, 79, 26)]}, "rotor": (126, 70, 34), "valves1": valves1, "rotor_cristaux": rotor_cristaux, "colonnes_rotor": colonnes_rotor}
 
     # --- la Cheminee : galerie aux 3 vannes, rampe en lacets (dalles : on la monte sans sauter), tartre, turbine, bassin, chambre aux trous, Poste
     vannes_d = []
@@ -464,9 +466,10 @@ def construire():
                 poser("station_cheminee", (x, n - 1, z), S("tuff_bricks"))
                 poser("station_cheminee", (x, n, z), S("tuff_brick_slab", type="bottom", waterlogged=True))
                 rampe.append((x, n + 1, z))
-    tartre_d = []
+    tartre_d = []                                                                            # le plafond de la rampe : un barrage de planches (donjon:planche_station, a plat) que la Cape lestee brise d'un tourbillon, comme dans la salle des lits ; au centre, le sable des ames (le courant qui monte)
+    centre_sable = {(int(hx) + dx, int(hz) + dz) for dx in (-1, 0, 1) for dz in (-1, 0, 1)}
     for (x, z) in cyl(CHEM, R_CHEM):
-        poser("station_cheminee", (x, 63, z), S("dripstone_block"))
+        poser("station_cheminee", (x, 63, z), S("soul_sand") if (x, z) in centre_sable else station_vannes.planche("y", True))
         tartre_d.append((x, 63, z))
     turbine_d = {"centre": (int(hx), 66, int(hz)), "croix": [(int(hx) + d, 66, int(hz)) for d in (-2, -1, 1, 2)] + [(int(hx), 66, int(hz) + d) for d in (-2, -1, 1, 2)],
                  "diag": [(int(hx) + d, 66, int(hz) + e) for d in (-1, 1) for e in (-1, 1)]}
@@ -493,9 +496,7 @@ def construire():
         poser("station_cheminee", (POSTE[0] - 1, 88, z), S("waxed_copper_bulb", lit=True, powered=False))
     levier_g = (POSTE[0] + 2, 85, 46)
     poser("station_cheminee", levier_g, S("donjon:levier_station", face="floor", facing="east", powered=False))
-    porte_poste = barreaux("station_cheminee", [(PORTE_POSTE, y, z) for y in range(85, 89) for z in range(64, 67)])
-    for p in porte_poste:
-        poser("station_cheminee", p, S("iron_bars", waterlogged=False))
+    porte_poste = barreaux("station_cheminee", [(PORTE_POSTE, y, z) for y in range(85, 89) for z in range(64, 67)], eau=False)
     # le plongeoir final, sur la Coursive en face du Poste : une ouverture du garde-corps et deux dalles
     plongeoir = []
     a = math.radians(40)
@@ -517,10 +518,16 @@ def construire():
 
     # --- le Reservoir : onze piliers en ruine, quatre bondes de fond, un coffre ; l'Exutoire ferme
     piliers = [(0, 13), (120, 13), (240, 13)] + [(k * 45 + 22, 30) for k in range(8)]
+    cristaux = []                                                                           # les cristaux des mers : sur six des huit piliers de l'anneau exterieur (comme ceux de l'Ender Dragon)
     for i, (ang, r) in enumerate(piliers):
         a = math.radians(ang)
         pcx, pcz = CUVE[0] + r * math.sin(a), CUVE[1] - r * math.cos(a)
         haut = 10 + (i * 7) % 15
+        if i >= 3 and i not in (6, 10):
+            if haut + 5 <= RES_Y[1] - 3:                                                    # au-dessus du pilier, s'il reste de l'eau sous le plafond du Reservoir
+                cristaux.append((int(round(pcx)), haut + 5, int(round(pcz))))
+            else:                                                                           # pilier trop haut (le cristal serait dans la roche) : le cristal flotte devant lui, vers le centre
+                cristaux.append((int(round(CUVE[0] + (r - 7) * math.sin(a))), 14, int(round(CUVE[1] - (r - 7) * math.cos(a)))))
         for (x, z) in cyl((pcx, pcz), 2.6, 0):
             for y in range(1, 1 + haut + ((x + z) % 3)):
                 poser("station_reservoir", (x, y, z), S("cracked_deepslate_bricks") if (x + y + z) % 3 else S("mossy_stone_bricks"))
@@ -543,15 +550,28 @@ def construire():
     poser("station_reservoir", coffre_r, S("chest", facing="north", type="single", waterlogged=True))
     exutoire = barreaux("station_reservoir", boite(EXU_SUD[0], EXU_SUD[1], 1, 4, 140, 140))
     x0, x1, z0, z1 = EXU_PUITS
-    grille_puits = barreaux("station_reservoir", boite(x0, x1, 6, 6, z0, z1))
+    grille_puits = []                                                                       # plus de grille dans la colonne : on n'y entre que par le couloir de l'Exutoire
     sable_r = boite(x0 + 1, x1 - 1, 0, 0, z0 + 1, z1 - 1)
-    x0, x1, z0, z1 = LAC
+    # la salle de sortie : carrelage, margelle autour du bassin d'arrivee, piliers, le coffre du butin, la dalle de sortie (elle ramene a l'entree du donjon)
+    for x in range(sx0, sx1 + 1):
+        for z in range(sz0, sz1 + 1):
+            if not (x0 <= x <= x1 and z0 <= z <= z1):
+                poser("station_reservoir", (x, Y_SORTIE, z), S("smooth_quartz") if (x // 2 + z // 2) % 2 else S("light_blue_concrete"))
     for x in range(x0 - 1, x1 + 2):
         for z in range(z0 - 1, z1 + 2):
-            if not (x0 <= x <= x1 and z0 <= z <= z1):
-                poser("station_reservoir", (x, a1.PLAINE, z), S("sand"))
+            if not (x0 <= x <= x1 and z0 <= z <= z1) and sz0 <= z <= sz1:
+                poser("station_reservoir", (x, Y_SORTIE, z), S("waxed_cut_copper"))
+    for (x, z) in ((sx0 + 2, sz0 + 2), (sx1 - 2, sz0 + 2), (sx0 + 2, sz1 - 2), (sx1 - 2, sz1 - 2)):
+        for y in range(sy0, sy1 + 1):
+            poser("station_reservoir", (x, y, z), S("quartz_pillar", axis="y"))
+    coffre_sortie = (120, sy0, sz1 - 3)
+    poser("station_reservoir", coffre_sortie, S("chest", facing="north", type="single", waterlogged=False))
+    dalle_sortie = [(x, Y_SORTIE, z) for x in range(119, 122) for z in range(sz1 - 7, sz1 - 4)]
+    for p in dalle_sortie:
+        poser("station_reservoir", p, S("waxed_copper_grate", waterlogged=False))
     infos["r"] = {"centre": CUVE, "rayon": R_RES, "y": RES_Y, "arrivee": (int(CUVE[0]), 20, int(CUVE[1])), "boss": (int(CUVE[0]) + 10, 12, int(CUVE[1]) - 10), "exutoire": exutoire,
-                  "grille_puits": grille_puits, "sable": sable_r, "coffre": coffre_r, "lac": ((LAC[0] + LAC[1]) // 2, a1.PLAINE + 1, (LAC[2] + LAC[3]) // 2), "bondes_fond": bondes_fond}
+                  "grille_puits": grille_puits, "sable": sable_r, "coffre": coffre_r, "lac": (120, sy0, (sz0 + sz1) // 2), "salle_sortie": SALLE_SORTIE,
+                  "dalle_sortie": dalle_sortie, "coffre_sortie": coffre_sortie, "bondes_fond": bondes_fond, "cristaux": cristaux}
 
     # la lumiere dans les grands volumes : des blocs de lumiere invisibles, un tous les 6 blocs dans les trois sens (aucun point a plus de 9 pas d'une source)
     for nom, cases in parts.items():
@@ -570,6 +590,18 @@ def construire():
     infos["creux"] = creux
     import station_create
     station_create.decor_secteurs(parts, infos)
+    # les courants : les cases d'eau de leur boite deviennent des blocs courant (invisibles, qui gardent l'eau) : sens et vitesse, la poussee est calculee chez le joueur (mod donjon 4.8.0, CourantClient)
+    infos["courants"] = []
+    for nom, (boite_c, v) in (("station_b", infos["b"]["collecteur"]), ("station_cheminee", (infos["d"]["rampe_boite"], (0, -0.3, 0)))):
+        x0, x1, y0, y1, z0, z1 = boite_c
+        sens = {(-1, 0, 0): "west", (1, 0, 0): "east", (0, 0, -1): "north", (0, 0, 1): "south", (0, -1, 0): "down", (0, 1, 0): "up"}[tuple((a > 0) - (a < 0) for a in v)]
+        vitesse = max(1, min(9, round(max(abs(a) for a in v) * 10)))
+        n = 0
+        for p, b in list(parts[nom].items()):
+            if x0 <= p[0] <= x1 and y0 <= p[1] <= y1 and z0 <= p[2] <= z1 and b == EAU:
+                parts[nom][p] = S(station_vannes.COURANT, facing=sens, vitesse=vitesse, waterlogged=True)
+                n += 1
+        infos["courants"].append({"structure": nom, "boite": boite_c, "sens": sens, "vitesse": vitesse, "cases": n})
     return parts, infos
 
 
@@ -585,4 +617,4 @@ def tout():
     return blocs
 
 
-ORDRE = ("station_drain", "station_a", "station_b", "station_c", "station_cheminee", "station_reservoir")
+ORDRE = ("station_a", "station_b", "station_c", "station_cheminee", "station_reservoir")
