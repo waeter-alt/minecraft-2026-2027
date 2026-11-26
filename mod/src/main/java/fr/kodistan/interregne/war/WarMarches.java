@@ -292,7 +292,7 @@ public final class WarMarches
             }
             if (attacker != null && slot == 0)
             {
-                troop.setCustomName(Component.literal("⚔ Troupes de " + attacker.getName()).withStyle(attacker.getTeamColonyColor()));
+                troop.setCustomName(Component.literal("⚔ Troupes de " + attacker.getName()).withColor(fr.kodistan.interregne.colony.ColonyColors.rgb(attacker)));
                 troop.setCustomNameVisible(true);
             }
             place(troop, march, slot);
