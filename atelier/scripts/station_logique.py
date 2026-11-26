@@ -7,6 +7,7 @@ import math
 import station_acte1 as a1
 import station_cine
 import station_create
+import station_vannes
 import suspendu_cine as sc
 
 DUREE_BAISSE = 170
@@ -50,6 +51,9 @@ def fonctions(infos, infos1, blocs, txt):
         return coin, f"@a[{sel},gamemode=!spectator{extra}]"
 
     def poser_cases(cases, bloc):
+        if bloc.startswith("minecraft:iron_bars"):                                         # les anciennes grilles : ce sont maintenant les vannes du mod, dans le bon plan
+            eau = "waterlogged=true" in bloc
+            return [f"setblock {txt(p)} {station_vannes.commande_vanne(p, cases, eau)}" for p in cases]
         return [f"setblock {txt(p)} {bloc}" for p in cases]
 
     def remettre(cases):
@@ -73,15 +77,14 @@ def fonctions(infos, infos1, blocs, txt):
         coin, sel = boite(condition_boite)
         lignes = [f"# [claude-build] Un joueur entre : les monstres de « {nom} » apparaissent (une seule fois).", f"scoreboard players set {drapeau} station 1"]
         for (typ, p, plus) in liste:
-            lignes.append(f"summon minecraft:{typ} {txt(p)} {{Tags:[\"station_emb\"],PersistenceRequired:1b{plus}}}")
+            ident = typ if ":" in typ else "minecraft:" + typ                  # les monstres du mod donjon gardent leur espace de noms
+            lignes.append(f"summon {ident} {txt(p)} {{Tags:[\"station_emb\"],PersistenceRequired:1b{plus}}}")
             lignes.append(f"execute positioned {txt(p)} run particle minecraft:bubble_pop ~ ~0.5 ~ 0.5 0.5 0.5 0.05 20")
         f[f"station_{nom}_monstres"] = "\n".join(lignes) + "\n"
         tick.append(f"execute if score {drapeau} station matches 0 positioned {coin} if entity @a[{sel},gamemode=!spectator] run function atelier:station_{nom}_monstres")
         reset.append(f"scoreboard players set {drapeau} station 0")
 
     # ================================================================= le Drain
-    for (b, v) in infos["drain"]["poussees"]:
-        pousser(b, v, "drain")
 
     # ================================================================= les bouches A, B, C : scellees tant que la Cuve est seche, grandes ouvertes ensuite (plus de sas a double vanne)
     ouvrir, fermer = ["# [claude-build] La Cuve est pleine : les bouches des secteurs A, B, C s'ouvrent pour de bon (leurs barreaux et ceux du fond du couloir disparaissent)."], \
@@ -108,7 +111,7 @@ def fonctions(infos, infos1, blocs, txt):
     A = infos["a"]
     monstres("a3", [("guardian", p, "") for p in A["gardiens_a3"]] + [("drowned", p, "") for p in A["noyes_a3"]], (A["a3"][0], A["a3"][1], A["a3"][4], A["a3"][5], A["a3"][2], A["a3"][3]), "#a3")
     monstres("a4", [("guardian", p, "") for p in A["gardiens_a4"]], (A["a4"][0], A["a4"][1], A["a4"][4], A["a4"][5], A["a4"][2], A["a4"][3]), "#a4")
-    tick += station_create.lignes_volant("pA", txt(A["volant_pos"]), "station_pompe_a", "#pA")
+    tick += station_create.lignes_valve(txt(A["volant_pos"]), "station_pompe_a", "#pA")
     f["station_pompe_a"] = "\n".join([
         "# [claude-build] Le volant A est tourne : la pompe A repart.",
         "scoreboard players set #pA station 1",
@@ -116,11 +119,13 @@ def fonctions(infos, infos1, blocs, txt):
         f"execute positioned {txt(A['pompe'][0])} run playsound minecraft:block.beacon.power_select master @a[distance=..80] ~ ~ ~ 2 0.6",
         'tellraw @a {"text":"La pompe A (Filtration) tourne.","color":"aqua"}', f"setblock {txt(P['A']['moteur'])} create:creative_motor[facing={P['A']['facing']}]", *pompe_bb(P['A'], True), *[f"setblock {txt(p)} donjon:pompe_station[facing={face},en_marche=true,waterlogged=true]" for p, face in infos["salle_lits"]["pompes"]], "function atelier:station_pompe_faite"]) + "\n"
     reset += [f"setblock {txt(p)} donjon:pompe_station[facing={face},en_marche=false,waterlogged=true]" for p, face in infos["salle_lits"]["pompes"]]
-    reset += ["scoreboard players set #pA station 0", "scoreboard players set #cpA station 0", "scoreboard players set #cpB station 0", "scoreboard players set #cpC station 0"]
+    reset += ["scoreboard players set #pA station 0"]
+    for k, vp in (("A", A["volant_pos"]), ("B", infos["b"]["volant_pos"]), ("C", infos["c"]["volant_pos"])):                 # les valves des pompes se remettent a zero
+        reset.append(f"setblock {txt(vp)} donjon:valve_station[couleur={station_create.COULEURS_POMPES['p' + k]},tournee=false,waterlogged={'true' if k == 'A' else 'false'}]")
 
     # ================================================================= secteur B
     B = infos["b"]
-    pousser(*B["collecteur"], "collecteur")
+    # le courant du collecteur : le bloc courant du mod (voir station_secteurs), plus de teleportation par le datapack
     monstres("b2", [("drowned", p, "") for p in B["noyes"]], (B["b2"][0], B["b2"][1], B["b2"][4], B["b2"][5], B["b2"][2], B["b2"][3]), "#b2")
     monstres("b3", [("blaze", p, "") for p in B["blazes"]], (B["b3"][0], B["b3"][1], B["b3"][4], B["b3"][5], B["b3"][2], B["b3"][3]), "#b3")
     effets = {1: ["# ouvre le jet qui garde la plaque 2", *poser_cases(B["jets"][2], "minecraft:water")],
@@ -132,10 +137,12 @@ def fonctions(infos, infos1, blocs, txt):
         coin, sel = boite((x0, x1, cases[0][1], cases[0][1], z0, z1))
         tick.append(f"execute if score #pl{k} station matches 0 positioned {coin} as @a[{sel},gamemode=!spectator] at @s unless block ~ ~-0.6 ~ minecraft:water run function atelier:station_b_plaque_{k}")
         f[f"station_b_plaque_{k}"] = "\n".join([
-            f"# [claude-build] Plaque lestee {k} : un joueur se tient debout dessus (au fond, pas en nageant).", f"scoreboard players set #pl{k} station 1", *effets[k],
+            f"# [claude-build] Plaque lestee {k} : un joueur se tient debout dessus (au fond, pas en nageant) ; son voyant passe au vert.", f"scoreboard players set #pl{k} station 1", *effets[k],
+            f"fill {txt((x0, cases[0][1] - 1, z0))} {txt((x1, cases[0][1] - 1, z1))} donjon:plaque_station[active=true] replace donjon:plaque_station",
             f"execute positioned {txt(cases[4])} run particle minecraft:wax_on ~ ~0.2 ~ 1 0.1 1 0.1 30",
             f"execute positioned {txt(cases[4])} run playsound minecraft:block.copper_bulb.turn_on master @a[distance=..40] ~ ~ ~ 2 0.7"]) + "\n"
         reset.append(f"scoreboard players set #pl{k} station 0")
+        reset.append(f"fill {txt((x0, cases[0][1] - 1, z0))} {txt((x1, cases[0][1] - 1, z1))} donjon:plaque_station[active=false] replace donjon:plaque_station")
     for k, porte in B["jets"].items():
         reset += poser_cases(porte, "minecraft:iron_bars[waterlogged=true]")
         tick.append(f"execute if score #pl{k - 1} station matches 0 positioned {txt(porte[len(porte) // 2])} if entity @a[distance=..20] run particle minecraft:bubble_column_up ~ ~ ~ 1 2 0.2 0.3 6")
@@ -150,7 +157,7 @@ def fonctions(infos, infos1, blocs, txt):
                  f"execute if score #vap station matches 5 positioned {coin} as @a[{sel},gamemode=!spectator] run damage @s 2 minecraft:hot_floor",
                  f"execute if score #vap station matches 15 positioned {coin} as @a[{sel},gamemode=!spectator] run damage @s 2 minecraft:hot_floor"]
     lev = txt(B["levier"])
-    tick += station_create.lignes_volant("pB", txt(B["volant_pos"]), "station_pompe_b", "#pB")
+    tick += station_create.lignes_valve(txt(B["volant_pos"]), "station_pompe_b", "#pB")
     f["station_pompe_b"] = "\n".join([
         "# [claude-build] Le volant B est tourne : la pompe B repart ; l'echelle de sortie vers les chaudieres s'ouvre.",
         "scoreboard players set #pB station 1", *poser_cases(B["vanne_sortie"], "minecraft:air"),
@@ -160,45 +167,79 @@ def fonctions(infos, infos1, blocs, txt):
     reset += [*poser_cases(B["vanne_sortie"], "minecraft:iron_bars[waterlogged=false]"),
               "scoreboard players set #pB station 0", "scoreboard players set #vap station 0"]
 
-    # ================================================================= secteur C : turbines (nager contre elles 2 s), tartre (nager contre lui, turbine lancee), gardien du rotor
+    # ================================================================= secteur C : les Turbines, REFAIT DE ZERO (25/11, Luca) : plus de turbine a lancer en fonçant dessus, plus de bouchon qui se brise.
+    # Trois etages, deux trappes (des vannes a plat dans les trous des grilles) :
+    #  etage 1 : deux valves aux deux bouts de la chambre ; les tourner a moins de 10 s d'ecart (la premiere retombe sinon) : il faut nager vite (la cape) ; une vague de monstres garde l'etage
+    #  etage 2 : la salle du Scaphandrier (quatre cristaux des mers le soignent et le protegent) ; sa mort ouvre la trappe 2 et la grille de la salle de la pompe
+    #  etage 3 : une vague de monstres, puis la salle de la pompe
     C = infos["c"]
-    for k, pale in C["pales"].items():
-        centre = txt(pale["centre"])
-        tick += [f"execute if score #t{k} station matches ..39 positioned {centre} if entity @a[distance=..4.5,{NAGE}] run scoreboard players add #t{k} station 1",
-                 f"execute if score #t{k} station matches 1..39 positioned {centre} unless entity @a[distance=..4.5,{NAGE}] run scoreboard players remove #t{k} station 1",
-                 f"execute if score #t{k} station matches 1..39 positioned {centre} run particle minecraft:bubble ~ ~ ~ 2 0.3 2 0.1 4",
-                 f"execute if score #t{k} station matches 40 run function atelier:station_c_turbine_{k}",
-                 f"execute if score #t{k} station matches 1000 positioned {centre} run particle minecraft:bubble_column_up ~ ~ ~ 3 0.4 3 0.2 6"]
-        vague = [("drowned", p, "") for p in C["vagues"][k][:3]] + [("guardian", C["vagues"][k][3], "")]
-        lignes = [f"# [claude-build] La turbine T{k} est lancee : elle tourne et pousse l'eau vers le haut ; une vague de monstres arrive.", f"scoreboard players set #t{k} station 1000",
-                  f"execute positioned {centre} run playsound minecraft:block.beacon.activate master @a[distance=..60] ~ ~ ~ 2 0.6",
-                  f'tellraw @a {{"text":"La turbine T{k} tourne.","color":"aqua"}}']
-        lignes += [f"summon minecraft:{t} {txt(p)} {{Tags:[\"station_emb\"],PersistenceRequired:1b}}" for (t, p, _) in vague]
-        lignes.append(f"setblock {txt(C['moteurs'][k])} create:creative_motor[facing=up]")
-        reset.append(f"setblock {txt(C['moteurs'][k])} create:shaft[axis=y]")
-        if k == 1:
-            lignes += poser_cases(C["sable"], "minecraft:soul_sand")
-        if k == 3:
-            lignes += poser_cases(C["grille_salle"], "minecraft:air") + ['tellraw @a {"text":"La grille de la salle de la pompe C se leve.","color":"gold"}']
-        f[f"station_c_turbine_{k}"] = "\n".join(lignes) + "\n"
-        reset.append(f"scoreboard players set #t{k} station 0")
     tx, _, tz = C["centre_tartre"]
+    va, vb = C["valves1"]
+    DELAI = 200
+    cx0, cz0, r0 = int(C["puits"][0]), int(C["puits"][1]), int(C["rayon"])
+    monstres("c1", [("drowned", p, "") for p in C["vagues"][1][:3]] + [("guardian", C["vagues"][1][3], "")], (cx0 - r0, cx0 + r0, C["grilles"][0] - 13, C["grilles"][0] - 1, cz0 - r0, cz0 + r0), "#w1")
+    monstres("c3", [("drowned", p, "") for p in C["vagues"][3][:3]] + [("guardian", C["vagues"][3][3], "")], (cx0 - r0, cx0 + r0, C["grilles"][1] + 1, C["grilles"][1] + 9, cz0 - r0, cz0 + r0), "#w3")
+    for s_, v, autre in (("a", va, "b"), ("b", vb, "a")):
+        tick += [f"execute if score #g1 station matches 0 if score #c1{s_} station matches 0 if block {txt(v)} donjon:valve_station[tournee=true] run function atelier:station_c_v1{s_}",
+                 f"execute if score #g1 station matches 0 if score #c1{s_} station matches 1 positioned {txt(v)} run particle minecraft:end_rod ~0.5 ~1.3 ~0.5 0.1 0.3 0.1 0.01 1"]
+        f[f"station_c_v1{s_}"] = "\n".join([
+            f"# [claude-build] La valve {s_.upper()} de l'etage 1 est tournee : elle retombe dans 10 s ; si l'autre est tournee avant, la trappe 1 s'ouvre.",
+            f"scoreboard players set #c1{s_} station 1", f"scoreboard players set #c1t station {DELAI}",
+            f"execute positioned {txt(v)} run playsound minecraft:block.chain.break master @a[distance=..60] ~ ~ ~ 2 0.8",
+            f"execute if score #c1{autre} station matches 1 run function atelier:station_c_trappe_1"]) + "\n"
+    tick += ["execute if score #g1 station matches 0 if score #c1t station matches 1.. run scoreboard players remove #c1t station 1",
+             "execute if score #g1 station matches 0 if score #c1t station matches 0 if score #c1a station matches 1 run function atelier:station_c_v1_retombe",
+             "execute if score #g1 station matches 0 if score #c1t station matches 0 if score #c1b station matches 1 run function atelier:station_c_v1_retombe"]
+    f["station_c_v1_retombe"] = "\n".join([
+        "# [claude-build] Dix secondes sans que l'autre valve soit tournee : la premiere retombe.", "scoreboard players set #c1a station 0", "scoreboard players set #c1b station 0",
+        f"setblock {txt(va)} donjon:valve_station[couleur=rouge,tournee=false,waterlogged=true]", f"setblock {txt(vb)} donjon:valve_station[couleur=bleu,tournee=false,waterlogged=true]",
+        f"execute positioned {txt(va)} run playsound minecraft:block.piston.contract master @a[distance=..60] ~ ~ ~ 2 0.6",
+        f"execute positioned {txt(vb)} run playsound minecraft:block.piston.contract master @a[distance=..60] ~ ~ ~ 2 0.6"]) + "\n"
     for k, y in enumerate(C["grilles"], start=1):
-        cases = C["tartres"][k]
-        cond = f"if score #t{k} station matches 1000" + (" unless entity @e[tag=station_rotor]" if k == 2 else "")
-        tick.append(f"execute if score #tar{k} station matches 0 {cond} positioned {txt((tx, y - 1, tz))} if entity @a[distance=..4,{NAGE}] run function atelier:station_c_tartre_{k}")
-        f[f"station_c_tartre_{k}"] = "\n".join([f"# [claude-build] Le tartre de la grille {k} se brise.", f"scoreboard players set #tar{k} station 1", *poser_cases(cases, "minecraft:water"),
-                                                f"execute positioned {txt((tx, y, tz))} run particle minecraft:block{{block_state:{{Name:\"minecraft:dripstone_block\"}}}} ~ ~ ~ 2 0.5 2 0.1 80",
-                                                f"execute positioned {txt((tx, y, tz))} run playsound minecraft:block.dripstone_block.break master @a[distance=..40] ~ ~ ~ 2 0.6"]) + "\n"
-        reset += poser_cases(cases, "minecraft:dripstone_block") + [f"scoreboard players set #tar{k} station 0"]
+        f[f"station_c_trappe_{k}"] = "\n".join([
+            f"# [claude-build] La trappe {k} (la vanne dans le trou de la grille) s'ouvre : on peut monter a l'etage suivant.", f"scoreboard players set #g{k} station 1",
+            *poser_cases(C["tartres"][k], "minecraft:water"),
+            f"execute positioned {txt((tx, y, tz))} run playsound minecraft:block.piston.extend master @a[distance=..60] ~ ~ ~ 3 0.6",
+            f"execute positioned {txt((tx, y, tz))} run particle minecraft:bubble_column_up ~ ~-1 ~ 2 0.5 2 0.2 60 force"]) + "\n"
+        reset += poser_cases(C["tartres"][k], "minecraft:iron_bars[waterlogged=true]") + [f"scoreboard players set #g{k} station 0"]
+    reset += [f"setblock {txt(va)} donjon:valve_station[couleur=rouge,tournee=false,waterlogged=true]", f"setblock {txt(vb)} donjon:valve_station[couleur=bleu,tournee=false,waterlogged=true]",
+              "scoreboard players set #c1a station 0", "scoreboard players set #c1b station 0", "scoreboard players set #c1t station 0"]
+    tick.append(f"execute if score #rotor station matches 1 if score #g2 station matches 0 positioned {txt((cx0, 69, cz0))} if entity @a[distance=..40] unless entity @e[tag=station_rotor] run function atelier:station_c_boss_mort")
+    f["station_c_boss_mort"] = "\n".join([
+        "# [claude-build] Le Scaphandrier est vaincu : la trappe 2 s'ouvre, et la grille de la salle de la pompe se leve.", "function atelier:station_c_trappe_2",
+        *poser_cases(C["grille_salle"], "minecraft:air"),
+        f"execute positioned {txt(C['grille_salle'][0])} run playsound minecraft:block.iron_door.open master @a[distance=..60] ~ ~ ~ 2 0.7"]) + "\n"
     reset += remettre(C["sable"]) + poser_cases(C["grille_salle"], "minecraft:iron_bars[waterlogged=false]")
     cx, cz = C["puits"]
     r = int(C["rayon"])
-    monstres("rotor", [("elder_guardian", C["rotor"], ',Tags:["station_emb","station_rotor"],CustomName:\'"Gardien du rotor"\'')],
+    # Le mini-boss du rotor : le Scaphandrier rouille (mod donjon), a la place du gardien des profondeurs qui tenait la place.
+    nom_rotor = 'CustomName:\'"Scaphandrier rouillé"\''
+    monstres("rotor", [("donjon:scaphandrier", C["rotor"], ',Tags:["station_emb","station_rotor"],active_effects:[{id:"minecraft:resistance",amplifier:4,duration:-1,show_particles:0b}],' + nom_rotor)],
              (int(cx) - r, int(cx) + r, C["grilles"][0] + 1, C["grilles"][1] - 1, int(cz) - r, int(cz) + r), "#rotor")
     f["station_rotor_monstres"] = f["station_rotor_monstres"].replace('{Tags:["station_emb"],PersistenceRequired:1b,Tags:["station_emb","station_rotor"]', '{PersistenceRequired:1b,Tags:["station_emb","station_rotor"]')
+    # La salle du Scaphandrier : quatre cristaux des mers le soignent (un rayon le relie a chacun) ; il est protege (resistance totale) tant qu'il en reste un ; un coup brise un cristal.
+    cristaux_r = C["rotor_cristaux"]
+    f["station_rotor_monstres"] += "\n".join([
+        *[f"summon donjon:cristal_marin {txt((x + 0.5, y, z + 0.5))} {{ShowBottom:0b,Tags:[\"station_rotor_cristal\",\"station_emb\"]}}" for (x, y, z) in cristaux_r],
+        *[f"execute positioned {txt((x + 0.5, y + 1, z + 0.5))} run particle minecraft:glow ~ ~ ~ 0.6 0.6 0.6 0.1 30 force" for (x, y, z) in cristaux_r]]) + "\n"
+    tick.append(f"execute if score #rotor station matches 1 if score #rvn station matches 0 positioned {txt((cx0, 69, cz0))} if entity @a[distance=..40] unless entity @e[tag=station_rotor_cristal] run function atelier:station_rotor_vulnerable")
+    tick.append("execute if score #rotor station matches 1 if score #rvn station matches 0 as @e[tag=station_rotor] at @s run particle minecraft:enchanted_hit ~ ~1 ~ 0.5 0.9 0.5 0.1 3")
+    f["station_rotor_vulnerable"] = "\n".join([
+        "# [claude-build] Les quatre cristaux sont brises : le Scaphandrier n'est plus protege.", "scoreboard players set #rvn station 1",
+        "effect clear @e[tag=station_rotor] minecraft:resistance", "effect give @e[tag=station_rotor] minecraft:glowing 40 0 true",
+        "execute as @e[tag=station_rotor] at @s run playsound minecraft:block.beacon.deactivate hostile @a[distance=..60] ~ ~ ~ 3 0.7",
+        "execute as @e[tag=station_rotor] at @s run particle minecraft:explosion ~ ~1 ~ 0.4 0.6 0.4 0.1 6"]) + "\n"
+    reset += ["kill @e[tag=station_rotor_cristal]", "scoreboard players set #rvn station 0"]
+    # Un monde ou le gardien des profondeurs est deja apparu : il laisse sa place au Scaphandrier, la ou il nage.
+    tick.append("execute as @e[type=minecraft:elder_guardian,tag=station_rotor] at @s run function atelier:station_rotor_remplacer")
+    f["station_rotor_remplacer"] = "\n".join([
+        "# [claude-build] L'ancien gardien du rotor (gardien des profondeurs) est remplace par le Scaphandrier rouille, a sa place.",
+        "summon donjon:scaphandrier ~ ~ ~ {PersistenceRequired:1b,Tags:[\"station_emb\",\"station_rotor\"],active_effects:[{id:\"minecraft:resistance\",amplifier:4,duration:-1,show_particles:0b}]," + nom_rotor + "}",
+        "tag @s remove station_rotor",
+        "tp @s ~ -400 ~",
+        "kill @s"]) + "\n"
     lev = txt(C["levier"])
-    tick += station_create.lignes_volant("pC", txt(C["volant_pos"]), "station_pompe_c", "#pC")
+    tick += station_create.lignes_valve(txt(C["volant_pos"]), "station_pompe_c", "#pC")
     f["station_pompe_c"] = "\n".join([
         "# [claude-build] Le volant C est tourne : la pompe C repart.", "scoreboard players set #pC station 1",
         f"execute positioned {txt(C['pompe'][0])} run particle minecraft:bubble_column_up ~ ~2 ~ 1 2 1 0.2 100",
@@ -239,12 +280,12 @@ def fonctions(infos, infos1, blocs, txt):
                                                     f"execute positioned {txt(cases[len(cases) // 2])} run particle minecraft:bubble_column_up ~0.5 ~ ~0.5 1.2 0.3 1.2 0.2 40 force",
                                                     f"execute positioned {txt(cases[len(cases) // 2])} run playsound minecraft:block.piston.contract master @a[distance=..120] ~ ~ ~ 2 {0.5 + 0.08 * (y - rangs_d[0]):.2f}"]) + "\n"
     f["station_vanne_d_ouverte"] = "\n".join(["# [claude-build] La vanne D est levee : la Cheminee est ouverte (fin de la cinematique).", "scoreboard players set #d station 1",
-                                               'tellraw @a {"text":"Au fond de la Cuve, au nord-est, la vanne D est ouverte.","color":"gold"}']) + "\n"
+                                               'tellraw @a {"text":"Au fond de la Cuve, la vanne D est ouverte.","color":"gold"}']) + "\n"
     f["station_vanne_d"] = "\n".join(["# [claude-build] La vanne D se leve : la Cheminee est ouverte.", "scoreboard players set #d station 1", *poser_cases(D["vanne_d"], "minecraft:water"),
                                       f"execute positioned {txt(D['vanne_d'][0])} run playsound minecraft:block.piston.contract master @a[distance=..80] ~ ~ ~ 3 0.5",
-                                      'tellraw @a {"text":"Au fond de la Cuve, au nord-est, la vanne D se leve.","color":"gold"}',
+                                      'tellraw @a {"text":"Au fond de la Cuve, la vanne D se leve.","color":"gold"}',
                                       'title @a title {"text":"Va au fond de la Cuve","color":"gold"}',
-                                      'title @a subtitle {"text":"la vanne D est ouverte, au nord-est : la Cheminée","color":"aqua"}']) + "\n"
+                                      'title @a subtitle {"text":"la vanne D est ouverte : la Cheminée","color":"aqua"}']) + "\n"
     reset += poser_cases(D["vanne_d"], "minecraft:iron_bars[waterlogged=false]") + ["scoreboard players set #d station 0"]
 
     # les cinematiques : la camera suit la surface qui descend (elle reste 3 blocs au dessus) ; la vanne D vue de la Cuve
@@ -274,7 +315,7 @@ def fonctions(infos, infos1, blocs, txt):
     vise_d = [(1, cible), (DUREE_VANNE_D, cible)]
     ev_d = {2: ['title @a[tag=cine] actionbar {"text":"Troisième pompe : la station est prête…","color":"gray"}',
                 "execute as @a[tag=cine] at @s run playsound minecraft:block.beacon.power_select master @s ~ ~ ~ 1 0.6"],
-            30: ['title @a[tag=cine] title {"text":"Va au fond de la Cuve","color":"gold"}', 'title @a[tag=cine] subtitle {"text":"au nord-est, la vanne D","color":"aqua"}'],
+            30: ['title @a[tag=cine] title {"text":"Va au fond de la Cuve","color":"gold"}', 'title @a[tag=cine] subtitle {"text":"la vanne D","color":"aqua"}'],
             80: ["execute as @a[tag=cine] at @s run playsound minecraft:block.iron_door.open master @s ~ ~ ~ 1 0.5"],
             130: ["function atelier:station_vanne_d_ouverte", f"execute positioned {txt(d0)} run particle minecraft:bubble_column_up ~0.5 ~ ~0.5 1.5 2 1.5 0.2 120 force"],
             134: [station_cine.son("chime", 0.75)], 140: [station_cine.son("chime", 1.0)], 146: [station_cine.son("chime", 1.5)],
@@ -309,24 +350,10 @@ def fonctions(infos, infos1, blocs, txt):
     reset.append("scoreboard players set #dvu station 0")
 
     # ================================================================= la Cheminee
-    pousser(D["rampe_boite"], (0, -0.3, 0), "rampe")
-    ct = txt(D["centre_tartre"])
-    tick.append(f"execute if score #tard station matches 0 positioned {ct} if entity @a[distance=..4,{NAGE}] run function atelier:station_d_tartre")
-    f["station_d_tartre"] = "\n".join(["# [claude-build] Le tartre de la Cheminee se brise.", "scoreboard players set #tard station 1", *poser_cases(D["tartre"], "minecraft:water"),
-                                       f"execute positioned {ct} run particle minecraft:block{{block_state:{{Name:\"minecraft:dripstone_block\"}}}} ~ ~2 ~ 3 0.5 3 0.1 80",
-                                       f"execute positioned {ct} run playsound minecraft:block.dripstone_block.break master @a[distance=..40] ~ ~ ~ 2 0.6"]) + "\n"
-    reset += poser_cases(D["tartre"], "minecraft:dripstone_block") + ["scoreboard players set #tard station 0"]
-    tc = txt(D["turbine"]["centre"])
-    tick += [f"execute if score #tard station matches 1 if score #td station matches ..39 positioned {tc} if entity @a[distance=..4,{NAGE}] run scoreboard players add #td station 1",
-             f"execute if score #td station matches 1..39 positioned {tc} unless entity @a[distance=..4,{NAGE}] run scoreboard players remove #td station 1",
-             "execute if score #td station matches 40 run function atelier:station_d_turbine",
-             f"execute if score #td station matches 1000 positioned {tc} run particle minecraft:bubble_column_up ~ ~ ~ 2 0.4 2 0.2 6"]
-    f["station_d_turbine"] = "\n".join(["# [claude-build] La turbine de la Cheminee tourne : un courant ascendant (colonne de bulles) monte jusqu'au bassin du haut.", "scoreboard players set #td station 1000",
-                                        *poser_cases(D["sable"], "minecraft:soul_sand"), f"setblock {txt(D['moteur'])} create:creative_motor[facing=up]",
-                                        f"execute positioned {tc} run playsound minecraft:block.beacon.activate master @a[distance=..60] ~ ~ ~ 2 0.6"]) + "\n"
-    reset += poser_cases(D["sable"], "minecraft:dripstone_block") + [f"setblock {txt(D['moteur'])} create:shaft[axis=y]", "scoreboard players set #td station 0"]
+    # le courant de la rampe de la Cheminee : idem
+    # Le plafond de la rampe est un barrage de planches que la Cape lestee brise (mod : tourbillon) ; la turbine tourne des le depart et le sable des ames du centre porte le courant qui monte.
     lev = txt(D["levier"])
-    tick.append(f"execute if score #lg station matches 0 if block {lev} minecraft:lever[powered=true] run function atelier:station_levier_general")
+    tick.append(f"execute if score #lg station matches 0 if block {lev} donjon:levier_station[powered=true] run function atelier:station_levier_general")
     f["station_levier_general"] = "\n".join([
         "# [claude-build] Le levier general : la porte du Poste s'ouvre sur la Coursive ; la bonde de la Cuve s'ouvre en cinematique (ou tout de suite si une autre est en cours).",
         "scoreboard players set #lg station 1", *poser_cases(D["porte_poste"], "minecraft:air"), "scoreboard players operation #libre cine = #t cine",
@@ -338,7 +365,7 @@ def fonctions(infos, infos1, blocs, txt):
         f"playsound minecraft:block.beacon.deactivate master @a {txt((int(cxu), a1.SOL, int(czu)))} 4 0.5",
         f"playsound minecraft:block.bubble_column.whirlpool_inside master @a {txt((int(cxu), a1.NIVEAUX['bas'], int(czu)))} 4 0.6"]) + "\n"
     tick.append(f"execute if score #lg station matches 1 positioned {txt((int(cxu), a1.NIVEAUX['bas'], int(czu)))} run particle minecraft:bubble_column_up ~ ~-4 ~ 4 4 4 0.3 20")
-    reset += [f"setblock {lev} minecraft:lever[face=floor,facing=east,powered=false]", *poser_cases(D["porte_poste"], "minecraft:iron_bars[waterlogged=false]"),
+    reset += [f"setblock {lev} donjon:levier_station[face=floor,facing=east,powered=false]", *poser_cases(D["porte_poste"], "minecraft:iron_bars[waterlogged=false]"),
               *remettre(D["bonde"] + D["puits_bonde"] + D["magma"]), "scoreboard players set #lg station 0"]
 
     # ================================================================= le Reservoir, le boss, l'Exutoire
@@ -348,24 +375,51 @@ def fonctions(infos, infos1, blocs, txt):
     tick.append(f"execute if score #boss station matches 0 positioned {coin} if entity @a[{sel},gamemode=!spectator] run function atelier:station_boss_debut")
     f["station_boss_debut"] = "\n".join([
         "# [claude-build] Un joueur arrive dans le Reservoir : le Leviathan surgit.", "scoreboard players set #boss station 1", "function atelier:station_boss_apparition",
-        'title @a title {"text":"Le Léviathan","color":"dark_aqua"}', "execute unless entity @e[tag=station_boss] run tellraw @a {\"text\":\"(Le Léviathan n'existe pas dans ce jar du grappin : l'Exutoire s'ouvre.)\",\"color\":\"gray\"}"]) + "\n"
+        "function atelier:station_cristaux", 'title @a title {"text":"Le Léviathan","color":"dark_aqua"}', "execute unless entity @e[tag=station_boss] run tellraw @a {\"text\":\"(Le Léviathan n'existe pas dans ce jar du grappin : l'Exutoire s'ouvre.)\",\"color\":\"gray\"}"]) + "\n"
+    f["station_cristaux"] = "\n".join(["# [claude-build] Les cristaux des mers (mod donjon) apparaissent sur les piliers de l'anneau : tant qu'il en reste, ils soignent le Leviathan ; un coup en brise un.",
+                                       *[f"summon donjon:cristal_marin {txt((x + 0.5, y, z + 0.5))} {{ShowBottom:0b,Tags:[\"station_cristal\",\"station_emb\"]}}" for (x, y, z) in R["cristaux"]],
+                                       *[f"execute positioned {txt((x + 0.5, y, z + 0.5))} run particle minecraft:glow ~ ~ ~ 0.6 0.6 0.6 0.1 30 force" for (x, y, z) in R["cristaux"]],
+                                       f"playsound minecraft:block.amethyst_cluster.place master @a {txt(R['boss'])} 4 0.6"]) + "\n"
     f["station_boss_apparition"] = ("# [claude-build] Le Leviathan (mod grappin). A part : si l'entite manque, seule cette fonction est refusee au chargement.\n"
                                     f"summon donjon:leviathan {txt(R['boss'])} {{Tags:[\"station_boss\",\"station_emb\"],PersistenceRequired:1b}}\n")
     tick.append("execute if score #boss station matches 1 unless entity @e[tag=station_boss] run function atelier:station_boss_vaincu")
     f["station_boss_vaincu"] = "\n".join([
-        "# [claude-build] Le Leviathan est vaincu : l'Exutoire s'ouvre, un courant ascendant ramene a la surface.", "scoreboard players set #boss station 2",
+        "# [claude-build] Le Leviathan est vaincu : l'Exutoire s'ouvre, un courant ascendant ramene a la surface.", "scoreboard players set #boss station 2", "kill @e[tag=station_cristal]",
+        'title @a title {"text":"Le Léviathan est vaincu","color":"gold"}', "schedule function atelier:station_sortie_scene 60t"]) + "\n"
+    ex = R["exutoire"]
+    cible = ((min(p[0] for p in ex) + max(p[0] for p in ex)) / 2 + 0.5, (min(p[1] for p in ex) + max(p[1] for p in ex)) / 2 + 0.5, ex[0][2] + 0.5)
+    f["station_sortie_ouvrir"] = "\n".join([
+        "# [claude-build] L'Exutoire s'ouvre, au sud du Reservoir : la vanne disparait, le sable des ames fait monter le courant jusqu'a la salle de sortie.",
         *poser_cases(R["exutoire"] + R["grille_puits"], "minecraft:water"), *poser_cases(R["sable"], "minecraft:soul_sand"),
-        'title @a title {"text":"Le Léviathan est vaincu","color":"gold"}', 'title @a subtitle {"text":"L\'Exutoire est ouvert, au sud","color":"gray"}']) + "\n"
-    lac = R["lac"]
-    tick.append(f"execute if score #boss station matches 2 positioned {txt(lac)} if entity @a[distance=..8] run function atelier:station_victoire")
+        f"execute positioned {txt(cible)} run particle minecraft:bubble_column_up ~ ~-1 ~ 2 1 1 0.2 120 force",
+        f"execute positioned {txt(cible)} run particle minecraft:end_rod ~ ~ ~ 2 1.5 0.5 0.03 60 force",
+        f"playsound minecraft:block.piston.extend master @a {txt(cible)} 4 0.5", f"playsound minecraft:block.beacon.activate master @a {txt(cible)} 3 1.2"]) + "\n"
+    f["station_sortie_scene"] = "\n".join([
+        "# [claude-build] Trois secondes apres la mort du boss : la cinematique montre la porte de sortie qui s'ouvre (ou elle s'ouvre tout de suite si une autre scene est en cours).",
+        "scoreboard players operation #libre cine = #t cine",
+        "execute if score #libre cine matches 0 run function atelier:station_cine_debut_sortie",
+        "execute unless score #libre cine matches 0 run function atelier:station_sortie_ouvrir"]) + "\n"
+    scenes["sortie"] = {"cles": sc.travelling(cible, (cible[0] + 3.0, cible[1] + 4.0, cible[2] - 20.0)), "duree": 120, "centre": txt(R["boss"]), "rayon": 120,
+                        "evenements": {10: ['title @a[tag=cine] actionbar {"text":"La porte de sortie…","color":"aqua"}'], 45: ["function atelier:station_sortie_ouvrir"],
+                                       60: [station_cine.son("chime", 1.0)], 66: [station_cine.son("chime", 1.26)], 72: [station_cine.son("chime", 1.5)]}}
+    lac = R["lac"]                                                                              # le centre de la salle de sortie (sous terre)
+    tick.append(f"execute if score #boss station matches 2 positioned {txt(lac)} if entity @a[distance=..10] run function atelier:station_victoire")
+    dalle = R["dalle_sortie"]
+    dx0, dz0 = min(p[0] for p in dalle), min(p[2] for p in dalle)
+    dx1, dz1 = max(p[0] for p in dalle), max(p[2] for p in dalle)
+    coin_d = txt((dx0, dalle[0][1] + 1, dz0))
+    tick.append(f"execute if score #boss station matches 2.. positioned {txt(((dx0 + dx1) // 2, dalle[0][1] + 1, (dz0 + dz1) // 2))} run particle minecraft:end_rod ~0.5 ~0.5 ~0.5 0.8 1 0.8 0.01 3")
+    tick.append(f"execute if score #boss station matches 2.. positioned {coin_d} as @a[dx={dx1 - dx0},dy=1,dz={dz1 - dz0},gamemode=!spectator] run function atelier:station_sortie")
+    f["station_sortie"] = "\n".join(["# [claude-build] La dalle de sortie : elle ramene a l'entree du donjon (le pavillon, en surface).",
+                                     f"tp @s {txt(infos1['entree'])} 180 0", "playsound minecraft:entity.enderman.teleport master @s ~ ~ ~ 1 1.2"]) + "\n"
     f["station_victoire"] = "\n".join(["# [claude-build] Retour a la lumiere.", "scoreboard players set #boss station 3", 'title @a title {"text":"La Station est vaincue","color":"gold"}',
                                        f"execute positioned {txt(lac)} run particle minecraft:firework ~ ~2 ~ 3 2 3 0.1 120", f"playsound minecraft:ui.toast.challenge_complete master @a {txt(lac)} 2 1"]) + "\n"
-    reset += ["kill @e[tag=station_boss]", *poser_cases(R["exutoire"] + R["grille_puits"], "minecraft:iron_bars[waterlogged=true]"), *remettre(R["sable"]), "scoreboard players set #boss station 0"]
+    reset += ["schedule clear atelier:station_sortie_scene", "kill @e[tag=station_boss]", "kill @e[tag=station_cristal]", *poser_cases(R["exutoire"] + R["grille_puits"], "minecraft:iron_bars[waterlogged=true]"), *remettre(R["sable"]), "scoreboard players set #boss station 0"]
     for drapeau in ("#a3", "#a4", "#b2", "#b3", "#rotor"):
         reset.append(f"scoreboard players set {drapeau} station 0")
     return f, tick, reset, scenes
 
 
 VARIABLES = ("#niv", "#pompes", "#pA", "#pB", "#pC", "#a3", "#a4", "#b2", "#b3", "#rotor", "#pl1", "#pl2", "#pl3", "#vap",
-             "#cpA", "#cpB", "#cpC", "#t1", "#t2", "#t3", "#tar1", "#tar2", "#d", "#dvu", "#tard", "#td", "#lg", "#boss")
+             "#g1", "#g2", "#c1a", "#c1b", "#c1t", "#w1", "#w3", "#d", "#dvu", "#lg", "#boss", "#rvn")
 

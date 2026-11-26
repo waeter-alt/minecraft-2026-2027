@@ -14,10 +14,10 @@ import station_acte1 as a1  # noqa: E402
 import station_secteurs as s2  # noqa: E402
 from suspendu_outils import AIR  # noqa: E402
 
-PASSE = {"minecraft:air", "minecraft:water", "minecraft:ladder", "minecraft:chain", "minecraft:lever", "minecraft:light"}
+PASSE = {"donjon:courant_station", "minecraft:air", "minecraft:water", "minecraft:ladder", "minecraft:chain", "minecraft:lever", "minecraft:light"}
 EAU = ("minecraft:water", (("level", "0"),))
 LIMITE = 900000
-TRANSPARENT = PASSE | {"minecraft:iron_bars", "minecraft:waxed_copper_grate", "minecraft:iron_trapdoor"}      # la lumiere passe les barreaux et les grilles ; pas le nageur
+TRANSPARENT = PASSE | {"minecraft:iron_bars", "minecraft:waxed_copper_grate", "minecraft:iron_trapdoor", "donjon:vanne_station", "donjon:planche_station"}      # la lumiere passe les barreaux et les grilles ; pas le nageur
 
 
 def nager(blocs, depart, borne=None):
@@ -66,10 +66,9 @@ def verifier():
 
     centre_cuve = (120, 50, 95)
     E = inf["ecluses"]
-    # le Drain : du bassin d'essai on rejoint la Cuve (seche)
-    d = inf["drain"]
-    vu = nager(blocs, (d["bouche"][0], d["bouche"][1] + 2, d["bouche"][2]))
-    attendre("Drain : du bassin d'essai au pied de la Cuve", vu, (125, 31, 110), True)
+    # plus de Drain : le bassin d'essai du Hall ne mene nulle part (on n'atteint pas le fond de la Cuve par lui)
+    vu = nager(blocs, (173, a1.SOL - 2, 162))
+    attendre("Bassin d'essai : pas de passage vers le fond de la Cuve", vu, (125, 31, 110), False)
     # les ecluses fermees : rien ne passe de la Cuve aux secteurs
     vu = nager(pleine, centre_cuve)
     for nom, cible in (("secteur A", inf["a"]["pompe"][0]), ("secteur B", inf["b"]["plaques"][0][4]), ("secteur C", inf["c"]["pales"][1]["centre"]), ("Cheminee", inf["d"]["rampe"][0]),
@@ -78,6 +77,11 @@ def verifier():
     # secteur A
     A = inf["a"]
     a_ouvert = ouvrir(pleine, E["A"]["externe"], E["A"]["interne"])
+    planches = [p for p, _ in inf["salle_lits"]["planches"]]
+    vu = nager(ouvrir(a_ouvert, *A["vannes"]), centre_cuve)
+    attendre("A : les barrages de planches ferment le slalom de la salle des lits", vu, (50, 66, 20), False)
+    attendre("A : ... et la pompe derriere eux", vu, (A["volant_pos"][0] - 1, A["volant_pos"][1], A["volant_pos"][2]), False)
+    a_ouvert = ouvrir(a_ouvert, planches)                                                      # la Cape lestee a brise les planches (tourbillon)
     vu = nager(a_ouvert, centre_cuve)
     vu = nager(ouvrir(a_ouvert, *A["vannes"]), centre_cuve)
     attendre("A : galerie ouverte -> salle des lits", vu, (50, 66, 20), True)
@@ -131,9 +135,9 @@ def verifier():
     res = ouvrir(bas, D["bonde"], D["puits_bonde"])
     vu = nager(res, (120, 35, 95))
     attendre("Bonde ouverte -> Reservoir", vu, R["arrivee"], True)
-    attendre("Reservoir : le lac derriere l'Exutoire ferme", vu, R["lac"], False)
+    attendre("Reservoir : la salle de sortie derriere l'Exutoire ferme", vu, R["lac"], False)
     vu = nager(ouvrir(res, R["exutoire"], R["grille_puits"]), (120, 35, 95))
-    attendre("Exutoire ouvert -> lac", vu, (R["lac"][0], R["lac"][1] - 1, R["lac"][2]), True)
+    attendre("Exutoire ouvert -> salle de sortie", vu, R["lac"], True)
     return erreurs, blocs, pleine, inf
 
 
