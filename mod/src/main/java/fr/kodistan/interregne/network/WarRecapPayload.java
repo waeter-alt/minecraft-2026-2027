@@ -21,11 +21,21 @@ import net.minecraft.world.level.block.entity.BannerPatternLayers;
  * @param lost          of those, the ones that never came back
  * @param fallen        defending citizens killed
  * @param shieldTicks   how long nobody may declare war on the defender
+ * @param aidReceived   allies' soldiers that came to defend the defender (Aide de clan)
+ * @param aidFallen     of those, the ones that fell
  */
 public record WarRecapPayload(boolean victory, int outcome, String winner, String loser, BannerPatternLayers winnerFlag,
                               BannerPatternLayers loserFlag, long durationTicks, int assaults, int sent, int lost, int destroyed, long loot,
-                              int fallen, long tribute, long influence, long shieldTicks) implements CustomPacketPayload
+                              int fallen, long tribute, long influence, long shieldTicks, int aidReceived, int aidFallen) implements CustomPacketPayload
 {
+    public WarRecapPayload(final boolean victory, final int outcome, final String winner, final String loser, final BannerPatternLayers winnerFlag,
+                           final BannerPatternLayers loserFlag, final long durationTicks, final int assaults, final int sent, final int lost, final int destroyed,
+                           final long loot, final int fallen, final long tribute, final long influence, final long shieldTicks)
+    {
+        this(victory, outcome, winner, loser, winnerFlag, loserFlag, durationTicks, assaults, sent, lost, destroyed, loot, fallen, tribute, influence,
+          shieldTicks, 0, 0);
+    }
+
     /** The loser's town hall fell. */
     public static final int CONQUEST     = 0;
     /** The loser paid the tribute. */
@@ -54,10 +64,12 @@ public record WarRecapPayload(boolean victory, int outcome, String winner, Strin
         buf.writeVarLong(p.tribute());
         buf.writeVarLong(p.influence());
         buf.writeVarLong(p.shieldTicks());
+        buf.writeVarInt(p.aidReceived());
+        buf.writeVarInt(p.aidFallen());
     }, buf -> new WarRecapPayload(buf.readBoolean(), buf.readVarInt(), ByteBufCodecs.STRING_UTF8.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf),
       BannerPatternLayers.STREAM_CODEC.decode(buf), BannerPatternLayers.STREAM_CODEC.decode(buf), buf.readVarLong(), buf.readVarInt(),
       buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarLong(), buf.readVarInt(), buf.readVarLong(), buf.readVarLong(),
-      buf.readVarLong()));
+      buf.readVarLong(), buf.readVarInt(), buf.readVarInt()));
 
     /** A war that ended with a winner and a loser (shield, Influence, gold or red tiles). */
     public boolean decisive()

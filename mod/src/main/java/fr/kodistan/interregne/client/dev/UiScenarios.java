@@ -159,6 +159,8 @@ public final class UiScenarios
                     targets.add(new Target("war-recap-capitulation", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.CAPITULATION))));
                     targets.add(new Target("war-recap-abandon-win", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.ABANDON))));
                     targets.add(new Target("war-recap-abandon-loss", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(false, fr.kodistan.interregne.network.WarRecapPayload.ABANDON))));
+                    targets.add(new Target("war-recap-defense-aid", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(withAid(fakeRecap(false, fr.kodistan.interregne.network.WarRecapPayload.CONQUEST)))));
+                    targets.add(new Target("war-recap-defense-aid-win", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(withAid(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.ABANDON)))));
                     targets.add(new Target("war-recap-break", 60, () -> fr.kodistan.interregne.client.war.WarRecapScreen.open(fakeRecap(true, fr.kodistan.interregne.network.WarRecapPayload.BREAK))));
                 }
                 default -> throw new IllegalArgumentException("Unknown screen " + spec);
@@ -218,6 +220,20 @@ public final class UiScenarios
                         fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(19, "Crête-Grise", "Inès", 15, -200, -800, 7, 0, 1, 2));
                         fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(20, "Roc-aux-Corbeaux", "Jade", 27, 380, 610, 6, 240, 1, 0));
                         fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), 6, 3, 20, 500L, treasury, fake));
+                        ColonyHubScreen.openDev(colony.getTownHall(), "diplomacy", 0);
+                    }));
+                }
+                // Aide de clan: only allies, so the contingent lines are above the fold. « Remplir » payable (900 of
+                // 1240), then short; a full contingent, an engaged one, and reinforcements kept for us.
+                for (final long treasury : new long[] {1240L, 320L})
+                {
+                    targets.add(new Target(treasury >= 900L ? "hub-diplomacy-aid" : "hub-diplomacy-aid-short", () -> {
+                        final var fake = new java.util.ArrayList<fr.kodistan.interregne.network.DiplomacySyncPayload.Entry>();
+                        fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(21, "Haute-Garde", "Brenn", 31, -300, 260, 1, 0, 2, 0, 4, 5, -1, -1));
+                        fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(22, "Fort-Écarlate avec un nom très long", "Eloïse", 40, 900, 900, 1, 0, 2, 0, 0, 0, -1, -1));
+                        fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(23, "Port-Sombrebois", "Alix", 14, 410, -120, 1, 0, 2, 0, 3, 0, 7, -1));
+                        fake.add(new fr.kodistan.interregne.network.DiplomacySyncPayload.Entry(24, "Mont-Cuivre", "Gaël", 19, -500, 400, 1, 0, 2, 0, 10, 0, -1, 6));
+                        fr.kodistan.interregne.client.hut.ClientDiplomacy.put(new fr.kodistan.interregne.network.DiplomacySyncPayload(colony.getID(), 6, 3, 20, 500L, treasury, 150L, 10, fake));
                         ColonyHubScreen.openDev(colony.getTownHall(), "diplomacy", 0);
                     }));
                 }
@@ -446,6 +462,13 @@ public final class UiScenarios
                 targets.add(new Target("block-" + block.getKey(), block.getValue()));
             }
         }
+    }
+
+    /** The same recap seen by a defender that two allies' contingents helped (Aide de clan). */
+    private static fr.kodistan.interregne.network.WarRecapPayload withAid(final fr.kodistan.interregne.network.WarRecapPayload p)
+    {
+        return new fr.kodistan.interregne.network.WarRecapPayload(p.victory(), p.outcome(), p.winner(), p.loser(), p.winnerFlag(), p.loserFlag(), p.durationTicks(),
+          p.assaults(), p.sent(), p.lost(), p.destroyed(), p.loot(), p.fallen(), p.tribute(), p.influence(), p.shieldTicks(), 14, 5);
     }
 
     private static fr.kodistan.interregne.network.WarRecapPayload fakeRecap(final boolean victory, final int outcome)

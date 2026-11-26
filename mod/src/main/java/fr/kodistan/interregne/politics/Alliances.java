@@ -155,9 +155,11 @@ public final class Alliances extends SavedData
                 case DiplomacyActionPayload.RECALL_TROOPS -> WarMarches.marching(colony.getID(), other.getID())
                   ? WarMarches.recall(player.server, colony, other.getID())
                   : WarAssaults.recall(colony, other.getID());
+                case DiplomacyActionPayload.REFILL_AID -> AllyAid.refill(player.server, colony, other);
                 default -> Diplomacy.apply(player, colony, other, payload.action());
             };
-            if (refusal == null && (payload.action() == DiplomacyActionPayload.LAUNCH_ASSAULT || payload.action() == DiplomacyActionPayload.RECALL_TROOPS))
+            if (refusal == null && (payload.action() == DiplomacyActionPayload.LAUNCH_ASSAULT || payload.action() == DiplomacyActionPayload.RECALL_TROOPS
+                                      || payload.action() == DiplomacyActionPayload.REFILL_AID))
             {
                 broadcast(player.server, colony, other);
             }
@@ -197,6 +199,7 @@ public final class Alliances extends SavedData
     {
         final Alliances alliances = get(server);
         final RouteRegistry routes = RouteRegistry.get(server);
+        final AllyAid aid = AllyAid.get(server);
         final List<DiplomacySyncPayload.Entry> entries = new ArrayList<>();
         for (final IColony other : IColonyManager.getInstance().getColonies(level))
         {
@@ -213,10 +216,11 @@ public final class Alliances extends SavedData
             final int campaign = WarMarches.marching(me, you) ? DiplomacySyncPayload.CAMPAIGN_MARCHING
               : WarAssaults.assaulting(me, you) ? DiplomacySyncPayload.CAMPAIGN_ASSAULTING : DiplomacySyncPayload.CAMPAIGN_NONE;
             entries.add(new DiplomacySyncPayload.Entry(you, other.getName(), other.getPermissions().getOwnerName(),
-              other.getCitizenManager().getCurrentCitizenCount(), other.getCenter().getX(), other.getCenter().getZ(), relation[0], relation[1], road, campaign));
+              other.getCitizenManager().getCurrentCitizenCount(), other.getCenter().getX(), other.getCenter().getZ(), relation[0], relation[1], road, campaign,
+              aid.reserve(me, you), aid.reserve(you, me), aid.isEngaged(me, you) ? aid.alive(me, you) : -1, aid.isEngaged(you, me) ? aid.alive(you, me) : -1));
         }
         return new DiplomacySyncPayload(colony.getID(), Garrison.available(server, colony, Garrison.LEGIONNAIRE), Garrison.available(server, colony, Garrison.ARCHERE),
-          Config.WAR_DECLARATION_COST.get().intValue(), Config.WAR_TRIBUTE.get(), RegionalTreasury.get(server).balance(colony), entries);
+          Config.WAR_DECLARATION_COST.get().intValue(), Config.WAR_TRIBUTE.get(), RegionalTreasury.get(server).balance(colony), AllyAid.price(), AllyAid.max(), entries);
     }
 
     // Package-private moves for Diplomacy, which holds the rules.
