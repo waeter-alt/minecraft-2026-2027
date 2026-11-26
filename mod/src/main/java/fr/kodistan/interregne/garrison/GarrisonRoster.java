@@ -58,6 +58,23 @@ public final class GarrisonRoster extends SavedData
         }
     }
 
+    public void remove(final IColony colony, final ICitizenData citizen)
+    {
+        final Map<Integer, Guard> guards = colonies.get(colony.getID());
+        if (guards != null && guards.remove(citizen.getId()) != null)
+        {
+            setDirty();
+        }
+    }
+
+    /** Bought guards of this colony, by citizen id (entries of dead citizens are pruned first). */
+    public Map<Integer, Guard> guardsOf(final IColony colony)
+    {
+        count(colony);
+        final Map<Integer, Guard> guards = colonies.get(colony.getID());
+        return guards == null ? Map.of() : new HashMap<>(guards);
+    }
+
     @Nullable
     public Guard of(final IColony colony, final ICitizenData citizen)
     {

@@ -305,6 +305,14 @@ public final class Config
       .comment("Seconds a road takes to vanish once the alliance it served is broken")
       .defineInRange("roadDecaySeconds", 300, 10, 86400);
 
+    public static final ModConfigSpec.LongValue WAR_ROAD_COST = BUILDER
+      .comment("Couronnes taken from the declaring colony's treasury to build the war road when the two colonies have no road yet (the war is refused without them)")
+      .defineInRange("warRoadCost", 300L, 0L, Long.MAX_VALUE);
+
+    public static final ModConfigSpec.IntValue WAR_ROAD_SECONDS = BUILDER
+      .comment("Seconds the war road takes to build; troops wait for it before marching")
+      .defineInRange("warRoadSeconds", 60, 5, 3600);
+
     static
     {
         BUILDER.pop();

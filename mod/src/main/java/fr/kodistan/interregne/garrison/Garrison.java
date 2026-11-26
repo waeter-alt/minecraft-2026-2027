@@ -11,8 +11,14 @@ import com.minecolonies.core.colony.buildings.modules.GuardBuildingModule;
 import com.minecolonies.core.colony.jobs.JobKnight;
 import com.minecolonies.core.colony.jobs.JobRanger;
 import fr.kodistan.interregne.economy.TreasuryPayment;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Buying guards. Colonies no longer hire guards from their own population: a légionnaire is bought at the combat academy,
@@ -229,11 +235,25 @@ public final class Garrison
         {
             return "Pas assez de couronnes.";
         }
-        final ICitizenData citizen = colony.getCitizenManager().createAndRegisterCivilianData();
-        if (citizen == null)
+        if (enlist(player.server, colony, module, kind, level) == null)
         {
             payment.refund(player, colony);
             return "Recrutement impossible pour l'instant.";
+        }
+        return null;
+    }
+
+    /**
+     * A new guard of this kind and level in this tower, free of charge (the caller has paid, or the guard is a survivor
+     * coming back from an assault); null if the colony cannot take one more citizen right now.
+     */
+    @Nullable
+    private static ICitizenData enlist(final MinecraftServer server, final IColony colony, final GuardBuildingModule module, final int kind, final int level)
+    {
+        final ICitizenData citizen = colony.getCitizenManager().createAndRegisterCivilianData();
+        if (citizen == null)
+        {
+            return null;
         }
         citizen.setGenderAndGenerateName(kind == ARCHERE);
         for (final Skill skill : Skill.values())
@@ -244,12 +264,85 @@ public final class Garrison
                 citizen.getCitizenSkillHandler().incrementLevel(skill, missing);
             }
         }
-        GarrisonRoster.get(player.server).add(colony, citizen, kind, level);
+        GarrisonRoster.get(server).add(colony, citizen, kind, level);
         module.assignCitizen(citizen);
         final IBuilding school = school(colony, kind);
         colony.getCitizenManager().spawnOrCreateCivilian(citizen, colony.getWorld(), (school != null ? school : module.getBuilding()).getPosition(), true);
         citizen.getEntity().ifPresent(entity -> net.neoforged.neoforge.network.PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity,
           new GuardLookPayload(entity.getId(), kind, level)));
-        return null;
+        return citizen;
+    }
+
+    /**
+     * A survivor of an assault takes back a place in the towers; false if there is no free place any more (the
+     * survivor is then lost: the towers were given to new recruits meanwhile).
+     */
+    public static boolean welcomeBack(final MinecraftServer server, final IColony colony, final int kind, final int level)
+    {
+        final GuardBuildingModule module = freePlace(colony, kind);
+        return module != null && enlist(server, colony, module, kind, level) != null;
+    }
+
+    /**
+     * Bought guards of this kind available for an assault.
+     */
+    public static int available(final MinecraftServer server, final IColony colony, final int kind)
+    {
+        int count = 0;
+        for (final GarrisonRoster.Guard guard : GarrisonRoster.get(server).guardsOf(colony).values())
+        {
+            if (guard.kind() == kind)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Takes {@code wanted} bought guards of this kind out of the colony (best levels first) to march on an enemy:
+     * they leave their tower and the colony's citizens. Returns the levels of those who left.
+     */
+    public static List<Integer> depart(final MinecraftServer server, final IColony colony, final int kind, final int wanted)
+    {
+        final GarrisonRoster roster = GarrisonRoster.get(server);
+        final List<Map.Entry<Integer, GarrisonRoster.Guard>> pool = new ArrayList<>();
+        for (final Map.Entry<Integer, GarrisonRoster.Guard> entry : roster.guardsOf(colony).entrySet())
+        {
+            if (entry.getValue().kind() == kind)
+            {
+                pool.add(entry);
+            }
+        }
+        pool.sort((x, y) -> Integer.compare(y.getValue().level(), x.getValue().level()));
+        final List<Integer> levels = new ArrayList<>();
+        for (final Map.Entry<Integer, GarrisonRoster.Guard> entry : pool)
+        {
+            if (levels.size() >= wanted)
+            {
+                break;
+            }
+            final ICitizenData citizen = colony.getCitizenManager().getCivilian(entry.getKey());
+            if (citizen == null)
+            {
+                continue;
+            }
+            citizen.getEntity().ifPresent(entity -> entity.remove(Entity.RemovalReason.DISCARDED));
+            final IBuilding tower = citizen.getWorkBuilding();
+            if (tower != null)
+            {
+                for (final GuardBuildingModule module : tower.getModulesByType(GuardBuildingModule.class))
+                {
+                    if (module.hasAssignedCitizen(citizen))
+                    {
+                        module.removeCitizen(citizen);
+                    }
+                }
+            }
+            roster.remove(colony, citizen);
+            colony.getCitizenManager().removeCivilian(citizen);
+            levels.add(entry.getValue().level());
+        }
+        return levels;
     }
 }
