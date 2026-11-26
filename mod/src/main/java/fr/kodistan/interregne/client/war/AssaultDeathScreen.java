@@ -12,6 +12,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.DeathScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
@@ -27,7 +28,7 @@ import org.lwjgl.glfw.GLFW;
 
 /**
  * Replaces the vanilla death screen for a death during an assault: a countdown, where the player will come back, and
- * the respawn button only once the wait is over. Meanwhile a broken crown mends itself on its pedestal, in step with the wait.
+ * the respawn button only once the wait is over, while the camera hovers over the attacked colony (AssaultCamera). Meanwhile a broken crown mends itself on its pedestal, in step with the wait.
  */
 @EventBusSubscriber(modid = InterregneMod.MODID, value = Dist.CLIENT)
 public final class AssaultDeathScreen extends Screen
@@ -44,15 +45,18 @@ public final class AssaultDeathScreen extends Screen
     private final int    totalMs;
     private final String where;
     private final boolean demo;
+    @Nullable
+    private final BlockPos focus;
     private boolean rang;
 
-    private AssaultDeathScreen(final long readyAt, final int totalMs, final String where, final boolean demo)
+    private AssaultDeathScreen(final long readyAt, final int totalMs, final String where, final boolean demo, @Nullable final BlockPos focus)
     {
         super(Component.literal("Tombé au combat"));
         this.readyAt = readyAt;
         this.totalMs = totalMs;
         this.where = where;
         this.demo = demo;
+        this.focus = focus;
     }
 
     /** The server's word on a death in an assault: arrives just before the death screen opens. */
@@ -68,15 +72,15 @@ public final class AssaultDeathScreen extends Screen
     }
 
     /** UiShot: the screen with {@code leftMs} still to wait out of {@code totalMs}. */
-    public static void openDemo(final int leftMs, final int totalMs, final String where)
+    public static void openDemo(final int leftMs, final int totalMs, final String where, @Nullable final BlockPos focus)
     {
-        Minecraft.getInstance().setScreen(new AssaultDeathScreen(Util.getMillis() + leftMs, totalMs, where, true));
+        Minecraft.getInstance().setScreen(new AssaultDeathScreen(Util.getMillis() + leftMs, totalMs, where, true, focus));
     }
 
     private static AssaultDeathScreen fromPending()
     {
         final int totalMs = pending.waitTicks() * 50;
-        return new AssaultDeathScreen(pendingAt + totalMs, totalMs, pending.where(), false);
+        return new AssaultDeathScreen(pendingAt + totalMs, totalMs, pending.where(), false, pending.focus());
     }
 
     @SubscribeEvent
@@ -246,7 +250,8 @@ public final class AssaultDeathScreen extends Screen
     @Override
     public void renderBackground(final GuiGraphics graphics, final int mouseX, final int mouseY, final float partialTick)
     {
-        graphics.fillGradient(0, 0, width, height, 0xB0200000, 0xE0100404);
+        // Light enough to watch the fight from above, dark enough for the text
+        graphics.fillGradient(0, 0, width, height, 0x50200000, 0xA0100404);
     }
 
     @Override
@@ -386,6 +391,46 @@ public final class AssaultDeathScreen extends Screen
         graphics.pose().scale(scale, scale, 1f);
         graphics.drawString(font, text, -font.width(text) / 2, 0, color, true);
         graphics.pose().popPose();
+    }
+
+    @Override
+    protected void init()
+    {
+        super.init();
+        // init runs again on every resize: the camera keeps its angle
+        if (focus != null && !AssaultCamera.active())
+        {
+            AssaultCamera.start(focus, minecraft.player != null ? minecraft.player.getYRot() : 0f);
+        }
+    }
+
+    @Override
+    public void removed()
+    {
+        AssaultCamera.stop();
+        super.removed();
+    }
+
+    @Override
+    public boolean mouseDragged(final double mouseX, final double mouseY, final int button, final double dragX, final double dragY)
+    {
+        if (AssaultCamera.active())
+        {
+            AssaultCamera.drag(dragX, dragY);
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseScrolled(final double mouseX, final double mouseY, final double scrollX, final double scrollY)
+    {
+        if (AssaultCamera.active())
+        {
+            AssaultCamera.zoom(scrollY);
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     @Override

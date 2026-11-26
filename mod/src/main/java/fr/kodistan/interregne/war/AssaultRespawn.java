@@ -118,7 +118,7 @@ public final class AssaultRespawn
             DEATHS.put(player.getUUID(), new Death(defender.getID(), count));
             final int seconds = waitSeconds(count);
             PENDING.put(player.getUUID(), new Pending(now(server) + seconds * 20L, home.getDimension(), home.getCenter()));
-            PacketDistributor.sendToPlayer(player, new AssaultDeathPayload(seconds * 20, count, where));
+            PacketDistributor.sendToPlayer(player, new AssaultDeathPayload(seconds * 20, count, where, defender.getCenter()));
             InterregneMod.LOGGER.info("[war] {} tombé ({}e mort de l'assaut sur {}) : attente {} s", player.getName().getString(), count,
               defender.getName(), seconds);
             return;

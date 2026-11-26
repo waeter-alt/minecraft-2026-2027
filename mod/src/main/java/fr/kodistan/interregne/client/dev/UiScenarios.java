@@ -167,13 +167,13 @@ public final class UiScenarios
                 }
                 case "respawn" -> {
                     // The broken crown through a 10 s wait (captured ~0.5 s after opening): shards flying, landing, cracked, glowing, healed, then gilded
-                    targets.add(new Target("respawn-shards", 10, () -> fr.kodistan.interregne.client.war.AssaultDeathScreen.openDemo(8500, 10_000, "votre hôtel de ville")));
-                    targets.add(new Target("respawn-landing", 10, () -> fr.kodistan.interregne.client.war.AssaultDeathScreen.openDemo(6000, 10_000, "votre hôtel de ville")));
-                    targets.add(new Target("respawn-cracks", 10, () -> fr.kodistan.interregne.client.war.AssaultDeathScreen.openDemo(4200, 10_000, "votre hôtel de ville")));
-                    targets.add(new Target("respawn-glow", 10, () -> fr.kodistan.interregne.client.war.AssaultDeathScreen.openDemo(2500, 10_000, "votre hôtel de ville")));
-                    targets.add(new Target("respawn-healed", 10, () -> fr.kodistan.interregne.client.war.AssaultDeathScreen.openDemo(1200, 10_000, "votre hôtel de ville")));
-                    targets.add(new Target("respawn-gold", 4, () -> fr.kodistan.interregne.client.war.AssaultDeathScreen.openDemo(0, 8_000, "l'hôtel de ville de Valombre")));
-                    targets.add(new Target("respawn-ready", 40, () -> fr.kodistan.interregne.client.war.AssaultDeathScreen.openDemo(0, 8_000, "l'hôtel de ville de Valombre")));
+                    targets.add(new Target("respawn-shards", 10, () -> fr.kodistan.interregne.client.war.AssaultDeathScreen.openDemo(8500, 10_000, "votre hôtel de ville", colony.getTownHall().getPosition())));
+                    targets.add(new Target("respawn-landing", 10, () -> fr.kodistan.interregne.client.war.AssaultDeathScreen.openDemo(6000, 10_000, "votre hôtel de ville", colony.getTownHall().getPosition())));
+                    targets.add(new Target("respawn-cracks", 10, () -> fr.kodistan.interregne.client.war.AssaultDeathScreen.openDemo(4200, 10_000, "votre hôtel de ville", colony.getTownHall().getPosition())));
+                    targets.add(new Target("respawn-glow", 10, () -> fr.kodistan.interregne.client.war.AssaultDeathScreen.openDemo(2500, 10_000, "votre hôtel de ville", colony.getTownHall().getPosition())));
+                    targets.add(new Target("respawn-healed", 10, () -> fr.kodistan.interregne.client.war.AssaultDeathScreen.openDemo(1200, 10_000, "votre hôtel de ville", colony.getTownHall().getPosition())));
+                    targets.add(new Target("respawn-gold", 4, () -> fr.kodistan.interregne.client.war.AssaultDeathScreen.openDemo(0, 8_000, "l'hôtel de ville de Valombre", colony.getTownHall().getPosition())));
+                    targets.add(new Target("respawn-ready", 40, () -> fr.kodistan.interregne.client.war.AssaultDeathScreen.openDemo(0, 8_000, "l'hôtel de ville de Valombre", colony.getTownHall().getPosition())));
                 }
                 case "war" -> {
                     // Settled long enough for the title pop and every figure's count-up to finish

@@ -1,6 +1,7 @@
 package fr.kodistan.interregne.mixin.client;
 
 import fr.kodistan.interregne.client.walls.WallPlanner;
+import fr.kodistan.interregne.client.war.AssaultCamera;
 import net.minecraft.client.Camera;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.BlockGetter;
@@ -12,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * While the wall planner is open, the camera leaves the player and hovers above the colony.
+ * While the wall planner or the assault wait screen is open, the camera leaves the player and hovers above the colony.
  */
 @Mixin(Camera.class)
 public abstract class CameraMixin
@@ -34,6 +35,14 @@ public abstract class CameraMixin
         {
             final Vec3 position = WallPlanner.cameraPosition();
             setRotation(WallPlanner.yaw(), WallPlanner.pitch());
+            setPosition(position.x, position.y, position.z);
+            detached = true;
+        }
+        else if (AssaultCamera.active())
+        {
+            AssaultCamera.frame();
+            final Vec3 position = AssaultCamera.position();
+            setRotation(AssaultCamera.yaw(), AssaultCamera.pitch());
             setPosition(position.x, position.y, position.z);
             detached = true;
         }
