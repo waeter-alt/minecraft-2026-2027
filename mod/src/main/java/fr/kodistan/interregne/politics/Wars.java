@@ -22,6 +22,13 @@ public final class Wars extends SavedData
     private final Map<Long, Long> declared = new HashMap<>();
     /** The wars whose opening was already announced. */
     private final Set<Long> opened = new HashSet<>();
+    /** Colonies that just lost a war, to the game time their shield ends: nobody may declare war on them before. */
+    private final Map<Integer, Long> shields = new HashMap<>();
+    /** What each war cost so far, for the end-of-war recap: see {@link #record}. */
+    private final Map<Long, long[]> stats = new HashMap<>();
+
+    /** Indices into a war's stats. */
+    public static final int ASSAULTS = 0, SENT = 1, LOST = 2, DESTROYED = 3, LOOT = 4, FALLEN = 5, STAT_COUNT = 6;
 
     public static Wars get(final MinecraftServer server)
     {
@@ -69,8 +76,48 @@ public final class Wars extends SavedData
         setDirty();
     }
 
+    /**
+     * Adds one finished assault of this war to its tally: troops sent and lost, buildings destroyed, crowns looted and
+     * defenders fallen. Ignored when there is no such war (an assault ended by the peace itself).
+     */
+    public void record(final int attacker, final int defender, final int sent, final int lost, final int destroyed, final long loot, final int fallen)
+    {
+        final long key = key(attacker, defender);
+        if (!declared.containsKey(key))
+        {
+            return;
+        }
+        final long[] tally = stats.computeIfAbsent(key, k -> new long[STAT_COUNT]);
+        tally[ASSAULTS]++;
+        tally[SENT] += sent;
+        tally[LOST] += lost;
+        tally[DESTROYED] += destroyed;
+        tally[LOOT] += loot;
+        tally[FALLEN] += fallen;
+        setDirty();
+    }
+
+    /**
+     * A copy of this war's tally (zeros when no assault ended yet).
+     */
+    public long[] stats(final int attacker, final int defender)
+    {
+        final long[] tally = stats.get(key(attacker, defender));
+        return tally == null ? new long[STAT_COUNT] : tally.clone();
+    }
+
+    /**
+     * The game time the war was declared, or -1.
+     */
+    public long declaredAt(final int attacker, final int defender)
+    {
+        final Long at = declared.get(key(attacker, defender));
+        return at == null ? -1 : at;
+    }
+
     public boolean end(final int attacker, final int defender)
     {
+        stats.remove(key(attacker, defender));
         opened.remove(key(attacker, defender));
         final boolean was = declared.remove(key(attacker, defender)) != null;
         if (was)
@@ -100,6 +147,21 @@ public final class Wars extends SavedData
         return out;
     }
 
+    public void shield(final int colony, final long until)
+    {
+        shields.put(colony, until);
+        setDirty();
+    }
+
+    /**
+     * Ticks left on the colony's shield, 0 when it has none.
+     */
+    public long shieldLeft(final int colony, final long now)
+    {
+        final Long until = shields.get(colony);
+        return until == null ? 0 : Math.max(0, until - now);
+    }
+
     public boolean hasPending(final long now, final long noticeTicks)
     {
         for (final Map.Entry<Long, Long> entry : declared.entrySet())
@@ -118,6 +180,11 @@ public final class Wars extends SavedData
         tag.putLongArray("keys", declared.keySet().stream().mapToLong(Long::longValue).toArray());
         tag.putLongArray("times", declared.values().stream().mapToLong(Long::longValue).toArray());
         tag.putLongArray("opened", opened.stream().mapToLong(Long::longValue).toArray());
+        tag.putIntArray("shieldIds", shields.keySet().stream().mapToInt(Integer::intValue).toArray());
+        tag.putLongArray("shieldUntil", shields.values().stream().mapToLong(Long::longValue).toArray());
+        final CompoundTag tallies = new CompoundTag();
+        stats.forEach((key, tally) -> tallies.putLongArray(Long.toString(key), tally));
+        tag.put("stats", tallies);
         return tag;
     }
 
@@ -133,6 +200,20 @@ public final class Wars extends SavedData
         for (final long value : tag.getLongArray("opened"))
         {
             wars.opened.add(value);
+        }
+        final int[] shieldIds = tag.getIntArray("shieldIds");
+        final long[] shieldUntil = tag.getLongArray("shieldUntil");
+        for (int i = 0; i < Math.min(shieldIds.length, shieldUntil.length); i++)
+        {
+            wars.shields.put(shieldIds[i], shieldUntil[i]);
+        }
+        final CompoundTag tallies = tag.getCompound("stats");
+        for (final String key : tallies.getAllKeys())
+        {
+            final long[] saved = tallies.getLongArray(key);
+            final long[] tally = new long[STAT_COUNT];
+            System.arraycopy(saved, 0, tally, 0, Math.min(saved.length, STAT_COUNT));
+            wars.stats.put(Long.parseLong(key), tally);
         }
         return wars;
     }

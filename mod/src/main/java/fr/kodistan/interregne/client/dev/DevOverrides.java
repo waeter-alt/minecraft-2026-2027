@@ -22,6 +22,10 @@ public final class DevOverrides
     @Nullable
     public static Long influence;
     /**
+     * True to show the HUD war indicator without a real war.
+     */
+    public static boolean war;
+    /**
      * Forced mouse position in GUI pixels for our screens, so captures never show a stray hover.
      */
     @Nullable
@@ -39,5 +43,6 @@ public final class DevOverrides
         purse = null;
         influence = null;
         hover = null;
+        war = false;
     }
 }

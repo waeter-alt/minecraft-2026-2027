@@ -57,6 +57,7 @@ public final class Politics
         if (event.getEntity() instanceof ServerPlayer player)
         {
             Influence.sync(player);
+            Alliances.syncTo(player);
             player.refreshDisplayName();
             player.refreshTabListName();
         }
