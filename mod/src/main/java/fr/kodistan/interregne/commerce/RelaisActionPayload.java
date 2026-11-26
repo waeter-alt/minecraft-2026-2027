@@ -21,6 +21,10 @@ public record RelaisActionPayload(int action, int colony, int other, long contra
     public static final int OFFER = 1;
     public static final int ACCEPT = 2;
     public static final int CANCEL = 3;
+    /** Open the colony's road to the Marché impérial whose packed position is in {@code contract} (0 for the nearest). */
+    public static final int OPEN_ROUTE = 4;
+    /** Send a caravan of {@code quantity} crates of {@code crate} to the Empire, along the road to the Marché at {@code contract}. */
+    public static final int SELL_IMPERIAL = 5;
 
     public static final Type<RelaisActionPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "relais_action"));
 

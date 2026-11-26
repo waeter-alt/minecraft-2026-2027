@@ -404,12 +404,28 @@ public final class Config
     }
 
     public static final ModConfigSpec.IntValue CRATES_SLOWNESS_1 = BUILDER
-      .comment("A player carrying more crates than this is slowed down (Slowness I)")
+      .comment("Crates a player can carry before being slowed down; each crate beyond adds to the slowness (see cratesPerSlowLevel)")
       .defineInRange("cratesSlowness1", 6, 0, 10_000);
 
-    public static final ModConfigSpec.IntValue CRATES_SLOWNESS_2 = BUILDER
-      .comment("A player carrying more crates than this is slowed further (Slowness II)")
-      .defineInRange("cratesSlowness2", 16, 0, 10_000);
+    public static final ModConfigSpec.IntValue CRATES_PER_SLOW_LEVEL = BUILDER
+      .comment("Crates carried beyond the free ones that add one level of Slowness (the first level comes with the first crate beyond them)")
+      .defineInRange("cratesPerSlowLevel", 10, 1, 10_000);
+
+    public static final ModConfigSpec.IntValue CRATES_SLOW_MAX = BUILDER
+      .comment("Highest level of Slowness the weight of crates can give (1 = Slowness I; 0 turns the slowing off)")
+      .defineInRange("cratesSlowMax", 4, 0, 10);
+
+    public static final ModConfigSpec.LongValue IMPERIAL_ROAD_COST = BUILDER
+      .comment("Couronnes taken from a colony's treasury to open its road to the Marché impérial (refused without them, given back if no road can be traced)")
+      .defineInRange("imperialRoadCost", 400L, 0L, Long.MAX_VALUE);
+
+    public static final ModConfigSpec.IntValue IMPERIAL_ROAD_SECONDS = BUILDER
+      .comment("Seconds the road to the Marché impérial takes to build")
+      .defineInRange("imperialRoadSeconds", 60, 5, 3600);
+
+    public static final ModConfigSpec.IntValue IMPERIAL_MAX_CRATES = BUILDER
+      .comment("Most crates one caravan to the Marché impérial may carry")
+      .defineInRange("imperialMaxCrates", 64, 1, 256);
 
     public static final ModConfigSpec.ConfigValue<String> COMPTOIR_SECONDS = BUILDER
       .comment("Seconds a Comptoir régional takes to produce one crate, for levels 1 to 5, comma-separated")

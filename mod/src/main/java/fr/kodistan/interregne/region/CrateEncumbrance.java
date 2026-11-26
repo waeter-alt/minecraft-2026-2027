@@ -34,6 +34,20 @@ public final class CrateEncumbrance
     {
     }
 
+    /**
+     * The Slowness level (0 for none) that carrying this many crates gives: nothing up to the free load, then one level
+     * more every {@code cratesPerSlowLevel} crates, never above {@code cratesSlowMax}.
+     */
+    public static int slowLevel(final int carried)
+    {
+        final int excess = carried - Config.CRATES_SLOWNESS_1.get();
+        if (excess <= 0)
+        {
+            return 0;
+        }
+        return Math.min(Config.CRATES_SLOW_MAX.get(), 1 + (excess - 1) / Config.CRATES_PER_SLOW_LEVEL.get());
+    }
+
     @SubscribeEvent
     public static void onPlayerTick(final PlayerTickEvent.Post event)
     {
@@ -42,7 +56,7 @@ public final class CrateEncumbrance
             return;
         }
         final int carried = CrateStores.countAll(new PlayerInvWrapper(player.getInventory()));
-        final int level = carried > Config.CRATES_SLOWNESS_2.get() ? 2 : carried > Config.CRATES_SLOWNESS_1.get() ? 1 : 0;
+        final int level = slowLevel(carried);
         if (level > 0)
         {
             player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, EFFECT_TICKS, level - 1, true, false, true));
@@ -54,7 +68,7 @@ public final class CrateEncumbrance
             LAST_LEVEL.put(player.getUUID(), level);
             if (level > previous)
             {
-                player.displayClientMessage(Component.literal(level == 2
+                player.displayClientMessage(Component.literal(level >= 2
                                                                 ? "Tu croules sous les caisses : tu avances très lentement."
                                                                 : "Ces caisses pèsent lourd : tu ralentis.").withStyle(ChatFormatting.GOLD), true);
             }
