@@ -162,6 +162,43 @@ public final class Wars extends SavedData
         return out;
     }
 
+    /**
+     * The colony is gone: every war it declared or suffered ends without winner, its shield and tallies with it.
+     *
+     * @return the colonies that were at war with it
+     */
+    public Set<Integer> removeColony(final int colony)
+    {
+        final Set<Integer> opponents = new java.util.HashSet<>();
+        for (final long key : new java.util.ArrayList<>(declared.keySet()))
+        {
+            final int attacker = (int) (key >> 32);
+            final int defender = (int) key;
+            if (attacker == colony || defender == colony)
+            {
+                opponents.add(attacker == colony ? defender : attacker);
+                end(attacker, defender);
+            }
+        }
+        if (shields.remove(colony) != null)
+        {
+            setDirty();
+        }
+        return opponents;
+    }
+
+    /** Every colony id this state mentions, for the purge of colonies that no longer exist. */
+    public Set<Integer> colonyIds()
+    {
+        final Set<Integer> ids = new java.util.HashSet<>(shields.keySet());
+        for (final long key : declared.keySet())
+        {
+            ids.add((int) (key >> 32));
+            ids.add((int) key);
+        }
+        return ids;
+    }
+
     public void shield(final int colony, final long until)
     {
         shields.put(colony, until);

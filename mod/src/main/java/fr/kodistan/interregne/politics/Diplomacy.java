@@ -7,6 +7,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.InterregneMod;
+import fr.kodistan.interregne.commerce.Contracts;
 import fr.kodistan.interregne.economy.RegionalTreasury;
 import fr.kodistan.interregne.network.DiplomacyActionPayload;
 import fr.kodistan.interregne.network.WarRecapPayload;
@@ -189,14 +190,26 @@ public final class Diplomacy
             return "Il faut " + roadCost + " couronnes au trésor de la colonie pour la route de guerre.";
         }
         Influence.remove(player.server, player.getUUID(), cost, "déclaration de guerre");
-        alliances.clearBetween(me, you);
-        AllyAid.get(player.server).forget(me, you);
+        cutTies(player.server, me, you);
         wars.declare(me, you, player.server.overworld().getGameTime());
         if (needsRoad)
         {
             WarRoad.start(player.serverLevel(), colony, other, roadCost);
         }
         return null;
+    }
+
+    /**
+     * What a war declaration cuts between the two colonies: alliance and proposals, clan-aid reserves, and the trade
+     * contracts, which end like those of a broken alliance (the buyer is refunded, the caravans are taken off the road).
+     * Declaring war on an ally is refused, so this only finds a contract left by an admin shortcut; the contracts would
+     * go anyway on the next tick, this just does not wait.
+     */
+    public static void cutTies(final MinecraftServer server, final int me, final int you)
+    {
+        Alliances.get(server).clearBetween(me, you);
+        AllyAid.get(server).forget(me, you);
+        Contracts.get(server).cancelBetween(server, me, you);
     }
 
     /**
@@ -451,8 +464,7 @@ public final class Diplomacy
             }
             case "guerre" ->
             {
-                alliances.clearBetween(me, you);
-                AllyAid.get(server).forget(me, you);
+                cutTies(server, me, you);
                 wars.declare(me, you, immediate ? level.getGameTime() - noticeTicks() : level.getGameTime());
             }
             case "paix" ->
