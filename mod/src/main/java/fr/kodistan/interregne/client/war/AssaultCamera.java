@@ -110,8 +110,12 @@ public final class AssaultCamera
         final int bz = (int) Math.floor(focusZ);
         if (minecraft.level != null && minecraft.level.hasChunk(bx >> 4, bz >> 4))
         {
-            final int ground = minecraft.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, bx, bz);
-            focusY += (ground - focusY) * Math.min(1, seconds * 4);
+            // MOTION_BLOCKING: one of the heightmaps the server sends to clients (NO_LEAVES isn't, it reads the world's floor)
+            final int ground = minecraft.level.getHeight(Heightmap.Types.MOTION_BLOCKING, bx, bz);
+            if (ground > minecraft.level.getMinBuildHeight())
+            {
+                focusY += (ground - focusY) * Math.min(1, seconds * 4);
+            }
         }
     }
 
