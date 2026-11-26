@@ -30,6 +30,8 @@ public record DiplomacyActionPayload(int colony, int action, int target, int amo
     public static final int CAPITULATE = 9;
     /** Pays to fill this colony's contingent for an ally back up (Aide de clan). */
     public static final int REFILL_AID = 10;
+    /** The defender ends the war by demanding the attacker's surrender (see {@code WarRules#surrenderWait}). */
+    public static final int DEMAND_SURRENDER = 11;
 
     /** Packs an assault's troops into {@code amount}. */
     public static int troops(final int legionnaires, final int archers)

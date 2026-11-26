@@ -12,10 +12,11 @@ import net.minecraft.world.level.block.entity.BannerPatternLayers;
  * Server to client, when a war ends (or an alliance breaks): everything the recap screen shows, sent to each online
  * member of both colonies ({@code victory} from the receiver's side). Figures are the whole war's.
  * <p>
- * The winner is the attacker after a {@link #CONQUEST} or a {@link #CAPITULATION}, the defender after an {@link #ABANDON};
+ * The winner is the attacker after a {@link #CONQUEST} or a {@link #CAPITULATION}, the defender after an {@link #ABANDON}
+ * or a {@link #REDDITION};
  * for {@link #BREAK}, the colony that broke the alliance.
  *
- * @param outcome       how it ended: {@link #CONQUEST}, {@link #CAPITULATION}, {@link #ABANDON} or {@link #BREAK}
+ * @param outcome       how it ended: {@link #CONQUEST}, {@link #CAPITULATION}, {@link #ABANDON}, {@link #REDDITION} or {@link #BREAK}
  * @param durationTicks from the declaration to the end
  * @param sent          attacking troops engaged, over all assaults
  * @param lost          of those, the ones that never came back
@@ -44,6 +45,8 @@ public record WarRecapPayload(boolean victory, int outcome, String winner, Strin
     public static final int ABANDON      = 2;
     /** An alliance was broken: no war, no figures. */
     public static final int BREAK        = 3;
+    /** The defender demanded the attacker's surrender: the defender wins, the attacker pays a tribute. */
+    public static final int REDDITION    = 4;
 
     public static final Type<WarRecapPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "war_recap"));
 
@@ -80,7 +83,7 @@ public record WarRecapPayload(boolean victory, int outcome, String winner, Strin
     /** Whether the receiver's colony was the one that declared the war. */
     public boolean attacking()
     {
-        return victory != (outcome == ABANDON);
+        return victory != (outcome == ABANDON || outcome == REDDITION);
     }
 
     @Override

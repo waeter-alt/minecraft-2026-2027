@@ -24,6 +24,8 @@ final class HubDiplomacyPage
     private int confirmWar = -1;
     /** The attacker whose « Capituler » was clicked once (a second click pays the tribute). */
     private int confirmCapitulate = -1;
+    /** The attacker whose « Exiger la reddition » was clicked once (a second click ends the war). */
+    private int confirmDemand = -1;
 
     private static final int A_NONE = 0;
     private static final int A_ALLIED = 1;
@@ -129,7 +131,11 @@ final class HubDiplomacyPage
         final boolean surrender = status == A_WAR_IN_NOTICE || status == A_WAR_IN;
         // An ally: the contingent kept for it (Aide de clan) gets that second line.
         final boolean aid = status == A_ALLIED;
-        final int rowH = launcher || recall || surrender || aid ? 26 + Ui.BUTTON_H + 4 : 26;
+        // « Exiger la reddition » shares the line of « Capituler » when both fit, else it gets a line of its own
+        final int surrenderRoom = width - 13;
+        final int capitulateW = surrender ? capitulateWidth(sync, surrenderRoom, true) : 0;
+        final boolean demandStacked = surrender && capitulateW + 4 + hub.font().width(DEMAND_SHORT) + 16 > surrenderRoom;
+        final int rowH = (launcher || recall || surrender || aid ? 26 + Ui.BUTTON_H + 4 : 26) + (demandStacked ? Ui.BUTTON_H + 4 : 0);
         Ui.card(graphics, x, y, width, rowH, false, false, false);
         graphics.fill(x + 1, y + 1, x + 4, y + rowH - 1, war ? Palette.RED : switch (status)
         {
@@ -262,7 +268,7 @@ final class HubDiplomacyPage
         graphics.drawString(hub.font(), Ui.fit(hub.font(), detail, textRoom), x + 9, y + 15, detailColor, false);
         if (launcher)
         {
-            assaultLine(graphics, mouseX, mouseY, x + 9, y + 26, width - 13, sync, id, mayAct);
+            assaultLine(graphics, mouseX, mouseY, x + 9, y + 26, width - 13, sync, entry, mayAct);
         }
         else if (recall)
         {
@@ -273,7 +279,15 @@ final class HubDiplomacyPage
         }
         else if (surrender)
         {
-            surrenderButton(graphics, mouseX, mouseY, x + width - 4, y + 26, width - 13, sync, id, mayAct);
+            final int capitulateX = surrenderButton(graphics, mouseX, mouseY, x + width - 4, y + 26, surrenderRoom, sync, id, mayAct);
+            if (demandStacked)
+            {
+                demandButton(graphics, mouseX, mouseY, x + width - 4, y + 26 + Ui.BUTTON_H + 4, surrenderRoom, entry, mayAct);
+            }
+            else
+            {
+                demandButton(graphics, mouseX, mouseY, capitulateX - 4, y + 26, capitulateX - 4 - (x + 9), entry, mayAct);
+            }
         }
         else if (aid)
         {
@@ -370,7 +384,7 @@ final class HubDiplomacyPage
      * « Capituler » with the tribute inside, right-aligned and ending at {@code right}: green when the regional treasury
      * pays it, grey with have/cost in red when not. One click arms it, a second one pays.
      */
-    private void surrenderButton(final GuiGraphics graphics, final int mouseX, final int mouseY, final int right, final int y, final int room,
+    private int surrenderButton(final GuiGraphics graphics, final int mouseX, final int mouseY, final int right, final int y, final int room,
       final fr.kodistan.interregne.network.DiplomacySyncPayload sync, final int id, final boolean mayAct)
     {
         final long tribute = sync.tribute();
@@ -417,6 +431,82 @@ final class HubDiplomacyPage
             hub.hint = money < tribute ? "Il manque " + fr.kodistan.interregne.economy.Wallet.format(tribute - money) + " Couronnes au trésor régional pour le tribut."
                                        : "Verse le tribut au trésor de l'assaillant : la guerre s'arrête, ses troupes rentrent et vous gagnez un bouclier.";
         }
+        return x;
+    }
+
+    private static final String DEMAND_FULL = "Exiger la reddition";
+    private static final String DEMAND_SHORT = "Reddition";
+
+    /**
+     * Width of the « Capituler » button as {@link #surrenderButton} lays it out, to know whether another button fits beside it.
+     */
+    private int capitulateWidth(final fr.kodistan.interregne.network.DiplomacySyncPayload sync, final int room, final boolean armed)
+    {
+        final long tribute = sync.tribute();
+        final long money = sync.treasury();
+        final Component price = Component.literal(money >= tribute ? fr.kodistan.interregne.economy.Wallet.format(tribute)
+                                                                   : fr.kodistan.interregne.economy.Wallet.format(money) + "/" + fr.kodistan.interregne.economy.Wallet.format(tribute))
+                                  .withStyle(ChatFormatting.BOLD);
+        final int priceW = ColonyHubScreen.PRICE_ICON + 3 + hub.font().width(price);
+        String verb = armed ? "Confirmer le tribut" : "Capituler";
+        if (hub.font().width(Component.literal(verb).withStyle(ChatFormatting.BOLD)) + 10 + priceW + 16 > room)
+        {
+            verb = armed ? "Confirmer" : "Capituler";
+        }
+        return Math.min(room, hub.font().width(Component.literal(verb).withStyle(ChatFormatting.BOLD)) + 10 + priceW + 16);
+    }
+
+    /**
+     * « Exiger la reddition », right-aligned and ending at {@code right}: the defender may end the war once it repelled an
+     * assault or the attacker stayed idle long enough. Grey otherwise, the hover saying what is missing and the time left.
+     * One click arms it, a second one demands. The shorter wording is used when the full one does not fit {@code room}.
+     */
+    private void demandButton(final GuiGraphics graphics, final int mouseX, final int mouseY, final int right, final int y, final int room,
+      final fr.kodistan.interregne.network.DiplomacySyncPayload.Entry entry, final boolean mayAct)
+    {
+        final int id = entry.id();
+        final boolean armed = confirmDemand == id;
+        final int mine = hub.colony.getID();
+        final int wait = entry.surrenderSeconds() > 0 ? Math.max(0, entry.surrenderSeconds() - ClientDiplomacy.secondsSince(mine)) : entry.surrenderSeconds();
+        final boolean ready = wait == 0;
+        final boolean enabled = mayAct && ready;
+        String label = armed ? "Confirmer" : DEMAND_FULL;
+        if (hub.font().width(label) + 16 > room)
+        {
+            label = armed ? "Confirmer" : DEMAND_SHORT;
+        }
+        final int w = Math.min(room, hub.font().width(label) + 16);
+        final int x = right - w;
+        hub.seatButton(graphics, mouseX, mouseY, x, y, w, label, armed ? Ui.ButtonStyle.DANGER : Ui.ButtonStyle.PRIMARY, enabled, () -> {
+            if (confirmDemand != id)
+            {
+                confirmDemand = id;
+                return;
+            }
+            confirmDemand = -1;
+            ClientDiplomacy.act(mine, DiplomacyActionPayload.DEMAND_SURRENDER, id);
+        });
+        if (Ui.inside(mouseX, mouseY, x, y, w, Ui.BUTTON_H))
+        {
+            hub.hint = ready ? "Impose la reddition de " + entry.name() + " : la guerre s'arrête, elle vous verse un tribut pris sur son trésor (sa réserve reste intacte), "
+                                 + "vous gagnez l'Influence de la victoire et c'est elle qui reçoit le bouclier."
+                 : wait > 0 ? "Pas encore : repoussez un assaut de " + entry.name() + ", ou attendez qu'elle reste sans attaquer encore " + waitText(wait) + "."
+                 : "Pas pour l'instant : la guerre n'est pas encore ouverte, ou les troupes de " + entry.name() + " sont en campagne. Repoussez leur assaut, ou attendez qu'elles restent sans attaquer assez longtemps.";
+        }
+    }
+
+    /**
+     * « 5 h 12 min », « 12 min », « 45 s ».
+     */
+    private static String waitText(final int seconds)
+    {
+        final int hours = seconds / 3600;
+        final int minutes = seconds % 3600 / 60;
+        if (hours > 0)
+        {
+            return minutes > 0 ? hours + " h " + minutes + " min" : hours + " h";
+        }
+        return minutes > 0 ? minutes + " min" : seconds + " s";
     }
 
     /**
@@ -424,8 +514,9 @@ final class HubDiplomacyPage
      * them. Names shrink to abbreviations when the row is narrow, so the button always fits.
      */
     private void assaultLine(final GuiGraphics graphics, final int mouseX, final int mouseY, final int x, final int y, final int width,
-      final fr.kodistan.interregne.network.DiplomacySyncPayload sync, final int id, final boolean mayAct)
+      final fr.kodistan.interregne.network.DiplomacySyncPayload sync, final fr.kodistan.interregne.network.DiplomacySyncPayload.Entry entry, final boolean mayAct)
     {
+        final int id = entry.id();
         final int[] max = { sync.legionAvailable(), sync.archersAvailable() };
         final int[] pick = chosen.computeIfAbsent(id, k -> max.clone());
         pick[0] = Math.min(pick[0], max[0]);
@@ -454,9 +545,16 @@ final class HubDiplomacyPage
             cx += step + 8;
         }
         final int mine = hub.colony.getID();
-        hub.seatButton(graphics, mouseX, mouseY, x + width - lw - 4, y, lw, launch, Ui.ButtonStyle.DANGER, mayAct && pick[0] + pick[1] > 0, () -> {
+        // Another colony has this one reserved for its assaults: the button stays grey and the hover says until when
+        final int lockLeft = entry.lockSeconds() > 0 ? Math.max(0, entry.lockSeconds() - ClientDiplomacy.secondsSince(mine)) : 0;
+        final boolean locked = !entry.lockHolder().isEmpty() && lockLeft > 0;
+        hub.seatButton(graphics, mouseX, mouseY, x + width - lw - 4, y, lw, launch, Ui.ButtonStyle.DANGER, mayAct && pick[0] + pick[1] > 0 && !locked, () -> {
             ClientDiplomacy.act(mine, DiplomacyActionPayload.LAUNCH_ASSAULT, id, DiplomacyActionPayload.troops(pick[0], pick[1]));
             chosen.remove(id);
         });
+        if (locked && Ui.inside(mouseX, mouseY, x + width - lw - 4, y, lw, Ui.BUTTON_H))
+        {
+            hub.hint = entry.name() + " est aux prises avec " + entry.lockHolder() + " : encore " + Math.max(1, (lockLeft + 59) / 60) + " min avant de pouvoir l'attaquer.";
+        }
     }
 }

@@ -144,6 +144,10 @@ public final class Diplomacy
             {
                 return capitulate(server, wars, colony, other);
             }
+            case DiplomacyActionPayload.DEMAND_SURRENDER ->
+            {
+                return demandSurrender(server, wars, colony, other);
+            }
             default ->
             {
             }
@@ -232,6 +236,39 @@ public final class Diplomacy
     }
 
     /**
+     * The defender ends the war by forcing the attacker to surrender, once it repelled an assault or the attacker has
+     * stayed idle long enough ({@link WarRules#surrenderWait}). The attacker loses: a tribute from its treasury to the
+     * defender (the capitulation's amount at most, the reserve untouched), the Influence to the defender, the shield to
+     * the attacker.
+     */
+    @Nullable
+    private static String demandSurrender(final MinecraftServer server, final Wars wars, final IColony colony, final IColony attacker)
+    {
+        if (!wars.declaredBy(attacker.getID(), colony.getID()))
+        {
+            return "Seule la colonie attaquée peut exiger la reddition.";
+        }
+        final long wait = WarRules.surrenderWait(server, attacker.getID(), colony.getID());
+        if (wait != 0)
+        {
+            return wait < 0 ? "Pas pour l'instant : la guerre n'est pas encore ouverte, ou les troupes de " + attacker.getName() + " sont en campagne."
+                            : "Repoussez un assaut, ou attendez encore " + (wait / 1200 + 1) + " min d'inaction de " + attacker.getName() + ".";
+        }
+        if (WarMarches.marching(attacker.getID(), colony.getID()))
+        {
+            WarMarches.recall(server, attacker, colony.getID());
+        }
+        if (WarAssaults.assaulting(attacker.getID(), colony.getID()))
+        {
+            WarAssaults.recall(attacker, colony.getID());
+        }
+        final long tribute = WarRules.takeTribute(RegionalTreasury.get(server), attacker, colony, Config.WAR_TRIBUTE.get(), Config.WAR_TREASURY_RESERVE.get());
+        settle(server, attacker, colony, WarRecapPayload.REDDITION,
+          "§a" + colony.getName() + " exige la reddition§r de " + attacker.getName() + (tribute > 0 ? " et reçoit " + tribute + " couronnes de tribut." : "."), tribute);
+        return null;
+    }
+
+    /**
      * The declarer gives up its war: a defeat. Troops still on the road or on the field go home first (so the last
      * assault counts in the tally), then the defender wins: shield and Influence, no tribute.
      */
@@ -258,8 +295,9 @@ public final class Diplomacy
     }
 
     /**
-     * Ends a war with a winner: the attacker after a conquest or a capitulation, the defender after an abandon. The
-     * defender always gets the shield (it is the one a new war would hit), the winner's owner the Influence.
+     * Ends a war with a winner: the attacker after a conquest or a capitulation, the defender after an abandon or a
+     * demanded surrender. The defender gets the shield (it is the one a new war would hit), except after a demanded
+     * surrender where the attacker, who lost, does ({@link WarRules#shielded}); the winner's owner gets the Influence.
      */
     private static void settle(final MinecraftServer server, final IColony attacker, final IColony defender, final int outcome, final String news,
                                final long tribute)
@@ -274,10 +312,10 @@ public final class Diplomacy
         {
             return;
         }
-        final IColony winner = outcome == WarRecapPayload.ABANDON ? defender : attacker;
+        final IColony winner = WarRules.defenderWins(outcome) ? defender : attacker;
         final IColony loser = winner == attacker ? defender : attacker;
         final long shieldTicks = Config.WAR_SHIELD_SECONDS.get() * 20L;
-        wars.shield(defender.getID(), server.overworld().getGameTime() + shieldTicks);
+        wars.shield(WarRules.shielded(outcome, attacker.getID(), defender.getID()), server.overworld().getGameTime() + shieldTicks);
         final long influence = Config.WAR_VICTORY_INFLUENCE.get();
         final java.util.UUID owner = winner.getPermissions().getOwner();
         if (influence > 0 && owner != null)
@@ -288,7 +326,14 @@ public final class Diplomacy
         final int minutes = (int) Math.ceil(shieldTicks / 1200.0);
         final String shieldNote = "personne ne peut vous déclarer la guerre pendant " + minutes + " min.";
         final String gain = influence > 0 ? "+" + influence + " d'Influence" : "";
-        if (outcome == WarRecapPayload.ABANDON)
+        if (outcome == WarRecapPayload.REDDITION)
+        {
+            notifyMembers(server, defender, "Reddition imposée à " + attacker.getName() + (tribute > 0 ? " : +" + tribute + " couronnes de tribut" : "")
+                                              + (gain.isEmpty() ? "." : ", " + gain + "."));
+            notifyMembers(server, attacker, "Reddition exigée par " + defender.getName() + " : " + (tribute > 0 ? tribute + " couronnes de tribut versées, " : "")
+                                              + shieldNote);
+        }
+        else if (outcome == WarRecapPayload.ABANDON)
         {
             notifyMembers(server, defender, attacker.getName() + " abandonne la guerre : " + (gain.isEmpty() ? "" : gain + ", et ") + shieldNote);
             notifyMembers(server, attacker, "Guerre abandonnée contre " + defender.getName() + ".");

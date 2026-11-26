@@ -128,6 +128,15 @@ public class AssaultGoal extends Goal
             anchor = null;
             standAt = null;
         }
+        if (WarAssaults.isCaptureTarget(troop, hut))
+        {
+            // A town hall in ruins is taken, not battered: gather in the middle of it, the taking runs while anyone stands there
+            if (horizontalDistSqr(hut) > RuinCapture.STAND * RuinCapture.STAND)
+            {
+                march(hut);
+            }
+            return;
+        }
         final boolean wallTarget = WarAssaults.isWallTarget(troop, hut);
         final IBuilding building = wallTarget ? null : troop.getColony().getBuildingManager().getBuilding(hut);
         if (!wallTarget && building == null)

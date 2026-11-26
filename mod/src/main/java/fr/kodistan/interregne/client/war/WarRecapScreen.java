@@ -67,7 +67,7 @@ public final class WarRecapScreen extends ParchmentScreen
         final boolean atk = recap.attacking();
         final LongFunction<String> plain = Long::toString;
         tiles.add(new Tile(COIN, atk ? "Butin" : "Or pillé", recap.loot(), Wallet::format, atk ? Tone.GOOD : Tone.BAD));
-        if (recap.outcome() == WarRecapPayload.CAPITULATION)
+        if (recap.outcome() == WarRecapPayload.CAPITULATION || recap.outcome() == WarRecapPayload.REDDITION)
         {
             tiles.add(new Tile(COIN, won ? "Tribut" : "Tribut payé", recap.tribute(), Wallet::format, won ? Tone.GOOD : Tone.BAD));
         }
@@ -187,6 +187,7 @@ public final class WarRecapScreen extends ParchmentScreen
         {
             case WarRecapPayload.CAPITULATION -> won ? "Ils ont capitulé" : "Vous avez capitulé";
             case WarRecapPayload.ABANDON -> won ? "Ils ont abandonné" : "Vous avez abandonné";
+            case WarRecapPayload.REDDITION -> won ? "Reddition imposée" : "Reddition exigée par " + theirs;
             case WarRecapPayload.BREAK -> won ? "Vous avez rompu l'alliance" : theirs + " a rompu l'alliance";
             default -> won ? "Hôtel de ville pris" : "Hôtel de ville perdu";
         };
@@ -232,9 +233,11 @@ public final class WarRecapScreen extends ParchmentScreen
         if (recap.shieldTicks() > 0)
         {
             Icon.of(Items.WHITE_BANNER).draw(g, x0 + 8, y, 16);
-            final String text = recap.attacking()
-              ? theirs + " ne peut plus être attaquée pendant " + duration(recap.shieldTicks()) + "."
-              : "Votre colonie est à l'abri de toute guerre pendant " + duration(recap.shieldTicks()) + ".";
+            // The shield is the defender's, except after a surrender demand: the attacker, who lost, gets it
+            final boolean mineShielded = recap.attacking() == (recap.outcome() == WarRecapPayload.REDDITION);
+            final String text = mineShielded
+              ? "Votre colonie est à l'abri de toute guerre pendant " + duration(recap.shieldTicks()) + "."
+              : theirs + " ne peut plus être attaquée pendant " + duration(recap.shieldTicks()) + ".";
             final int lines = font.split(Component.literal(text), w - 36).size();
             Ui.wrapped(g, font, Component.literal(text), x0 + 28, y + (lines > 1 ? 0 : 4), w - 36, Palette.INK, 9);
         }
