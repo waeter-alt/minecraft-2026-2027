@@ -2152,6 +2152,10 @@ public final class WarAssaults
             Wars.get(level.getServer()).record(assault.attacker.getID(), assault.defender.getID(), assault.sent, lost + homeless,
               assault.destroyed, assault.loot, assault.fallen);
             Wars.get(level.getServer()).finishAssault(assault.attacker.getID(), assault.defender.getID(), level.getGameTime(), repelled);
+            if (repelled)
+            {
+                fr.kodistan.interregne.politics.InfluenceSources.repelled(level.getServer(), assault.attacker, assault.defender);
+            }
             Alliances.broadcast(level.getServer(), assault.attacker, assault.defender);
         }
     }

@@ -133,6 +133,20 @@ public final class AllyAid extends SavedData
         return engaged.containsKey(pair(helper, helped));
     }
 
+    /** The helpers whose contingent is out in {@code helped}, each once. */
+    public List<Integer> engagedHelpers(final int helped)
+    {
+        final List<Integer> out = new ArrayList<>();
+        for (final long key : engaged.keySet())
+        {
+            if (helpedOf(key) == helped)
+            {
+                out.add(helperOf(key));
+            }
+        }
+        return out;
+    }
+
     /** Soldiers of {@code helper}'s contingent still standing in {@code helped}. */
     public int alive(final int helper, final int helped)
     {
