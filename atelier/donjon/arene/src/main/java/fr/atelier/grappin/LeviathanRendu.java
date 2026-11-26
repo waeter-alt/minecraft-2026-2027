@@ -44,7 +44,7 @@ public class LeviathanRendu extends EntityRenderer<Leviathan> {
 
     @Override
     public boolean shouldRender(Leviathan serpent, net.minecraft.client.renderer.culling.Frustum frustum, double x, double y, double z) {
-        return true;                                         // un corps de 36 blocs : sa boite de culling ne suffit pas toujours
+        return true;                                         // un long corps : sa boite de culling ne suffit pas toujours
     }
 
     @Override
@@ -75,7 +75,8 @@ public class LeviathanRendu extends EntityRenderer<Leviathan> {
         pose.translate(centre.x, centre.y, centre.z);
         pose.mulPose(Axis.YP.rotationDegrees(180.0F - lacet));
         pose.mulPose(Axis.XP.rotationDegrees(-tangage));
-        pose.scale(-4.0F, -4.0F, 4.0F);
+        float e = 4.0F * Leviathan.ECHELLE;
+        pose.scale(-e, -e, e);
         if (estTete) {
             lueurs.visible = false;
             perle.visible = false;

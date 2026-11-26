@@ -172,6 +172,20 @@ public final class CapeEvenements {
         }
     }
 
+    private static final net.minecraft.tags.TagKey<net.minecraft.world.level.block.Block> CASSABLE = net.minecraft.tags.TagKey.create(
+            net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(Grappin.MODID, "cassable"));
+
+    /** Le tourbillon brise les barrages de planches (tag donjon:cassable) a sa portee : on fonce dessus avec la cape. */
+    private static void briserBarrages(ServerPlayer j, double portee) {
+        net.minecraft.core.BlockPos centre = j.blockPosition().above();
+        int r = (int) Math.ceil(portee);
+        for (net.minecraft.core.BlockPos pos : net.minecraft.core.BlockPos.betweenClosed(centre.offset(-r, -r, -r), centre.offset(r, r, r))) {
+            if (pos.distToCenterSqr(j.position().add(0, j.getBbHeight() / 2, 0)) <= portee * portee && j.level().getBlockState(pos).is(CASSABLE)) {
+                j.level().destroyBlock(pos, false, j);
+            }
+        }
+    }
+
     /** Le joueur declenche l'attaque tourbillon. Tout est reverifie ici ; un refus est silencieux (le joueur n'a qu'a recliquer). */
     static void tourbillon(ServerPlayer j) {
         if (!CapeLesteeItem.porte(j) || !j.isAlive() || j.isSpectator() || !j.isInWater() || leste(j) || !(j.isSwimming() || j.isSprinting())) {
@@ -185,6 +199,10 @@ public final class CapeEvenements {
         DERNIER_TOURBILLON.put(j.getUUID(), maintenant);
 
         double portee = Reglages.TOURBILLON_PORTEE.get();
+        briserBarrages(j, portee);
+        for (CristalMarin cristal : j.level().getEntitiesOfClass(CristalMarin.class, j.getBoundingBox().inflate(portee))) {
+            cristal.hurt(j.damageSources().playerAttack(j), 1.0F);          // en nage rapide le clic gauche est le tourbillon : il doit briser les cristaux
+        }
         float degats = Reglages.TOURBILLON_DEGATS.get().floatValue();
         Vec3 centre = j.position().add(0, j.getBbHeight() / 2, 0);
         for (LivingEntity cible : j.level().getEntitiesOfClass(LivingEntity.class, j.getBoundingBox().inflate(portee))) {

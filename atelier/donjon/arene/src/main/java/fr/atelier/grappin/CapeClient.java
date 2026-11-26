@@ -12,9 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.joml.Quaternionf;
-import org.lwjgl.glfw.GLFW;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
@@ -64,9 +62,6 @@ public final class CapeClient {
     private static final double FOV_PIC_ELAN = 0.25;
     private static final double FOV_RETOUR_PROJECTION = 24.0;
     private static final double FOV_PIC_PROJECTION = 0.35;
-
-    // V par defaut : a verifier contre les touches de sorts des mods RPG Series du modpack (reaffectable dans Options > Commandes).
-    static final KeyMapping TOUCHE_LEST = new KeyMapping("key.donjon.lest", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V, "key.categories.donjon");
 
     /** Debut (temps de jeu, en ticks) du dernier tourbillon de chaque entite, d'apres le serveur. */
     private static final Map<Integer, Long> TOURBILLONS = new HashMap<>();
@@ -158,7 +153,7 @@ public final class CapeClient {
                 return;
             }
 
-            while (TOUCHE_LEST.consumeClick()) {
+            while (TouchesDonjon.LEST.consumeClick()) {
                 if (!CapeLesteeItem.porte(j)) {
                     continue;
                 }
@@ -182,6 +177,10 @@ public final class CapeClient {
             boolean avant = active;
             active = possible(j, avant);
             boolean sprint = mc.options.keySprint.isDown();
+            if (!active) {
+                while (TouchesDonjon.DASH.consumeClick()) {      // hors nage rapide, le dash ne s'accumule pas
+                }
+            }
             if (active) {
                 if (!avant) {
                     Vec3 v = j.getDeltaMovement();
@@ -200,7 +199,7 @@ public final class CapeClient {
                     nager(j, sprint);
                 }
                 if (mc.screen == null) {
-                    while (mc.options.keyAttack.consumeClick()) {
+                    while (TouchesDonjon.DASH.consumeClick()) {
                         long maintenant = mc.level.getGameTime();
                         if (CapeCalcul.rechargee(maintenant, dernierClic, Reglages.TOURBILLON_RECHARGE.get())) {
                             dernierClic = maintenant;
@@ -214,8 +213,12 @@ public final class CapeClient {
                             }
                         }
                     }
-                    // Le clic garde enfonce ne doit pas non plus miner ni declencher l'attaque de Better Combat.
-                    mc.options.keyAttack.setDown(false);
+                    if (TouchesDonjon.DASH.getKey().equals(mc.options.keyAttack.getKey())) {
+                        // Meme bouton que l'attaque (reglage par defaut) : le clic ne sert qu'au dash, il ne doit ni frapper, ni miner, ni declencher l'attaque de Better Combat.
+                        while (mc.options.keyAttack.consumeClick()) {
+                        }
+                        mc.options.keyAttack.setDown(false);
+                    }
                 }
             } else if (avant) {
                 if (!j.isInWater() && (projection > 0 || vy > 0.1)) {
@@ -634,7 +637,10 @@ public final class CapeClient {
     public static final class Enregistrement {
         @SubscribeEvent
         static void touches(RegisterKeyMappingsEvent evenement) {
-            evenement.register(TOUCHE_LEST);
+            evenement.register(TouchesDonjon.LEST);
+            evenement.register(TouchesDonjon.DASH);
+            evenement.register(TouchesDonjon.LACHER);
+            evenement.register(TouchesDonjon.PARAVOILE);
         }
 
         @SubscribeEvent

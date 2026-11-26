@@ -2,6 +2,7 @@
 # face est dessine (apercu_bbmodel.py ne prend que la couleur moyenne d'une face, trop grossier pour un casier de 16 x 32).
 # Faces cachees retirees, tri par profondeur, eclairage simple par orientation, rendu sur-echantillonne.
 #   python apercu_bbmodel_texture.py <modele.bbmodel> <sortie.png> [--anim <nom> --temps <s> [<s> ...]] [--textures a.png b.png ...]
+#          [--centre <y> --champ <pixels>]   (cadrage : hauteur visee et largeur du champ, en pixels de modele ; 16 et 44 par defaut)
 # Une colonne par vue (3/4 avant, face), une ligne par instant ; avec --textures : une ligne de plus, le modele avec chaque texture.
 import base64
 import io
@@ -28,7 +29,7 @@ def texture(modele, chemin=None):
     return Image.open(io.BytesIO(base64.b64decode(src))).convert("RGBA")
 
 
-def rendu(modele, tex, anim, t, lacet, tangage, echelle):
+def rendu(modele, tex, anim, t, lacet, tangage, echelle, centre_y=16):
     trans = transformations(modele, anim, t)
     vue = mul(rot_mat(tangage, 0, 0), rot_mat(0, lacet, 0))
     px = tex.load()
@@ -38,7 +39,6 @@ def rendu(modele, tex, anim, t, lacet, tangage, echelle):
         rc = rot_mat(*e.get("rotation", [0, 0, 0]))
         o = e.get("origin", [0, 0, 0])
         f = trans[e["uuid"]]
-        centre_y = 16
         for nom, coins in FACES.items():
             pts = []
             for c in coins:
@@ -92,7 +92,7 @@ def main():
     modele = json.load(open(args[0], encoding="utf-8"))
     sortie = args[1]
     anim = args[args.index("--anim") + 1] if "--anim" in args else None
-    options = ("--anim", "--temps", "--textures")
+    options = ("--anim", "--temps", "--textures", "--centre", "--champ")
 
     def liste(opt):
         if opt not in args:
@@ -106,17 +106,18 @@ def main():
     temps = [float(v) for v in liste("--temps")] or [0.0]
     autres = liste("--textures")
     vues = [("3/4 avant", -32, 16), ("face", 0, 0), ("3/4 interieur", 28, 10)]
-    echelle = CASE / 44
+    centre_y = float(args[args.index("--centre") + 1]) if "--centre" in args else 16.0     # hauteur visee, en pixels de modele
+    echelle = CASE / (float(args[args.index("--champ") + 1]) if "--champ" in args else 44.0)
     lignes = len(temps) + (1 if autres else 0)
     larg = max(len(vues), len(autres))
     planche = Image.new("RGB", (CASE * larg, CASE * lignes), FOND)
     tex = texture(modele)
     for ligne, t in enumerate(temps):
         for col, (nom, lacet, tangage) in enumerate(vues):
-            planche.paste(rendu(modele, tex, anim, t, lacet, tangage, echelle), (col * CASE, ligne * CASE))
+            planche.paste(rendu(modele, tex, anim, t, lacet, tangage, echelle, centre_y), (col * CASE, ligne * CASE))
             ImageDraw.Draw(planche).text((col * CASE + 8, ligne * CASE + 8), f"{nom}  {anim or 'repos'}  t = {t:.2f} s", fill=(0, 0, 0))
     for col, chemin in enumerate(autres):
-        planche.paste(rendu(modele, texture(modele, chemin), None, 0, -32, 16, echelle), (col * CASE, len(temps) * CASE))
+        planche.paste(rendu(modele, texture(modele, chemin), None, 0, -32, 16, echelle, centre_y), (col * CASE, len(temps) * CASE))
         ImageDraw.Draw(planche).text((col * CASE + 8, len(temps) * CASE + 8), Path(chemin).stem, fill=(0, 0, 0))
     planche.save(sortie)
     print("apercu ecrit :", sortie)

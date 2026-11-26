@@ -1,0 +1,64 @@
+{
+  "variants": {
+    "couleur=rouge,tournee=false,waterlogged=false": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=rouge,tournee=false,waterlogged=true": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=rouge,tournee=true,waterlogged=false": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=rouge,tournee=true,waterlogged=true": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=bleu,tournee=false,waterlogged=false": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=bleu,tournee=false,waterlogged=true": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=bleu,tournee=true,waterlogged=false": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=bleu,tournee=true,waterlogged=true": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=vert,tournee=false,waterlogged=false": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=vert,tournee=false,waterlogged=true": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=vert,tournee=true,waterlogged=false": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=vert,tournee=true,waterlogged=true": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=orange,tournee=false,waterlogged=false": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=orange,tournee=false,waterlogged=true": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=orange,tournee=true,waterlogged=false": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=orange,tournee=true,waterlogged=true": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=cyan,tournee=false,waterlogged=false": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=cyan,tournee=false,waterlogged=true": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=cyan,tournee=true,waterlogged=false": {
+      "model": "donjon:block/valve_station"
+    },
+    "couleur=cyan,tournee=true,waterlogged=true": {
+      "model": "donjon:block/valve_station"
+    }
+  }
+}

@@ -1,4 +1,4 @@
-// [claude-build] La Paravoile : une voile de planeur, comme dans Breath of the Wild. Elle se tient en main (principale ou secondaire) ;
+// [claude-build] La Paravoile : une voile de planeur, comme dans Breath of the Wild. Elle se tient en main (principale ou secondaire) ou se porte au dos (case d'Accessories) ;
 // en l'air, un appui sur ESPACE la deploie et on plane. Sa jauge d'endurance (la barre de durabilite) se vide en vol et se recharge au sol. Elle ne casse jamais.
 package fr.atelier.grappin;
 
@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
+
+import io.wispforest.accessories.api.AccessoriesCapability;
+import io.wispforest.accessories.api.slot.SlotEntryReference;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -44,14 +47,28 @@ public class ParavoileItem extends Item {
         return false;
     }
 
-    /** La paravoile que le joueur tient en main (principale d'abord, puis secondaire) ; vide s'il n'en tient pas : rangee dans l'inventaire, elle ne sert pas. */
+    /**
+     * La paravoile que le joueur tient en main (principale d'abord, puis secondaire), sinon celle qu'il porte dans la case « dos »
+     * d'Accessories (a cote de la cape) ; vide s'il n'en a ni en main ni au dos : rangee dans l'inventaire, elle ne sert pas.
+     */
     public static ItemStack trouver(Player joueur) {
         ItemStack principale = joueur.getItemBySlot(EquipmentSlot.MAINHAND);
         if (principale.getItem() instanceof ParavoileItem) {
             return principale;
         }
         ItemStack secondaire = joueur.getItemBySlot(EquipmentSlot.OFFHAND);
-        return secondaire.getItem() instanceof ParavoileItem ? secondaire : ItemStack.EMPTY;
+        if (secondaire.getItem() instanceof ParavoileItem) {
+            return secondaire;
+        }
+        return portee(joueur);
+    }
+
+    /** La paravoile portee dans une case d'Accessories (le dos), ou vide. */
+    public static ItemStack portee(LivingEntity entite) {
+        return AccessoriesCapability.getOptionally(entite)
+                .map(c -> c.getFirstEquipped(stack -> stack.getItem() instanceof ParavoileItem))
+                .map(SlotEntryReference::stack)
+                .orElse(ItemStack.EMPTY);
     }
 
     /** Secondes de vol qui restent, d'apres la jauge. */

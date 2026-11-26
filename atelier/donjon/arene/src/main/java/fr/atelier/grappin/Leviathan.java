@@ -31,10 +31,12 @@ public class Leviathan extends Monster {
     public static final int ANNEAUX = 8;
     public static final int QUEUE = 8;                       // indice de la queue parmi les pieces
     public static final int PERLE = 9;                       // indice de la perle
-    /** Cote de la boite de chaque piece : 8 anneaux, la queue, la perle. */
-    public static final float[] TAILLES = {4, 4, 4, 4, 4, 4, 4, 4, 3, 2.5F};
-    /** Le corps suit le chemin de la tete : chaque section est a ESPACEMENT blocs de la precedente le long de ce chemin (points espaces de 0,5 bloc), 36 blocs en tout. */
-    public static final double ESPACEMENT = 4.0;
+    /** La taille du serpent par rapport au premier modele (1 = 36 blocs de long, trop grand pour la salle) : boites, ecart entre les anneaux, perle et dessin la suivent. */
+    public static final float ECHELLE = 0.6F;
+    /** Cote de la boite de chaque piece : 8 anneaux, la queue, la perle (la perle reste un peu plus grosse que l'echelle : c'est le point faible a viser). */
+    public static final float[] TAILLES = {4 * ECHELLE, 4 * ECHELLE, 4 * ECHELLE, 4 * ECHELLE, 4 * ECHELLE, 4 * ECHELLE, 4 * ECHELLE, 4 * ECHELLE, 3 * ECHELLE, 2.0F};
+    /** Le corps suit le chemin de la tete : chaque section est a ESPACEMENT blocs de la precedente le long de ce chemin (points espaces de 0,5 bloc), une vingtaine de blocs en tout. */
+    public static final double ESPACEMENT = 4.0 * ECHELLE;
     private static final double PAS_CHEMIN = 0.5;
     private static final int HISTORIQUE_MAX = 120;
 
@@ -75,7 +77,7 @@ public class Leviathan extends Monster {
         return Monster.createMonsterAttributes()
                 .add(Attributes.MAX_HEALTH, 150.0)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0)
-                .add(Attributes.MOVEMENT_SPEED, 0.9)
+                .add(Attributes.MOVEMENT_SPEED, 0.75)
                 .add(Attributes.FOLLOW_RANGE, 128.0);
     }
 
@@ -127,9 +129,9 @@ public class Leviathan extends Monster {
         return positionSection(section, this.position());
     }
 
-    /** Position de la perle, la meme que celle du modele (a 1,5 bloc devant et 3 blocs au-dessus du centre de la tete) : elle depasse du dessus de la boite de la tete, donc un coup qui la vise la touche. */
+    /** Position de la perle, la meme que celle du modele (a 1,5 bloc devant et 3 blocs au-dessus du centre de la tete, a l'echelle du serpent) : elle depasse du dessus de la boite de la tete, donc un coup qui la vise la touche. */
     public Vec3 positionPerle() {
-        return this.position().add(0, this.getBbHeight() / 2, 0).add(this.getLookAngle().scale(1.5)).add(0, 3.0, 0);
+        return this.position().add(0, this.getBbHeight() / 2, 0).add(this.getLookAngle().scale(1.5 * ECHELLE)).add(0, 3.0 * ECHELLE, 0);
     }
 
     /** Positions des sections au tick precedent et au tick courant : le rendu les interpole, sinon les anneaux sautent a chaque tick. */
@@ -319,6 +321,18 @@ public class Leviathan extends Monster {
     protected void customServerAiStep() {
         super.customServerAiStep();
         this.barre.setProgress(this.getHealth() / this.getMaxHealth());
+        if (perleOuverte() && this.level() instanceof net.minecraft.server.level.ServerLevel niveau) {        // le point faible se voit de loin : colonne de lumiere sur la perle, carillon chaque seconde
+            Vec3 perle = positionPerle();
+            if (this.tickCount % 2 == 0) {
+                for (ServerPlayer j : niveau.getPlayers(p -> p.distanceToSqr(this) < 120 * 120)) {
+                    niveau.sendParticles(j, net.minecraft.core.particles.ParticleTypes.END_ROD, true, perle.x, perle.y + 1.0, perle.z, 4, 0.15, 1.6, 0.15, 0.02);
+                    niveau.sendParticles(j, net.minecraft.core.particles.ParticleTypes.GLOW, true, perle.x, perle.y, perle.z, 3, 0.5, 0.5, 0.5, 0.05);
+                }
+            }
+            if (this.tickCount % 20 == 0) {
+                niveau.playSound(null, perle.x, perle.y, perle.z, net.minecraft.sounds.SoundEvents.AMETHYST_BLOCK_CHIME, net.minecraft.sounds.SoundSource.HOSTILE, 4.0F, 0.8F);
+            }
+        }
         if (this.tickCount % 40 == 0) {                          // premiere cible, puis passage sur un joueur nettement plus proche
             Player proche = this.level().getNearestPlayer(this.getX(), this.getY(), this.getZ(), 128.0, e -> e instanceof Player p && p.isAlive() && !p.isCreative() && !p.isSpectator());
             if (proche != null && (this.getTarget() == null || (proche != this.getTarget() && proche.distanceToSqr(this) < this.getTarget().distanceToSqr(this) * 0.64))) {

@@ -5,10 +5,10 @@
 
 ## Ce qu'on fait avec
 
-- **Clic droit** : lance le crochet (portée 30 blocs, il vole tout droit). Il ne s'accroche qu'à un **point d'ancrage** (bloc `donjon:ancrage`) qu'il touche ou frôle à moins de **1 bloc** (le grappin 2 en tolérait 1,5 : il faut maintenant viser le point).
+- **Clic droit MAINTENU** (mod 4.7.0) : lance le crochet (portée 30 blocs, il vole tout droit). Il ne s'accroche qu'à un **point d'ancrage** (bloc `donjon:ancrage`) qu'il touche ou frôle à moins de **1 bloc** (le grappin 2 en tolérait 1,5 : il faut maintenant viser le point).
 - **Accroché**, on est **tiré en ligne droite** vers l'ancrage (départ progressif, 0,75 bloc par tick au maximum, soit 15 blocs/s ; on ralentit en arrivant). On s'arrête quand le centre du joueur est à **1,2 bloc** de l'ancrage : le crochet se détache tout seul, la vitesse est annulée et **la gravité reprend** (on tombe tout droit, donc sur la plateforme ou la rive qui est sous l'ancrage).
 - **Pas de balancier** : plus de corde, plus de clic maintenu, plus de molette (elle change de nouveau d'objet), plus de poussée des touches.
-- **Pendant la traction** : **Espace** lâche en route (on garde sa vitesse et on saute un peu), **s'accroupir** lâche aussi, et **un nouveau clic droit** lâche et relance aussitôt (enchaînement de points). Crochet encore en vol : un clic le rappelle.
+- **Pendant la traction** : **Espace** lâche en route (on garde sa vitesse et on saute un peu), **s'accroupir** lâche aussi, et **relâcher le clic droit lâche le crochet** (en vol comme accroché : il faut rester appuyé pour être tracté ; pour enchaîner deux points on relâche, puis on appuie de nouveau). Maintenir le clic ne relance pas : il faut un nouvel appui (`GrappinClient.Traction.clic` annule la répétition du clic ; tant qu'un crochet existe, `GrappinItem.use` ne fait rien).
 - **Sécurités** : si un bloc nous retient plus de 10 ticks (on ne se rapproche plus), le crochet se détache ; une traction ne dure jamais plus de 20 s ; pas de dégâts de chute pendant la traction (la chute compte à partir du lâcher).
 
 ## Réglages (`config/donjon-common.toml`)

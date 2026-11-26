@@ -95,10 +95,19 @@ public class Grappin {
                     .build("harpon_scaphandrier"));
     public static final DeferredItem<DeferredSpawnEggItem> SCAPHANDRIER_OEUF = ITEMS.register("scaphandrier_spawn_egg",
             () -> new DeferredSpawnEggItem(SCAPHANDRIER, 0xA0762F, 0x3E7A66, new Item.Properties()));
+    /** Le cristal des mers : le cristal de l'End recolore, qui soigne le Leviathan (comme les cristaux de l'Ender Dragon). */
+    public static final DeferredHolder<EntityType<?>, EntityType<CristalMarin>> CRISTAL = ENTITES.register("cristal_marin",
+            () -> EntityType.Builder.<CristalMarin>of(CristalMarin::new, MobCategory.MISC)
+                    .sized(2.0F, 2.0F)
+                    .fireImmune()
+                    .clientTrackingRange(16)
+                    .updateInterval(Integer.MAX_VALUE)
+                    .build("cristal_marin"));
+
     /** Le Leviathan, serpent de mer du Donjon 2 (boite de la tete de 5 x 5 blocs), et son oeuf d'apparition. */
     public static final DeferredHolder<EntityType<?>, EntityType<Leviathan>> LEVIATHAN = ENTITES.register("leviathan",
             () -> EntityType.Builder.<Leviathan>of(Leviathan::new, MobCategory.MONSTER)
-                    .sized(5.0F, 5.0F)
+                    .sized(5.0F * Leviathan.ECHELLE, 5.0F * Leviathan.ECHELLE)
                     .fireImmune()
                     .clientTrackingRange(16)
                     .updateInterval(1)                        // le corps suit le chemin de la tete : des mises a jour a chaque tick evitent un retard visible

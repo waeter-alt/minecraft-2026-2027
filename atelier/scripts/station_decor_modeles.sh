@@ -12,3 +12,7 @@ E=atelier/scripts/bbmodel_vers_bloc.py
 "$PY" "$E" "$S/douche.bbmodel" --objet
 "$PY" "$E" "$S/lavabo.bbmodel"
 "$PY" "$E" "$S/banc.bbmodel" --a-part pied_g_ --a-part pied_d_ --objet
+# les portes et barrages (atelier/scripts/station_portes_3d.py)
+"$PY" "$E" "$S/vanne_station.bbmodel" --objet
+"$PY" "$E" "$S/planche_station.bbmodel" --objet
+"$PY" "$E" "$S/plaque_station.bbmodel" --variantes plaque_haut:eteinte=plaque_haut,allumee=plaque_haut_actif --objet
