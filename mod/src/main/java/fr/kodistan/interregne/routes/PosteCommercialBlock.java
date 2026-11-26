@@ -136,6 +136,13 @@ public final class PosteCommercialBlock extends Block
             return;
         }
         final String target = toPost ? "poste → " + colonyA.getName() : colonyA.getName() + " → " + colonyB.getName();
+        // Former enemies now allied: their first trade road is the war road, laid again as a level 1 road
+        final int warRoad = toPost ? -1 : registry.warRoad(colonyA.getID(), colonyB.getID());
+        if (warRoad >= 0)
+        {
+            makePeace(level, player, pos, pair, warRoad, target, build);
+            return;
+        }
         final Studied studied = PLANS.get(pair);
         if (studied != null && level.getGameTime() - studied.at() <= PLAN_TICKS)
         {
@@ -268,6 +275,40 @@ public final class PosteCommercialBlock extends Block
         {
             say(player, "Chantier de la route lancé : " + plan.length() + " blocs, " + works(plan) + ", " + seconds + " s.", ChatFormatting.GOLD);
         }
+        level.playSound(null, pos, SoundEvents.ANVIL_PLACE, SoundSource.BLOCKS, 0.6F, 1.0F);
+    }
+
+    private static void makePeace(final ServerLevel level, final ServerPlayer player, final BlockPos pos, final RouteRegistry.Pair pair, final int road,
+                                  final String target, final boolean build)
+    {
+        final RouteRegistry registry = RouteRegistry.get(level.getServer());
+        if (!build)
+        {
+            say(player, "Route commerciale " + target + " : la route de guerre qui vous relie sera refaite en route de niveau 1. Sneak + clic droit pour lancer.",
+              ChatFormatting.GOLD);
+            return;
+        }
+        final RoutePlan plan = registry.plan(road);
+        if (plan == null)
+        {
+            // Laid before roads kept their plan: it cannot be laid again, it simply counts as a trade road now
+            registry.makePeace(road);
+            registry.broadcast();
+            say(player, "La route de guerre " + target + " devient votre route commerciale (niveau 1).", ChatFormatting.GOLD);
+            return;
+        }
+        BUSY.add(pair);
+        final int seconds = Math.max(MIN_SECONDS, Math.min(MAX_SECONDS, MIN_SECONDS + plan.length() / 100));
+        RouteSite.launch(level, new RouteBuilder(level, plan, RoadStyle.PATH, road), seconds, Component.literal("⚒ Route commerciale"), () -> {
+            BUSY.remove(pair);
+            final RouteRegistry now = RouteRegistry.get(level.getServer());
+            if (now.standing(road))
+            {
+                now.makePeace(road);
+                now.broadcast();
+            }
+        });
+        say(player, "Chantier lancé : la route de guerre " + target + " redevient une route commerciale, " + seconds + " s.", ChatFormatting.GOLD);
         level.playSound(null, pos, SoundEvents.ANVIL_PLACE, SoundSource.BLOCKS, 0.6F, 1.0F);
     }
 

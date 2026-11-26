@@ -92,6 +92,20 @@ public final class RouteProbe
     }
 
     /**
+     * A column of the live world seen as if the blocks `ignore` accepts were air: a road being rebuilt reads the
+     * ground under its own slabs.
+     */
+    public static Column ofIgnoring(final ServerLevel level, final int x, final int z, final java.util.function.Predicate<BlockState> ignore)
+    {
+        final ChunkAccess chunk = level.getChunk(x >> 4, z >> 4);
+        final BlockState air = Blocks.AIR.defaultBlockState();
+        return scan(pos -> {
+            final BlockState state = level.getBlockState(pos);
+            return ignore.test(state) ? air : state;
+        }, chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x & 15, z & 15), level.getMinBuildHeight(), x, z);
+    }
+
+    /**
      * Every column of a loaded chunk, without ever loading a neighbour: a tree leaning over the chunk border is
      * judged on what is loaded, and taken for a natural tree when that is not enough to tell.
      */
