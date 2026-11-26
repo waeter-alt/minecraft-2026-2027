@@ -6,6 +6,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.InterregneMod;
 import fr.kodistan.interregne.colony.RouteSite;
+import fr.kodistan.interregne.routes.plan.RoutePlan;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -52,7 +53,10 @@ public final class RoadUpgrade
         }
         final int from = registry.level(road);
         UNDER_WAY.add(road);
-        RouteSite.launch(level, new RoadDresser(level, registry.path(road), from), Config.ROAD_UPGRADE_SECONDS.get(),
+        // A road that kept its plan is laid again whole in its next style; an older one is dressed in place
+        final RoutePlan plan = registry.plan(road);
+        final RouteWork work = plan == null ? new RoadDresser(level, registry.path(road), from) : new RouteBuilder(level, plan, RoadStyle.of(from + 1), road);
+        RouteSite.launch(level, work, Config.ROAD_UPGRADE_SECONDS.get(),
           Component.literal("⚒ Route : niveau " + (from + 1)), () -> {
               UNDER_WAY.remove(road);
               final RouteRegistry now = RouteRegistry.get(level.getServer());

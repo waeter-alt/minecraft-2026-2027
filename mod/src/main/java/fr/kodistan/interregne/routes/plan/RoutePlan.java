@@ -34,6 +34,15 @@ public final class RoutePlan
         this.cost = cost;
     }
 
+    /**
+     * A plan as it was recorded once built, to rebuild the road at another level. Third-party claims are not
+     * remembered: the caller keeps off colony land itself.
+     */
+    public static RoutePlan restore(final int[] x, final int[] z, final int[] y, final byte[] mode, final boolean[] bend, final byte[] half)
+    {
+        return new RoutePlan(x, z, y, mode, bend, new Footprint(x, z, half, null), 0, false);
+    }
+
     public int length()
     {
         return x.length;
