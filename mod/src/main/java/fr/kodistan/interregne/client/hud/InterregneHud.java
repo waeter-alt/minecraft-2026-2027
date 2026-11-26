@@ -7,6 +7,9 @@ import fr.kodistan.interregne.client.hut.ClientDiplomacy;
 import fr.kodistan.interregne.client.hut.DiplomacyKey;
 import fr.kodistan.interregne.network.DiplomacySyncPayload;
 import fr.kodistan.interregne.politics.Alliances;
+import fr.kodistan.interregne.region.Crate;
+import fr.kodistan.interregne.region.CrateStores;
+import net.minecraft.world.effect.MobEffects;
 import fr.kodistan.interregne.economy.Wallet;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -96,6 +99,7 @@ public final class InterregneHud
     {
         event.registerAbove(VanillaGuiLayers.HOTBAR, ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "score"), InterregneHud::render);
         event.registerAbove(VanillaGuiLayers.HOTBAR, ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "war"), InterregneHud::renderWar);
+        event.registerAbove(VanillaGuiLayers.HOTBAR, ResourceLocation.fromNamespaceAndPath(InterregneMod.MODID, "crates"), InterregneHud::renderCrates);
     }
 
     /**
@@ -261,6 +265,46 @@ public final class InterregneHud
             return value < 10_000 ? String.format(java.util.Locale.FRANCE, "%.1fk", value / 1_000.0) : (value / 1_000) + "k";
         }
         return value < 10_000_000 ? String.format(java.util.Locale.FRANCE, "%.1fM", value / 1_000_000.0) : (value / 1_000_000) + "M";
+    }
+
+    /**
+     * Crates are heavy: while the player carries some, a small paper under the wallet shows how many, in red once they
+     * slow the player down. Nothing at all without crates. Whether they slow is read from the effect itself: the weight
+     * settings are the server's.
+     */
+    private static void renderCrates(final GuiGraphics graphics, final DeltaTracker delta)
+    {
+        final Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || minecraft.options.hideGui || minecraft.getDebugOverlay().showDebugScreen())
+        {
+            return;
+        }
+        final boolean fake = DevOverrides.crates != null;
+        final int carried = fake ? DevOverrides.crates : CrateStores.countAll(new PlayerMainInvWrapper(minecraft.player.getInventory()));
+        if (carried <= 0)
+        {
+            return;
+        }
+        final boolean slowed = fake || minecraft.player.hasEffect(MobEffects.MOVEMENT_SLOWDOWN);
+        final Font font = minecraft.font;
+        final double guiScale = minecraft.getWindow().getGuiScale();
+        final float scale = guiScale > 2 ? (float) (SCREEN_SIZE / guiScale) : 1F;
+        graphics.pose().pushPose();
+        graphics.pose().scale(scale, scale, 1);
+        final int right = (int) (graphics.guiWidth() / scale) - MARGIN;
+        // Just under the three papers of the wallet
+        final int top = MARGIN + LINE + PILL - 3 + TAB + 3;
+        final String count = Integer.toString(carried);
+        final int width = 3 + TAB_ICON + 2 + font.width(count) + 3;
+        final int left = right - width;
+        roundedPlate(graphics, left, top, right, top + TAB, PAPER, PAPER_EDGE, PAPER_LIGHT);
+        graphics.pose().pushPose();
+        graphics.pose().translate(left + 3, top + 2, 0);
+        graphics.pose().scale(TAB_ICON / 16F, TAB_ICON / 16F, 1);
+        graphics.renderItem(Crate.BOIS.stack(1), 0, 0);
+        graphics.pose().popPose();
+        graphics.drawString(font, count, left + 3 + TAB_ICON + 2, top + 4, slowed ? LOSS : INK, false);
+        graphics.pose().popPose();
     }
 
     /**

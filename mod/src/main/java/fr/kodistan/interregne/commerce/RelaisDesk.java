@@ -2,8 +2,13 @@ package fr.kodistan.interregne.commerce;
 
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
+import fr.kodistan.interregne.Config;
+import fr.kodistan.interregne.economy.RegionalTreasury;
 import fr.kodistan.interregne.economy.TreasuryPayment;
 import fr.kodistan.interregne.region.Crate;
+import fr.kodistan.interregne.region.ImperialMarket;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -44,6 +49,17 @@ public final class RelaisDesk
             }
             case RelaisActionPayload.ACCEPT -> notice = contracts.accept(player, player.server, colony, payload.contract());
             case RelaisActionPayload.CANCEL -> notice = contracts.cancel(player, colony, payload.contract());
+            case RelaisActionPayload.OPEN_ROUTE ->
+            {
+                final BlockPos market = ImperialGate.find(player.server, colony, payload.contract());
+                notice = market == null ? "Aucun Marché impérial n'a été posé." : ImperialRoutes.get(player.server).open(player.serverLevel(), colony, market);
+            }
+            case RelaisActionPayload.SELL_IMPERIAL ->
+            {
+                final BlockPos market = ImperialGate.find(player.server, colony, payload.contract());
+                final Crate crate = payload.crate() >= 0 && payload.crate() < Crate.values().length ? Crate.values()[payload.crate()] : null;
+                notice = market == null || crate == null ? "Vente invalide." : contracts.sellImperial(player, player.server, colony, market, crate, payload.quantity());
+            }
             default ->
             {
             }
@@ -69,7 +85,8 @@ public final class RelaisDesk
             final IColony buyer = IColonyManager.getInstance().getColonyByWorld(contract.buyer, player.server.overworld());
             final Crate crate = Crate.byId(contract.crate);
             final int percent = contract.state == Contract.OFFER || contract.path.length < 2 ? 0 : (int) Math.round(100.0 * contract.progress / (contract.path.length - 1));
-            rows.add(new RelaisStatePayload.Row(contract.id, contract.seller, seller == null ? "?" : seller.getName(), contract.buyer, buyer == null ? "?" : buyer.getName(),
+            rows.add(new RelaisStatePayload.Row(contract.id, contract.seller, seller == null ? "?" : seller.getName(), contract.buyer,
+              contract.imperial() ? "l'Empire" : buyer == null ? "?" : buyer.getName(),
               crate == null ? 0 : crate.ordinal(), contract.quantity, contract.unitPrice, contract.state, percent, contract.escort,
               contract.state == Contract.OFFER ? Escort.headcount(contract.escort) : contract.swordsmenLeft + contract.archersLeft));
         }
@@ -79,6 +96,26 @@ public final class RelaisDesk
             tiers.add(new RelaisStatePayload.Tier(Escort.cost(tier), Escort.swordsmen(tier), Escort.archers(tier)));
         }
         PacketDistributor.sendToPlayer(player, new RelaisStatePayload(colony.getID(), colony.getName(), Contracts.relaisLevel(colony), Contracts.capacity(colony),
-          TreasuryPayment.available(player, colony), notice == null ? "" : notice, partners, rows, tiers));
+          TreasuryPayment.available(player, colony), notice == null ? "" : notice, partners, rows, tiers, imperial(player.server, colony)));
+    }
+
+    private static RelaisStatePayload.Imperial imperial(final MinecraftServer server, final IColony colony)
+    {
+        final ImperialRoutes routes = ImperialRoutes.get(server);
+        final List<RelaisStatePayload.Dock> docks = new ArrayList<>();
+        for (final ImperialGate.Dock dock : ImperialGate.docks(server, colony.getCenter()))
+        {
+            final int state = routes.isOpen(colony.getID(), dock.pos()) ? RelaisStatePayload.Dock.OPEN
+                                : ImperialRoutes.isBuilding(colony.getID(), dock.pos()) ? RelaisStatePayload.Dock.BUILDING : RelaisStatePayload.Dock.CLOSED;
+            docks.add(new RelaisStatePayload.Dock(dock.pos().asLong(), dock.distance(), state));
+        }
+        final ImperialMarket market = ImperialMarket.get(server);
+        final int[] stock = new int[Crate.values().length];
+        for (final Crate crate : Crate.values())
+        {
+            stock[crate.ordinal()] = market.stock(crate);
+        }
+        return new RelaisStatePayload.Imperial(Config.IMPERIAL_ROAD_COST.get(), RegionalTreasury.get(server).balance(colony), Contracts.maxImperial(), stock,
+          ImperialMarket.sellCurve(), docks);
     }
 }

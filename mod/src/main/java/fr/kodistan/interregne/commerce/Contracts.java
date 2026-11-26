@@ -12,6 +12,7 @@ import fr.kodistan.interregne.politics.Alliances;
 import fr.kodistan.interregne.politics.Diplomacy;
 import fr.kodistan.interregne.region.Crate;
 import fr.kodistan.interregne.region.CrateStores;
+import fr.kodistan.interregne.region.ImperialMarket;
 import fr.kodistan.interregne.routes.RouteRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -418,6 +419,16 @@ public final class Contracts extends SavedData
         for (final Iterator<Contract> it = contracts.contracts.iterator(); it.hasNext(); )
         {
             final Contract contract = it.next();
+            if (contract.imperial())
+            {
+                // The Empire needs no alliance: its caravans have a road of their own and never turn back
+                if (contracts.tickImperial(server, level, contract, step, check))
+                {
+                    it.remove();
+                }
+                changed |= check;
+                continue;
+            }
             if (contract.state == Contract.OFFER)
             {
                 if (check && !mayTrade(server, contract.seller, contract.buyer))
@@ -500,7 +511,7 @@ public final class Contracts extends SavedData
         }
         final IColony seller = IColonyManager.getInstance().getColonyByWorld(contract.seller, level);
         final IColony buyer = IColonyManager.getInstance().getColonyByWorld(contract.buyer, level);
-        final String name = "Caravane " + (seller == null ? "?" : seller.getName()) + " → " + (buyer == null ? "?" : buyer.getName());
+        final String name = "Caravane " + (seller == null ? "?" : seller.getName()) + " → " + (contract.imperial() ? "l'Empire" : buyer == null ? "?" : buyer.getName());
         boolean added = false;
 
         final Entity mule = contract.puppet == null ? null : level.getEntity(contract.puppet);
@@ -936,6 +947,141 @@ public final class Contracts extends SavedData
         }
     }
 
+    // ------------------------------------------------------------------ the Empire
+
+    /**
+     * Largest caravan to the Empire.
+     */
+    public static int maxImperial()
+    {
+        return Math.min(MAX_QUANTITY, Config.IMPERIAL_MAX_CRATES.get());
+    }
+
+    /**
+     * A colony sells crates from its warehouse to the Empire: a caravan leaves along the colony's imperial road, and the
+     * price is only settled when it arrives.
+     *
+     * @return a refusal for the player, or null once the caravan has left.
+     */
+    @Nullable
+    public String sellImperial(@Nullable final ServerPlayer player, final MinecraftServer server, final IColony seller, final BlockPos market, final Crate crate,
+      final int quantity)
+    {
+        if (player != null && !seller.getPermissions().isColonyMember(player))
+        {
+            return "Vous ne faites pas partie de cette colonie.";
+        }
+        if (relaisLevel(seller) < 1)
+        {
+            return "Il faut un Relais commercial construit.";
+        }
+        final long[] path = ImperialRoutes.get(server).pathOf(seller.getID(), market);
+        if (path == null || path.length < 2)
+        {
+            return "Ouvrez d'abord la route impériale jusqu'au Marché.";
+        }
+        if (quantity < 1 || quantity > maxImperial())
+        {
+            return "Une caravane impériale porte de 1 à " + maxImperial() + " caisses.";
+        }
+        if (of(seller.getID()).size() >= capacity(seller))
+        {
+            return "Trop de contrats en cours : améliorez le Relais commercial ou attendez.";
+        }
+        if (stock(seller, crate) < quantity)
+        {
+            return "L'entrepôt n'a pas assez de " + crate.displayName().toLowerCase() + ".";
+        }
+        final int taken = CrateStores.extract(racks(seller), crate, quantity);
+        if (taken < quantity)
+        {
+            // Never lose crates: put back what came out
+            CrateStores.storeInWarehouse(seller, crate, taken);
+            return "L'entrepôt n'a pas pu fournir les caisses.";
+        }
+        final IBuilding warehouse = CrateStores.warehouse(seller);
+        if (warehouse != null)
+        {
+            warehouse.markDirty();
+        }
+        dispatchImperial(server, seller.getID(), crate, quantity, path);
+        Diplomacy.notifyMembers(server, seller, "La caravane de " + quantity + " × " + crate.displayName().toLowerCase() + " part vendre à l'Empire.");
+        return null;
+    }
+
+    /**
+     * Sends a caravan to the Empire with crates already taken from the warehouse. Its {@code unitPrice} is the average of
+     * today's offer, only an estimate.
+     */
+    public Contract dispatchImperial(final MinecraftServer server, final int seller, final Crate crate, final int quantity, final long[] path)
+    {
+        final long estimate = ImperialMarket.get(server).sellTotal(crate, quantity);
+        final Contract contract = new Contract(nextId++, seller, Contract.IMPERIAL, crate.id(), quantity, Math.max(1, Math.round((double) estimate / quantity)));
+        contract.path = path.clone();
+        contract.left = quantity;
+        contract.state = Contract.TRANSIT;
+        contracts.add(contract);
+        setDirty();
+        return contract;
+    }
+
+    /**
+     * The caravan is at the Marché: the crates join the Empire's stock at the price of that moment (each one lowering the
+     * next), and the colony's treasury is paid.
+     *
+     * @return what was paid.
+     */
+    public static long settle(final MinecraftServer server, @Nullable final IColony seller, final Contract contract)
+    {
+        final Crate crate = Crate.byId(contract.crate);
+        if (crate == null)
+        {
+            return 0;
+        }
+        final ImperialMarket market = ImperialMarket.get(server);
+        final long paid = market.sellTotal(crate, contract.left);
+        market.setStock(crate, market.stock(crate) + contract.left);
+        contract.left = 0;
+        if (seller != null)
+        {
+            RegionalTreasury.get(server).credit(seller, paid);
+        }
+        return paid;
+    }
+
+    private boolean tickImperial(final MinecraftServer server, final ServerLevel level, final Contract contract, final double step, final boolean check)
+    {
+        contract.engaged = updateEngaged(level, contract);
+        if (!contract.engaged)
+        {
+            contract.progress = Math.min(contract.path.length - 1, contract.progress + step);
+        }
+        if (contract.progress >= contract.path.length - 1)
+        {
+            final IColony seller = IColonyManager.getInstance().getColonyByWorld(contract.seller, level);
+            final Crate crate = Crate.byId(contract.crate);
+            final int count = contract.quantity;
+            removePuppet(level, contract);
+            effects(level, contract, true);
+            final long paid = settle(server, seller, contract);
+            if (seller != null && crate != null)
+            {
+                Diplomacy.notifyMembers(server, seller, "La caravane de " + count + " × " + crate.displayName().toLowerCase() + " est arrivée chez l'Empire : " + paid
+                                                           + " ont été versés au trésor régional.");
+            }
+            return true;
+        }
+        if (check)
+        {
+            showOrHide(server, level, contract, playerNear(level, contract.cell((int) contract.progress)));
+        }
+        else
+        {
+            movePuppet(level, contract);
+        }
+        return false;
+    }
+
     // ------------------------------------------------------------------ pillage
 
     /**
@@ -1006,7 +1152,7 @@ public final class Contracts extends SavedData
         for (final IColony colony : IColonyManager.getInstance().getColonies(level))
         {
             if (colony.getID() != seller && colony.getID() != buyer && colony.getPermissions().isColonyMember(player)
-                  && (Diplomacy.mayAssault(level.getServer(), colony.getID(), seller) || Diplomacy.mayAssault(level.getServer(), colony.getID(), buyer)))
+                  && (Diplomacy.mayAssault(level.getServer(), colony.getID(), seller) || buyer != Contract.IMPERIAL && Diplomacy.mayAssault(level.getServer(), colony.getID(), buyer)))
             {
                 return true;
             }
@@ -1060,7 +1206,7 @@ public final class Contracts extends SavedData
         }
         if (seller != null)
         {
-            Diplomacy.notifyMembers(level.getServer(), seller, "§cVotre caravane vers " + (buyer == null ? "?" : buyer.getName()) + " a été pillée§r : les caisses sont perdues.");
+            Diplomacy.notifyMembers(level.getServer(), seller, "§cVotre caravane vers " + (contract.imperial() ? "l'Empire" : buyer == null ? "?" : buyer.getName()) + " a été pillée§r : les caisses sont perdues.");
         }
         contracts.contracts.remove(contract);
         // The rest of the caravan (the other half of the pair, the soldiers) goes with it

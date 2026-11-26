@@ -118,6 +118,10 @@ public final class UiScenarios
                         }
                     }
                 }
+                case "hud-caisses" -> targets.add(new Target("hud-caisses", () -> {
+                    Minecraft.getInstance().setScreen(null);
+                    DevOverrides.crates = 23;
+                }));
                 case "hud-war" -> targets.add(new Target("hud-war", () -> {
                     Minecraft.getInstance().setScreen(null);
                     DevOverrides.war = true;
@@ -406,8 +410,22 @@ public final class UiScenarios
       final List<RelaisStatePayload.Partner> partners, final java.util.function.IntFunction<List<RelaisStatePayload.Row>> rows, final List<RelaisStatePayload.Tier> tiers,
       final int escort)
     {
+        relais(colony, tab, level, capacity, available, notice, partners, rows, tiers, escort, RelaisStatePayload.Imperial.NONE);
+    }
+
+    private static void relais(final IColonyView colony, final String tab, final int level, final int capacity, final long available, final String notice,
+      final List<RelaisStatePayload.Partner> partners, final java.util.function.IntFunction<List<RelaisStatePayload.Row>> rows, final List<RelaisStatePayload.Tier> tiers,
+      final int escort, final RelaisStatePayload.Imperial imperial)
+    {
         ownBody(colony, "relais_commercial", tab, b -> HutBodies.preview(
-          new RelaisStatePayload(b.getColony().getID(), "Vielle Ville", level, capacity, available, notice, partners, rows.apply(b.getColony().getID()), tiers), escort));
+          new RelaisStatePayload(b.getColony().getID(), "Vielle Ville", level, capacity, available, notice, partners, rows.apply(b.getColony().getID()), tiers, imperial), escort));
+    }
+
+    /** The Empire's price curve as the server sends it: base stock 100, base sell price 10, elasticity 1, factor between 0.5 and 2. */
+    private static RelaisStatePayload.Imperial imperial(final int state, final long treasury)
+    {
+        return new RelaisStatePayload.Imperial(400, treasury, 64, new int[] {140, 100, 60, 100, 100}, new double[] {100, 10, 1, 0.5, 2},
+          List.of(new RelaisStatePayload.Dock(1L, 840, state), new RelaisStatePayload.Dock(2L, 1_920, RelaisStatePayload.Dock.CLOSED)));
     }
 
     private static void blocks(final List<Target> targets, final String arg, final IColonyView colony)
@@ -446,6 +464,11 @@ public final class UiScenarios
         blocks.put("relais-offre", () -> relais(colony, "offre", 2, 4, 5_000, "", partners, relaisRows, tiers, 0));
         blocks.put("relais-escorte", () -> relais(colony, "offre", 3, 6, 5_000, "", partners, relaisRows, tiers, 2));
         blocks.put("relais-escorte-chere", () -> relais(colony, "offre", 5, 10, 300, "", partners, relaisRows, tiers, 5));
+        blocks.put("relais-empire-ferme", () -> relais(colony, "empire", 2, 4, 5_000, "", partners, relaisRows, tiers, 0, imperial(RelaisStatePayload.Dock.CLOSED, 5_000)));
+        blocks.put("relais-empire-pauvre", () -> relais(colony, "empire", 2, 4, 120, "", partners, relaisRows, tiers, 0, imperial(RelaisStatePayload.Dock.CLOSED, 120)));
+        blocks.put("relais-empire-ouvert", () -> relais(colony, "empire", 2, 4, 5_000, "", partners, relaisRows, tiers, 0, imperial(RelaisStatePayload.Dock.OPEN, 5_000)));
+        blocks.put("relais-empire-chantier", () -> relais(colony, "empire", 2, 4, 5_000, "", partners, relaisRows, tiers, 0, imperial(RelaisStatePayload.Dock.BUILDING, 5_000)));
+        blocks.put("relais-empire-aucun", () -> relais(colony, "empire", 2, 4, 5_000, "", partners, relaisRows, tiers, 0, RelaisStatePayload.Imperial.NONE));
         blocks.put("relais-refus", () -> relais(colony, null, 1, 2, 20, "L'entrepôt n'a pas assez de caisses de bois.", List.of(), cid -> List.of(), tiers, 0));
         blocks.put("garnison", () -> ownBody(colony, "combatacademy", null, b -> HutBodies.preview(
           new fr.kodistan.interregne.garrison.GarrisonStatePayload(b.getColony().getID(), 0, 3, 220, 5_000, 4, 7, 12, ""))));
@@ -543,6 +566,6 @@ public final class UiScenarios
 
     static String describe()
     {
-        return Arrays.toString(new String[] {"hub:<page|all>", "hubtool:<tool|all>", "building:<type|all>", "citizen:<n>", "hud", "hud-war", "block:<name|all> (dont relais, relais-escorte, carte)", "catalogue"});
+        return Arrays.toString(new String[] {"hub:<page|all>", "hubtool:<tool|all>", "building:<type|all>", "citizen:<n>", "hud", "hud-war", "hud-caisses", "block:<name|all> (dont relais, relais-escorte, carte)", "catalogue"});
     }
 }

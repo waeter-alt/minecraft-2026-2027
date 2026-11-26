@@ -159,7 +159,12 @@ Pour tester contrats et caravanes sans client, sur un serveur de test (`./gradle
 /commerce retirer 1 2           # la colonie 1 retire son offre n° 2 (l'escorte payée est rendue)
 /commerce etat                  # stocks, trésors et contrats (progression sur la route)
 /commerce chantier 1 [niveau]   # pose un Relais non construit et construit le niveau voulu (1 par défaut, hôtel de ville relevé si besoin)
+/commerce empire marches        # les Marchés impériaux connus, du plus proche de toi au plus loin
+/commerce empire 1 route        # la colonie 1 ouvre sa route impériale vers le Marché le plus proche (payée par son trésor)
+/commerce empire 1 vendre bois 20   # une caravane de 20 caisses part vendre à l'Empire (route ouverte et Relais exigés)
 ```
+
+Vente à l'Empire : les `ImperialTradeTests` (GameTests) couvrent la route payée par le trésor (et refusée sans fonds, remboursée si elle échoue), la caravane payée au prix du stock à l'arrivée et non au départ, son arrivée par le tick, son pillage, et la Lenteur selon le nombre de caisses (plafonnée). Une vraie route ne se teste qu'en jeu : `/commerce relais 1 1`, `/commerce tresor 1 1000`, un bloc `marche_imperial` posé, puis `/commerce empire 1 route` ; la route se construit seule et une caravane peut ensuite partir. UiShot : `screen=block:relais-empire-ferme` (et `-pauvre`, `-ouvert`, `-chantier`, `-aucun`) et `screen=hud-caisses`.
 
 Une caravane parcourt la route à `caravanBlocksPerSecond` (3 par défaut). Sans joueur à moins de `caravanShowDistance` blocs, elle n'avance que sur le papier ; l'animal n'apparaît que près d'un joueur (couvert par `CommerceTests`, lancés avec `runGameTestServer`). `/diplomatie rompre 1 2` pendant le trajet rend les caisses au vendeur et le prix à l'acheteur.
 

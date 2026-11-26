@@ -44,10 +44,21 @@ public class MarketBlock extends Block
     {
         if (player instanceof ServerPlayer serverPlayer)
         {
+            // A market placed before the registry existed gets known the first time it is used
+            MarketSites.get(serverPlayer.server).add(pos.immutable());
             sendWindow(serverPlayer, pos);
             level.playSound(null, pos, SoundEvents.VILLAGER_TRADE, SoundSource.BLOCKS, 0.5F, 1.0F);
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    @Override
+    protected void onPlace(final BlockState state, final Level level, final BlockPos pos, final BlockState oldState, final boolean movedByPiston)
+    {
+        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel && !state.is(oldState.getBlock()))
+        {
+            MarketSites.get(serverLevel.getServer()).add(pos.immutable());
+        }
     }
 
     public static void onAction(final RegionActionPayload payload, final ServerPlayer player)
