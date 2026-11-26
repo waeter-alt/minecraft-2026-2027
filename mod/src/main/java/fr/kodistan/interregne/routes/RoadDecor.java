@@ -418,7 +418,7 @@ final class RoadDecor
             {
                 for (int yy = base + 1; yy < y; yy++)
                 {
-                    put(out, x, yy, z, state(Blocks.BLACKSTONE));
+                    put(out, x, yy, z, state(Blocks.POLISHED_BLACKSTONE));
                 }
                 put(out, x, y, z, state(Blocks.IRON_BARS));
             }
@@ -631,7 +631,7 @@ final class RoadDecor
         {
             for (int w = 1; w <= 2; w++)
             {
-                f.column(u, w, 1, 9, state(Blocks.BLACKSTONE));
+                f.column(u, w, 1, 9, state(Blocks.POLISHED_BLACKSTONE));
                 if ((Math.abs(u) == 7) == (w == 1))
                 {
                     f.set(u, 10, w, state(Blocks.POLISHED_BLACKSTONE_BRICKS));
@@ -754,7 +754,7 @@ final class RoadDecor
                 {
                     for (int v = 1; v <= 15; v++)
                     {
-                        if (w == 0 && Math.abs(u) <= 4 || w < 0 && v < 8 || opening(u, v, w))
+                        if (w == 0 && Math.abs(u) <= 4 && v <= 6 || w < 0 && v < 8 || opening(u, v, w))
                         {
                             continue;
                         }

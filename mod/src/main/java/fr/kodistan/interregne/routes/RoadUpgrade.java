@@ -47,7 +47,7 @@ public final class RoadUpgrade
     public static boolean start(final ServerLevel level, final int road)
     {
         final RouteRegistry registry = RouteRegistry.get(level.getServer());
-        if (!registry.standing(road) || UNDER_WAY.contains(road) || registry.level(road) >= RoadLevels.MAX)
+        if (!registry.standing(road) || registry.war(road) || UNDER_WAY.contains(road) || registry.level(road) >= RoadLevels.MAX)
         {
             return false;
         }

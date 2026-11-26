@@ -73,7 +73,7 @@ public final class WarRoad
                 BUILDING.remove(pair);
                 final RouteRegistry registry = RouteRegistry.get(level.getServer());
                 registry.linkColonies(a, b);
-                registry.record(plan, endA, endB);
+                registry.record(plan, endA, endB, true);
                 registry.broadcast();
                 tell(level, a, "⚔ La route de guerre est achevée : les troupes peuvent marcher.");
                 tell(level, b, "⚔ La route de guerre de l'ennemi atteint vos terres.");

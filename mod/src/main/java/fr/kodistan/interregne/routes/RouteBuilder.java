@@ -481,7 +481,8 @@ public final class RouteBuilder implements RouteWork
         {
             return;
         }
-        final RouteProbe.Column column = probe(x, z);
+        // Rebuilding, an older deck's own blocks are never the ground, not even the earth of a war road's ruts
+        final RouteProbe.Column column = rebuilding < 0 ? RouteProbe.of(level, x, z) : RouteProbe.ofIgnoring(level, x, z, RoadStyle::ours);
         if (column.blocked() || column.lava())
         {
             return;
@@ -509,7 +510,7 @@ public final class RouteBuilder implements RouteWork
             }
             if (rebuilding >= 0)
             {
-                clearLaidBelow(out, x, z, y, column.base());
+                clearLaidBelow(out, x, z, y, column);
             }
             if (square && side == 4)
             {
@@ -523,7 +524,7 @@ public final class RouteBuilder implements RouteWork
         }
         if (rebuilding >= 0)
         {
-            clearLaidBelow(out, x, z, y, column.base());
+            clearLaidBelow(out, x, z, y, column);
         }
         if (style.timberBridge())
         {
@@ -535,13 +536,21 @@ public final class RouteBuilder implements RouteWork
         }
     }
 
-    private void clearLaidBelow(final List<RouteStep> out, final int x, final int z, final int y, final int base)
+    /** Down from under the deck, an older deck's masonry and piles go, as far as the first block of real ground. */
+    private void clearLaidBelow(final List<RouteStep> out, final int x, final int z, final int y, final RouteProbe.Column column)
     {
-        for (int yy = y - 1; yy > base; yy--)
+        // Under the river's surface a pier gives its place back to the water, not to a pocket of air
+        final int waterTop = column.wet() ? column.ground() : Integer.MIN_VALUE;
+        for (int yy = y - 1; yy > Math.min(column.base(), y - 1) - MAX_PIER && yy > level.getMinBuildHeight(); yy--)
         {
-            if (laid(level.getBlockState(cursor.set(x, yy, z))))
+            final BlockState state = level.getBlockState(cursor.set(x, yy, z));
+            if (laid(state))
             {
-                out.add(new RouteStep(cursor.immutable(), AIR));
+                out.add(new RouteStep(cursor.immutable(), yy <= waterTop ? Blocks.WATER.defaultBlockState() : AIR));
+            }
+            else if (!state.isAir() && state.getFluidState().isEmpty())
+            {
+                return;
             }
         }
     }
@@ -550,11 +559,16 @@ public final class RouteBuilder implements RouteWork
     private void timberDeck(final List<RouteStep> out, final int i, final int x, final int z, final int d2, final RouteProbe.Column column)
     {
         final boolean path = style == RoadStyle.PATH;
+        final int y = plan.y[i];
         if (path && d2 > 2)
         {
+            // The plank way is three wide: the rest of a wider deck it replaces goes
+            if (rebuilding >= 0 && RoadStyle.ours(level.getBlockState(cursor.set(x, y, z))))
+            {
+                out.add(new RouteStep(cursor.immutable(), AIR));
+            }
             return;
         }
-        final int y = plan.y[i];
         final Direction dir = travel[i] == null ? Direction.EAST : travel[i];
         final boolean edge = path ? d2 >= 1 : d2 >= 9;
         final int role = roles[i];

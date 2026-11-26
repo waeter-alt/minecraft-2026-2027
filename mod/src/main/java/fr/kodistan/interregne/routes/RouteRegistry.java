@@ -56,16 +56,21 @@ public final class RouteRegistry extends SavedData
      * B colony's gate (a T junction) has colony B 0, and joinRoad/joinAt say which road and which of its cells.
      */
     private record Road(int[] x, int[] y, int[] z, int colonyA, int gateA, int colonyB, int gateB, int pairA, int pairB, @Nullable Decay decay, int level,
-                        int joinRoad, int joinAt, @Nullable Shape shape)
+                        int joinRoad, int joinAt, @Nullable Shape shape, boolean war)
     {
         Road withEnds(final int a, final int gA, final int b, final int gB)
         {
-            return new Road(x, y, z, a, gA, b, gB, pairA, pairB, decay, level, joinRoad, joinAt, shape);
+            return new Road(x, y, z, a, gA, b, gB, pairA, pairB, decay, level, joinRoad, joinAt, shape, war);
         }
 
         Road withLevel(final int next)
         {
-            return new Road(x, y, z, colonyA, gateA, colonyB, gateB, pairA, pairB, decay, next, joinRoad, joinAt, shape);
+            return new Road(x, y, z, colonyA, gateA, colonyB, gateB, pairA, pairB, decay, next, joinRoad, joinAt, shape, war);
+        }
+
+        Road atPeace()
+        {
+            return new Road(x, y, z, colonyA, gateA, colonyB, gateB, pairA, pairB, decay, 1, joinRoad, joinAt, shape, false);
         }
     }
 
@@ -200,6 +205,37 @@ public final class RouteRegistry extends SavedData
         return colonyLinks.contains(Pair.ofColonies(a, b));
     }
 
+    public boolean war(final int road)
+    {
+        return roads.get(road).war();
+    }
+
+    /**
+     * The standing war road between these two colonies, -1 when there is none.
+     */
+    public int warRoad(final int a, final int b)
+    {
+        for (int i = 0; i < roads.size(); i++)
+        {
+            final Road road = roads.get(i);
+            if (road.war() && standing(i) && (road.pairA() == a && road.pairB() == b || road.pairA() == b && road.pairB() == a))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * A war road the two colonies have turned into their trade road: level 1, and raised like any other from now on.
+     */
+    public void makePeace(final int road)
+    {
+        roads.set(road, roads.get(road).atPeace());
+        levels = null;
+        setDirty();
+    }
+
     public void link(final BlockPos a, final BlockPos b)
     {
         if (links.add(Pair.of(a, b)))
@@ -212,6 +248,15 @@ public final class RouteRegistry extends SavedData
      * Remembers a route once built, so later ones can see it.
      */
     public void record(final RoutePlan plan, @Nullable final RouteEnds.End endA, @Nullable final RouteEnds.End endB)
+    {
+        record(plan, endA, endB, false);
+    }
+
+    /**
+     * @param war a war road: it links the two colonies for the troops, but is never raised and gives way to their
+     *            first trade road once they are allies
+     */
+    public void record(final RoutePlan plan, @Nullable final RouteEnds.End endA, @Nullable final RouteEnds.End endB, final boolean war)
     {
         int count = 0;
         for (int i = 0; i < plan.length(); i++)
@@ -245,7 +290,7 @@ public final class RouteRegistry extends SavedData
         }
         final boolean hooked = joinRoad < 0;
         final Road road = new Road(new int[count], new int[count], new int[count], colA, endA == null ? -1 : endA.gate(),
-          hooked ? colB : 0, hooked && endB != null ? endB.gate() : -1, colA, colB, null, 1, joinRoad, joinAt, Shape.of(plan));
+          hooked ? colB : 0, hooked && endB != null ? endB.gate() : -1, colA, colB, null, 1, joinRoad, joinAt, Shape.of(plan), war);
         int at = 0;
         for (int i = 0; i < plan.length(); i++)
         {
@@ -372,7 +417,7 @@ public final class RouteRegistry extends SavedData
             }
             if (decay.remaining <= 0)
             {
-                roads.set(i, new Road(new int[0], new int[0], new int[0], 0, -1, 0, -1, road.pairA(), road.pairB(), null, 1, -1, -1, null));
+                roads.set(i, new Road(new int[0], new int[0], new int[0], 0, -1, 0, -1, road.pairA(), road.pairB(), null, 1, -1, -1, null, false));
                 finished = true;
             }
         }
@@ -863,7 +908,7 @@ public final class RouteRegistry extends SavedData
               road.contains("level") ? Math.max(1, road.getInt("level")) : 1, road.contains("joinRoad") ? road.getInt("joinRoad") : -1,
               road.contains("joinAt") ? road.getInt("joinAt") : -1, road.contains("shapeMode") ? new Shape(road.getIntArray("shapeX"),
               road.getIntArray("shapeY"), road.getIntArray("shapeZ"), road.getByteArray("shapeMode"), road.getByteArray("shapeHalf"),
-              road.getByteArray("shapeBend")) : null));
+              road.getByteArray("shapeBend")) : null, road.getBoolean("war")));
         }
         final long[] low = tag.getLongArray("linksLow");
         final long[] high = tag.getLongArray("linksHigh");
@@ -904,6 +949,10 @@ public final class RouteRegistry extends SavedData
             entry.putInt("level", road.level());
             entry.putInt("joinRoad", road.joinRoad());
             entry.putInt("joinAt", road.joinAt());
+            if (road.war())
+            {
+                entry.putBoolean("war", true);
+            }
             if (road.shape() != null)
             {
                 entry.putIntArray("shapeX", road.shape().x());

@@ -66,6 +66,15 @@ public final class RouteDev
     public static CompletableFuture<String> build(final ServerLevel level, final BlockPos a, final BlockPos b, final boolean show,
       final int roadLevel, final boolean war)
     {
+        return build(level, a, b, show, roadLevel, war, false);
+    }
+
+    /**
+     * @param peace laid as a war road, then laid again as the level 1 road its colonies open once allied
+     */
+    public static CompletableFuture<String> build(final ServerLevel level, final BlockPos a, final BlockPos b, final boolean show,
+      final int roadLevel, final boolean war, final boolean peace)
+    {
         final CompletableFuture<String> result = new CompletableFuture<>();
         final long started = System.currentTimeMillis();
         final BlockPos from = foot(level, a.getX(), a.getZ());
@@ -104,8 +113,17 @@ public final class RouteDev
                     blocks += lay(level, builder.slice(i));
                 }
                 final RouteRegistry registry = RouteRegistry.get(level.getServer());
-                registry.record(plan, null, null);
+                registry.record(plan, null, null, war);
                 final int road = registry.roadCount() - 1;
+                if (war && peace)
+                {
+                    final RouteBuilder rebuild = new RouteBuilder(level, registry.plan(road), RoadStyle.PATH, road);
+                    for (int i = 0; i < rebuild.cells(); i++)
+                    {
+                        blocks += lay(level, rebuild.slice(i));
+                    }
+                    registry.makePeace(road);
+                }
                 // Raised the way an upgrade does it: the whole road laid again over itself, one level at a time
                 for (int done = 1; done < roadLevel && !war; done++)
                 {
