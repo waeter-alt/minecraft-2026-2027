@@ -106,6 +106,7 @@ public final class Diplomacy
                     return "Pas d'alliance en temps de guerre : faites d'abord la paix.";
                 }
                 alliances.doPropose(me, you);
+                rewardIfAllied(server, alliances, colony, other);
             }
             case DiplomacyActionPayload.ACCEPT ->
             {
@@ -114,6 +115,7 @@ public final class Diplomacy
                     return "Pas d'alliance en temps de guerre : faites d'abord la paix.";
                 }
                 alliances.doAccept(me, you);
+                rewardIfAllied(server, alliances, colony, other);
             }
             case DiplomacyActionPayload.WITHDRAW -> alliances.doWithdraw(me, you);
             // Les routes restent après une rupture (décision 19/11) : le lien est gardé pour une réalliance.
@@ -297,6 +299,15 @@ public final class Diplomacy
         }
         settle(server, attacker, defender, WarRecapPayload.ABANDON,
           "§a" + attacker.getName() + " abandonne§r la guerre contre " + defender.getName() + ".", 0);
+    }
+
+    /** An alliance stands between the two (a proposal can complete a crossing one): its signing earns Influence once per pair. */
+    private static void rewardIfAllied(final MinecraftServer server, final Alliances alliances, final IColony a, final IColony b)
+    {
+        if (alliances.areAllied(a.getID(), b.getID()))
+        {
+            InfluenceSources.allianceSigned(server, alliances, a, b);
+        }
     }
 
     /**

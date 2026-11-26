@@ -18,6 +18,7 @@ Une colonie prospère grâce à son économie et à ses routes. Elle peut s'alli
 | Butin | En place : 25 couronnes par niveau de bâtiment détruit, versées au trésor régional de l'attaquant |
 | Bouton « Tout reconstruire » | **Fait** (la note « à faire » de ma mémoire était périmée) |
 | Dîme, édits, présence | En place (sources d'Influence) |
+| Influence des interactions | **Fait** (26/11) : voir « Sources d'Influence » ci-dessous |
 
 ## La boucle proposée
 
@@ -35,7 +36,7 @@ Une colonie prospère grâce à son économie et à ses routes. Elle peut s'alli
 1. **Fin de guerre.** Aujourd'hui seul le déclarant peut y mettre fin, par la paix. Le défenseur ne peut rien faire et il n'y a pas de victoire.
 2. **Bouclier du perdant.** Décidé en principe le 04/11, absent du code. Une colonie peut être rasée en boucle.
 3. **Butin créé de rien.** Le trésor de l'attaquant est crédité, celui du défenseur n'est pas débité. La décision du 03/11 prévoyait un pillage plafonné avec une réserve inviolable.
-4. **Influence non branchée.** Elle ne vient que de la présence, de la dîme et des édits. Ni la guerre ni le commerce n'en donnent, alors que c'est elle qui décide du couronnement.
+4. **Influence non branchée** (réglé, voir « Sources d'Influence »). Elle ne venait que de la présence, de la dîme, des édits et de la victoire.
 5. **Route de guerre automatique.** Décidée le 19/11, absente de la déclaration de guerre : les troupes marchent à travers champs.
 6. **Rupture d'alliance et routes.** Le code fait encore disparaître la route, contre la décision du 19/11 (« les routes restent »). C'est un reste à corriger.
 7. **Garnison achetée.** Gardes achetés depuis l'Académie et l'Archerie, caserne, tours : décidée le 19/11. Je n'ai pas pu confirmer dans le code que tout soit livré, à vérifier.
@@ -84,3 +85,17 @@ Puits d'or : constructions, Intendance, caisses de matériaux, frais de guerre, 
 7. **Test de bout en bout** : un scénario multi-colonies qui joue toute la boucle (alliance, commerce, rupture, guerre, aide, victoire, reconstruction).
 
 La diplomatie et la fin de guerre touchent à une architecture durable : j'attends ta validation avant de les coder.
+
+## Sources d'Influence (PR 4, 26/11)
+
+L'Influence est par joueur et va au **propriétaire de la colonie**, comme la victoire. Le commerce n'en donne jamais, et l'or ne se convertit pas en Influence. Montants réglables dans la config :
+
+| Source | Défaut | Règle |
+|---|---|---|
+| Victoire de guerre, reddition (déjà là) | 50 | `warVictoryInfluence` |
+| Assaut repoussé | 12 | défenseur, à chaque assaut qui finit par la mort de toutes les troupes ou le chrono à zéro (`influenceRepelled`) ; rappel, `stopAll` et arrêt du serveur ne comptent pas |
+| Aide de clan utile | 12 | chaque allié dont le contingent était chez le défenseur à la fin d'un assaut repoussé, une fois par allié et par assaut (`influenceAllyAid`) |
+| Alliance signée | 10 | les deux colonies, une seule fois par paire et par partie, même après rupture et nouvelle alliance ; mémorisé dans `Alliances` (`influenceAllianceSigned`) |
+| Alliance qui dure | 1 | par jour Minecraft complet (24000 ticks) d'alliance active, pour chaque colonie de la paire ; un seul jour payé après une longue interruption, pas de rattrapage (`influenceAllianceDaily`) |
+
+Repères : la déclaration de guerre coûte 20. Un assaut repoussé vaut environ un quart d'une victoire ; l'alliance signée un peu moins. Le raccourci admin `/diplomatie allier` ne verse rien.
