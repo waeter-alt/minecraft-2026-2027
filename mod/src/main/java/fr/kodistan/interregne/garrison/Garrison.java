@@ -294,9 +294,10 @@ public final class Garrison
     public static int available(final MinecraftServer server, final IColony colony, final int kind)
     {
         int count = 0;
-        for (final GarrisonRoster.Guard guard : GarrisonRoster.get(server).guardsOf(colony).values())
+        final fr.kodistan.interregne.politics.AllyAid aid = fr.kodistan.interregne.politics.AllyAid.get(server);
+        for (final Map.Entry<Integer, GarrisonRoster.Guard> entry : GarrisonRoster.get(server).guardsOf(colony).entrySet())
         {
-            if (guard.kind() == kind)
+            if (entry.getValue().kind() == kind && !aid.isGuest(colony.getID(), entry.getKey(), entry.getValue().uuid()))
             {
                 count++;
             }
@@ -311,10 +312,12 @@ public final class Garrison
     public static List<Integer> depart(final MinecraftServer server, final IColony colony, final int kind, final int wanted)
     {
         final GarrisonRoster roster = GarrisonRoster.get(server);
+        final fr.kodistan.interregne.politics.AllyAid aid = fr.kodistan.interregne.politics.AllyAid.get(server);
         final List<Map.Entry<Integer, GarrisonRoster.Guard>> pool = new ArrayList<>();
         for (final Map.Entry<Integer, GarrisonRoster.Guard> entry : roster.guardsOf(colony).entrySet())
         {
-            if (entry.getValue().kind() == kind)
+            // An ally's contingent defends this colony: it never marches for it
+            if (entry.getValue().kind() == kind && !aid.isGuest(colony.getID(), entry.getKey(), entry.getValue().uuid()))
             {
                 pool.add(entry);
             }
@@ -332,22 +335,97 @@ public final class Garrison
             {
                 continue;
             }
-            citizen.getEntity().ifPresent(entity -> entity.remove(Entity.RemovalReason.DISCARDED));
-            final IBuilding tower = citizen.getWorkBuilding();
-            if (tower != null)
-            {
-                for (final GuardBuildingModule module : tower.getModulesByType(GuardBuildingModule.class))
-                {
-                    if (module.hasAssignedCitizen(citizen))
-                    {
-                        module.removeCitizen(citizen);
-                    }
-                }
-            }
-            roster.remove(colony, citizen);
-            colony.getCitizenManager().removeCivilian(citizen);
+            dismiss(server, colony, citizen);
             levels.add(entry.getValue().level());
         }
         return levels;
+    }
+
+    /**
+     * Takes a bought guard out of the colony for good: its entity, its tower place, its roster entry and its citizen.
+     */
+    public static void dismiss(final MinecraftServer server, final IColony colony, final ICitizenData citizen)
+    {
+        citizen.getEntity().ifPresent(entity -> entity.remove(Entity.RemovalReason.DISCARDED));
+        final IBuilding tower = citizen.getWorkBuilding();
+        if (tower != null)
+        {
+            for (final GuardBuildingModule module : tower.getModulesByType(GuardBuildingModule.class))
+            {
+                if (module.hasAssignedCitizen(citizen))
+                {
+                    module.removeCitizen(citizen);
+                }
+            }
+        }
+        GarrisonRoster.get(server).remove(colony, citizen);
+        colony.getCitizenManager().removeCivilian(citizen);
+    }
+
+    /**
+     * A soldier of an ally's contingent ({@code AllyAid}): a guest of this colony's towers of its kind, beyond their
+     * capacity, appearing next to its tower. Null when the colony has no built tower for that kind.
+     */
+    @Nullable
+    public static ICitizenData enlistGuest(final MinecraftServer server, final IColony colony, final int kind, final int level)
+    {
+        GuardBuildingModule best = null;
+        int bestLoad = Integer.MAX_VALUE;
+        for (final IBuilding building : colony.getBuildingManager().getBuildings().values())
+        {
+            if (building.getBuildingLevel() <= 0)
+            {
+                continue;
+            }
+            for (final GuardBuildingModule module : building.getModulesByType(GuardBuildingModule.class))
+            {
+                final int load = building.getAllAssignedCitizen().size();
+                if (module.getJobEntry() == job(kind) && load < bestLoad)
+                {
+                    best = module;
+                    bestLoad = load;
+                }
+            }
+        }
+        if (best == null)
+        {
+            return null;
+        }
+        final ICitizenData citizen = colony.getCitizenManager().createAndRegisterCivilianData();
+        if (citizen == null)
+        {
+            return null;
+        }
+        citizen.setGenderAndGenerateName(kind == ARCHERE);
+        final int lvl = Math.max(1, Math.min(level, PRICE.length));
+        for (final Skill skill : Skill.values())
+        {
+            final int missing = SKILL[lvl - 1] - citizen.getCitizenSkillHandler().getLevel(skill);
+            if (missing > 0)
+            {
+                citizen.getCitizenSkillHandler().incrementLevel(skill, missing);
+            }
+        }
+        GarrisonRoster.get(server).add(colony, citizen, kind, lvl);
+        final boolean assigned;
+        fr.kodistan.interregne.politics.AllyAid.enlisting(citizen);
+        try
+        {
+            assigned = best.assignCitizen(citizen);
+        }
+        finally
+        {
+            fr.kodistan.interregne.politics.AllyAid.enlisting(null);
+        }
+        if (!assigned)
+        {
+            GarrisonRoster.get(server).remove(colony, citizen);
+            colony.getCitizenManager().removeCivilian(citizen);
+            return null;
+        }
+        colony.getCitizenManager().spawnOrCreateCivilian(citizen, colony.getWorld(), best.getBuilding().getPosition(), true);
+        citizen.getEntity().ifPresent(entity -> net.neoforged.neoforge.network.PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity,
+          new GuardLookPayload(entity.getId(), kind, lvl)));
+        return citizen;
     }
 }

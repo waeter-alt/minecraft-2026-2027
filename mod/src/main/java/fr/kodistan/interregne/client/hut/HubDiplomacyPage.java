@@ -127,7 +127,9 @@ final class HubDiplomacyPage
         final boolean recall = (status == A_WAR_OUT || status == A_WAR_OUT_NOTICE) && campaign;
         // At war against us (notice or open): the tribute that ends it gets that second line.
         final boolean surrender = status == A_WAR_IN_NOTICE || status == A_WAR_IN;
-        final int rowH = launcher || recall || surrender ? 26 + Ui.BUTTON_H + 4 : 26;
+        // An ally: the contingent kept for it (Aide de clan) gets that second line.
+        final boolean aid = status == A_ALLIED;
+        final int rowH = launcher || recall || surrender || aid ? 26 + Ui.BUTTON_H + 4 : 26;
         Ui.card(graphics, x, y, width, rowH, false, false, false);
         graphics.fill(x + 1, y + 1, x + 4, y + rowH - 1, war ? Palette.RED : switch (status)
         {
@@ -273,7 +275,95 @@ final class HubDiplomacyPage
         {
             surrenderButton(graphics, mouseX, mouseY, x + width - 4, y + 26, width - 13, sync, id, mayAct);
         }
+        else if (aid)
+        {
+            aidLine(graphics, mouseX, mouseY, x + 9, x + width - 4, y + 26, sync, entry, mayAct);
+        }
         return y + rowH + 2;
+    }
+
+    /**
+     * Aide de clan, on an ally's row: the contingent this colony keeps for it ({@code n/max}, or how many still stand
+     * while it fights there), the reinforcements that ally keeps for us, and « Remplir » with the price inside while
+     * the contingent is home and not full.
+     */
+    private void aidLine(final GuiGraphics graphics, final int mouseX, final int mouseY, final int left, final int right, final int y,
+      final fr.kodistan.interregne.network.DiplomacySyncPayload sync, final fr.kodistan.interregne.network.DiplomacySyncPayload.Entry entry, final boolean mayAct)
+    {
+        final int max = sync.aidMax();
+        final boolean out = entry.engagedOut() >= 0;
+        int buttonX = right;
+        if (!out && entry.aidOut() < max)
+        {
+            final long cost = (long) (max - entry.aidOut()) * sync.aidPrice();
+            buttonX = refillButton(graphics, mouseX, mouseY, right, y, right - left, cost, sync.treasury(), mayAct, entry);
+        }
+        // Longest wording that fits beside the button, so nothing is cut at GUI scale 4; the hint says it all anyway
+        final String mine = out ? "Contingent engagé : " + entry.engagedOut() + " debout" : "Contingent : " + entry.aidOut() + "/" + max;
+        final String mineShort = out ? "Engagé : " + entry.engagedOut() : entry.aidOut() + "/" + max;
+        final boolean theirsHere = entry.engagedIn() >= 0;
+        final int theirs = theirsHere ? entry.engagedIn() : entry.aidIn();
+        final String[] wordings = theirsHere || theirs > 0
+          ? new String[] {mine + " · " + (theirsHere ? "Leurs renforts ici : " : "Renforts réservés : ") + theirs, mine + " · Renforts : " + theirs,
+                          mineShort + " · Renforts : " + theirs, mineShort + " · Renf. " + theirs}
+          : new String[] {mine, mineShort};
+        final int room = buttonX - left - 6;
+        String text = wordings[wordings.length - 1];
+        for (final String wording : wordings)
+        {
+            if (hub.font().width(wording) <= room)
+            {
+                text = wording;
+                break;
+            }
+        }
+        final String shown = Ui.fit(hub.font(), text, room);
+        graphics.drawString(hub.font(), shown, left, y + (Ui.BUTTON_H - 8) / 2, out ? Palette.AMBER_TEXT : Palette.INK, false);
+        if (Ui.inside(mouseX, mouseY, left, y, Math.min(room, hub.font().width(shown)), Ui.BUTTON_H))
+        {
+            hub.hint = (out ? "Votre contingent se bat chez " + entry.name() + " : les survivants reviennent dans la réserve à la fin de la guerre."
+                            : "Votre contingent pour " + entry.name() + " : " + entry.aidOut() + "/" + max + " soldats, qui apparaissent chez elle au premier assaut qu'elle subit. Vos propres troupes ne bougent pas.")
+                       + (theirsHere ? " Ses renforts chez vous : " + theirs + " debout." : theirs > 0 ? " Renforts qu'elle garde pour vous : " + theirs + "." : "");
+        }
+    }
+
+    /**
+     * « Remplir » with the price inside, right-aligned and ending at {@code right}: green when the town hall treasury
+     * pays it, grey with have/cost in red when not. Returns the button's left edge.
+     */
+    private int refillButton(final GuiGraphics graphics, final int mouseX, final int mouseY, final int right, final int y, final int room, final long cost,
+      final long money, final boolean mayAct, final fr.kodistan.interregne.network.DiplomacySyncPayload.Entry entry)
+    {
+        final boolean payable = mayAct && money >= cost;
+        final Component price = Component.literal(money >= cost ? fr.kodistan.interregne.economy.Wallet.format(cost)
+                                                                : fr.kodistan.interregne.economy.Wallet.format(money) + "/" + fr.kodistan.interregne.economy.Wallet.format(cost))
+                                  .withStyle(ChatFormatting.BOLD);
+        final int priceW = ColonyHubScreen.PRICE_ICON + 3 + hub.font().width(price);
+        final Component verb = Component.literal("Remplir").withStyle(ChatFormatting.BOLD);
+        final int w = Math.min(room, hub.font().width(verb) + 10 + priceW + 16);
+        final int x = right - w;
+        final int h = Ui.BUTTON_H;
+        final boolean over = Ui.inside(mouseX, mouseY, x, y, w, h);
+        Ui.plate(graphics, x, y, x + w, y + h, payable ? (over ? Palette.GREEN_HOVER : Palette.GREEN) : Palette.PAPER_DARK, Palette.EDGE,
+          payable ? Palette.GREEN_LIGHT : Palette.PAPER_DARK);
+        final int textY = y + (h - 8) / 2;
+        int cx = x + (w - (hub.font().width(verb) + 10 + priceW)) / 2;
+        graphics.drawString(hub.font(), verb, cx, textY, payable ? Palette.GREEN_TEXT : Palette.MUTED, false);
+        cx += hub.font().width(verb) + 10;
+        Ui.coinTight(graphics, cx, y + (h - ColonyHubScreen.PRICE_ICON) / 2, ColonyHubScreen.PRICE_ICON);
+        graphics.drawString(hub.font(), price, cx + ColonyHubScreen.PRICE_ICON + 3, textY, money >= cost ? (payable ? Palette.GREEN_TEXT : Palette.INK) : Palette.RED, false);
+        if (payable)
+        {
+            final int mine = hub.colony.getID();
+            final int id = entry.id();
+            hub.addHit(x, y, w, h, () -> ClientDiplomacy.act(mine, DiplomacyActionPayload.REFILL_AID, id));
+        }
+        if (over)
+        {
+            hub.hint = money < cost ? "Il manque " + fr.kodistan.interregne.economy.Wallet.format(cost - money) + " Couronnes au trésor régional pour remplir le contingent."
+                                    : "Remplit la réserve de soldats pour " + entry.name() + ", payée par le trésor de la colonie : ils apparaissent chez elle au premier assaut qu'elle subit.";
+        }
+        return x;
     }
 
     /**

@@ -115,6 +115,21 @@ public final class Wars extends SavedData
         return at == null ? -1 : at;
     }
 
+    /**
+     * Whether any colony has declared war on this one (notice or open).
+     */
+    public boolean defending(final int defender)
+    {
+        for (final long key : declared.keySet())
+        {
+            if ((int) key == defender)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean end(final int attacker, final int defender)
     {
         stats.remove(key(attacker, defender));

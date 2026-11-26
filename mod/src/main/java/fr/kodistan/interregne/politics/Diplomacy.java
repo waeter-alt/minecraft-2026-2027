@@ -120,7 +120,8 @@ public final class Diplomacy
             {
                 if (alliances.doBreak(me, you))
                 {
-                    sendRecap(server, colony, other, WarRecapPayload.BREAK, new long[Wars.STAT_COUNT], 0, 0, 0, 0);
+                    AllyAid.get(server).forget(me, you);
+                    sendRecap(server, colony, other, WarRecapPayload.BREAK, new long[Wars.STAT_COUNT], 0, 0, 0, 0, new int[2]);
                 }
             }
             case DiplomacyActionPayload.DECLARE_WAR ->
@@ -189,6 +190,7 @@ public final class Diplomacy
         }
         Influence.remove(player.server, player.getUUID(), cost, "déclaration de guerre");
         alliances.clearBetween(me, you);
+        AllyAid.get(player.server).forget(me, you);
         wars.declare(me, you, player.server.overworld().getGameTime());
         if (needsRoad)
         {
@@ -266,6 +268,8 @@ public final class Diplomacy
         // Read before end(), which forgets the war's tally.
         final long[] tally = wars.stats(attacker.getID(), defender.getID());
         final long declaredAt = wars.declaredAt(attacker.getID(), defender.getID());
+        // The contingents go home on AllyAid's next tick, once no war is left on the defender: read their figures now
+        final int[] aid = AllyAid.get(server).tally(defender.getID());
         if (!wars.end(attacker.getID(), defender.getID()))
         {
             return;
@@ -296,7 +300,7 @@ public final class Diplomacy
         }
         Alliances.broadcast(server, attacker, defender);
         final long now = server.overworld().getGameTime();
-        sendRecap(server, winner, loser, outcome, tally, declaredAt < 0 ? 0 : now - declaredAt, tribute, owner != null ? influence : 0, shieldTicks);
+        sendRecap(server, winner, loser, outcome, tally, declaredAt < 0 ? 0 : now - declaredAt, tribute, owner != null ? influence : 0, shieldTicks, aid);
     }
 
     /**
@@ -304,7 +308,7 @@ public final class Diplomacy
      * loser's; for a break, "winner" is the colony that broke).
      */
     private static void sendRecap(final MinecraftServer server, final IColony winner, final IColony loser, final int outcome, final long[] tally,
-                                  final long duration, final long tribute, final long influence, final long shieldTicks)
+                                  final long duration, final long tribute, final long influence, final long shieldTicks, final int[] aid)
     {
         final BannerPatternLayers winnerFlag = winner.getColonyFlag() == null ? BannerPatternLayers.EMPTY : winner.getColonyFlag();
         final BannerPatternLayers loserFlag = loser.getColonyFlag() == null ? BannerPatternLayers.EMPTY : loser.getColonyFlag();
@@ -317,7 +321,7 @@ public final class Diplomacy
             }
             PacketDistributor.sendToPlayer(player, new WarRecapPayload(won, outcome, winner.getName(), loser.getName(), winnerFlag, loserFlag, duration,
               (int) tally[Wars.ASSAULTS], (int) tally[Wars.SENT], (int) tally[Wars.LOST], (int) tally[Wars.DESTROYED], tally[Wars.LOOT],
-              (int) tally[Wars.FALLEN], tribute, influence, shieldTicks));
+              (int) tally[Wars.FALLEN], tribute, influence, shieldTicks, aid[0], aid[1]));
         }
     }
 
@@ -440,10 +444,15 @@ public final class Diplomacy
                 alliances.doPropose(me, you);
                 alliances.doAccept(you, me);
             }
-            case "rompre" -> alliances.doBreak(me, you);
+            case "rompre" ->
+            {
+                alliances.doBreak(me, you);
+                AllyAid.get(server).forget(me, you);
+            }
             case "guerre" ->
             {
                 alliances.clearBetween(me, you);
+                AllyAid.get(server).forget(me, you);
                 wars.declare(me, you, immediate ? level.getGameTime() - noticeTicks() : level.getGameTime());
             }
             case "paix" ->

@@ -266,8 +266,20 @@ public final class CommerceTests
     /**
      * A lone player in plain iron gear, sword in hand, against a tier 1 escort: the duel is played tick by tick, the player
      * landing a sword blow every 12 ticks on the nearest soldier in reach. The escort must at least leave him badly hurt.
+     * <p>
+     * The duel must give the same result on every run, so nothing is left to chance:
+     * <ul>
+     * <li>its own batch: the 14-block arena reaches over the grid slots of the other tests, which clear the entities of their
+     * slot when they start or end (the archer used to vanish mid-duel);</li>
+     * <li>each soldier's random is seeded (its path refresh delay is drawn from it);</li>
+     * <li>each soldier thinks on the same tick parity: a mob only re-plans its goals when tick count plus entity id is even,
+     * and the ids depend on the other tests of the run;</li>
+     * <li>the soldiers do not hurt one another: the fake player is in no level list, so the archer's arrows fly through him into
+     * the swordsmen fighting him, which a real player standing in the way would stop (and the arrows that should hit the player
+     * do nothing here, so the escort stays weaker than in a real fight).</li>
+     * </ul>
      */
-    @GameTest(template = "empty", timeoutTicks = 800)
+    @GameTest(template = "empty", batch = "duelEscorte", timeoutTicks = 800)
     public static void aTierOneEscortHoldsAgainstOneIronPlayer(final GameTestHelper helper)
     {
         final ServerLevel level = helper.getLevel();
@@ -321,7 +333,16 @@ public final class CommerceTests
         final java.util.ArrayList<EntEscorte> soldiers = new java.util.ArrayList<>();
         for (int i = 0; i < Escort.headcount(1); i++)
         {
-            final EntEscorte soldier = CaravanEntities.ESCORTE.get().create(level);
+            final EntEscorte soldier = new EntEscorte(CaravanEntities.ESCORTE.get(), level)
+            {
+                @Override
+                public boolean hurt(final net.minecraft.world.damagesource.DamageSource source, final float amount)
+                {
+                    return !(source.getEntity() instanceof EntEscorte) && super.hurt(source, amount);
+                }
+            };
+            soldier.getRandom().setSeed(1000 + i);
+            soldier.tickCount = soldier.getId() & 1;
             soldier.equip(1, i >= Escort.swordsmen(1), 1, 2);
             soldier.setPos(arenaX + 9.5 + i * 1.5, origin.getY() + 1, arenaZ + 6.5 + i);
             level.addFreshEntity(soldier);
