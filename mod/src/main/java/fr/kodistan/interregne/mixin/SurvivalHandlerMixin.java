@@ -3,8 +3,12 @@ package fr.kodistan.interregne.mixin;
 import com.ldtteam.structurize.api.RotationMirror;
 import com.ldtteam.structurize.blueprints.v1.Blueprint;
 import com.minecolonies.core.placementhandlers.main.SurvivalHandler;
+import com.minecolonies.api.blocks.AbstractBlockHut;
+import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
+import com.minecolonies.api.util.SoundUtils;
 import fr.kodistan.interregne.colony.BuildNow;
+import fr.kodistan.interregne.colony.PlacementOverlap;
 import fr.kodistan.interregne.colony.UniqueHuts;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -63,12 +67,29 @@ public abstract class SurvivalHandlerMixin
       final RotationMirror rotMir,
       final CallbackInfo ci)
     {
+        if (blueprint == null)
+        {
+            return;
+        }
         final Block hut = blueprint.getBlockState(blueprint.getPrimaryBlockOffset()).getBlock();
-        final String refusal = UniqueHuts.refusal(IColonyManager.getInstance().getColonyByPosFromWorld(world, blockPos), hut);
+        final IColony colony = IColonyManager.getInstance().getColonyByPosFromWorld(world, blockPos);
+        final String refusal = UniqueHuts.refusal(colony, hut);
         if (refusal != null)
         {
             player.sendSystemMessage(Component.literal(refusal).withStyle(ChatFormatting.RED));
             ci.cancel();
+            return;
+        }
+        // A hut put over another building would have the builder tear the old one down
+        if (hut instanceof AbstractBlockHut<?>)
+        {
+            final Component overlap = PlacementOverlap.refusal(colony, world, blueprint, packName, blueprintPath, blockPos, rotMir);
+            if (overlap != null)
+            {
+                player.sendSystemMessage(overlap);
+                SoundUtils.playErrorSound(player, player.blockPosition());
+                ci.cancel();
+            }
         }
     }
 
