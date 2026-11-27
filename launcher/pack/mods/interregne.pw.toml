@@ -1,9 +1,9 @@
 name = "L'Interrègne (mod maison)"
-filename = "interregne-1.0.0.jar"
+filename = "interregne-0.1.0-alpha.jar"
 side = "both"
 pin = true
 
 [download]
-url = "https://PACK_BASE_URL/files/interregne-1.0.0.jar"
+url = "https://PACK_BASE_URL/files/interregne-0.1.0-alpha.jar"
 hash-format = "sha512"
 hash = "A_REMPLIR_PAR_scripts-publish-jar.ps1"

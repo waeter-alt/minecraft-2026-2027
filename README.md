@@ -2,6 +2,17 @@
 
 Serveur Minecraft communautaire (Kodistan) et son mod NeoForge custom, **Interrègne**, construit par-dessus MineColonies/Structurize.
 
+## Statut : Alpha (depuis le 2026-11-27)
+
+La boucle complète d'une colonie se joue en survie, sur un monde neuf et à plusieurs : fondation, bâtiments, alliance et route, contrats et caravanes, guerre, assaut et étendard de siège, réapparitions, fin de guerre (capitulation, reddition, chute de l'hôtel de ville), bouclier et reconstruction. Elle a été validée par un pré-playtest à deux clients. On passe aux playtests multijoueurs.
+
+Ce que veut dire « Alpha » :
+- le contenu peut encore changer (équilibrage, règles, interface) et les mondes de playtest ne sont pas gardés d'une version à l'autre ;
+- version du mod et du pack : `0.1.0-alpha` (`mod/gradle.properties`, `launcher/pack/pack.toml`) ;
+- connu, pas encore réglé : un crash serveur ramène le monde à la dernière sauvegarde automatique (jusqu'à 5 min) ; un joueur mort pendant un assaut au moment du crash réapparaît au spawn du monde.
+
+Préparer un monde de playtest : `mod/docs/plan-de-test-playtest.md`, section « 0 bis ».
+
 ## Par où commencer
 
 1. **[CLAUDE.md](CLAUDE.md)** : les règles de travail (branche + PR, jamais de push sur `main`, version NeoForge figée, build/test). À lire en premier, que tu codes à la main ou avec un agent.

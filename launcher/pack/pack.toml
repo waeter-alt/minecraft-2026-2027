@@ -1,12 +1,12 @@
 name = "L'Interrègne"
 author = "Kodistan"
-version = "1.0.0"
+version = "0.1.0-alpha"
 pack-format = "packwiz:1.1.0"
 
 [index]
 file = "index.toml"
 hash-format = "sha256"
-hash = "5486ce2d6883bc89f95371ffc6b17f5da525ef267eaeeb57d712dc9e34ea5a5a"
+hash = "581c4b719237950762a606382e4df4319a5347ae1595864cff2563d25109694c"
 
 [versions]
 minecraft = "1.21.1"
