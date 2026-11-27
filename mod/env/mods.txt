@@ -28,6 +28,7 @@ client ranged-weapon-api
 client relics-rpg
 client rogues-and-warriors
 client runes
+client shoulder-surfing-reloaded
 client shield-api
 client skill-tree
 client spell-engine

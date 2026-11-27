@@ -243,6 +243,11 @@ hash = "d937661a21bac98d10901deeb3aa599e1a941a8e668ac091ed94dc934172dbc2"
 metafile = true
 
 [[files]]
+file = "mods/shoulder-surfing-reloaded.pw.toml"
+hash = "be8b1df21fb43b8f209720f691c4f003028d9208396c53df96221f1df77083ff"
+metafile = true
+
+[[files]]
 file = "mods/simple-planes.pw.toml"
 hash = "b3033b5080f3c0c733165697a342b6168d44f5335482dd391b61331b133651ad"
 metafile = true
