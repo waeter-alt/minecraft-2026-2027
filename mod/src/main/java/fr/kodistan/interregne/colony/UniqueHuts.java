@@ -7,6 +7,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,18 +19,28 @@ import java.util.Map;
 public final class UniqueHuts
 {
     /**
-     * Building id (the registry path) to how the message names it, with its article.
+     * Building id (the registry path) to how the message names it, in the order a colony builds them: the catalogue's
+     * Institutions category shows them in this order.
      */
-    private static final Map<String, String> LABELS = Map.of(
-      "townhall", "hôtel de ville",
-      "warehouse", "entrepôt",
-      "relais_commercial", "relais commercial",
-      "banque_regionale", "banque régionale",
-      "depot_regional", "dépôt régional",
-      "barracks", "caserne");
+    private static final Map<String, String> LABELS = new LinkedHashMap<>();
+
+    static
+    {
+        LABELS.put("townhall", "hôtel de ville");
+        LABELS.put("warehouse", "entrepôt");
+        LABELS.put("barracks", "caserne");
+        LABELS.put("relais_commercial", "relais commercial");
+        LABELS.put("banque_regionale", "banque régionale");
+        LABELS.put("depot_regional", "dépôt régional");
+    }
 
     private UniqueHuts()
     {
+    }
+
+    public static List<String> ids()
+    {
+        return List.copyOf(LABELS.keySet());
     }
 
     public static boolean isUnique(final String buildingId)

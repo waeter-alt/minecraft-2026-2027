@@ -51,7 +51,7 @@ public final class CatalogueScreen extends ParchmentScreen
     private static final int GAP = 4;
     private static final int ROW = 17;
 
-    private static CatalogueIndex.Need lastNeed = CatalogueIndex.Need.FOOD;
+    private static CatalogueIndex.Need lastNeed = CatalogueIndex.Need.INSTITUTIONS;
 
     private final WindowExtendedBuildTool buildTool;
     private final BlockPos anchor;
@@ -135,8 +135,36 @@ public final class CatalogueScreen extends ParchmentScreen
 
     private List<CatalogueIndex.Entry> visible()
     {
-        return entries.stream().filter(e -> e.need() == need)
-          .sorted(Comparator.comparing(this::locked).thenComparingInt(CatalogueIndex::rank)).toList();
+        // Institutions keep their building order: one already built is a status, not a reason to sink to the end
+        final Comparator<CatalogueIndex.Entry> order = need == CatalogueIndex.Need.INSTITUTIONS
+          ? Comparator.comparingInt(CatalogueIndex::rank)
+          : Comparator.comparing(this::locked).thenComparingInt(CatalogueIndex::rank);
+        return entries.stream().filter(e -> e.need() == need).sorted(order).toList();
+    }
+
+    /**
+     * This colony's own copy of a building it may have only once, built or still a construction site; null when it has none.
+     */
+    @Nullable
+    private com.minecolonies.api.colony.buildings.views.IBuildingView existing(final CatalogueIndex.Entry entry)
+    {
+        if (entry.hut() == null || minecraft.level == null || !fr.kodistan.interregne.colony.UniqueHuts.isUnique(entry.buildingId()))
+        {
+            return null;
+        }
+        final IColonyView colony = IColonyManager.getInstance().getClosestColonyView(minecraft.level, anchor);
+        if (colony == null)
+        {
+            return null;
+        }
+        for (final var building : colony.getBuildings())
+        {
+            if (building.getBuildingType().getRegistryName().getPath().equals(entry.buildingId()))
+            {
+                return building;
+            }
+        }
+        return null;
     }
 
     private void select(final CatalogueIndex.Entry entry)
@@ -164,23 +192,9 @@ public final class CatalogueScreen extends ParchmentScreen
      */
     private String uniqueRefusal(final CatalogueIndex.Entry entry)
     {
-        if (entry.hut() == null || minecraft.level == null || !fr.kodistan.interregne.colony.UniqueHuts.isUnique(entry.buildingId()))
-        {
-            return null;
-        }
-        final var colony = com.minecolonies.api.colony.IColonyManager.getInstance().getClosestColonyView(minecraft.level, anchor);
-        if (colony == null)
-        {
-            return null;
-        }
-        for (final var building : colony.getBuildings())
-        {
-            if (building.getBuildingType().getRegistryName().getPath().equals(entry.buildingId()))
-            {
-                return fr.kodistan.interregne.colony.UniqueHuts.message(entry.buildingId(), colony.getName(), building.getPosition());
-            }
-        }
-        return null;
+        final var building = existing(entry);
+        return building == null ? null
+          : fr.kodistan.interregne.colony.UniqueHuts.message(entry.buildingId(), building.getColony().getName(), building.getPosition());
     }
 
     private List<MutableComponent> requirementsOfMineColonies(final CatalogueIndex.Entry entry)
@@ -316,7 +330,14 @@ public final class CatalogueScreen extends ParchmentScreen
 
     private List<FormattedCharSequence> needDesc()
     {
-        return font.split(Component.literal(need.desc()), centerWidth());
+        String desc = need.desc();
+        if (need == CatalogueIndex.Need.INSTITUTIONS && loaded)
+        {
+            final List<CatalogueIndex.Entry> list = visible();
+            final long built = list.stream().filter(e -> existing(e) != null).count();
+            desc += " " + built + " sur " + list.size() + " bâties.";
+        }
+        return font.split(Component.literal(desc), centerWidth());
     }
 
     private int cardsTop()
@@ -370,8 +391,13 @@ public final class CatalogueScreen extends ParchmentScreen
             final CatalogueIndex.Entry entry = list.get(i);
             final int cx = grid.x(i);
             final int cy = grid.y(i);
-            final boolean locked = locked(entry);
+            final var built = existing(entry);
+            final boolean locked = built == null && locked(entry);
             Ui.card(graphics, cx, cy, cardW, CARD_H, entry == selected, inside(mouseX, mouseY, cx, cy, cardW, CARD_H), locked);
+            if (fr.kodistan.interregne.colony.UniqueHuts.isUnique(entry.buildingId()) && entry != selected)
+            {
+                graphics.renderOutline(cx + 1, cy + 1, cardW - 2, CARD_H - 2, Palette.AMBER);
+            }
             if (entry.icon().isItem())
             {
                 entry.icon().draw(graphics, cx + 5, cy + 8, 16);
@@ -381,7 +407,13 @@ public final class CatalogueScreen extends ParchmentScreen
                 entry.icon().draw(graphics, cx + 3, cy + 6, 20);
             }
             graphics.drawString(font, fit(entry.name(), cardW - 30), cx + 25, cy + 6, locked ? Palette.MUTED : Palette.INK, false);
-            if (locked)
+            if (built != null)
+            {
+                final int level = built.getBuildingLevel();
+                graphics.drawString(font, level > 0 ? "✔ Bâti · niv. " + level : "⚒ En chantier", cx + 25, cy + 18,
+                  level > 0 ? Palette.GREEN_LIGHT : Palette.AMBER_TEXT, false);
+            }
+            else if (locked)
             {
                 graphics.drawString(font, "Verrouillé", cx + 25, cy + 18, Palette.RED, false);
             }

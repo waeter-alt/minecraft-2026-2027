@@ -10,6 +10,7 @@ import com.minecolonies.api.blocks.AbstractBlockHut;
 import fr.kodistan.interregne.Config;
 import fr.kodistan.interregne.InterregneMod;
 import fr.kodistan.interregne.client.ui.Icon;
+import fr.kodistan.interregne.colony.UniqueHuts;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -48,13 +49,13 @@ public final class CatalogueIndex
      */
     public enum Need
     {
+        INSTITUTIONS("Institutions", Items.BELL, "Les piliers de la colonie, un seul de chaque : à bâtir en premier."),
         FOOD("Nourriture", Items.COOKED_CHICKEN, "Ce qui nourrit vos citoyens et remplit l'entrepôt : élevages, ferme, pêche, restaurant."),
         PLANTATION("Plantations", Items.SUGAR_CANE, "La Plantation cultive bambou, canne à sucre, cactus, cacao, lianes… Posez ses champs à côté : ses ouvriers y récoltent ce qui sert au papier, au sucre et aux teintures."),
         WOOD_STONE("Bois et pierre", Items.IRON_AXE, "Les matières premières : bûcheron, mine, carrières."),
-        HOUSING("Logement", Items.RED_BED, "Loger, soigner et rassembler vos citoyens."),
+        HOUSING("Vie citoyenne", Items.RED_BED, "Loger, soigner et rassembler vos citoyens, stocker et recevoir leur courrier."),
         CRAFT("Artisanat", Items.ANVIL, "Les ateliers qui transforment les matières premières."),
-        LOGISTICS("Logistique", Items.CHEST, "Stocker et livrer."),
-        DEFENSE("Défense", Items.SHIELD, "Gardes, casernes et entraînement."),
+        ARMY("Armée", Items.IRON_SWORD, "Tours de garde, archers et entraînement des soldats."),
         KNOWLEDGE("Savoir", Items.BOOK, "Éducation, recherche et enchantements."),
         GROUNDS("Aménagements", Items.DIRT_PATH, "Routes, voies ferrées, ponts, murs et canaux, payés à la taille."),
         DECORATION("Décoration", Items.FLOWER_POT, "Pour embellir la ville, payé à la taille.");
@@ -124,13 +125,13 @@ public final class CatalogueIndex
     static
     {
         // In the order a new player needs them: what to build first comes first
+        put(Need.INSTITUTIONS, UniqueHuts.ids().toArray(String[]::new));
         put(Need.FOOD, "chickenherder", "cook", "farmer", "fisherman", "cowboy", "shepherd", "swineherder", "rabbithutch", "baker", "beekeeper", "kitchen");
         put(Need.PLANTATION, "plantation");
         put(Need.WOOD_STONE, "lumberjack", "miner", "simplequarry", "mediumquarry", "largequarry", "crusher", "sifter", "netherworker");
-        put(Need.HOUSING, "townhall", "residence", "hospital", "tavern", "graveyard");
-        put(Need.LOGISTICS, "warehouse", "postbox", "stash", "relais_commercial", "banque_regionale", "depot_regional");
-        put(Need.DEFENSE, "guardtower", "barracks", "barrackstower", "archery", "combatacademy");
-        put(Need.KNOWLEDGE, "university", "library", "school", "enchanter", "mysticalsite");
+        put(Need.HOUSING, "residence", "hospital", "tavern", "graveyard", "postbox", "stash");
+        put(Need.ARMY, "guardtower", "barrackstower", "archery", "combatacademy");
+        put(Need.KNOWLEDGE, "library", "school", "enchanter", "mysticalsite");
         put(Need.CRAFT, "sawmill", "stonemason", "blacksmith", "smeltery", "stonesmeltery", "glassblower", "fletcher", "composter", "florist", "dyer",
           "concretemixer", "mechanic", "alchemist");
     }
