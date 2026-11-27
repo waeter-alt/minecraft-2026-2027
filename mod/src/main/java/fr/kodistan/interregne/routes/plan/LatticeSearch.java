@@ -31,6 +31,8 @@ final class LatticeSearch
     private final short[][] hi = new short[2][];
     private final short[][] sum = new short[2][];
     private final short[][] surface = new short[2][];
+    /** The lowest deck the water and ice across the road allow. */
+    private final short[][] deck = new short[2][];
     private final byte[][] wet = new byte[2][];
     private final byte[][] blocked = new byte[2][];
     private final byte[][] hard = new byte[2][];
@@ -77,6 +79,7 @@ final class LatticeSearch
             hi[axis] = new short[size];
             sum[axis] = new short[size];
             surface[axis] = new short[size];
+            deck[axis] = new short[size];
             wet[axis] = new byte[size];
             blocked[axis] = new byte[size];
             hard[axis] = new byte[size];
@@ -96,6 +99,7 @@ final class LatticeSearch
         int max = Short.MIN_VALUE;
         int total = 0;
         int water = Short.MIN_VALUE;
+        int clear = Short.MIN_VALUE;
         int wetCount = 0;
         int blockedCount = 0;
         int hardCount = 0;
@@ -120,6 +124,7 @@ final class LatticeSearch
             {
                 wetCount++;
                 water = Math.max(water, field.ground[i]);
+                clear = Math.max(clear, Tuning.clearance(flag, field.ground[i]));
             }
             else
             {
@@ -138,6 +143,7 @@ final class LatticeSearch
         hi[axis][i] = (short) max;
         sum[axis][i] = (short) total;
         surface[axis][i] = (short) water;
+        deck[axis][i] = (short) clear;
         wet[axis][i] = (byte) wetCount;
         blocked[axis][i] = (byte) blockedCount;
         hard[axis][i] = (byte) hardCount;
@@ -167,10 +173,11 @@ final class LatticeSearch
         final int min = lo[axis][i];
         final int max = hi[axis][i];
         final int water = surface[axis][i];
+        final int clear = deck[axis][i];
 
         float best = INF;
         byte mode = Tuning.SURFACE;
-        lastClearance = nWet > 0 ? water + Tuning.WATER_CLEAR : Integer.MIN_VALUE;
+        lastClearance = nWet > 0 ? clear : Integer.MIN_VALUE;
         if (!centreWet && nWet <= Tuning.WET_MAX && max - y <= Tuning.CUT_MAX && y - min <= Tuning.FILL_MAX && (nWet == 0 || y > water))
         {
             final float cut;
@@ -196,7 +203,7 @@ final class LatticeSearch
                      + nWet * Tuning.WET_COLUMN + nBlocked * Tuning.BLOCKED_COLUMN;
         }
         if (nBlocked == 0 && (centreWet || y - gc >= 2 || (y >= gc && best == INF))
-              && (nWet == 0 || y >= water + Tuning.WATER_CLEAR) && (nDry == 0 || (max - y <= 1 && y - min <= Tuning.BRIDGE_MAX)))
+              && (nWet == 0 || y >= clear) && (nDry == 0 || (max - y <= 1 && y - min <= Tuning.BRIDGE_MAX)))
         {
             final int base = centreWet ? field.bed[i] : gc;
             final float deck = Tuning.BRIDGE_CELL + Tuning.pier(y - base);
@@ -483,7 +490,6 @@ final class LatticeSearch
         push(0, 0F, (short) 0);
         int chord = y;
         float ramp = 0;
-        boolean raised = false;
         march:
         while (true)
         {
@@ -501,10 +507,9 @@ final class LatticeSearch
                 final float c = cell(cx, cz, chord, nd >> 1);
                 if (c == INF)
                 {
-                    if (!raised && lastClearance > chord && lastClearance - y <= Tuning.FILL_MAX)
+                    if (lastClearance > chord && lastClearance - y <= Tuning.FILL_MAX)
                     {
-                        // Water under a deck too low: take off higher, the bank ramps up to it
-                        raised = true;
+                        // Water under a deck too low: take off higher, the bank (or a low deck over ice) ramps up to it
                         ramp = (lastClearance - y) * Tuning.STEP;
                         chord = lastClearance;
                         continue march;

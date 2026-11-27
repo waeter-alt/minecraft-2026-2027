@@ -307,6 +307,7 @@ public final class Diplomacy
         if (alliances.areAllied(a.getID(), b.getID()))
         {
             InfluenceSources.allianceSigned(server, alliances, a, b);
+            fr.kodistan.interregne.routes.AllianceRoad.start(server, a, b);
         }
     }
 
@@ -512,6 +513,7 @@ public final class Diplomacy
                 wars.end(you, me);
                 alliances.doPropose(me, you);
                 alliances.doAccept(you, me);
+                fr.kodistan.interregne.routes.AllianceRoad.start(server, a, b);
             }
             case "rompre" ->
             {

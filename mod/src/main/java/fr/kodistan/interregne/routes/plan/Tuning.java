@@ -32,6 +32,11 @@ final class Tuning
     static final float BRIDGE_PIER_SQ = 0.0012F;
     /** Deck this far above the water surface, whatever the banks. */
     static final int WATER_CLEAR = 3;
+    /**
+     * Over ice nothing sails: the deck only has to clear it. Three above the ice of a frozen sea that a town hall opens
+     * onto at its own level, the road could never climb to its first deck (pp2, 2026-11-27).
+     */
+    static final int ICE_CLEAR = 1;
     static final int BRIDGE_MAX = 44;
 
     static final float TUNNEL_CELL = 3.5F;
@@ -64,6 +69,12 @@ final class Tuning
     {
         final int h = Math.max(0, height);
         return BRIDGE_PIER * h + BRIDGE_PIER_SQ * h * h;
+    }
+
+    /** The lowest deck over a wet column: clear of the water, or just over the ice. */
+    static int clearance(final int flag, final int surface)
+    {
+        return surface + ((flag & HeightField.WATER) != 0 ? WATER_CLEAR : ICE_CLEAR);
     }
 
     static float stepCost(final byte mode)
