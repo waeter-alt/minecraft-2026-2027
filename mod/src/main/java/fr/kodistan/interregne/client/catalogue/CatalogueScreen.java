@@ -244,7 +244,7 @@ public final class CatalogueScreen extends ParchmentScreen
 
     private int cost(final CatalogueIndex.Entry entry)
     {
-        return entry.hut() != null ? BuildCosts.forLevel(1) : BuildCosts.forDecoration(entry.blocks());
+        return entry.hut() != null ? BuildCosts.forLevel("townhall".equals(entry.buildingId()), 1) : BuildCosts.forDecoration(entry.blocks());
     }
 
     private Map<Crate, Integer> crates(final CatalogueIndex.Entry entry)
@@ -421,7 +421,7 @@ public final class CatalogueScreen extends ParchmentScreen
             {
                 final int cost = cost(entry);
                 Ui.coin(graphics, cx + 25, cy + 18, 8);
-                graphics.drawString(font, free ? "gratuit" : Integer.toString(cost), cx + 35, cy + 18, free || owned >= cost ? Palette.INK : Palette.RED, false);
+                graphics.drawString(font, free || cost == 0 ? "gratuit" : Integer.toString(cost), cx + 35, cy + 18, free || owned >= cost ? Palette.INK : Palette.RED, false);
                 final int crates = crates(entry).values().stream().mapToInt(Integer::intValue).sum();
                 if (crates > 0)
                 {
@@ -492,7 +492,7 @@ public final class CatalogueScreen extends ParchmentScreen
         y += 11;
         final boolean free = minecraft.player != null && minecraft.player.isCreative();
         final int cost = cost(selected);
-        y = Ui.priceLine(graphics, font, x, y, width, free ? "Gratuit (créatif)" : cost + " Couronnes", free || owned() >= cost);
+        y = Ui.priceLine(graphics, font, x, y, width, free ? "Gratuit (créatif)" : cost == 0 ? "Gratuit" : cost + " Couronnes", free || owned() >= cost);
         for (final CrateRows.Row row : CrateRows.forCrates(crates(selected)))
         {
             y = Ui.crateLine(graphics, font, x, y, width, row);

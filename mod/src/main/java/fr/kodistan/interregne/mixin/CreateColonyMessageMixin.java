@@ -48,6 +48,8 @@ public abstract class CreateColonyMessageMixin
         {
             return;
         }
+        fr.kodistan.interregne.economy.RegionalTreasury.get(sender.getServer())
+          .credit(building.getColony(), fr.kodistan.interregne.Config.FOUNDING_TREASURY.get());
         BuildContext.begin(sender);
         try
         {

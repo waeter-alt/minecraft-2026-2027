@@ -8,6 +8,11 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class TownHallCap
 {
+    /**
+     * Refusal for a hut that stands outside the colony's claimed land (its town hall level is then irrelevant).
+     */
+    public static final String OUTSIDE = "Hors des terres de ta colonie.";
+
     private TownHallCap()
     {
     }

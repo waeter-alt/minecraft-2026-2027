@@ -32,10 +32,12 @@ record UpgradeOffer(int level, int target, @Nullable String refusal, boolean fre
         final int level = building.getBuildingLevel();
         final int target = level + 1;
         final ITownHallView townHall = building.getColony().getTownHall();
-        final String refusal = TownHallCap.refusal(building instanceof ITownHallView, target, townHall == null ? 0 : townHall.getBuildingLevel());
+        final boolean outside = !(building instanceof ITownHallView) && !building.getColony().isCoordInColony(minecraft.level, building.getPosition());
+        final String refusal = outside ? TownHallCap.OUTSIDE
+                                 : TownHallCap.refusal(building instanceof ITownHallView, target, townHall == null ? 0 : townHall.getBuildingLevel());
         final boolean free = minecraft.player.isCreative();
         final long owned = Wallet.value(new PlayerMainInvWrapper(minecraft.player.getInventory())) + ClientTreasury.of(building.getColony());
-        final int cost = BuildCosts.forLevel(target);
+        final int cost = BuildCosts.forLevel(building instanceof ITownHallView, target);
         final List<CrateRows.Row> crates = CrateRows.forBuilding(building, true);
         return new UpgradeOffer(level, target, refusal, free, cost, free || owned >= cost, crates, crates.stream().allMatch(CrateRows.Row::available),
           BuildCosts.secondsForLevel(target));
@@ -48,7 +50,7 @@ record UpgradeOffer(int level, int target, @Nullable String refusal, boolean fre
 
     String price()
     {
-        return free ? "Gratuit (créatif)" : cost + " Couronnes";
+        return free ? "Gratuit (créatif)" : cost == 0 ? "Gratuit" : cost + " Couronnes";
     }
 
     /**
@@ -56,7 +58,8 @@ record UpgradeOffer(int level, int target, @Nullable String refusal, boolean fre
      */
     String action()
     {
-        return refusal != null ? "Hôtel de ville niv. " + target + " requis"
+        return TownHallCap.OUTSIDE.equals(refusal) ? "Hors de la colonie"
+                 : refusal != null ? "Hôtel de ville niv. " + target + " requis"
                  : !affordable ? "Pas assez de Couronnes"
                      : !cratesReady ? "Il manque des caisses"
                          : (level == 0 ? "Construire" : "Améliorer") + " (" + BuildCosts.formatSeconds(seconds) + ")";
@@ -72,7 +75,8 @@ record UpgradeOffer(int level, int target, @Nullable String refusal, boolean fre
         {
             return full;
         }
-        return refusal != null ? "Hôtel niv. " + target + " requis"
+        return TownHallCap.OUTSIDE.equals(refusal) ? "Hors colonie"
+                 : refusal != null ? "Hôtel niv. " + target + " requis"
                  : !affordable ? "Pas assez d'or"
                      : !cratesReady ? "Caisses manquantes"
                          : level == 0 ? "Construire" : "Améliorer";

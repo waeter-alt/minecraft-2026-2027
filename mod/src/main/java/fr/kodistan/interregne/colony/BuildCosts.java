@@ -32,6 +32,15 @@ public final class BuildCosts
         return Config.COST_PER_LEVEL.get() * Math.max(1, targetLevel);
     }
 
+    /**
+     * Price of reaching a level for this kind of building: the town hall's level 1 is free, otherwise a new player
+     * (no Couronne) could never found a colony.
+     */
+    public static int forLevel(final boolean townHall, final int targetLevel)
+    {
+        return townHall && targetLevel <= 1 ? 0 : forLevel(targetLevel);
+    }
+
     public static int forRepair()
     {
         return Config.REPAIR_COST.get();

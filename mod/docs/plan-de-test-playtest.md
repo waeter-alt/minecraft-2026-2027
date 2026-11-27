@@ -13,6 +13,15 @@ Cocher `[x]` quand c'est bon, noter ce qui cloche à côté (message exact, capt
 - **Réglage utile** : dans la config serveur, mettre `caravanBlocksPerSecond` à 10 et `roadUpgradeSeconds` à 10 (minimum autorisé) pour ne pas attendre.
 - Noter la version du jeu et qui joue quoi. Garder la console serveur ouverte pour les erreurs.
 
+## 0 bis. Préparer le monde (serveur neuf)
+
+Sur un monde neuf, aucun Marché impérial n'existe : sans lui, pas de caisses de pierre (l'Hôtel de ville niveau 2 en exige) ni de route impériale. En op ou en rcon, une fois le monde créé :
+
+1. `/commerce empire poser` : pose le Marché impérial sur le sol à 6 blocs à l'est du spawn du monde (ou `/commerce empire poser <x> <y> <z>` pour une position précise). Le bloc s'enregistre tout seul comme destination des caravanes. Il est incassable (admin).
+2. `/commerce empire marches` : vérifie qu'il est connu (coordonnées et distance).
+3. Chaque joueur a besoin de Couronnes (`/couronnes frapper`) : l'achat se fait en cliquant droit sur le bloc (aucun droit op requis, aucune colonie requise). Prix de base 60 Couronnes la caisse, stock de départ 32 par type (`/regions stock pierre <n>` pour le changer, `/regions` pour voir prix et stock).
+4. Route impériale (optionnelle, pour vendre à l'Empire) : le Relais commercial de la colonie doit être construit et son trésor avoir 400 Couronnes (`/commerce tresor <colonie> 400`), puis bouton du Relais ou `/commerce empire <colonie> route`.
+
 ## 1. Diplomatie (PR #35)
 
 Jamais cliqué dans le vrai écran. Hôtel de ville > onglet Diplomatie.
