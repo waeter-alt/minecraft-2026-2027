@@ -222,7 +222,9 @@ public abstract class AssaultTroop extends AbstractEntityMinecoloniesRaider impl
     /**
      * The stock raider navigator gets a stuck handler that, with MineColonies' default config
      * (dobarbariansbreakthroughwalls), silently sets blocks to air around a stuck raider — building blocks vanished
-     * with no troop battering them. Same handler minus the block breaking: only the troops' own counted blows wreck.
+     * with no troop battering them — and that also places ladders and leaf bridges to climb out, blocks left in the
+     * world for good. Ours never touches a block: a stuck troop skips ahead along its path, and teleports to its goal
+     * when it is completely stuck. Only the troops' own counted blows wreck anything.
      */
     @Override
     public AbstractAdvancedPathNavigate getNavigation()
@@ -233,9 +235,9 @@ public abstract class AssaultTroop extends AbstractEntityMinecoloniesRaider impl
         {
             navigator.setStuckHandler(PathingStuckHandler.createStuckHandler()
               .withTakeDamageOnStuck(0.4f)
-              .withBuildLeafBridges()
               .withChanceToByPassMovingAway(0.20)
-              .withPlaceLadders());
+              .withTeleportSteps(5)
+              .withTeleportOnFullStuck());
         }
         return navigator;
     }
