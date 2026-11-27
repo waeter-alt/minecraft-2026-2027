@@ -429,7 +429,7 @@ final class HubDiplomacyPage
         if (over)
         {
             hub.hint = money < tribute ? "Il manque " + fr.kodistan.interregne.economy.Wallet.format(tribute - money) + " Couronnes au trésor régional pour le tribut."
-                                       : "Verse le tribut au trésor de l'assaillant : la guerre s'arrête, ses troupes rentrent et vous gagnez un bouclier.";
+                                       : "Verse le tribut (une part de votre trésor) à l'assaillant : la guerre s'arrête, ses troupes rentrent et vous gagnez un bouclier.";
         }
         return x;
     }

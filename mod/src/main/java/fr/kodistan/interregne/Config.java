@@ -325,9 +325,9 @@ public final class Config
       .comment("Seconds the war road takes to build; troops wait for it before marching")
       .defineInRange("warRoadSeconds", 60, 5, 3600);
 
-    public static final ModConfigSpec.LongValue WAR_TRIBUTE = BUILDER
-      .comment("Couronnes the defender pays from its treasury to the attacker's to capitulate and end the war")
-      .defineInRange("warTribute", 500L, 0L, Long.MAX_VALUE);
+    public static final ModConfigSpec.IntValue WAR_TRIBUTE_PERCENT = BUILDER
+      .comment("Percent of its own treasury the loser pays the winner: the defender to capitulate, or the attacker when its surrender is demanded. A share rather than a fixed sum, so it hurts a young colony as much as a rich one")
+      .defineInRange("warTributePercent", 25, 0, 100);
 
     public static final ModConfigSpec.IntValue WAR_SHIELD_SECONDS = BUILDER
       .comment("Seconds a colony that lost a war (town hall taken or capitulation) cannot be declared war on")
@@ -445,7 +445,7 @@ public final class Config
 
     public static final ModConfigSpec.LongValue FOUNDING_TREASURY = BUILDER
       .comment("Couronnes put in a colony's treasury when it is founded: a new player has none, and every hut after the free town hall costs some")
-      .defineInRange("foundingTreasury", 150L, 0L, Long.MAX_VALUE);
+      .defineInRange("foundingTreasury", 500L, 0L, Long.MAX_VALUE);
 
     public static final ModConfigSpec.LongValue IMPERIAL_ROAD_COST = BUILDER
       .comment("Couronnes taken from a colony's treasury to open its road to the Marché impérial (refused without them, given back if no road can be traced)")
