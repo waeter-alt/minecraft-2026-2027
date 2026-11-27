@@ -108,6 +108,11 @@ hash = "436fef60f558441c1da59021f83618f4e5887b83d46229c59120dea5d8c5dbec"
 metafile = true
 
 [[files]]
+file = "mods/donjon.pw.toml"
+hash = "06bf3b70ff155209daacedfb531d449817a216d8153dfb81789ad0f821be2bbf"
+metafile = true
+
+[[files]]
 file = "mods/elemental-wizards-rpg.pw.toml"
 hash = "d7c04b4bfecae0845e14c7b2ea37366781191054ef3af4b367faef53a4e63794"
 metafile = true
@@ -144,7 +149,7 @@ metafile = true
 
 [[files]]
 file = "mods/interregne.pw.toml"
-hash = "f1660635f3b7d7a95bd3041a26f0af344d558e1d218c3af4a7782bf6c54585ea"
+hash = "7464da224e4af196f7e7121dd7f2e7ec2d1be49ab59ea738580bb1c4d06aa5be"
 metafile = true
 
 [[files]]

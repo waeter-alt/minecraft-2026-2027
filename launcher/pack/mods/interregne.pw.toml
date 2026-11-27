@@ -4,6 +4,6 @@ side = "both"
 pin = true
 
 [download]
-url = "https://PACK_BASE_URL/files/interregne-0.1.0-alpha.jar"
+url = "https://raw.githubusercontent.com/waeter-alt/minecraft-2026-2027/feature/launcher-beta/launcher/pack/files/interregne-0.1.0-alpha.jar"
 hash-format = "sha512"
-hash = "A_REMPLIR_PAR_scripts-publish-jar.ps1"
+hash = "686cec96153f6920dcedeaa407c095215f5bbeb4c4862da6648ced5dcad14c9b1ccab5ab1e71eadf0b6d8b6bee994d7d8f71e494ee4d402faf413dd1c5e0c188"
