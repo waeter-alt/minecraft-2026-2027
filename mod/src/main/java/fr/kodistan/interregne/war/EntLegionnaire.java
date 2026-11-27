@@ -26,8 +26,8 @@ import software.bernie.geckolib.animation.RawAnimation;
  * The assault's melee troop. Riding the raider base buys the whole defense story for free: guards spot it through
  * CombatUtils' raider branch and the threat tables, citizens fight back, notifyGuardsOfTarget rallies guard towers.
  * <p>
- * Deliberately NOT registered with a raid event (registerWithColony would discard it: eventID 0): the stock
- * RaiderWalkAI idles on a missing event, and {@link AssaultGoal} owns the march and the battering instead.
+ * Registered with the assault's own colony event ({@link AssautEvent}, set before the first tick: an unregistered
+ * raider discards itself); MineColonies' raid AI is never attached, {@link AssaultGoal} owns the march and the battering.
  * A man in red and steel with his own Blockbench model (art/legionnaire/legionnaire.bbmodel), five models one per
  * {@link #getTroopLevel() level}, animated through GeckoLib. Sword and shield are part of the model, so the weapon
  * item {@code setEquipment} hands out is never drawn. Two controllers: "locomotion" (idle, the guarded "ready" stance
