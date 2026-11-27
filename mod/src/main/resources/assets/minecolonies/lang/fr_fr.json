@@ -1,0 +1,4 @@
+{
+  "com.minecolonies.coremod.colonysizechange": "Votre colonie s'agrandit : toutes les terres dans un rayon de %1$d chunk(s) sont désormais à vous.",
+  "tile.blockhut.messagetoofarfromtownhall": "Vous ne pouvez pas poser de bâtiment hors des terres de votre colonie ! Agrandissez-la en améliorant l'Hôtel de ville ou en construisant et améliorant des tours de garde et des casernes."
+}

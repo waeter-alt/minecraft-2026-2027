@@ -109,7 +109,7 @@ public final class InstantBuilder
         {
             return true;
         }
-        final int cost = player == null || player.isCreative() ? 0 : costOf(colony, order);
+        final int cost = player == null || player.isCreative() || BuildContext.prepaid() ? 0 : costOf(colony, order);
         // Regional treasury: the colony's treasury pays first, the coins carried make up the rest
         final TreasuryPayment payment = TreasuryPayment.pay(player, colony, cost);
         if (payment == null)
