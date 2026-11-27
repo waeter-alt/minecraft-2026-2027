@@ -32,8 +32,9 @@ import java.util.UUID;
 
 /**
  * Dying during an assault: the wait before respawning grows with each death in that assault (8 s, then +4 s, up to
- * 30 s), the defender and the allies who came to help respawn at the defender's town hall, the attacker at their own
- * (until the siege banner exists), beds don't count, and the first 3 s after respawning are protected until the
+ * 30 s), the defender and the allies who came to help respawn at the defender's town hall, the attacker at the foot of
+ * their siege banner while it stands ({@link SiegeBanners}) and at their own town hall once it is down, beds don't
+ * count, and the first 3 s after respawning are protected until the
  * player strikes.
  * <p>
  * The wait itself is held by the client's death screen ({@code AssaultDeathScreen}); the server only logs a respawn
@@ -94,6 +95,7 @@ public final class AssaultRespawn
             }
             final IColony home;
             final String where;
+            BlockPos spot = null;
             if (own.getID() == defender.getID())
             {
                 home = defender;
@@ -101,8 +103,9 @@ public final class AssaultRespawn
             }
             else if (own.getID() == attacker.getID())
             {
-                home = attacker;
-                where = "votre hôtel de ville";
+                spot = SiegeBanners.respawnFor(defender.getID());
+                home = spot != null ? defender : attacker;
+                where = spot != null ? "votre étendard de siège" : "votre hôtel de ville";
             }
             else if (Alliances.get(server).areAllied(own.getID(), defender.getID()))
             {
@@ -117,7 +120,7 @@ public final class AssaultRespawn
             final int count = previous != null && previous.defender() == defender.getID() ? previous.count() + 1 : 1;
             DEATHS.put(player.getUUID(), new Death(defender.getID(), count));
             final int seconds = waitSeconds(count);
-            PENDING.put(player.getUUID(), new Pending(now(server) + seconds * 20L, home.getDimension(), home.getCenter()));
+            PENDING.put(player.getUUID(), new Pending(now(server) + seconds * 20L, home.getDimension(), spot != null ? spot : home.getCenter()));
             PacketDistributor.sendToPlayer(player, new AssaultDeathPayload(seconds * 20, count, where, defender.getCenter()));
             InterregneMod.LOGGER.info("[war] {} tombé ({}e mort de l'assaut sur {}) : attente {} s", player.getName().getString(), count,
               defender.getName(), seconds);

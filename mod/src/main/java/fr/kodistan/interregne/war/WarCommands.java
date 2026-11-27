@@ -44,6 +44,29 @@ public final class WarCommands
               .then(net.minecraft.commands.Commands.argument("archers", IntegerArgumentType.integer(0, 12))
                 .executes(ctx -> assault(ctx, IntegerArgumentType.getInteger(ctx, "legionnaires"),
                   IntegerArgumentType.getInteger(ctx, "archers"))))))
+          .then(literal("assaut-de")
+            .then(net.minecraft.commands.Commands.argument("attaquant", IntegerArgumentType.integer(1))
+              .then(net.minecraft.commands.Commands.argument("defenseur", IntegerArgumentType.integer(1))
+                .executes(ctx -> assaultFrom(ctx, 3, 0))
+                .then(net.minecraft.commands.Commands.argument("legionnaires", IntegerArgumentType.integer(0, 12))
+                  .then(net.minecraft.commands.Commands.argument("archers", IntegerArgumentType.integer(0, 12))
+                    .executes(ctx -> assaultFrom(ctx, IntegerArgumentType.getInteger(ctx, "legionnaires"),
+                      IntegerArgumentType.getInteger(ctx, "archers"))))))))
+          .then(literal("etendard")
+            .then(net.minecraft.commands.Commands.argument("defenseur", IntegerArgumentType.integer(1))
+              .executes(ctx -> {
+                  ctx.getSource().sendSystemMessage(Component.literal(SiegeBanners.describe(IntegerArgumentType.getInteger(ctx, "defenseur"))));
+                  return 1;
+              })
+              .then(literal("figer")
+                .then(net.minecraft.commands.Commands.argument("pourcent", IntegerArgumentType.integer(-1, 100))
+                  .then(net.minecraft.commands.Commands.argument("etat", IntegerArgumentType.integer(0, 3))
+                    .executes(ctx -> {
+                        ctx.getSource().sendSystemMessage(Component.literal(SiegeBanners.hold(ctx.getSource().getServer().overworld(),
+                          IntegerArgumentType.getInteger(ctx, "defenseur"), IntegerArgumentType.getInteger(ctx, "pourcent"),
+                          (byte) IntegerArgumentType.getInteger(ctx, "etat"))));
+                        return 1;
+                    }))))))
           .then(literal("stop").executes(WarCommands::stop))
           .then(literal("debug")
             .then(literal("archers-siege-only")
@@ -81,6 +104,34 @@ public final class WarCommands
             ctx.getSource().sendFailure(Component.literal(refusal));
             return 0;
         }
+        return 1;
+    }
+
+    /**
+     * Test shortcut: an assault of one colony on another, as if the attacker's troops had just marched in (fresh troops,
+     * not taken from its garrison). The war must be open, e.g. {@code /diplomatie guerre <a> <b> immediat}.
+     */
+    private static int assaultFrom(final CommandContext<CommandSourceStack> ctx, final int legionnaires, final int archers)
+    {
+        final ServerLevel level = ctx.getSource().getServer().overworld();
+        final IColony attacker = com.minecolonies.api.colony.IColonyManager.getInstance()
+          .getColonyByWorld(IntegerArgumentType.getInteger(ctx, "attaquant"), level);
+        final IColony defender = com.minecolonies.api.colony.IColonyManager.getInstance()
+          .getColonyByWorld(IntegerArgumentType.getInteger(ctx, "defenseur"), level);
+        if (attacker == null || defender == null || attacker.getID() == defender.getID())
+        {
+            ctx.getSource().sendFailure(Component.literal("Deux colonies différentes, par leur numéro (/mc colony list)."));
+            return 0;
+        }
+        final java.util.List<Integer> legion = java.util.Collections.nCopies(legionnaires, 1);
+        final java.util.List<Integer> bows = java.util.Collections.nCopies(archers, 1);
+        final String refusal = WarAssaults.launch(level, attacker, defender, null, legion, bows, null, false);
+        if (refusal != null)
+        {
+            ctx.getSource().sendFailure(Component.literal(refusal));
+            return 0;
+        }
+        ctx.getSource().sendSystemMessage(Component.literal("Assaut lancé : " + SiegeBanners.describe(defender.getID())));
         return 1;
     }
 

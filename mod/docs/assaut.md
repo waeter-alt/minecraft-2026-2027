@@ -40,6 +40,17 @@ Par ordre de priorité :
 - Pas d'achat de garde pendant un assaut sur sa propre colonie : la garnison qui défend est celle qu'on avait avant.
 - Le plafond de la garnison reste celui des tours (inchangé).
 
+## Étendard de siège
+
+Code : `war/SiegeBanners` (règles), `war/SiegeBannerEntity` (modèle), `client/war/SiegeBannerFx` (rayon, cercle, repère), `client/war/SiegeBannerRenderer`. Modèle Blockbench : `art/etendard/etendard_siege.bbmodel`, texture régénérable par `mod/tools/gen_etendard_texture.py`.
+
+- **Pose** : automatique au lancement d'un assaut entre deux colonies, là où la route de guerre arrive à `siegeBannerDistance` (40) blocs de la bordure du défenseur, à 11 blocs sur le côté de la route, sur un sol plat (1 bloc de pente au plus), sec, hors de toute colonie. Sans route : sur la ligne attaquant → défenseur. Position annoncée aux deux colonies.
+- **Réapparition** : tant qu'il tient, les assaillants tombés dans l'assaut réapparaissent à son pied ; une fois tombé, chez eux. Défenseur et alliés : toujours à l'hôtel de ville.
+- **Capture** : défenseurs (et alliés du défenseur) dans le cercle (`siegeBannerRadius` = 6) sans assaillant : le drapeau descend, `siegeBannerCaptureSeconds` (20 s) seul, plus vite à plusieurs (plafond 3). Un assaillant (joueur ou troupe) dans le cercle gèle la capture ; un cercle vide la fait remonter lentement (3× plus lent). À 100 % : cor de raid, annonce, l'étendard disparaît. **Pas de replantation** dans le même assaut.
+- **Visible** : rayon aux couleurs de l'assaillant (vu au-delà de la distance d'affichage, clignote pendant une capture), cercle lumineux au sol qui se remplit comme une jauge, repère à l'écran (icône + distance, collé au bord, caché à moins de 32 m). Rendu additif « éclair » vanilla, aucun shader à nous ni passe post-process : n'interfère pas avec le shaderpack d'un joueur.
+- **Indestructible** : entité non sauvegardée, ni frappable ni poussable ; elle est recréée quand son chunk se charge.
+- **Tests** (op) : `/war assaut-de <attaquant> <défenseur> [légionnaires archers]` (la guerre doit être ouverte : `/diplomatie guerre <a> <b> true`), `/war etendard <défenseur>` (état), `/war etendard <défenseur> figer <pourcent> <état 0-3>` (fige un état pour le regarder ; `-1` rend la main au jeu, état 3 l'abat).
+
 ## Verrou d'assaut : une colonie à la fois
 
 - Quand une colonie A lance un assaut contre D, **D est réservée à A pendant 2 h de temps de jeu** (`warAssaultLockMinutes` = 120), comptées depuis ce premier assaut. A peut relancer des assauts contre D pendant la fenêtre, mais elle ne se prolonge pas.

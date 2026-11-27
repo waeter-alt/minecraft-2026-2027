@@ -52,6 +52,8 @@ import java.util.stream.Stream;
  * size=1280x720                  (optional: window size)
  * settle=60                      (optional: ticks to wait at least after each teleport)
  * quit=true                      (optional: close the game once done)
+ * commands=cmd;cmd;...           (optional: server commands run once the world is open, before the routes and poses)
+ * gui=true                       (optional: keep the interface (HUD) visible in the captures)
  * </pre>
  * The player is put in spectator at noon under a clear sky, the interface hidden; each pose is captured into
  * {@code routeshot/out/<name>.png} once the chunks around it have stopped arriving, then {@code routeshot/done.txt}
@@ -90,6 +92,8 @@ public final class RouteShot
     private static final List<int[]> posts = new ArrayList<>();
     private static double[] home;
     private static boolean show;
+    private static boolean gui;
+    private static final List<String> commands = new ArrayList<>();
     private static final List<int[]> clicks = new ArrayList<>();
     private static int clickWait;
     private static int clickIndex;
@@ -206,6 +210,15 @@ public final class RouteShot
             }
         }
         show = Boolean.parseBoolean(props.getProperty("show", "false").trim());
+        gui = Boolean.parseBoolean(props.getProperty("gui", "false").trim());
+        commands.clear();
+        for (final String cmd : props.getProperty("commands", "").split(";"))
+        {
+            if (!cmd.isBlank())
+            {
+                commands.add(cmd.trim());
+            }
+        }
         clicks.clear();
         clickIndex = 0;
         clickTimer = 0;
@@ -301,7 +314,7 @@ public final class RouteShot
         savedDistance = mc.options.renderDistance().get();
         optionsSaved = true;
         resize(mc);
-        mc.options.hideGui = true;
+        mc.options.hideGui = !gui;
         // A window in the background would pause the game, and the integrated server with it
         mc.options.pauseOnLostFocus = false;
         mc.options.cloudStatus().set(CloudStatus.OFF);
@@ -321,6 +334,11 @@ public final class RouteShot
             for (final int[] post : posts)
             {
                 report.add("post " + RouteDev.post(server.overworld(), post[0], post[1]).toShortString());
+            }
+            for (final String cmd : commands)
+            {
+                server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withPermission(4), cmd);
+                report.add("command " + cmd);
             }
         });
         ticks = 0;
