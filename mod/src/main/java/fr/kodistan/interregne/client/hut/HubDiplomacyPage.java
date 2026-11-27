@@ -75,7 +75,7 @@ final class HubDiplomacyPage
         }
         y += Ui.banner(graphics, hub.font(), x, y, width, wars > 0 ? Ui.State.BAD : received > 0 ? Ui.State.WAIT : Ui.State.OK, allies + (allies > 1 ? " alliés" : " allié"),
           wars > 0 ? wars + (wars > 1 ? " guerres" : " guerre") : received > 0 ? received + (received > 1 ? " propositions à examiner" : " proposition à examiner")
-            : sync.entries().size() + " autres colonies");
+            : sync.entries().size() + (sync.entries().size() > 1 ? " autres colonies" : " autre colonie"));
         y += 20;
         if (!mayAct)
         {

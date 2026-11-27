@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 public final class BuildContext
 {
     private static final ThreadLocal<ServerPlayer> REQUESTER = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> PREPAID = new ThreadLocal<>();
 
     private BuildContext()
     {
@@ -20,9 +21,22 @@ public final class BuildContext
         REQUESTER.set(player);
     }
 
+    /** Orders requested until {@link #end()} were already paid for by the caller (e.g. "Tout reconstruire"). */
+    public static void beginPrepaid(final ServerPlayer player)
+    {
+        REQUESTER.set(player);
+        PREPAID.set(true);
+    }
+
     public static void end()
     {
         REQUESTER.remove();
+        PREPAID.remove();
+    }
+
+    public static boolean prepaid()
+    {
+        return Boolean.TRUE.equals(PREPAID.get());
     }
 
     @Nullable
