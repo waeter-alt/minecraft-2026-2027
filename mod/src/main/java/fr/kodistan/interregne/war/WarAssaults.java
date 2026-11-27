@@ -1879,7 +1879,7 @@ public final class WarAssaults
         {
             player.sendSystemMessage(Component.literal("Payé : " + payment.describe() + "."));
         }
-        BuildContext.begin(player);
+        BuildContext.beginPrepaid(player);
         try
         {
             for (final IBuilding building : targets)

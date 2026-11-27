@@ -172,6 +172,11 @@ public final class Contracts extends SavedData
         {
             return "Il faut une alliance et une route entre les deux colonies.";
         }
+        if (CrateStores.warehouse(buyer) == null)
+        {
+            // Without one the caravan would wait at the buyer's door forever
+            return buyer.getName() + " n'a pas d'Entrepôt pour recevoir les caisses.";
+        }
         if (quantity < 1 || quantity > MAX_QUANTITY || unitPrice < 1)
         {
             return "Quantité ou prix invalide.";
@@ -236,6 +241,10 @@ public final class Contracts extends SavedData
         if (relaisLevel(buyer) < 1)
         {
             return "Il faut un Relais commercial construit.";
+        }
+        if (CrateStores.warehouse(buyer) == null)
+        {
+            return "Il faut un Entrepôt construit pour recevoir les caisses.";
         }
         if (!mayTrade(server, contract.seller, contract.buyer))
         {
