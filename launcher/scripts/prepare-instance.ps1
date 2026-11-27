@@ -21,7 +21,9 @@
 param(
     [Parameter(Mandatory = $true)][string]$PrismDir,
     [Parameter(Mandatory = $true)][string]$PackUrl,
-    [Parameter(Mandatory = $true)][string]$ServerAddress,
+    # Vide = pas d'auto-join ni de servers.dat : le joueur passe par Multijoueur
+    # et tape l'adresse lui-meme (choix de l'Alpha, adresse pas encore fixe).
+    [string]$ServerAddress = '',
     [Parameter(Mandatory = $true)][string]$BootstrapJar,
     [string]$InstanceFolder = 'Interregne',
     [switch]$Force
@@ -46,6 +48,7 @@ New-Item -ItemType Directory -Force $mc | Out-Null
 # instance.cfg et mmc-pack.json : toujours re-appliques depuis le modele
 $cfg = [IO.File]::ReadAllText((Join-Path $template 'instance.cfg'), $utf8)
 $cfg = $cfg.Replace('PACK_URL', $PackUrl).Replace('SERVER_ADDRESS', $ServerAddress)
+if (-not $ServerAddress) { $cfg = $cfg.Replace('JoinServerOnLaunch=true', 'JoinServerOnLaunch=false') }
 [IO.File]::WriteAllText((Join-Path $dest 'instance.cfg'), $cfg, $utf8)
 Copy-Item (Join-Path $template 'mmc-pack.json') $dest -Force
 
@@ -54,6 +57,10 @@ if ($Force -or -not (Test-Path $opt)) { Copy-Item (Join-Path $template 'minecraf
 Copy-Item -LiteralPath $BootstrapJar (Join-Path $mc 'packwiz-installer-bootstrap.jar') -Force
 
 # --- servers.dat : NBT non compresse, big-endian -------------------------------
+$serversDat = Join-Path $mc 'servers.dat'
+if (-not $ServerAddress) {
+    if (Test-Path $serversDat) { Remove-Item $serversDat -Force }
+} else {
 function Write-NbtString([IO.BinaryWriter]$w, [string]$s) {
     $b = [Text.Encoding]::UTF8.GetBytes($s)   # = "modified UTF-8" pour ces caracteres
     $w.Write([byte](($b.Length -shr 8) -band 0xFF)); $w.Write([byte]($b.Length -band 0xFF)); $w.Write($b)
@@ -72,11 +79,12 @@ $w.Write([byte]1);  Write-NbtString $w 'acceptTextures'; $w.Write([byte]1)
 $w.Write([byte]0)                                                          # fin du serveur
 $w.Write([byte]0)                                                          # fin de la racine
 $w.Flush()
-[IO.File]::WriteAllBytes((Join-Path $mc 'servers.dat'), $ms.ToArray())
+[IO.File]::WriteAllBytes($serversDat, $ms.ToArray())
+}
 
 # --- Jouer.bat -----------------------------------------------------------------
 $bat = "@echo off`r`nstart `"`" `"%~dp0prismlauncher.exe`" --launch $InstanceFolder`r`n"
 [IO.File]::WriteAllText((Join-Path $PrismDir 'Jouer.bat'), $bat, (New-Object System.Text.ASCIIEncoding))
 
 Write-Host "Instance prete : $dest"
-Write-Host "Serveur : $ServerAddress | Pack : $PackUrl"
+Write-Host "Serveur : $(if ($ServerAddress) { $ServerAddress } else { '(aucun, saisie manuelle)' }) | Pack : $PackUrl"

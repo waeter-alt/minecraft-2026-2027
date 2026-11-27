@@ -29,7 +29,7 @@ Contenu de ce dossier :
 | Marqueur | Où | Valeur attendue |
 |---|---|---|
 | `PACK_URL` | `prism-instance/instance.cfg` | URL complète de `pack.toml`, par ex. `https://moncompte.github.io/interregne-pack/pack.toml` |
-| `SERVER_ADDRESS` | `prism-instance/instance.cfg` | Adresse du serveur, par ex. `play.exemple.fr` ou `1.2.3.4:25565` |
+| `SERVER_ADDRESS` | `prism-instance/instance.cfg` | Adresse du serveur, par ex. `play.exemple.fr` ou `1.2.3.4:25565`. **Facultative** : sans `-ServerAddress`, pas d'auto-join ni de `servers.dat`, le joueur passe par Multijoueur et tape l'adresse (choix de l'Alpha). |
 | `PACK_BASE_URL` et `A_REMPLIR_PAR_scripts-publish-jar.ps1` | `pack/mods/interregne.pw.toml` | Remplis automatiquement par `scripts/publish-jar.ps1` |
 
 Ne les modifie pas à la main dans les modèles. `prepare-instance.ps1` les remplace dans la **copie** installée dans Prism, et `publish-jar.ps1` remplit l'entrée `interregne`.
@@ -40,7 +40,7 @@ Ne les modifie pas à la main dans les modèles. `prepare-instance.ps1` les remp
 
 Ce dépôt ne contient aucun exécutable : récupère-les toi-même depuis leurs sources officielles.
 
-1. **Prism Launcher, version portable pour Windows** : sur prismlauncher.org, Download → Windows → l'archive « Portable » (zip). Dézippe-la dans un **chemin court**, par ex. `C:\Interregne\PrismLauncher\`. Les chemins longs posent problème à Windows PowerShell 5.1.
+1. **Prism Launcher, version portable pour Windows** : sur prismlauncher.org, Download → Windows → l'archive « Portable » (zip). Prendre la variante **MinGW-w64** (`PrismLauncher-Windows-MinGW-w64-Portable-*.zip`) : la variante MSVC exige le runtime Visual C++, que tous les joueurs n'ont pas. Testé avec la 11.1.1. Dézippe-la dans un **chemin court**, par ex. `C:\Interregne\PrismLauncher\`. Les chemins longs posent problème à Windows PowerShell 5.1.
 2. **packwiz-installer-bootstrap.jar** : page Releases de `github.com/packwiz/packwiz-installer-bootstrap`. Garde le `.jar` dans `Téléchargements`.
 3. **packwiz** (la ligne de commande, recommandée pour maintenir le pack) : il n'y a pas de release officielle. Au choix :
    - `go install github.com/packwiz/packwiz@latest` (Go 1.21 ou plus) ;
@@ -49,9 +49,24 @@ Ce dépôt ne contient aucun exécutable : récupère-les toi-même depuis leurs
    Mets `packwiz.exe` dans le PATH. Sans packwiz, `scripts/refresh-index.ps1` sert de roue de secours pour recalculer les hashes.
 4. **Java 21** est déjà sur ton PC pour compiler le mod. Les joueurs n'ont rien à installer : Prism télécharge Java tout seul (voir l'étape 4).
 
-## Étape 2 : héberger le pack sur GitHub Pages
+## Étape 2 : héberger le pack
 
-Le dépôt principal contient le code du mod et le dossier de projet : il est privé, et Pages n'est gratuit que pour les dépôts publics. On publie donc **uniquement `launcher/pack/`** dans un petit dépôt public dédié.
+**Choix actuel (Alpha, 2026-11-27) : le pack est servi directement par le dépôt principal, qui est public.**
+
+```
+PACK_URL = https://raw.githubusercontent.com/waeter-alt/minecraft-2026-2027/main/launcher/pack/pack.toml
+```
+
+Rien à créer ni à pousser ailleurs : **chaque merge dans `main` qui touche `launcher/pack/` est une mise à jour chez les joueurs** à leur prochain lancement (cache raw de GitHub : environ 5 minutes). Conséquences :
+
+- une PR qui publie un jar (`publish-jar.ps1`) ne marche chez les joueurs **qu'une fois mergée** : avant, les URL pointent vers un fichier que `main` n'a pas encore ;
+- pour tester une PR avant le merge, relancer `publish-jar.ps1` avec l'URL de la branche (`.../minecraft-2026-2027/<branche>/launcher/pack/pack.toml`), tester, puis le relancer avec l'URL de `main` avant de demander le merge.
+
+L'option Pages ci-dessous reste valable si le dépôt redevient privé.
+
+### Variante : GitHub Pages sur un dépôt dédié
+
+Pages n'est gratuit que pour les dépôts publics. Si le dépôt principal est privé, on publie **uniquement `launcher/pack/`** dans un petit dépôt public dédié.
 
 1. Sur GitHub, crée un dépôt **public** vide, par ex. `interregne-pack`.
 2. Depuis la racine de ce dépôt-ci :
@@ -96,6 +111,8 @@ Le script :
    - thème : au choix.
 
    Ces réglages sont enregistrés dans `prismlauncher.cfg`, qui part dans le zip.
+
+   Raccourci sans assistant : écrire soi-même `prismlauncher.cfg` avec `Language=fr`, `UseSystemLocale=false`, `AutomaticJavaDownload=true`, `AutomaticJavaSwitch=true`, `UserAskedAboutAutomaticJavaDownload=true` et `ApplicationTheme=system`. **Lancer ensuite Prism deux fois** avant de fabriquer le zip : au premier démarrage, il télécharge `translations/mmc_fr.qm` mais reste en anglais ; ce fichier doit être dans le zip pour que le joueur ait le français dès son premier lancement.
 2. Ferme Prism, puis installe l'instance :
    ```powershell
    .\launcher\scripts\prepare-instance.ps1 -PrismDir C:\Interregne\PrismLauncher `
@@ -124,7 +141,7 @@ Réglages de l'instance (`instance.cfg`) :
 3. Vérifie :
    - les 6 mods CurseForge (MineColonies & co.) s'installent **sans** fenêtre « téléchargement manuel » (voir `MISSING_MODS.md` sinon) ;
    - le jeu est en français ;
-   - l'auto-join fonctionne ;
+   - l'auto-join fonctionne (seulement si une adresse a été donnée à `prepare-instance.ps1`) ;
    - Simple Voice Chat se connecte.
 
 ## Étape 6 : fabriquer le zip et le distribuer
@@ -135,6 +152,8 @@ Réglages de l'instance (`instance.cfg`) :
 ```
 
 Le script **exclut `accounts.json`**, qui contient tes jetons Microsoft ; il s'arrête net s'il en trouve un.
+
+**Fabrique le zip depuis une instance qui n'a jamais été lancée.** Si tu as joué dans l'instance, le zip embarque tes cartes Xaero, tes données de mods et les configs générées. Le plus simple : copier le dossier Prism ailleurs, supprimer `instances\Interregne`, relancer `prepare-instance.ps1 -Force` sur la copie, puis `make-zip.ps1` sur cette copie.
 
 - En mode léger (par défaut), il exclut aussi les logs, les caches, Java, les assets et les mods déjà téléchargés. Le zip pèse quelques dizaines de Mo, et tout se télécharge proprement au premier lancement chez chaque joueur.
 - `-Full` garde tout : zip de plusieurs centaines de Mo, mais premier lancement plus rapide.
@@ -175,7 +194,7 @@ Message à copier-coller aux amis :
 > 1. Télécharge le zip **Interregne** et décompresse-le dans un dossier simple, par exemple `C:\Jeux\Interregne`. Évite le Bureau s'il est synchronisé par OneDrive.
 > 2. Double-clique sur **`Jouer.bat`** (ou sur `prismlauncher.exe`). Si Windows affiche « Windows a protégé votre ordinateur », clique sur *Informations complémentaires* → *Exécuter quand même*.
 > 3. **Première fois seulement :** Prism te demande un compte. Clique sur *Ajouter Microsoft*, ouvre le lien affiché, entre le code et connecte-toi avec le compte Microsoft qui possède Minecraft Java.
-> 4. Relance **`Jouer.bat`**. Une fenêtre télécharge les mods (quelques minutes la première fois, quelques secondes ensuite), puis le jeu s'ouvre **directement sur le serveur**.
+> 4. Relance **`Jouer.bat`**. Une fenêtre télécharge les mods (quelques minutes la première fois, quelques secondes ensuite), puis le jeu s'ouvre **directement sur le serveur** (si le zip a été fait avec `-ServerAddress`). Pour l'Alpha, il n'y a pas d'adresse dans le zip : le joueur clique sur *Multijoueur* → *Ajouter un serveur* et tape l'adresse que les organisateurs lui donnent.
 > 5. Les fois suivantes, il suffit de double-cliquer sur `Jouer.bat`. Les mises à jour sont automatiques.
 
 À savoir :
