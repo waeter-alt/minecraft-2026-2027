@@ -1,12 +1,16 @@
 hash-format = "sha256"
 
 [[files]]
+file = "config/fancymenu/assets/kodistan/ecran_titre.afma"
+hash = "7546fa2891a3fddbaae62da83d19f61f38a941c197de0590fe8ed8a04d32e6df"
+
+[[files]]
 file = "config/fancymenu/customizablemenus.txt"
 hash = "9f0ada5a7f0193d2d717d1c1736f545f5235c2597213731493b97488617ebbf2"
 
 [[files]]
 file = "config/fancymenu/customization/kodistan_title.txt"
-hash = "f9d513ea82b7da8871fe581bfabec5ca29cec0ff9199d244709ba823ef6da26c"
+hash = "58bb607b6a965b42e12ea93bca50872991895bf87b3f088e0a22057715a84eff"
 
 [[files]]
 file = "config/fancymenu/options.txt"

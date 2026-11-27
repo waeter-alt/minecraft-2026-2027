@@ -1,0 +1,296 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Rendu de l'écran titre</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Cinzel+Decorative:wght@700&family=Noto+Sans+Runic&display=swap">
+<style>
+  body{margin:0;background:#111;color:#eee;font:14px system-ui;display:flex;flex-direction:column;gap:10px;align-items:center;padding:12px}
+  canvas{width:min(100%,1280px);height:auto;background:#000}
+  .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  button{padding:6px 12px}
+</style>
+<div class="bar">
+  <button id="play">Aperçu</button>
+  <button id="intro">Rendre l'intro</button>
+  <button id="main">Rendre la boucle</button>
+  <span id="status">prêt</span>
+</div>
+<canvas id="cv" width="1600" height="900"></canvas>
+<video id="vid" src="ouverture.webm" muted playsinline preload="auto" style="display:none"></video>
+<script>
+/* Rendu image par image de l'écran titre : intro (la vraie ouverture du coffre du site, filmée) puis boucle (intérieur du coffre + logo).
+   Toutes les animations de la boucle ont une période qui divise LOOP, pour que la boucle soit sans couture. */
+const W = 1600, H = 900, FPS = 20, LOOP = 8;
+const T_DIM = 4.4, T_DIM_LEN = 1.4, T_LOGO = 4.3, T_SWAP = 0.8; // secondes dans l'intro
+const C1 = '#ffc46b', C2 = '#c77dff', HOT = '#ff7a2e', DEEP = 'rgba(42,14,8,.6)', CORE = '#fff2cf';
+const RUNES = 'ᚲᛟᛞᛁᛋᛏᚨᚾ ✦ ';
+const RUNES2 = 'ᛉᚱᛟᚹᚾ ✶ ᚹᚨᚲᚨᚾᛏ ✶ ';
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const vid = document.getElementById('vid');
+const still = new Image(); still.src = 't37.jpg';
+const TAU = Math.PI * 2;
+const mod = (a, b) => ((a % b) + b) % b;
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const ease = x => 1 - Math.pow(1 - clamp(x), 3);
+const lerp = (a, b, k) => a + (b - a) * k;
+
+/* ---------- logo (espace de dessin 680x320, comme les maquettes) ---------- */
+const LOGO_W = 0.46 * W, LS = LOGO_W / 680, LX = (W - LOGO_W) / 2, LY = 0.03 * H;
+const FONT_L = '700 94px "Cinzel Decorative"';
+let layout = null;
+function computeLayout(){
+  ctx.font = FONT_L;
+  const items = [['K'],['O',92],['D'],['I',30],['S'],['T'],['A'],['N']];
+  let x = 0; const out = [];
+  for (const [c, w] of items){ const ww = w || ctx.measureText(c).width; out.push({c, x, w: ww, g: !!w}); x += ww + 3; }
+  const tot = x - 3, x0 = 340 - tot / 2;
+  out.forEach(o => o.x += x0);
+  layout = out;
+}
+function glitch(tau){
+  const u = mod(tau, LOOP / 4) / (LOOP / 4);
+  if (u < .08) return [[-3,0],[3,0]];
+  if (u < .11) return [[5,-2],[-4,2]];
+  if (u >= .55 && u < .58) return [[-8,1],[7,-1]];
+  return [[-3,0],[3,0]];
+}
+function crownPath(c){
+  c.beginPath(); c.moveTo(-18,9); c.lineTo(-21,-12); c.lineTo(-9,-2); c.lineTo(0,-19); c.lineTo(9,-2); c.lineTo(21,-12); c.lineTo(18,9); c.closePath();
+}
+function goldGrad(c, y0, y1){
+  const g = c.createLinearGradient(0, y0, 0, y1);
+  g.addColorStop(0,'#fff6cf'); g.addColorStop(.4,'#f6cf5c'); g.addColorStop(.6,'#c98f22'); g.addColorStop(1,'#f2c14e'); return g;
+}
+function drawCrown(c, alpha = 1){
+  c.save(); c.globalAlpha *= alpha;
+  c.lineJoin = 'round'; crownPath(c);
+  c.fillStyle = 'rgba(255,231,166,.22)'; c.fill();
+  c.strokeStyle = goldGrad(c,-19,14); c.lineWidth = 3; c.shadowColor = C1; c.shadowBlur = 7 * LS; c.stroke();
+  c.lineWidth = 2.5; c.strokeRect(-18, 9, 36, 5);
+  c.shadowBlur = 0; c.fillStyle = '#b46cf2'; c.save(); c.translate(0,-6); c.rotate(Math.PI/4); c.fillRect(-3,-3,6,6); c.restore();
+  c.restore();
+}
+function runeRing(c, r, text, reps, size, color, rot){
+  const s = text.repeat(reps), chars = [...s], step = TAU / chars.length;
+  c.save(); c.shadowBlur = 0; c.rotate(rot); c.font = `${size}px "Noto Sans Runic"`; c.fillStyle = color; c.textAlign = 'center'; c.textBaseline = 'middle';
+  chars.forEach((ch, i) => { c.save(); c.rotate(i * step); c.translate(0, -r); c.fillText(ch, 0, 0); c.restore(); });
+  c.restore();
+}
+function drawO(c, tau, pop){
+  c.save(); c.globalAlpha *= pop; c.scale(lerp(.2,1,pop), lerp(.2,1,pop));
+  const breath = .775 + .225 * Math.cos(TAU * tau / (LOOP / 2));
+  const hg = c.createRadialGradient(0,0,0,0,0,54); hg.addColorStop(0, `rgba(255,196,107,${.42*breath})`); hg.addColorStop(1,'rgba(255,196,107,0)');
+  c.fillStyle = hg; c.beginPath(); c.arc(0,0,54,0,TAU); c.fill();
+  c.shadowColor = C1; c.shadowBlur = 7 * LS;
+  const rot = TAU / 3 * tau / LOOP;
+  c.save(); c.rotate(rot); c.strokeStyle = C1; c.lineWidth = 1.8; c.beginPath(); c.arc(0,0,45,0,TAU); c.stroke();
+  c.fillStyle = C1; for (let i = 0; i < 8; i++){ c.save(); c.rotate(i * TAU / 8); c.beginPath(); c.arc(0,-45,2,0,TAU); c.fill(); c.restore(); }
+  c.restore();
+  runeRing(c, 39, RUNES, 3, 9.5, C1, rot);
+  c.save(); c.rotate(-TAU / 6 * tau / LOOP); c.strokeStyle = C2; c.lineWidth = 1.1;
+  for (const sgn of [1,-1]){ c.beginPath(); c.moveTo(0,-31*sgn); c.lineTo(26.8,15.5*sgn); c.lineTo(-26.8,15.5*sgn); c.closePath(); c.stroke(); }
+  c.restore();
+  const ign = .775 + .225 * Math.cos(TAU * tau / (LOOP / 2));
+  drawCrown(c, ign);
+  c.save(); c.rotate(TAU * tau / LOOP); c.fillStyle = '#fff6dc'; c.shadowColor = '#fff6dc'; c.shadowBlur = 8 * LS; c.beginPath(); c.arc(0,-52,2.6,0,TAU); c.fill(); c.restore();
+  c.save(); c.rotate(2 * TAU * tau / LOOP);
+  for (let k = 0; k < 3; k++){ const a = k * TAU / 3; c.save(); c.translate(Math.sin(a) * 66, -Math.cos(a) * 66); c.scale(.6,.6); drawCrown(c, .8); c.restore(); }
+  c.restore();
+  c.restore();
+}
+function zap(c, pts, color, w, period, tau){
+  const p = mod(tau, period) / period, st = Math.floor(p * 6) / 6;
+  const a = p < .4 ? lerp(1,.2,p/.4) : p < .6 ? lerp(.2,1,(p-.4)/.2) : lerp(1,.7,(p-.6)/.4);
+  c.save(); c.globalAlpha *= a; c.strokeStyle = color; c.lineWidth = w; c.setLineDash([6,40]); c.lineDashOffset = 92 * st;
+  c.beginPath(); pts.forEach(([x,y],i) => i ? c.lineTo(x,y) : c.moveTo(x,y)); c.stroke(); c.restore();
+}
+function rel(start, d){ const out = [[start[0],start[1]]]; for (let i = 0; i < d.length; i += 2){ const l = out[out.length-1]; out.push([l[0]+d[i], l[1]+d[i+1]]); } return out; }
+const ZAP1 = rel([-12,-58],[8,7,-7,6,10,9,-8,7,9,10,-7,8,6,9]), ZAP2 = rel([12,-50],[-8,6,7,7,-9,8,7,7,-8,9]);
+function drawSword(c, tau, pop){
+  const P = LOOP / 3, k = (1 - Math.cos(TAU * mod(tau, P) / P)) / 2;
+  c.save(); c.globalAlpha *= pop;
+  c.translate(0, -33); c.rotate((-5 + 11 * k) * Math.PI / 180); c.translate(0, 33 - 12 * k);
+  c.scale(lerp(.2,1,pop), lerp(.2,1,pop));
+  c.lineWidth = 1.5; c.strokeStyle = '#3b1a0a';
+  const gg = goldGrad(c,-112,-60);
+  c.fillStyle = gg; c.beginPath(); c.arc(0,-104,8,0,TAU); c.fill(); c.stroke();
+  c.fillStyle = '#5a1e14'; c.fillRect(-5,-97,10,22); c.strokeStyle = '#1b0d04'; c.strokeRect(-5,-97,10,22);
+  c.fillStyle = gg; c.strokeStyle = '#3b1a0a'; c.beginPath(); c.moveTo(-26,-73); c.quadraticCurveTo(0,-83,26,-73); c.lineTo(23,-64); c.quadraticCurveTo(0,-72,-23,-64); c.closePath(); c.fill(); c.stroke();
+  const sg = c.createLinearGradient(-8,0,8,0); sg.addColorStop(0,'#b8aa98'); sg.addColorStop(.5,'#fff9ee'); sg.addColorStop(1,'#9a8b78');
+  c.fillStyle = sg; c.strokeStyle = '#2a1608'; c.beginPath(); c.moveTo(-8,-64); c.lineTo(8,-64); c.lineTo(7,20); c.lineTo(0,38); c.lineTo(-7,20); c.closePath(); c.fill(); c.stroke();
+  c.shadowColor = C1; c.shadowBlur = 8 * LS;
+  zap(c, ZAP1, C1, 2, LOOP / 8, tau);
+  zap(c, ZAP2, C2, 1.8, LOOP / 5, tau);
+  c.restore();
+}
+/* intro = progression d'apparition (null = logo complet) */
+function drawLogo(tau, a){
+  if (!layout) computeLayout();
+  const A = a ?? 99;
+  const pRings = ease(A / 1.0), pObj = ease((A - .6) / .8), pSub = ease((A - 1.9) / .7), pGl = clamp((A - 1.6) / .7);
+  ctx.save(); ctx.translate(LX, LY); ctx.scale(LS, LS);
+  // grands cercles
+  if (pRings > 0){
+    ctx.save(); ctx.translate(340,150); ctx.globalAlpha = .7 * pRings;
+    const sc = lerp(.4, 1, pRings); ctx.scale(sc, sc); ctx.rotate(lerp(-1.05, 0, pRings));
+    ctx.shadowColor = C1; ctx.shadowBlur = 7 * LS;
+    const r1 = TAU / 8 * tau / LOOP;
+    ctx.save(); ctx.rotate(r1); ctx.strokeStyle = C1; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(0,0,150,0,TAU); ctx.stroke(); ctx.restore();
+    runeRing(ctx, 142, RUNES, 8, 13, C1, r1);
+    const r2 = -TAU / 3 * tau / LOOP;
+    ctx.save(); ctx.rotate(r2); ctx.strokeStyle = C2; ctx.lineWidth = 1; ctx.setLineDash([10,6,2,6]); ctx.beginPath(); ctx.arc(0,0,128,0,TAU); ctx.stroke(); ctx.restore();
+    runeRing(ctx, 120, RUNES2, 3, 11, '#ffd98a', r2);
+    ctx.restore();
+  }
+  // lettres
+  ctx.font = FONT_L; ctx.lineJoin = 'round'; ctx.textBaseline = 'alphabetic';
+  const [ga, gb] = glitch(tau); let n = 0;
+  for (const it of layout){
+    const cx = it.x + it.w / 2;
+    if (it.g){
+      ctx.save(); ctx.translate(cx, 184);
+      if (it.c === 'O'){ ctx.translate(0, -34); drawO(ctx, tau, pObj); }
+      else drawSword(ctx, tau, pObj);
+      ctx.restore(); continue;
+    }
+    const pDraw = clamp((A - .2 - n * .1) / 1.4); n++;
+    if (pDraw <= 0) continue;
+    const dash = 520, off = dash * (1 - ease(pDraw));
+    if (pGl > 0){
+      ctx.save(); ctx.globalAlpha = .75 * pGl; ctx.lineWidth = 1.6;
+      ctx.strokeStyle = C2; ctx.strokeText(it.c, it.x + ga[0], 184 + ga[1]);
+      ctx.strokeStyle = HOT; ctx.globalAlpha = .8 * pGl; ctx.strokeText(it.c, it.x + gb[0], 184 + gb[1]);
+      ctx.restore();
+    }
+    ctx.save();
+    const fillK = clamp((pDraw - .6) / .4);
+    if (fillK > 0){ ctx.fillStyle = `rgba(42,14,8,${.6 * fillK})`; ctx.fillText(it.c, it.x, 184); }
+    ctx.setLineDash([dash, dash]); ctx.lineDashOffset = off;
+    ctx.shadowColor = C1; ctx.shadowBlur = 14 * LS; ctx.strokeStyle = C1; ctx.lineWidth = 3.2;
+    ctx.strokeText(it.c, it.x, 184); ctx.shadowBlur = 7 * LS; ctx.strokeText(it.c, it.x, 184);
+    ctx.shadowBlur = 0; ctx.strokeStyle = CORE; ctx.lineWidth = 1; ctx.strokeText(it.c, it.x, 184);
+    ctx.restore();
+  }
+  // sous-titre : centré, une seule couleur
+  if (pSub > 0){
+    ctx.save(); ctx.globalAlpha = pSub; ctx.font = '700 22px Cinzel'; ctx.letterSpacing = '6px'; ctx.textAlign = 'center';
+    ctx.shadowColor = C1; ctx.shadowBlur = 7 * LS; ctx.fillStyle = CORE;
+    ctx.fillText('LA COURONNE VACANTE', 340 + 3, 268);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+/* ---------- fond ---------- */
+function filterFor(k){ return `brightness(${lerp(1,.58,k)}) saturate(${lerp(1,.92,k)}) contrast(${lerp(1,1.05,k)}) blur(${lerp(0,1.2,k)}px)`; }
+// le fond retouché de la boucle ne change pas : on le calcule une seule fois (le flou du canvas coûte cher)
+let stillDone = null;
+function stillFiltered(){
+  if (stillDone) return stillDone;
+  stillDone = document.createElement('canvas'); stillDone.width = W; stillDone.height = H;
+  const c = stillDone.getContext('2d'); c.filter = filterFor(1); c.drawImage(still, -0.03*W, -0.03*H, 1.06*W, 1.06*H);
+  return stillDone;
+}
+function drawBg(src, k){
+  if (src === still && k === 1){ ctx.drawImage(stillFiltered(), 0, 0); return; }
+  ctx.save(); ctx.filter = filterFor(k);
+  ctx.drawImage(src, -0.03*W, -0.03*H, 1.06*W, 1.06*H);
+  ctx.restore();
+}
+function overlays(tau, k){
+  if (k <= 0) return;
+  ctx.save(); ctx.globalAlpha = k;
+  // lueur de bougie : somme de sinus aux fréquences entières de la boucle
+  const f = .75 + .08*Math.sin(TAU*7*tau/LOOP) + .05*Math.sin(TAU*13*tau/LOOP + 1) + .04*Math.sin(TAU*23*tau/LOOP + 2);
+  let g = ctx.createRadialGradient(W/2, H*.48, 0, W/2, H*.48, W*.42);
+  g.addColorStop(0, `rgba(255,180,90,${.55*f})`); g.addColorStop(1, 'rgba(255,120,40,0)');
+  ctx.globalCompositeOperation = 'soft-light'; ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  ctx.globalCompositeOperation = 'source-over';
+  g = ctx.createRadialGradient(W/2, H*.25, 0, W/2, H*.25, W*.42);
+  g.addColorStop(0, 'rgba(18,6,2,.72)'); g.addColorStop(1, 'rgba(18,6,2,0)');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  g = ctx.createRadialGradient(W/2, H/2, H*.45, W/2, H/2, W*.62);
+  g.addColorStop(0, 'rgba(8,3,1,0)'); g.addColorStop(1, 'rgba(8,3,1,.85)');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  ctx.restore();
+}
+// étincelles : chaque particule fait un nombre entier de traversées par boucle
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const COLS = ['#ffd34d','#ffe9a0','#ffb347','#ffd34d','#ffe9a0','#c77dff','#9b5cff'];
+const SP = Array.from({length: 70}, () => ({x: .15 + rnd() * .7, y: rnd(), r: .6 + rnd() * 1.9, k: rnd() < .8 ? 1 : 2, m: 1 + Math.floor(rnd() * 5), ph: rnd() * TAU, c: COLS[Math.floor(rnd() * COLS.length)]}));
+function sparks(tau, k){
+  if (k <= 0) return;
+  ctx.save();
+  for (const p of SP){
+    const y = mod(p.y - p.k * tau / LOOP, 1.1) - .05;
+    const x = (p.x + Math.sin(TAU * tau / LOOP + p.ph) * .015) * W;
+    ctx.globalAlpha = k * Math.max(.1, .4 + .5 * Math.sin(TAU * p.m * tau / LOOP + p.ph * 3)) * clamp((1 - y) * 3);
+    ctx.fillStyle = p.c; ctx.shadowColor = p.c; ctx.shadowBlur = 10;
+    ctx.fillRect(x, y * H, p.r * 1.4 * W / 1280, p.r * 1.4 * W / 1280);
+  }
+  ctx.restore();
+}
+
+/* ---------- images ---------- */
+function frameMain(tau){
+  ctx.clearRect(0,0,W,H);
+  drawBg(still, 1); overlays(tau, 1); sparks(tau, 1); drawLogo(tau, null);
+}
+function frameIntro(t, tEnd){
+  const tau = t - tEnd, k = ease((t - T_DIM) / T_DIM_LEN), swap = clamp((t - (tEnd - T_SWAP)) / T_SWAP);
+  ctx.clearRect(0,0,W,H);
+  drawBg(vid, k);
+  if (swap > 0){ ctx.save(); ctx.globalAlpha = swap; drawBg(still, 1); ctx.restore(); }
+  overlays(tau, k); sparks(tau, k);
+  if (t >= T_LOGO) drawLogo(tau, t - T_LOGO);
+}
+
+/* ---------- envoi ---------- */
+const status = document.getElementById('status');
+async function post(kind, i){
+  const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+  await fetch(`http://127.0.0.1:8091/${kind}/${String(i).padStart(4,'0')}.png`, {method: 'POST', body: blob});
+}
+async function ready(){ await document.fonts.load(FONT_L); await document.fonts.load('700 22px Cinzel'); await document.fonts.load('13px "Noto Sans Runic"', 'ᚲ'); await still.decode(); layout = null; computeLayout(); }
+async function renderMain(from = 0){
+  await ready();
+  const n = LOOP * FPS;
+  for (let i = from; i < n; i++){ frameMain(i / FPS); await post('main', i); status.textContent = `boucle ${i+1}/${n}`; }
+  status.textContent = 'boucle terminée'; return n;
+}
+async function renderIntro(from = 0){
+  await ready();
+  vid.pause(); vid.currentTime = 0; await new Promise(r => vid.readyState >= 2 ? r() : vid.addEventListener('loadeddata', r, {once: true}));
+  // la webm de MediaRecorder n'a pas d'index : on la lit au ralenti et on prend une image à chaque pas de 1/FPS
+  const tEnd = 7.5, n = Math.round(tEnd * FPS); let i = from;
+  vid.playbackRate = .25;
+  await new Promise(resolve => {
+    const onFrame = async (_, meta) => {
+      if (meta.mediaTime >= i / FPS){
+        vid.pause();
+        frameIntro(i / FPS, tEnd); await post('intro', i); status.textContent = `intro ${i+1}/${n}`; i++;
+        if (i >= n){ resolve(); return; }
+        vid.play();
+      }
+      vid.requestVideoFrameCallback(onFrame);
+    };
+    vid.requestVideoFrameCallback(onFrame);
+    vid.addEventListener('ended', resolve, {once: true});
+    vid.play();
+  });
+  status.textContent = `intro terminée (${i} images)`; return i;
+}
+let preview = false;
+document.getElementById('play').onclick = async () => {
+  await ready(); preview = !preview; const t0 = performance.now();
+  const loop = () => { if (!preview) return; frameMain((performance.now() - t0) / 1000); requestAnimationFrame(loop); }; loop();
+};
+document.getElementById('intro').onclick = () => { preview = false; renderIntro(); };
+document.getElementById('main').onclick = () => { preview = false; renderMain(); };
+ready().then(async () => {
+  frameMain(0);
+  // ?auto : rend tout d'un coup (utilisé en navigateur sans fenêtre, voir README)
+  const q = new URLSearchParams(location.search);
+  if (q.has('auto')){ if (!q.has('intro')) await renderMain(+(q.get('from') || 0)); await renderIntro(+(q.get('ifrom') || 0)); document.title = 'FINI'; }
+});
+window.renderMain = renderMain; window.renderIntro = renderIntro; window.frameIntro = frameIntro; window.frameMain = frameMain; window.ready = ready;
+</script>

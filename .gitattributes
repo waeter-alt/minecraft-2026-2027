@@ -1,3 +1,4 @@
 # Les scripts shell doivent rester en LF, y compris sur Windows (sinon bash plante sur le )
 *.sh text eol=lf
 gradlew text eol=lf
+*.afma binary
