@@ -13,6 +13,10 @@ file = "config/fancymenu/options.txt"
 hash = "04293aaea2a76348ae9a82ef51070aae2481713242bfcc34a333809b6740e62a"
 
 [[files]]
+file = "config/fml.toml"
+hash = "514ca389c59f890c74e1a83f82f74a250f106f1a7bab77045a158366badd473a"
+
+[[files]]
 file = "mods/accessories.pw.toml"
 hash = "2bca646a0bf5b465b350a9b9573571b561f597e09fdb267c47063547f4ef3aef"
 metafile = true
