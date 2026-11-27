@@ -33,6 +33,7 @@ public final class WarRenderers
     {
         event.registerEntityRenderer(WarEntities.LEGIONNAIRE.get(), context -> new TroopRenderer<>(context, "legionnaire"));
         event.registerEntityRenderer(WarEntities.ARCHER.get(), context -> new TroopRenderer<>(context, "archere"));
+        event.registerEntityRenderer(WarEntities.SIEGE_BANNER.get(), fr.kodistan.interregne.client.war.SiegeBannerRenderer::new);
     }
 
     public static final class TroopRenderer<T extends AssaultTroop> extends GeoEntityRenderer<T>

@@ -36,6 +36,14 @@ public final class WarEntities
              .clientTrackingRange(64)
              .build("archer"));
 
+    public static final Supplier<EntityType<SiegeBannerEntity>> SIEGE_BANNER = ENTITIES.register("siege_banner",
+      () -> EntityType.Builder.<SiegeBannerEntity>of(SiegeBannerEntity::new, MobCategory.MISC)
+             .sized(3.0F, 2.75F)
+             .clientTrackingRange(16)
+             .updateInterval(20)
+             .noSummon()
+             .build("siege_banner"));
+
     /** The assault's colony event type: MineColonies saves running events and crashes the colony load on an unknown type. */
     public static final DeferredRegister<ColonyEventTypeRegistryEntry> EVENT_TYPES =
       DeferredRegister.create(CommonMinecoloniesAPIImpl.COLONY_EVENT_TYPES, AssautEvent.TYPE_ID.getNamespace());

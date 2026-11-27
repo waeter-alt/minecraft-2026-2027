@@ -308,6 +308,7 @@ public final class WarAssaults
         {
             fr.kodistan.interregne.politics.WarRules.onAssaultLaunched(level.getServer(), attacker.getID(), defender.getID());
             fr.kodistan.interregne.politics.AllyAid.onAssault(level.getServer(), defender);
+            SiegeBanners.plant(level, attacker, defender, spawnPos);
         }
         if (commander != null)
         {

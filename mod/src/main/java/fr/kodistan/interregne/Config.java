@@ -301,6 +301,18 @@ public final class Config
       .comment("Seconds between a declaration of war and the war being open (assaults allowed)")
       .defineInRange("warNoticeSeconds", 180, 0, 86400);
 
+    public static final ModConfigSpec.IntValue SIEGE_BANNER_CAPTURE_SECONDS = BUILDER
+      .comment("Seconds one lone defender needs to bring the siege banner down (2 defenders twice as fast, capped at 3)")
+      .defineInRange("siegeBannerCaptureSeconds", 20, 3, 600);
+
+    public static final ModConfigSpec.IntValue SIEGE_BANNER_RADIUS = BUILDER
+      .comment("Radius in blocks of the siege banner's capture zone")
+      .defineInRange("siegeBannerRadius", 6, 2, 32);
+
+    public static final ModConfigSpec.IntValue SIEGE_BANNER_DISTANCE = BUILDER
+      .comment("Blocks between the defender colony's border and the siege banner, along the war road")
+      .defineInRange("siegeBannerDistance", 40, 8, 200);
+
     public static final ModConfigSpec.IntValue ROAD_DECAY_SECONDS = BUILDER
       .comment("Seconds a road takes to vanish once the alliance it served is broken")
       .defineInRange("roadDecaySeconds", 300, 10, 86400);
