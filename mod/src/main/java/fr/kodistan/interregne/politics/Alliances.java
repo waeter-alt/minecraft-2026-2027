@@ -227,7 +227,7 @@ public final class Alliances extends SavedData
               relation[0] == WAR_OUT ? WarRules.lockHolderName(server, me, you) : "", relation[0] == WAR_OUT ? WarRules.lockSeconds(server, me, you) : 0));
         }
         return new DiplomacySyncPayload(colony.getID(), Garrison.available(server, colony, Garrison.LEGIONNAIRE), Garrison.available(server, colony, Garrison.ARCHERE),
-          Config.WAR_DECLARATION_COST.get().intValue(), Config.WAR_TRIBUTE.get(), RegionalTreasury.get(server).balance(colony), AllyAid.price(), AllyAid.max(), entries);
+          Config.WAR_DECLARATION_COST.get().intValue(), WarRules.tribute(Config.WAR_TRIBUTE_PERCENT.get(), RegionalTreasury.get(server).balance(colony), 0L), RegionalTreasury.get(server).balance(colony), AllyAid.price(), AllyAid.max(), entries);
     }
 
     // Package-private moves for Diplomacy, which holds the rules.

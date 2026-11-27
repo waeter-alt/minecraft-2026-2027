@@ -109,12 +109,12 @@ public final class WarRules
     }
 
     /**
-     * What a surrender demand takes from the attacker's treasury: the capitulation's tribute at most, and never what
-     * brings the treasury under the reserve that loot leaves untouched.
+     * The tribute a treasury of {@code balance} pays: {@code percent} of it, and never what brings the treasury under
+     * {@code reserve} (the capitulation passes 0, the surrender demand the reserve that loot leaves untouched).
      */
-    public static long tribute(final long cap, final long balance, final long reserve)
+    public static long tribute(final int percent, final long balance, final long reserve)
     {
-        return Math.max(0L, Math.min(cap, balance - reserve));
+        return Math.max(0L, Math.min(balance * percent / 100, balance - reserve));
     }
 
     /**
@@ -122,9 +122,9 @@ public final class WarRules
      *
      * @return the couronnes moved
      */
-    public static long takeTribute(final RegionalTreasury treasury, final IColony from, final IColony to, final long cap, final long reserve)
+    public static long takeTribute(final RegionalTreasury treasury, final IColony from, final IColony to, final int percent, final long reserve)
     {
-        final long tribute = tribute(cap, treasury.balance(from), reserve);
+        final long tribute = tribute(percent, treasury.balance(from), reserve);
         if (tribute <= 0 || !treasury.spend(from, tribute))
         {
             return 0L;
