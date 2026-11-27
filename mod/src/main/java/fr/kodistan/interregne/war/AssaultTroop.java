@@ -23,8 +23,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Shared base for every assault troop ({@link EntLegionnaire}, {@link EntArcher}). Riding the raider base buys the
  * whole defense story for free (guards, citizens and threat tables already know how to fight a raider), and both
- * march/fight entirely under their own goals rather than MineColonies' MobAIRegistry/RaiderWalkAI (see
- * MobAiRegistryMixin, RaiderWalkAiMixin) — only the stuck handler, swim factor and skin faction are genuinely
+ * march/fight entirely under their own goals rather than MineColonies' MobAIRegistry (see
+ * MobAiRegistryMixin; AssaultTroopRaiderMixin cuts the raider base tick's despawn, pass-through raid and thorns) — only the stuck handler, swim factor and skin faction are genuinely
  * shared between the two, which is what lives here.
  * <p>
  * Both troops are GeckoLib entities with a Blockbench model per upgrade level (1-5: same skeleton and same
