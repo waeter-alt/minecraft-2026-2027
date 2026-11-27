@@ -12,3 +12,8 @@ __pycache__/
 !.claude/statusline.sh
 !.claude/launch.json
 mod/.claude/
+
+# Menu titre : images rendues et sorties d'encodage (régénérables, des centaines de Mo)
+art/menu-titre/frames/
+art/menu-titre/frames_960/
+art/menu-titre/out/

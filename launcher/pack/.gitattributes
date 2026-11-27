@@ -3,3 +3,4 @@
 * text eol=lf
 *.jar binary
 *.zip binary
+*.afma binary

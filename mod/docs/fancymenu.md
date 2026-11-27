@@ -35,6 +35,6 @@ Les autres fichiers que FancyMenu génère tout seul (`ui_themes/`, `legacy_chec
 
 ## État actuel
 
-- Écran titre : titre « KODISTAN » doré + sous-titre « Interrègne · 2026 », logo Minecraft, splash et Realms masqués, fond vanilla.
+- Écran titre : fond animé `assets/kodistan/ecran_titre.afma` (le coffre de la taverne s'ouvre une fois, puis boucle sur l'intérieur du coffre avec le logo « Surcharge arcanique » et le sous-titre « LA COURONNE VACANTE »). Le logo est dans l'animation, pas un élément du layout ; les boutons (Solo, Multijoueur, Mods, Options, Quitter, langue, accessibilité) sont ancrés au centre, sous le logo. Logo Minecraft, splash et Realms masqués. Fabrication et régénération : `art/menu-titre/README.md`.
 - Menu pause : vanilla.
-- **Manque** : un logo et un fond Kodistan (art à produire), à poser ensuite comme éléments image / fond du layout.
+- Pas de fond vidéo : FancyMenu 3.10 l'exige via le mod Watermedia. L'AFMA (format d'animation de FancyMenu, intro jouée une fois + boucle) est natif.
