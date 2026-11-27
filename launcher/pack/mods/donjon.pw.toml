@@ -4,6 +4,6 @@ side = "both"
 pin = true
 
 [download]
-url = "https://raw.githubusercontent.com/waeter-alt/minecraft-2026-2027/feature/launcher-beta/launcher/pack/files/donjon-4.8.0.jar"
+url = "https://raw.githubusercontent.com/waeter-alt/minecraft-2026-2027/main/launcher/pack/files/donjon-4.8.0.jar"
 hash-format = "sha512"
 hash = "f391db6c9637551a6efeb4cdb649ee25512442fbf895cb581848d92437428dba2e1d91991d54250300111e827b0c6e24e357b14a4eb32ecad46c5b3d76a4f7b8"

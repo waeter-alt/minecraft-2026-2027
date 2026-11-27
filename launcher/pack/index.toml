@@ -109,7 +109,7 @@ metafile = true
 
 [[files]]
 file = "mods/donjon.pw.toml"
-hash = "06bf3b70ff155209daacedfb531d449817a216d8153dfb81789ad0f821be2bbf"
+hash = "780924c36a547815c35f9d538741513f4bdf4bae06d45fdd43cabdd21f6873a3"
 metafile = true
 
 [[files]]
@@ -149,7 +149,7 @@ metafile = true
 
 [[files]]
 file = "mods/interregne.pw.toml"
-hash = "7464da224e4af196f7e7121dd7f2e7ec2d1be49ab59ea738580bb1c4d06aa5be"
+hash = "848a50284089dbf11ba45829a7a6c5dbb88c918113962c97faa2fe30b6f9f7bf"
 metafile = true
 
 [[files]]
