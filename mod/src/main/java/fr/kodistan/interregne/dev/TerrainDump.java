@@ -1,6 +1,7 @@
 package fr.kodistan.interregne.dev;
 
 import fr.kodistan.interregne.InterregneMod;
+import fr.kodistan.interregne.routes.RouteProbe;
 import fr.kodistan.interregne.walls.Terrain;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -395,7 +396,7 @@ public final class TerrainDump
                 under--;
             }
         }
-        else if (state.is(BlockTags.ICE))
+        else if (RouteProbe.sheetIce(state))
         {
             flag = ICE;
             under = y - 1;

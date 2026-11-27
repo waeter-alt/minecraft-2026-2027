@@ -55,6 +55,8 @@ public final class RoutePlanning
         @Nullable
         private CompletableFuture<RoutePlan> planning;
         private int ticks;
+        /** This study already stands in for one whose ends no route could reach. */
+        private boolean fallback;
 
         private Study(final ServerLevel level, final BlockPos a, final BlockPos b, @Nullable final RouteEnds.End endA,
           @Nullable final RouteEnds.End endB, @Nullable final ServerPlayer watcher, final Consumer<RoutePlan> done)
@@ -120,6 +122,7 @@ public final class RoutePlanning
     {
         final Iterator<Study> iterator = STUDIES.iterator();
         final List<Runnable> callbacks = new ArrayList<>();
+        final List<Study> retries = new ArrayList<>();
         while (iterator.hasNext())
         {
             final Study study = iterator.next();
@@ -171,8 +174,19 @@ public final class RoutePlanning
                 InterregneMod.LOGGER.info("Route studied from {} to {} in {} ticks: {}", study.a.toShortString(), study.b.toShortString(), study.ticks,
                   plan == null ? "no route" : plan.length() + " cells, " + plan.count(RoutePlan.BRIDGE) + " bridges, " + plan.count(RoutePlan.TUNNEL)
                                                 + " tunnels");
+                final Study retry = plan == null ? fallback(study) : null;
+                final List<ServerPlayer> watchers = new ArrayList<>(study.bar.getPlayers());
                 study.bar.removeAllPlayers();
                 iterator.remove();
+                if (retry != null)
+                {
+                    // A town hall's door the road cannot get out of: the road stops at the edge of that colony's land
+                    InterregneMod.LOGGER.info("Route from {} to {}: no way out of a town hall's door, trying from {} to {} (edge of the colony's land)",
+                      study.a.toShortString(), study.b.toShortString(), retry.a.toShortString(), retry.b.toShortString());
+                    watchers.forEach(retry.bar::addPlayer);
+                    retries.add(retry);
+                    continue;
+                }
                 final RoutePlan result = plan;
                 callbacks.add(() -> study.done.accept(result));
             }
@@ -181,7 +195,37 @@ public final class RoutePlanning
                 study.bar.setProgress(Math.min(0.99F, study.bar.getProgress() + 0.002F));
             }
         }
+        STUDIES.addAll(retries);
         callbacks.forEach(Runnable::run);
+    }
+
+    /**
+     * The same study with each end at a town hall's door moved to the edge of its colony's land, null when neither
+     * end can be moved or this study is already such a fallback.
+     */
+    @Nullable
+    private static Study fallback(final Study study)
+    {
+        if (study.fallback || study.endA == null || study.endB == null)
+        {
+            return null;
+        }
+        final RouteEnds.End movedA = RouteEnds.fallback(study.level, study.endA, study.endB.at());
+        final RouteEnds.End movedB = RouteEnds.fallback(study.level, study.endB, study.endA.at());
+        if (movedA == null && movedB == null)
+        {
+            return null;
+        }
+        final RouteEnds.End endA = movedA == null ? study.endA : movedA;
+        final RouteEnds.End endB = movedB == null ? study.endB : movedB;
+        if (endA.at().distSqr(endB.at()) > (double) MAX_DISTANCE * MAX_DISTANCE || endA.at().equals(endB.at()))
+        {
+            return null;
+        }
+        final Study retry = new Study(study.level, endA.at(), endB.at(), endA, endB, null, study.done);
+        retry.fallback = true;
+        retry.ticks = study.ticks;
+        return retry;
     }
 
     @SubscribeEvent

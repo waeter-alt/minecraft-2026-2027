@@ -237,7 +237,7 @@ public final class RouteProbe
             state = blocks.apply(pos);
         }
         final boolean fluid = !state.getFluidState().isEmpty();
-        if (!fluid && !state.is(BlockTags.ICE))
+        if (!fluid && !sheetIce(state))
         {
             return new Column(y, y, Terrain.natural(state) ? 0 : HeightField.BLOCKED);
         }
@@ -249,6 +249,16 @@ public final class RouteProbe
             state = blocks.apply(pos);
         }
         return new Column(surface, y, flag);
+    }
+
+    /**
+     * Ice that a road must bridge like the water it covers: ice melts by a lantern and is the skin of a frozen lake or
+     * sea. Packed and blue ice never melt: an iceberg or an ice spike is ground, cut or climbed like rock (pp2,
+     * 2026-11-27: two colonies among icebergs had every door open onto "water" decks could not climb out of).
+     */
+    public static boolean sheetIce(final BlockState state)
+    {
+        return state.is(BlockTags.ICE) && !state.is(Blocks.PACKED_ICE) && !state.is(Blocks.BLUE_ICE);
     }
 
     private static boolean vegetation(final Function<BlockPos, BlockState> blocks, final BlockPos pos, final BlockState state)

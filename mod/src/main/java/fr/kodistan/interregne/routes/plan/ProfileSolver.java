@@ -33,6 +33,7 @@ final class ProfileSolver
     private final int[][] dry;
     private final int[] wet;
     private final int[] water;
+    private final int[] clear;
     private final int[] blocked;
     private final boolean[] hard;
     private final int[] centre;
@@ -47,6 +48,7 @@ final class ProfileSolver
         this.dry = new int[n][];
         this.wet = new int[n];
         this.water = new int[n];
+        this.clear = new int[n];
         this.blocked = new int[n];
         this.hard = new boolean[n];
         this.centre = new int[n];
@@ -58,6 +60,7 @@ final class ProfileSolver
         {
             int count = 0;
             water[i] = Short.MIN_VALUE;
+            clear[i] = Short.MIN_VALUE;
             for (int dz = -4; dz <= 4; dz++)
             {
                 for (int dx = -4; dx <= 4; dx++)
@@ -77,6 +80,7 @@ final class ProfileSolver
                     {
                         wet[i]++;
                         water[i] = Math.max(water[i], field.ground(x, z));
+                        clear[i] = Math.max(clear[i], Tuning.clearance(flag, field.ground(x, z)));
                     }
                     else if ((flag & HeightField.BLOCKED) != 0)
                     {
@@ -140,7 +144,7 @@ final class ProfileSolver
         {
             return INF;
         }
-        if (wet[i] > 0 && y < water[i] + Tuning.WATER_CLEAR)
+        if (wet[i] > 0 && y < clear[i])
         {
             return INF;
         }

@@ -47,6 +47,10 @@ public final class RouteEnds
     private static final int BUILDING_MARGIN = 1;
     /** How far the straight way out of the town hall's door reaches past the building. */
     private static final int DOOR_OUT = 3;
+    /** Natural ground this far above a door's floor on its way out buries it: deeper than the road ever cuts. */
+    private static final int DOOR_CUT = 6;
+    /** How far along the edge of an unwalled colony's land the road may slide to find dry ground to stop on. */
+    private static final int BORDER_SLIDE = 32;
 
     private RouteEnds()
     {
@@ -261,6 +265,10 @@ public final class RouteEnds
                         dx = -dx;
                         dz = -dz;
                     }
+                    if (walledIn(colony, hall, box, x + dx, z + dz, dx, dz) || !wayOut(level, box, x + dx, y, z + dz, dx, dz))
+                    {
+                        continue;
+                    }
                     // An inner door counts as much farther: the way in is the one on the outside of the building
                     final double score = Math.sqrt(sq(x - toward.getX(), z - toward.getZ())) + 16 * inset(box, x, z, dx, dz);
                     if (score < best)
@@ -299,9 +307,91 @@ public final class RouteEnds
                 sz = (nz > 0 ? box[3] : box[1]) + nz;
             }
             floor = Terrain.probe(level, sx, sz).ground();
+            if (walledIn(colony, hall, box, sx, sz, nx, nz))
+            {
+                return null;
+            }
         }
         final Lead lead = new Lead(sx, sz, nx, nz, inset(box, sx, sz, nx, nz) + DOOR_OUT, floor);
         return new End(new BlockPos(sx, floor, sz), lead, colony.getID(), -1, false);
+    }
+
+    /**
+     * Whether the straight way out of the town hall from this threshold, and the first cell the street takes past it,
+     * run into another building's footprint or the margin it keeps: a building placed over the hall (or right against
+     * its door) leaves the door with no way out, every building being out of bounds for the road (preplaytest
+     * 2026-11-27: "no route" between two colonies whose halls were overlapped; pp2: a warehouse one block past the end
+     * of the way out).
+     */
+    private static boolean walledIn(final IColony colony, final IBuilding hall, final int[] hallBox, final int sx, final int sz, final int nx,
+      final int nz)
+    {
+        final int length = inset(hallBox, sx, sz, nx, nz) + DOOR_OUT + 1;
+        for (final IBuilding building : colony.getBuildingManager().getBuildings().values())
+        {
+            if (building == hall)
+            {
+                continue;
+            }
+            final int[] box = box(building.getCorners());
+            for (int k = 0; k <= length; k++)
+            {
+                final int x = sx + nx * k;
+                final int z = sz + nz * k;
+                if (x >= box[0] - BUILDING_MARGIN && x <= box[2] + BUILDING_MARGIN && z >= box[1] - BUILDING_MARGIN && z <= box[3] + BUILDING_MARGIN)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Whether a player can walk straight out of the door at this threshold to past the hall's footprint, the way the
+     * road comes in: no wall or furniture across the passage (an inner door), no natural ground standing higher over
+     * the floor than a road cuts (a hall sunk into a hill or an iceberg). pp2, 2026-11-27: the town hall's only doors
+     * were inner ones, the road was laid through the hall's wall into the iceberg behind it.
+     */
+    private static boolean wayOut(final ServerLevel level, final int[] box, final int sx, final int y, final int sz, final int nx, final int nz)
+    {
+        final int length = inset(box, sx, sz, nx, nz) + DOOR_OUT;
+        final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        for (int k = 0; k <= length; k++)
+        {
+            final int x = sx + nx * k;
+            final int z = sz + nz * k;
+            for (int dy = 0; dy <= 1; dy++)
+            {
+                final BlockState state = level.getBlockState(pos.set(x, y + dy, z));
+                if (!state.getCollisionShape(level, pos).isEmpty() && !Terrain.natural(state) && !(state.getBlock() instanceof DoorBlock))
+                {
+                    return false;
+                }
+            }
+            final RouteProbe.Column column = RouteProbe.of(level, x, z);
+            if ((column.flags() & HeightField.BLOCKED) == 0 && !column.wet() && column.ground() - (y - 1) > DOOR_CUT)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * The end to fall back on when no route reaches this one: the edge of its colony's land, for an end at a town
+     * hall's door (the door may open on a slope or a building the road cannot get out of). Null when there is no
+     * such fallback.
+     */
+    @Nullable
+    public static End fallback(final ServerLevel level, final End end, final BlockPos toward)
+    {
+        if (!door(end))
+        {
+            return null;
+        }
+        final IColony colony = IColonyManager.getInstance().getColonyByWorld(end.colony(), level);
+        return colony == null ? null : atBorder(level, colony, toward);
     }
 
     /**
@@ -357,8 +447,74 @@ public final class RouteEnds
         }
         x += (int) Math.round(dx / length * BEYOND_BORDER);
         z += (int) Math.round(dz / length * BEYOND_BORDER);
+        final RouteProbe.Column column = RouteProbe.of(level, x, z);
+        if (column.wet() || (column.flags() & (HeightField.BLOCKED | HeightField.LAVA)) != 0)
+        {
+            final BlockPos dry = dryEdge(level, colony, x, z);
+            if (dry != null)
+            {
+                return new End(dry, null, colony.getID(), -1, true);
+            }
+        }
         final int y = Terrain.probe(level, x, z).ground();
         return new End(new BlockPos(x, y, z), null, colony.getID(), -1, true);
+    }
+
+    /**
+     * The dry ground nearest this point that lies just past the edge of the colony's land, as far as
+     * {@link #BORDER_SLIDE} along it; null when there is none. A road cannot stop in water (pp2, 2026-11-27: a colony
+     * on a frozen sea, the edge facing the other end all open water).
+     */
+    @Nullable
+    private static BlockPos dryEdge(final ServerLevel level, final IColony colony, final int cx, final int cz)
+    {
+        final Map<ChunkPos, IChunkClaimData> claims = IColonyManager.getInstance().getClaimData(level.dimension());
+        if (claims == null)
+        {
+            return null;
+        }
+        final int near = BEYOND_BORDER + 1;
+        for (int r = 1; r <= BORDER_SLIDE; r++)
+        {
+            BlockPos best = null;
+            double bestD = Double.MAX_VALUE;
+            for (int dz = -r; dz <= r; dz++)
+            {
+                for (int dx = -r; dx <= r; dx++)
+                {
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) != r)
+                    {
+                        continue;
+                    }
+                    final int x = cx + dx;
+                    final int z = cz + dz;
+                    final double d = sq(dx, dz);
+                    if (d >= bestD || owner(claims, x, z) != 0
+                          || owner(claims, x + near, z) != colony.getID() && owner(claims, x - near, z) != colony.getID()
+                               && owner(claims, x, z + near) != colony.getID() && owner(claims, x, z - near) != colony.getID())
+                    {
+                        continue;
+                    }
+                    final RouteProbe.Column column = RouteProbe.of(level, x, z);
+                    if (!column.wet() && (column.flags() & (HeightField.BLOCKED | HeightField.LAVA)) == 0)
+                    {
+                        best = new BlockPos(x, column.ground(), z);
+                        bestD = d;
+                    }
+                }
+            }
+            if (best != null)
+            {
+                return best;
+            }
+        }
+        return null;
+    }
+
+    private static int owner(final Map<ChunkPos, IChunkClaimData> claims, final int x, final int z)
+    {
+        final IChunkClaimData claim = claims.get(new ChunkPos(x >> 4, z >> 4));
+        return claim == null ? 0 : Math.max(0, claim.getOwningColony());
     }
 
     /**
