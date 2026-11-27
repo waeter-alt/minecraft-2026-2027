@@ -34,6 +34,13 @@ repositories {
             includeGroup 'software.bernie.geckolib'
         }
     }
+    // Modrinth maven: only to compile against the Shoulder Surfing API (camera plugin).
+    maven {
+        url = 'https://api.modrinth.com/maven'
+        content {
+            includeGroup 'maven.modrinth'
+        }
+    }
 }
 
 base {
@@ -155,6 +162,10 @@ dependencies {
     // GeckoLib 4.8.x: Bedrock geo + animation files straight from Blockbench. Version to be checked against the
     // pinned neo_version (never bump NeoForge for a mod's sake - downgrade GeckoLib instead).
     implementation "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:4.8.4"
+
+    // Shoulder Surfing Reloaded 5.3.1 (client-only camera mod, shipped by the pack / env/mods.txt): compile-only,
+    // for the plugin that pulls the camera back while attacking. Never required at runtime: only SSR loads the plugin.
+    compileOnly "maven.modrinth:shoulder-surfing-reloaded:ESA9aXtk"
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

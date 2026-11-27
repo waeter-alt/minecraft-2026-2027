@@ -1,0 +1,5 @@
+{
+  "entrypoints": [
+    "fr.kodistan.interregne.client.camera.CombatCameraPlugin"
+  ]
+}
