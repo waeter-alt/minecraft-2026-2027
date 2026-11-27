@@ -330,9 +330,15 @@ public final class HutScreen extends ParchmentScreen implements BodyKit.Host
 
     // --- Header: level and rename, after the title the shell draws ---
 
+    @Override
+    protected int headerReserve()
+    {
+        return HutNav.headerWidth(font, building);
+    }
+
     private void renderHeader(final GuiGraphics graphics, final int mouseX, final int mouseY)
     {
-        HutNav.header(graphics, font, x0 + 8 + font.width(title), y0, building, headerText(), mouseX, mouseY, (x, y, w, h, a) -> hits.add(new Hit(x, y, w, h, a)));
+        HutNav.header(graphics, font, titleRight, y0, building, headerText(), mouseX, mouseY, (x, y, w, h, a) -> hits.add(new Hit(x, y, w, h, a)));
     }
 
     @Override
@@ -477,6 +483,9 @@ public final class HutScreen extends ParchmentScreen implements BodyKit.Host
         }
     }
 
+    /** Blocks from the warehouse's hut block within which « Tout ranger » is offered (the server checks the real walls). */
+    private static final int DEPOSIT_RANGE = 24;
+
     /**
      * A warehouse's middle column: everything in its racks, searchable; with the magic network, storing all that is
      * carried in one click and taking one item or a stack from each line.
@@ -495,14 +504,21 @@ public final class HutScreen extends ParchmentScreen implements BodyKit.Host
             final String deposit = "Tout ranger";
             final int bw = font.width(deposit) + 10;
             final boolean over = Ui.inside(mouseX, mouseY, x, top, bw, 14);
-            Ui.button(graphics, font, x, top, bw, 14, deposit, Ui.ButtonStyle.PRIMARY, true, over);
-            hits.add(new Hit(x, top, bw, 14, () -> {
-                PacketDistributor.sendToServer(new TerminalDepositPayload(building.getID()));
-                stockRefresh = 5;
-            }));
+            // The server only stores for a player standing in the warehouse; opened from afar (the hub), its refusal
+            // would land in the chat hidden behind this window. The view has no corners, so a generous radius.
+            final boolean near = Minecraft.getInstance().player != null
+                                   && Minecraft.getInstance().player.blockPosition().distSqr(building.getPosition()) <= DEPOSIT_RANGE * DEPOSIT_RANGE;
+            Ui.button(graphics, font, x, top, bw, 14, deposit, Ui.ButtonStyle.PRIMARY, near, over);
+            if (near)
+            {
+                hits.add(new Hit(x, top, bw, 14, () -> {
+                    PacketDistributor.sendToServer(new TerminalDepositPayload(building.getID()));
+                    stockRefresh = 5;
+                }));
+            }
             if (over)
             {
-                hint = "Range tout ce que tu portes, sauf ta barre d'action.";
+                hint = near ? "Range tout ce que tu portes, sauf ta barre d'action." : "Entre dans l'entrepôt pour tout y ranger.";
             }
             tx += bw + 6;
         }
