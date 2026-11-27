@@ -229,14 +229,7 @@ public final class Diplomacy
         {
             return "Seule la colonie attaquée peut capituler.";
         }
-        final long tribute = Config.WAR_TRIBUTE.get();
-        final RegionalTreasury treasury = RegionalTreasury.get(server);
-        final long balance = treasury.balance(colony);
-        if (tribute > 0 && !treasury.spend(colony, tribute))
-        {
-            return "Le tribut est de " + tribute + " couronnes : il en manque " + (tribute - balance) + " au trésor.";
-        }
-        treasury.credit(attacker, tribute);
+        final long tribute = WarRules.takeTribute(RegionalTreasury.get(server), colony, attacker, Config.WAR_TRIBUTE_PERCENT.get(), 0L);
         if (WarMarches.marching(attacker.getID(), colony.getID()))
         {
             WarMarches.recall(server, attacker, colony.getID());
@@ -277,7 +270,7 @@ public final class Diplomacy
         {
             WarAssaults.recall(attacker, colony.getID());
         }
-        final long tribute = WarRules.takeTribute(RegionalTreasury.get(server), attacker, colony, Config.WAR_TRIBUTE.get(), Config.WAR_TREASURY_RESERVE.get());
+        final long tribute = WarRules.takeTribute(RegionalTreasury.get(server), attacker, colony, Config.WAR_TRIBUTE_PERCENT.get(), Config.WAR_TREASURY_RESERVE.get());
         settle(server, attacker, colony, WarRecapPayload.REDDITION,
           "§a" + colony.getName() + " exige la reddition§r de " + attacker.getName() + (tribute > 0 ? " et reçoit " + tribute + " couronnes de tribut." : "."), tribute);
         return null;

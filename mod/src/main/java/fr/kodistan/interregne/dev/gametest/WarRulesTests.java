@@ -187,13 +187,14 @@ public final class WarRulesTests
         helper.succeed();
     }
 
-    /** The tribute is the capitulation's amount at most and never takes the loser's treasury under the reserve. */
+    /** The tribute is a share of the loser's treasury and never takes it under the reserve. */
     @GameTest(template = "empty")
     public static void tributeIsCappedAndKeepsTheReserve(final GameTestHelper helper)
     {
-        expect(helper, 500, WarRules.tribute(500, 10_000, 200), "capped by the tribute");
-        expect(helper, 400, WarRules.tribute(500, 600, 200), "capped by the reserve");
-        expect(helper, 0, WarRules.tribute(500, 150, 200), "nothing under the reserve");
+        expect(helper, 2500, WarRules.tribute(25, 10_000, 200), "a quarter of a rich treasury");
+        expect(helper, 150, WarRules.tribute(25, 600, 0), "a quarter of a poor one");
+        expect(helper, 50, WarRules.tribute(50, 250, 200), "capped by the reserve");
+        expect(helper, 0, WarRules.tribute(25, 150, 200), "nothing under the reserve");
 
         final RegionalTreasury treasury = RegionalTreasury.get(helper.getLevel().getServer());
         final IColony loser = colony(9311);
@@ -202,12 +203,13 @@ public final class WarRulesTests
         treasury.spend(winner, treasury.balance(winner));
         treasury.credit(loser, 1000);
 
-        expect(helper, 500, WarRules.takeTribute(treasury, loser, winner, 500, 200), "first tribute");
+        expect(helper, 500, WarRules.takeTribute(treasury, loser, winner, 50, 200), "first tribute");
         expect(helper, 500, treasury.balance(loser), "loser's treasury after the first");
         expect(helper, 500, treasury.balance(winner), "winner's treasury after the first");
-        expect(helper, 300, WarRules.takeTribute(treasury, loser, winner, 500, 200), "second tribute stops at the reserve");
+        expect(helper, 250, WarRules.takeTribute(treasury, loser, winner, 50, 200), "second tribute");
+        expect(helper, 50, WarRules.takeTribute(treasury, loser, winner, 50, 200), "third tribute stops at the reserve");
         expect(helper, 200, treasury.balance(loser), "the reserve is left");
-        expect(helper, 0, WarRules.takeTribute(treasury, loser, winner, 500, 200), "nothing more to take");
+        expect(helper, 0, WarRules.takeTribute(treasury, loser, winner, 50, 200), "nothing more to take");
         expect(helper, 800, treasury.balance(winner), "winner's treasury at the end");
         treasury.spend(loser, treasury.balance(loser));
         treasury.spend(winner, treasury.balance(winner));
