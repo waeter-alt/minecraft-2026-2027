@@ -1,0 +1,49 @@
+# Profil PLAYTEST de L'Interrègne (alpha 0.1.0) : timers courts pour jouer toute la boucle
+# colonie / commerce / diplomatie / guerre en une soirée.
+#
+# Fichier volontairement PARTIEL : NeoForge complète les clés absentes avec leurs valeurs par
+# défaut au premier démarrage et réécrit le fichier entier. Ne contient donc que ce qui change.
+# Valeurs reprises du pré-playtest à deux clients (validées), sauf les deux lignes « Économie ».
+#
+# Retour aux valeurs de production après le playtest : supprimer ce fichier (et, s'il existe,
+# world/serverconfig/interregne-server.toml) puis redémarrer ; le mod le régénère avec ses défauts.
+
+[instantBuild]
+	# Construction instantanée : durée d'un chantier (défaut 30 à 120)
+	minBuildSeconds = 5
+	maxBuildSeconds = 15
+
+[citizens]
+	# Délai entre deux arrivées de citoyens (défaut 180)
+	immigrationSeconds = 30
+
+[death]
+	# Économie de guerre : le perdant verse ce pourcentage de SON trésor (défaut 25).
+	# Remplace l'ancienne clé fixe « warTribute » : ne doit plus apparaître.
+	warTributePercent = 25
+	# Caravanes (défaut 3 blocs/s)
+	caravanBlocksPerSecond = 10
+	# Guerre : préavis avant ouverture (défaut 180)
+	warNoticeSeconds = 30
+	# Délai avant que la route de guerre s'efface (défaut 300)
+	roadDecaySeconds = 30
+	# Durée de construction de la route de guerre (défaut 60)
+	warRoadSeconds = 15
+	# Protection d'une colonie vaincue (défaut 7200)
+	warShieldSeconds = 120
+	# Délai entre deux assauts (défaut 120 minutes)
+	warAssaultLockMinutes = 5
+	# Reddition automatique d'une guerre inactive : 0 = désactivée (défaut 6 heures)
+	warIdleSurrenderHours = 0
+	# Capture d'une ruine (défaut 60)
+	warRuinCaptureSeconds = 20
+
+[regions]
+	# Trésor de départ d'une colonie fondée (défaut 500)
+	foundingTreasury = 500
+	# Route impériale (défaut 60)
+	imperialRoadSeconds = 10
+
+[roads]
+	# Amélioration d'une route : minimum autorisé (défaut 120)
+	roadUpgradeSeconds = 10
