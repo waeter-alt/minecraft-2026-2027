@@ -73,7 +73,7 @@ Notes :
 
 ```powershell
 cd mod
-.\gradlew build                       # produit mod\build\libs\interregne-1.0.0.jar
+.\gradlew build                       # produit mod\build\libs\interregne-0.1.0-alpha.jar
 cd ..
 .\launcher\scripts\publish-jar.ps1 -PackUrl https://<compte>.github.io/interregne-pack/pack.toml
 git add launcher/pack ; git commit -m "Pack : interregne 1.0.0"
