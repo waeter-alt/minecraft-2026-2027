@@ -94,10 +94,13 @@ public class MarketBlock extends Block
             return;
         }
         final long price = market.buyTotal(crate, amount);
-        if (!Wallet.pay(inventory, price, stack -> player.drop(stack, false)))
+        // Treasury first, then purse, as for buildings and contracts: a new colony's money sits in its treasury
+        final com.minecolonies.api.colony.IColony colony = com.minecolonies.api.colony.IColonyManager.getInstance().getIColonyByOwner(player.level(), player);
+        if (fr.kodistan.interregne.economy.TreasuryPayment.pay(player, colony, price) == null)
         {
+            final long treasury = colony == null ? 0 : fr.kodistan.interregne.economy.RegionalTreasury.get(player.server).balance(colony);
             player.sendSystemMessage(Component.literal("Il te faut " + Wallet.couronnes(price, null) + " pour " + crate.count(amount) + " (tu en as "
-                                                         + Wallet.format(Wallet.value(inventory)) + ").").withStyle(ChatFormatting.RED));
+                                                         + Wallet.format(Wallet.value(inventory) + treasury) + ", trésor compris).").withStyle(ChatFormatting.RED));
             return;
         }
         market.setStock(crate, market.stock(crate) - amount);
@@ -143,6 +146,13 @@ public class MarketBlock extends Block
             stock[crate.ordinal()] = market.stock(crate);
             carried[crate.ordinal()] = CrateStores.count(inventory, crate);
         }
-        PacketDistributor.sendToPlayer(player, new OpenMarketPayload(pos, buy, sell, stock, carried, Wallet.value(inventory)));
+        PacketDistributor.sendToPlayer(player, new OpenMarketPayload(pos, buy, sell, stock, carried, Wallet.value(inventory) + treasuryOf(player)));
+    }
+
+    /** What the player's colony treasury adds to a purchase: buying spends it first. */
+    private static long treasuryOf(final ServerPlayer player)
+    {
+        final com.minecolonies.api.colony.IColony colony = com.minecolonies.api.colony.IColonyManager.getInstance().getIColonyByOwner(player.level(), player);
+        return colony == null ? 0 : fr.kodistan.interregne.economy.RegionalTreasury.get(player.server).balance(colony);
     }
 }

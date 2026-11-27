@@ -443,6 +443,10 @@ public final class Config
       .comment("Highest level of Slowness the weight of crates can give (1 = Slowness I; 0 turns the slowing off)")
       .defineInRange("cratesSlowMax", 4, 0, 10);
 
+    public static final ModConfigSpec.LongValue FOUNDING_TREASURY = BUILDER
+      .comment("Couronnes put in a colony's treasury when it is founded: a new player has none, and every hut after the free town hall costs some")
+      .defineInRange("foundingTreasury", 150L, 0L, Long.MAX_VALUE);
+
     public static final ModConfigSpec.LongValue IMPERIAL_ROAD_COST = BUILDER
       .comment("Couronnes taken from a colony's treasury to open its road to the Marché impérial (refused without them, given back if no road can be traced)")
       .defineInRange("imperialRoadCost", 400L, 0L, Long.MAX_VALUE);

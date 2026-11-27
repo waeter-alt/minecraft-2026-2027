@@ -72,7 +72,8 @@ public final class InstantBuilder
         {
             final IBuilding building = colony.getBuildingManager().getBuilding(order.getLocation());
             final ITownHall townHall = colony.getBuildingManager().getTownHall();
-            final String refusal = TownHallCap.refusal(building instanceof ITownHall, order.getTargetLevel(), townHall == null ? 0 : townHall.getBuildingLevel());
+            final String refusal = !(building instanceof ITownHall) && !colony.isCoordInColony(level, order.getLocation()) ? TownHallCap.OUTSIDE
+                                     : TownHallCap.refusal(building instanceof ITownHall, order.getTargetLevel(), townHall == null ? 0 : townHall.getBuildingLevel());
             if (refusal != null)
             {
                 if (player != null)
@@ -108,7 +109,7 @@ public final class InstantBuilder
         {
             return true;
         }
-        final int cost = player == null || player.isCreative() ? 0 : costOf(order);
+        final int cost = player == null || player.isCreative() ? 0 : costOf(colony, order);
         // Regional treasury: the colony's treasury pays first, the coins carried make up the rest
         final TreasuryPayment payment = TreasuryPayment.pay(player, colony, cost);
         if (payment == null)
@@ -283,7 +284,7 @@ public final class InstantBuilder
         }));
     }
 
-    private static int costOf(final IServerWorkOrder order)
+    private static int costOf(final IColony colony, final IServerWorkOrder order)
     {
         if (order.getWorkOrderType() == WorkOrderType.REMOVE)
         {
@@ -297,7 +298,8 @@ public final class InstantBuilder
         {
             return BuildCosts.forRepair();
         }
-        return BuildCosts.forLevel(order.getTargetLevel());
+        final boolean townHall = order instanceof WorkOrderBuilding && colony.getBuildingManager().getBuilding(order.getLocation()) instanceof ITownHall;
+        return BuildCosts.forLevel(townHall, order.getTargetLevel());
     }
 
     /**

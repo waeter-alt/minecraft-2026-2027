@@ -100,7 +100,7 @@ public final class BuildWindowPricing
         {
             final int level = building.getBuildingLevel();
             final boolean repair = level == building.getBuildingMaxLevel();
-            final int cost = repair ? BuildCosts.forRepair() : BuildCosts.forLevel(level + 1);
+            final int cost = repair ? BuildCosts.forRepair() : BuildCosts.forLevel(building instanceof ITownHallView, level + 1);
             final String action = repair ? "Réparer" : level == 0 ? "Construire" : "Améliorer";
             final int seconds = repair ? BuildCosts.secondsForFlat() : BuildCosts.secondsForLevel(level + 1);
             final String text = repair ? "Réparer"
@@ -110,11 +110,12 @@ public final class BuildWindowPricing
             priceButton(build, action, cost, free, owned);
             rows.add(new PriceRow(label, cost, free || owned >= cost));
             final ITownHallView townHall = building.getColony().getTownHall();
-            final String refusal = repair ? null
+            final boolean outside = !(building instanceof ITownHallView) && !building.getColony().isCoordInColony(Minecraft.getInstance().level, building.getPosition());
+            final String refusal = outside ? TownHallCap.OUTSIDE : repair ? null
               : TownHallCap.refusal(building instanceof ITownHallView, level + 1, townHall == null ? 0 : townHall.getBuildingLevel());
             if (refusal != null)
             {
-                build.setText(Component.literal("Hôtel de ville niv. " + (level + 1) + " requis"));
+                build.setText(Component.literal(outside ? "Hors de la colonie" : "Hôtel de ville niv. " + (level + 1) + " requis"));
                 build.setEnabled(false);
                 rows.add(0, new PriceRow(Component.literal(refusal), INFO, false));
             }

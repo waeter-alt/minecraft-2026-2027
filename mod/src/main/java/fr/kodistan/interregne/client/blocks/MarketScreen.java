@@ -58,7 +58,7 @@ public final class MarketScreen extends CounterScreen
         {
             crates += carried;
         }
-        y = hero(graphics, x, y, width, null, "TA BOURSE", couronnes(state.purse()),
+        y = hero(graphics, x, y, width, null, "TRÉSOR + BOURSE", couronnes(state.purse()),
           (crates > 0 ? crates + (crates > 1 ? " caisses à vendre sur toi" : " caisse à vendre sur toi") : "Aucune caisse sur toi")
             + " · Maj : par " + SHIFT_BATCH);
         // Column heads over the rows
@@ -97,7 +97,7 @@ public final class MarketScreen extends CounterScreen
               carried > 0 ? "Tu reçois " + couronnes(state.sell()[i]) + " par caisse." : "Tu n'en portes pas.", () -> trade(RegionActionPayload.MARKET_SELL, index));
             final String buy = "Acheter " + Wallet.format(state.buy()[i]);
             bx -= buttonWidth(buy) + 3;
-            final String why = stock <= 0 ? "Plus aucune en stock." : state.purse() < state.buy()[i] ? "Il te faut " + couronnes(state.buy()[i]) + " sur toi." : null;
+            final String why = stock <= 0 ? "Plus aucune en stock." : state.purse() < state.buy()[i] ? "Il te faut " + couronnes(state.buy()[i]) + " (trésor + bourse)." : null;
             button(graphics, mouseX, mouseY, bx, y + 5, buy, Ui.ButtonStyle.PRIMARY, why == null, why, () -> trade(RegionActionPayload.MARKET_BUY, index));
             y += 26;
         }

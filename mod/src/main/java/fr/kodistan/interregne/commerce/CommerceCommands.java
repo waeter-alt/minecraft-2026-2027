@@ -58,6 +58,9 @@ public final class CommerceCommands
         root.then(literal("retirer").then(argument("colonie", IntegerArgumentType.integer(1)).then(argument("contrat", LongArgumentType.longArg(1))
           .executes(CommerceCommands::withdraw))));
         root.then(literal("empire").then(literal("marches").executes(CommerceCommands::markets))
+          .then(literal("poser").executes(ctx -> placeMarket(ctx, null))
+            .then(argument("pos", net.minecraft.commands.arguments.coordinates.BlockPosArgument.blockPos())
+              .executes(ctx -> placeMarket(ctx, net.minecraft.commands.arguments.coordinates.BlockPosArgument.getBlockPos(ctx, "pos")))))
           .then(argument("colonie", IntegerArgumentType.integer(1)).then(literal("route").executes(CommerceCommands::imperialRoute))
             .then(literal("vendre").then(argument("type", StringArgumentType.word()).then(argument("nombre", IntegerArgumentType.integer(1, Contracts.MAX_QUANTITY))
               .executes(CommerceCommands::sellImperial))))));
@@ -173,6 +176,33 @@ public final class CommerceCommands
         final int count = IntegerArgumentType.getInteger(ctx, "nombre");
         final int stored = Contracts.store(colony, crate, count);
         return say(ctx, stored + " / " + count + " caisses rangées à l'entrepôt de " + colony.getName() + ".");
+    }
+
+    /**
+     * Sets a Marché impérial: at the given position, or on the ground a few blocks east of the world spawn (so it works from rcon, which has no player).
+     * The block registers itself in {@link MarketSites} when placed.
+     */
+    private static int placeMarket(final CommandContext<CommandSourceStack> ctx, @org.jetbrains.annotations.Nullable final BlockPos given)
+    {
+        final ServerLevel level = ctx.getSource().getServer().overworld();
+        final BlockPos target;
+        if (given == null)
+        {
+            final BlockPos spawn = level.getSharedSpawnPos();
+            // Outside spawn protection: there a non-op player's right-click on the block never reaches it.
+            final int x = spawn.getX() + ctx.getSource().getServer().getSpawnProtectionRadius() + 4;
+            final int z = spawn.getZ();
+            level.getChunk(x >> 4, z >> 4);
+            target = new BlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z);
+        }
+        else
+        {
+            level.getChunk(given.getX() >> 4, given.getZ() >> 4);
+            target = given;
+        }
+        level.setBlock(target, fr.kodistan.interregne.region.Crates.MARCHE.get().defaultBlockState(), 3);
+        fr.kodistan.interregne.region.MarketSites.get(ctx.getSource().getServer()).add(target.immutable());
+        return say(ctx, "Marché impérial posé en " + target.toShortString() + ".");
     }
 
     private static int markets(final CommandContext<CommandSourceStack> ctx)
