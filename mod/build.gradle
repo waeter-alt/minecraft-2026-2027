@@ -75,6 +75,23 @@ neoForge {
             programArguments.addAll '--width', '1553', '--height', '1011'
         }
 
+        // Pre-playtest: two real clients on one machine, each driven through PlayDriver (client/dev/PlayDriver.java).
+        // pilote1 plays as Duncan in run/client1, pilote2 as Luca in run/client2 (both copied from run/client by preparePilotes,
+        // so a normal runClient in run/client never shares their playdriver folder).
+        pilote1 {
+            client()
+            gameDirectory = project.file('run/client1')
+            systemProperty 'interregne.playdriver', 'true'
+            programArguments.addAll '--username', 'Duncan', '--width', '960', '--height', '600'
+        }
+
+        pilote2 {
+            client()
+            gameDirectory = project.file('run/client2')
+            systemProperty 'interregne.playdriver', 'true'
+            programArguments.addAll '--username', 'Luca', '--width', '960', '--height', '600'
+        }
+
         server {
             server()
             // Isolated test server world, wiped by deleting run/server
