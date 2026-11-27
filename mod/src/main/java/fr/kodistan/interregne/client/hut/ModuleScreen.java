@@ -160,11 +160,17 @@ public abstract class ModuleScreen extends PageScreen
     }
 
     @Override
+    protected int headerReserve()
+    {
+        return framed() ? HutNav.headerWidth(font, building) : 0;
+    }
+
+    @Override
     protected void renderChrome(final GuiGraphics graphics, final int mouseX, final int mouseY)
     {
         if (framed())
         {
-            HutNav.header(graphics, font, x0 + 8 + font.width(shownTitle()) + (crumb() == null ? 0 : font.width(crumb() + " › ")), y0, building, headerText(), mouseX, mouseY,
+            HutNav.header(graphics, font, titleRight, y0, building, headerText(), mouseX, mouseY,
               this::addHit);
             HutNav.nav(graphics, font, x0, y0, w, h, building, hut, navCurrent, mouseX, mouseY, this::addHit);
         }

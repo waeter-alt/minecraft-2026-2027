@@ -45,6 +45,9 @@ public final class Palette
      * Building level colours, the same as the construction site bars: 1 white, 2 green, 3 blue, 4 purple, 5 gold.
      * Index 0 is a building not built yet.
      */
+    /** A level square not reached yet: faded, so the white of level 1 reads as filled beside it. */
+    public static final int LEVEL_EMPTY = 0xFFE2D2AC;
+    public static final int LEVEL_EMPTY_EDGE = 0xFFC2AE86;
     private static final int[] LEVEL_FILL = {0xFFB8A888, 0xFFF4F1EA, 0xFF4CA83A, 0xFF3A7BD5, 0xFF9B4DCA, 0xFFE8B021};
     private static final int[] LEVEL_EDGE = {0xFF7A6A4E, 0xFF8E8778, 0xFF2B6620, 0xFF1F4C8C, 0xFF5E2A80, 0xFF8A6410};
     private static final int[] LEVEL_TEXT = {0xFF3A2A18, 0xFF3A3A3A, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFF3A2A08};

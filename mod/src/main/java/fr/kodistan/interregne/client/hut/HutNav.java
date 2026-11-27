@@ -75,6 +75,15 @@ public final class HutNav
      * The level, one square per level in its own colour filled up to the current one, and ✎ to rename; after the title
      * the shell draws.
      */
+    /**
+     * Width of what {@link #header} draws after the title, its gap included.
+     */
+    public static int headerWidth(final Font font, final IBuildingView building)
+    {
+        final String text = building.getBuildingLevel() == 0 ? "Pas construit" : "Niveau " + building.getBuildingLevel();
+        return 8 + font.width(text) + 10 + building.getBuildingMaxLevel() * 8 + 6 + 10;
+    }
+
     public static void header(final GuiGraphics graphics, final Font font, final int titleEnd, final int y0, final IBuildingView building, final int textColor,
       final int mouseX, final int mouseY, final Hits hits)
     {
@@ -88,8 +97,8 @@ public final class HutNav
         int px = x + 6 + font.width(text);
         for (int l = 1; l <= max; l++)
         {
-            graphics.fill(px, y0 + 7, px + 6, y0 + 14, Palette.levelEdge(l));
-            graphics.fill(px + 1, y0 + 8, px + 5, y0 + 13, l <= level ? Palette.levelFill(l) : Palette.PAPER_LIGHT);
+            graphics.fill(px, y0 + 7, px + 6, y0 + 14, l <= level ? Palette.levelEdge(l) : Palette.LEVEL_EMPTY_EDGE);
+            graphics.fill(px + 1, y0 + 8, px + 5, y0 + 13, l <= level ? Palette.levelFill(l) : Palette.LEVEL_EMPTY);
             px += 8;
         }
         x += plateW + 6;

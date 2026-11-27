@@ -754,7 +754,7 @@ public final class ColonyHubScreen extends ParchmentScreen
         }
         if (building.getBuildingLevel() == 0)
         {
-            return new BuildingState(Ui.State.BAD, "Pas construit");
+            return new BuildingState(Ui.State.BAD, "À construire");
         }
         final List<WorkerBuildingModuleView> jobs = building.getModuleViews(WorkerBuildingModuleView.class);
         // Towers house guards bought at the academy or the archery, which sell them: none of the three hires anyone

@@ -65,6 +65,8 @@ public abstract class ParchmentScreen extends Screen
 
     /** Where the header's Influence and gold tag sits, for its tooltip; 0 wide when not shown. */
     private int walletX;
+    /** Where the title drawn by {@link #renderFrame} ends, for what a window puts right after it. */
+    protected int titleRight;
     private int walletW;
 
     /**
@@ -155,10 +157,12 @@ public abstract class ParchmentScreen extends Screen
         final String crumb = crumb();
         final int crumbW = crumb == null ? 0 : font.width(crumb + " › ");
         final Component title = shownTitle();
-        // The wallet keeps clear of the ✕ and leaves the title at least its own width or 80 pixels
-        final int titleEnd = showWallet()
-          ? drawWallet(graphics, x0 + w - 19, crumbW + Math.min(font.width(title), 80), ink) - 8
-          : x0 + w - 17;
+        // The wallet keeps clear of the ✕ and leaves the title at least its own width or 80 pixels, plus what the window
+        // draws after the title (a hut's level chip)
+        final int reserve = headerReserve();
+        final int titleEnd = (showWallet()
+          ? drawWallet(graphics, x0 + w - 19, crumbW + Math.min(font.width(title), 80) + reserve, ink) - 8
+          : x0 + w - 17) - reserve;
         if (!showWallet())
         {
             walletW = 0;
@@ -171,13 +175,24 @@ public abstract class ParchmentScreen extends Screen
         if (font.width(title) <= titleEnd - titleX)
         {
             graphics.drawString(font, title, titleX, y0 + 7, ink, false);
+            titleRight = titleX + font.width(title);
         }
         else
         {
-            graphics.drawString(font, Ui.fit(font, title.getString(), titleEnd - titleX), titleX, y0 + 7, ink, false);
+            final String fitted = Ui.fit(font, title.getString(), titleEnd - titleX);
+            graphics.drawString(font, fitted, titleX, y0 + 7, ink, false);
+            titleRight = titleX + font.width(fitted);
         }
         graphics.drawString(font, "✕", x0 + w - 13, y0 + 6, overClose(mouseX, mouseY) ? Palette.RED : muted, false);
         graphics.fill(x0 + 4, y0 + 19, x0 + w - 4, y0 + 20, Palette.RULE);
+    }
+
+    /**
+     * Width a window draws right after the title in the header, kept free of the wallet and of the title itself.
+     */
+    protected int headerReserve()
+    {
+        return 0;
     }
 
     /**

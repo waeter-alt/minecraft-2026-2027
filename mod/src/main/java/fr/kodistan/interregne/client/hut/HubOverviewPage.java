@@ -46,13 +46,22 @@ final class HubOverviewPage
         final List<IBuildingView> buildings = hub.colony.getBuildings();
         final List<ICitizenDataView> citizens = new ArrayList<>(hub.colony.getCitizens().values());
         int blocked = 0;
+        // Placed but level 0 (a barracks' towers come that way): waiting for the player to pay, not broken
+        int unbuilt = 0;
         int sites = 0;
         for (final IBuildingView building : buildings)
         {
             final ColonyHubScreen.BuildingState state = hub.stateOf(building);
             if (state.state() == Ui.State.BAD)
             {
-                blocked++;
+                if (building.getBuildingLevel() == 0)
+                {
+                    unbuilt++;
+                }
+                else
+                {
+                    blocked++;
+                }
             }
             if (building.isBuilding() || building.isRepairing() || building.isDeconstructing())
             {
@@ -87,9 +96,12 @@ final class HubOverviewPage
             y += 4;
             y = renderRebuildButton(graphics, mouseX, mouseY, x, y, width, ruins) + 6;
         }
-        if (blocked > 0)
+        if (blocked > 0 || unbuilt > 0)
         {
-            y += Ui.banner(graphics, hub.font(), x, y, width, Ui.State.BAD, "À régler", blocked + (blocked == 1 ? " bâtiment bloqué" : " bâtiments bloqués"));
+            final String blockedPart = blocked == 0 ? null : blocked + (blocked == 1 ? " bâtiment bloqué" : " bâtiments bloqués");
+            final String unbuiltPart = unbuilt == 0 ? null : unbuilt + (unbuilt == 1 ? " bâtiment à construire" : " bâtiments à construire");
+            y += Ui.banner(graphics, hub.font(), x, y, width, Ui.State.BAD, "À régler",
+              blockedPart == null ? unbuiltPart : unbuiltPart == null ? blockedPart : blockedPart + ", " + unbuiltPart);
             hub.addHit(x, y, width, 14, () -> hub.show(ColonyHubScreen.Page.BUILDINGS));
         }
         else if (troubled > 0)

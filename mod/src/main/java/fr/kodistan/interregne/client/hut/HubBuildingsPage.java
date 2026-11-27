@@ -77,8 +77,8 @@ final class HubBuildingsPage
     {
         for (int l = 1; l <= max; l++)
         {
-            graphics.fill(x, y, x + 6, y + 7, Palette.levelEdge(l));
-            graphics.fill(x + 1, y + 1, x + 5, y + 6, l <= level ? Palette.levelFill(l) : Palette.PAPER_LIGHT);
+            graphics.fill(x, y, x + 6, y + 7, l <= level ? Palette.levelEdge(l) : Palette.LEVEL_EMPTY_EDGE);
+            graphics.fill(x + 1, y + 1, x + 5, y + 6, l <= level ? Palette.levelFill(l) : Palette.LEVEL_EMPTY);
             x += 8;
         }
     }
