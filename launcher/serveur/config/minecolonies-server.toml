@@ -1,0 +1,190 @@
+#Toutes les configurations liées à la base du jeu
+[gameplay]
+	#Nombre de citoyens initiaux. [Default: 4, min: 1, max: 10]
+	# Default: 4
+	# Range: 1 ~ 10
+	initialcitizenamount = 4
+	#Les joueurs peuvent-ils placer une quantité infinie de camps/navires de ravitaillement ? [Default: false]
+	allowinfinitesupplychests = false
+	#Les joueurs peuvent-ils abandonner leur colonie pour en créer une nouvelle facilement ? Remarque : c'est buggé! [Default: false]
+	allowinfinitecolonies = false
+	#Est-ce que les colonies dans les autres dimensions sont autorisées ? [Default: true]
+	allowotherdimcolonies = true
+	#Nombre max de citoyens dans une colonie. [Default: 250, min: 100, max: 500]
+	# Default: 250
+	# Range: 100 ~ 500
+	maxcitizenpercolony = 250
+	#Les fonctionnalités en développement doivent-elles êtres activées (peut être buggé)? [Default: false]
+	enableindevelopmentfeatures = false
+	#Les noms des citoyens doivent-ils être affichés ? [Default: true]
+	alwaysrendernametag = true
+	#Les travailleurs doivent-ils travailler sous la pluie? [Default: false]
+	workersalwaysworkinrain = false
+	#Chance que le Mineur obtienne un minerai en minant de la pierre (par défaut, il peut être étendu avec des datapacks à d'autres matériaux). C'est un pourcentage. (Pour changer quels minerais le Mineur peut trouver, regardez "Liste des Minerais Chanceux".) [Default: 1, min: 0, max: 100]
+	# Default: 1
+	# Range: 0 ~ 100
+	luckyblockchance = 1
+	#Le niveau minimum qu'un hôtel de ville doit avoir pour permettre la téléportation vers les colonies alliées. [Default: 3, min: 0, max: 5]
+	# Default: 3
+	# Range: 0 ~ 5
+	minthleveltoteleport = 3
+	#Modificateur de la consommation alimentaire. [Default: 1.0, min: 0.1, max: 100.0]
+	# Default: 1.0
+	# Range: 0.1 ~ 100.0
+	foodmodifier = 1.0
+	#A quel point les maladies sont courantes. 1 = Très commun, 100 = Extrêmement rare. [Default: 5, min: 1, max: 100]
+	# Default: 5
+	# Range: 1 ~ 100
+	diseasemodifier = 5
+	#Si une partie de la colonie est chargée par un propriétaire/agent, la colonie doit-elle rester chargée ? (Définissez le nombre de morceaux à charger avec l'option "Colony Chunk Loading Strictness") [Default: true]
+	forceloadcolony = true
+	#Définit la durée pendant laquelle les blocs restent chargés après le départ du joueur, ne persiste pas lors des redémarrages. Valeur par défaut : 10min [Default: 10, min: 1, max: 1440]
+	# Default: 10
+	# Range: 1 ~ 1440
+	loadtime = 10
+	#Cela contrôle combien de chunks sont chargés avec l'option "Chunk Load Colony". Plus la valeur est élevée, moins de chunks seront chargés. (Les chunks centraux seront chargés en premier.) 1 = charge de tous les chunks visités. [Default: 3, min: 1, max: 15]
+	# Default: 3
+	# Range: 1 ~ 15
+	colonyloadstrictness = 3
+	#Le nombre maximum de bûches d'un arbre pour le Forestier à vérifier pendant la recherche de son arbre. [Default: 400, min: 1, max: 1000]
+	# Default: 400
+	# Range: 1 ~ 1000
+	maxtreesize = 400
+	#Désactive les restrictions de placement des camps d'approvisionnement, pour les skyworld et similaire [Default: false]
+	nosupplyplacementrestrictions = false
+	#Les attaquants apparaitront dans le ciel si activé [Default: false]
+	skyraiders = false
+
+#Toutes les configurations liées au système de requête
+[research]
+	#Permet l'achèvement automatique et (presque) instantané des recherches pour les joueurs en mode créatif. Si elle est fausse, les joueurs en mode créatif pourront toujours commencer des recherches, mais auront des taux de progression normaux. [Default: true]
+	researchcreativecompletion = true
+	#Augmente significativement la quantité d'information relative aux datapacks de recherches loggée pendant le chargement d'un monde. [Default: false]
+	researchdebuglog = false
+	#Une liste d'éléments à facturer aux joueurs lorsqu'ils annulent une recherche déjà effectuée.
+	researchresetcost = ["minecolonies:ancienttome:1"]
+
+#Toutes les configurations liées aux commandes Minecolonies
+[commands]
+	#Les joueurs devraient-ils être autorisés à utiliser la commande /mc rtp? [Default: false]
+	canplayerusertpcommand = false
+	#Est-ce que les joueurs devraient être autorisés à utiliser la commande "/mc colony teleport" ? [Default: false]
+	canplayerusecolonytpcommand = false
+	#Les joueurs peuvent-ils se téléporter vers les colonies alliées ? [Default: true]
+	canplayeruseallytownhallteleport = true
+	#Les joueurs devraient-ils être autorisés à utiliser la commande "/mc maison"? Remarque: Seul le propriétaire de la colonie peut utiliser cette commande. [Default: false]
+	canplayerusehometpcommand = false
+	#Les joueurs devraient-ils être autorisés à utiliser la commande /mc colony info ? [Default: true]
+	canplayeruseshowcolonyinfocommand = true
+	#Les joueurs devraient-ils être autorisés à utiliser la commande /mc citizens kill ? [Default: false]
+	canplayerusekillcitizenscommand = false
+	#Les joueurs devraient-ils être autorisés à utiliser la commande /mc citizens modify ? [Default: false]
+	canplayerusemodifycitizenscommand = false
+	#Les joueurs doivent-ils être autorisés à utiliser la commande /mc colony addOfficer ? [Default: true]
+	canplayeruseaddofficercommand = true
+	#Les joueurs devraient-ils être autorisés à utiliser la commande /mc colony delete ? [Default: false]
+	canplayerusedeletecolonycommand = false
+	#Les joueurs doivent-ils être autorisés à utiliser la commande /mc colony requestsystem-reset ? [Default: false]
+	canplayeruseresetcommand = false
+
+#Toutes les configurations liées à la taille d’une colonie
+[claims]
+	#minecolonies.config.maxColonySize.comment [Default: 20, min: 1, max: 250]
+	# Default: 20
+	# Range: 1 ~ 250
+	maxColonySize = 20
+	#minecolonies.config.minColonyDistance.comment [Default: 8, min: 1, max: 200]
+	# Default: 8
+	# Range: 1 ~ 200
+	minColonyDistance = 8
+	#minecolonies.config.initialColonySize.comment [Default: 4, min: 1, max: 15]
+	# Default: 4
+	# Range: 1 ~ 15
+	initialColonySize = 4
+	#Distance maximale (en blocs) des apparitions des colonies dans le monde. [Default: 30000, min: 1000, max: 2147483647]
+	# Default: 30000
+	# Range: > 1000
+	maxdistancefromworldspawn = 30000
+	#Distance minimale (en blocs) des apparitions des colonies dans le monde. [Default: 0, min: 0, max: 1000]
+	# Default: 0
+	# Range: 0 ~ 1000
+	mindistancefromworldspawn = 0
+
+#Toutes les configurations liées aux éléments de combat de MineColonies
+[combat]
+	#minecolonies.config.dobarbariansspawn.comment [Default: true]
+	dobarbariansspawn = false
+	#minecolonies.config.barbarianhordedifficulty.comment [Default: 5, min: 0, max: 10]
+	# Default: 5
+	# Range: 0 ~ 10
+	barbarianhordedifficulty = 5
+	#minecolonies.config.maxBarbarianSize.comment [Default: 80, min: 6, max: 400]
+	# Default: 80
+	# Range: 6 ~ 400
+	maxBarbarianSize = 80
+	#minecolonies.config.dobarbariansbreakthroughwalls.comment [Default: true]
+	dobarbariansbreakthroughwalls = true
+	#Le nombre moyen de nuits entre les raids. [Default: 14, min: 1, max: 50]
+	# Default: 14
+	# Range: 1 ~ 50
+	averagenumberofnightsbetweenraids = 14
+	#Le nombre minimum de nuits entre les raids. [Default: 10, min: 1, max: 30]
+	# Default: 10
+	# Range: 1 ~ 30
+	minimumnumberofnightsbetweenraids = 10
+	#Les monstres devraient-ils attaquer les citoyens? [Default: true]
+	mobattackcitizens = true
+	#minecolonies.config.shouldraiderbreakdoors.comment [Default: true]
+	shouldraiderbreakdoors = true
+	#Multiplicateur de dégâts d'attaque pour les gardes. [Default: 1.0, min: 0.1, max: 15.0]
+	# Default: 1.0
+	# Range: 0.1 ~ 15.0
+	guardDamageMultiplier = 1.0
+	#Multiplicateur de santé pour tous les gardes. [Default: 1.0, min: 0.1, max: 5.0]
+	# Default: 1.0
+	# Range: 0.1 ~ 5.0
+	guardhealthmult = 1.0
+	#Activez le mode PVP de MineColonies (les colonies peuvent être détruites et anéanties dans certaines conditions). [Default: false]
+	pvp_mode = false
+
+#Toutes les options de configuration de permissions
+[permissions]
+	#La protection des colonies doit-elle être activée ? [Default: true]
+	enablecolonyprotection = true
+	#Indépendamment de la protection de la colonie, les explosions doivent-elles être enlevées à l'intérieur des colonies ? DAMAGE_NOTHING prévient de toutes les explosions. DAMAGES_PLAYERS, autorise les explosions à faire des dégâts aux joueurs et aux créatures agressives, mais pas aux blocs, ni aux créatures neutres et amicales. DAMAGES_ENTITIES autorise les dégâts à toutes les entités. DAMAGE_EVERYTHING autorise les explosions aux entités et aux blocs. [Default: DAMAGE_ENTITIES, values: DAMAGE_NOTHING, DAMAGE_PLAYERS, DAMAGE_ENTITIES, DAMAGE_EVERYTHING]
+	#Allowed Values: DAMAGE_NOTHING, DAMAGE_PLAYERS, DAMAGE_ENTITIES, DAMAGE_EVERYTHING
+	turnoffexplosionsincolonies = "DAMAGE_ENTITIES"
+
+#Toutes les configurations liées à la compatibilité entre mods
+[compatibility]
+	#Au chargement des recettes, un fichier d'audit CSV se génère pour vous aider à déboguer les datapacks ou autres mods. [Default: false]
+	auditcraftingtags = false
+	#Active le débogage de l'inventaire. [Default: false]
+	debuginventories = false
+	#Cochez si vous utilisez ce monde pour la construction ou scanner via un Blueprint. [Default: false]
+	blueprintbuildmode = false
+
+#Toutes les configurations liées au pathfinding
+[pathfinding]
+	#Détail des messages de débogage du Pathfinding. [Default: 0, min: 0, max: 10]
+	# Default: 0
+	# Range: 0 ~ 10
+	pathfindingdebugverbosity = 0
+	#Nombre minimum de rails consécutifs pour que les citoyens puissent les utiliser. [Default: 8, min: 5, max: 100]
+	# Default: 8
+	# Range: 5 ~ 100
+	minimumrailstopath = 8
+	#Nombre de processus additionnels à utiliser pour le Pathfinding. [Default: 1, min: 1, max: 10]
+	# Default: 1
+	# Range: 1 ~ 10
+	pathfindingmaxthreadcount = 1
+
+#minecolonies.config.requestSystem.comment
+[requestSystem]
+	#Est-ce que le système de requête doit résoudre créativement (si possible) quand le joueur est demandé à résoudre une requête ? C'est un outil de débogage et cela peut prendre très longtemps avant de résoudre la requête. [Default: false]
+	creativeresolve = false
+
+#minecolonies.config.debugging.comment
+[debugging]
+	#minecolonies.config.netherworkertakesdamage.comment [Default: true]
+	netherworkertakesdamage = true
