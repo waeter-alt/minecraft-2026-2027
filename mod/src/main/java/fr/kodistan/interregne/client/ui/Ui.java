@@ -1,5 +1,6 @@
 package fr.kodistan.interregne.client.ui;
 
+import fr.kodistan.interregne.client.dev.PlayDriver;
 import fr.kodistan.interregne.client.dev.LayoutProbe;
 import fr.kodistan.interregne.InterregneMod;
 import fr.kodistan.interregne.client.CrateRows;
@@ -237,6 +238,7 @@ public final class Ui
     public static void button(final GuiGraphics graphics, final Font font, final int x, final int y, final int width, final int height, final String label,
       final ButtonStyle style, final boolean enabled, final boolean hover)
     {
+        PlayDriver.seen(label, x, y, width, height, enabled);
         final int textY = y + (height - 8) / 2;
         if (!enabled)
         {
@@ -277,6 +279,7 @@ public final class Ui
             button(graphics, font, x, y, width, height, label, ButtonStyle.PRIMARY, false, hover);
             return;
         }
+        PlayDriver.seen(label, x, y, width, height, true);
         plate(graphics, x, y, x + width, y + height, Palette.levelFill(level), Palette.levelEdge(level), Palette.levelFill(level));
         if (hover)
         {
@@ -381,6 +384,7 @@ public final class Ui
     public static void solidButton(final GuiGraphics graphics, final Font font, final int x, final int y, final int width, final int height,
       final String label, final State state, final boolean hover)
     {
+        PlayDriver.seen(label, x, y, width, height, true);
         plate(graphics, x, y, x + width, y + height, state.strong, Palette.EDGE, state.strong);
         if (hover)
         {
